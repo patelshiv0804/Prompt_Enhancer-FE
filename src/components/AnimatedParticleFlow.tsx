@@ -4,14 +4,14 @@ import { motion } from "framer-motion";
 import { useEffect, useRef, useState, useCallback } from "react";
 
 /* ─────────────────────────────────────────────
- * Animated particle flow — the visual centerpiece.
+ * Animated particle flow — dotted/dashed flowing
+ * lines with colored particles that travel from
+ * the Raw Prompt card → AI Engine → Optimized For.
  *
- * Architecture:
- *   • SVG paths define flow routes (top→engine, engine→bottom)
- *   • Each path has animated dashed strokes via strokeDashoffset
- *   • Multiple glowing particles (circles) travel along each path
- *   • SVG filters create blur/glow effects
- *   • Uses a single hidden <path> ref per route for getPointAtLength
+ * Lines fan out from the card to the engine, and
+ * fan out wider from the engine to the bottom card.
+ * Matches the reference image's organic, spread-out
+ * dotted-line aesthetic with colored particle dots.
  * ───────────────────────────────────────────── */
 
 interface ParticlePathConfig {
@@ -24,89 +24,88 @@ interface ParticlePathConfig {
 }
 
 const PATHS: ParticlePathConfig[] = [
-  // ─── Top card → AI Engine ───
-  // Left curve
+  // ─── Top card → AI Engine (converging) ───
   {
-    id: "path-top-left",
-    d: "M 210 60 C 200 110, 140 130, 145 185 C 148 220, 195 260, 230 285",
-    color: "#A855F7",
-    duration: 4,
-    delay: 0,
-    particleCount: 3,
+    id: "t-far-left",
+    d: "M 185 55 C 150 90, 100 140, 90 180 C 80 230, 180 270, 270 310",
+    color: "#A855F7", duration: 5, delay: 0, particleCount: 3,
   },
-  // Center
   {
-    id: "path-top-center",
-    d: "M 230 60 C 230 120, 228 200, 230 285",
-    color: "#EC4899",
-    duration: 3.5,
-    delay: 0.5,
-    particleCount: 3,
+    id: "t-left",
+    d: "M 200 55 C 180 100, 150 150, 170 210 C 185 250, 230 280, 270 310",
+    color: "#8B5CF6", duration: 4.5, delay: 0.3, particleCount: 3,
   },
-  // Right curve
   {
-    id: "path-top-right",
-    d: "M 250 60 C 260 110, 320 130, 315 185 C 312 220, 265 260, 230 285",
-    color: "#60A5FA",
-    duration: 4.5,
-    delay: 0.3,
-    particleCount: 3,
+    id: "t-center-left",
+    d: "M 230 55 C 220 100, 210 170, 230 230 C 240 260, 255 285, 270 310",
+    color: "#EC4899", duration: 4, delay: 0.5, particleCount: 3,
+  },
+  {
+    id: "t-center",
+    d: "M 270 55 C 270 120, 270 200, 270 310",
+    color: "#F472B6", duration: 3.5, delay: 0.2, particleCount: 4,
+  },
+  {
+    id: "t-center-right",
+    d: "M 310 55 C 320 100, 330 170, 310 230 C 300 260, 285 285, 270 310",
+    color: "#60A5FA", duration: 4, delay: 0.4, particleCount: 3,
+  },
+  {
+    id: "t-right",
+    d: "M 340 55 C 360 100, 390 150, 370 210 C 355 250, 310 280, 270 310",
+    color: "#818CF8", duration: 4.5, delay: 0.1, particleCount: 3,
+  },
+  {
+    id: "t-far-right",
+    d: "M 355 55 C 390 90, 440 140, 450 180 C 460 230, 360 270, 270 310",
+    color: "#A855F7", duration: 5, delay: 0.6, particleCount: 3,
   },
 
-  // ─── AI Engine → Bottom card (fan out wider) ───
-  // Far left
+  // ─── AI Engine → Bottom card (fanning out) ───
   {
-    id: "path-bottom-far-left",
-    d: "M 230 330 C 220 360, 100 380, 70 430 C 50 470, 65 500, 85 520",
-    color: "#A855F7",
-    duration: 4.5,
-    delay: 0,
-    particleCount: 2,
+    id: "b-far-left",
+    d: "M 270 340 C 250 370, 120 400, 50 440 C 10 460, 20 490, 40 510",
+    color: "#A855F7", duration: 5, delay: 0, particleCount: 2,
   },
-  // Left
   {
-    id: "path-bottom-left",
-    d: "M 230 330 C 220 360, 140 390, 130 430 C 122 465, 135 495, 150 520",
-    color: "#60A5FA",
-    duration: 4,
-    delay: 0.3,
-    particleCount: 3,
+    id: "b-left",
+    d: "M 270 340 C 255 370, 160 400, 110 440 C 80 460, 90 490, 110 510",
+    color: "#EC4899", duration: 4.5, delay: 0.2, particleCount: 3,
   },
-  // Center-left
   {
-    id: "path-bottom-center-left",
-    d: "M 230 330 C 225 370, 195 420, 195 520",
-    color: "#EC4899",
-    duration: 3.5,
-    delay: 0.6,
-    particleCount: 2,
+    id: "b-center-left-1",
+    d: "M 270 340 C 260 370, 200 410, 170 450 C 150 480, 160 500, 175 510",
+    color: "#60A5FA", duration: 4, delay: 0.5, particleCount: 2,
   },
-  // Center-right
   {
-    id: "path-bottom-center-right",
-    d: "M 230 330 C 235 370, 265 420, 265 520",
-    color: "#A855F7",
-    duration: 3.5,
-    delay: 0.8,
-    particleCount: 2,
+    id: "b-center-left-2",
+    d: "M 270 340 C 265 370, 230 410, 220 450 C 215 480, 220 500, 230 510",
+    color: "#8B5CF6", duration: 3.8, delay: 0.7, particleCount: 2,
   },
-  // Right
   {
-    id: "path-bottom-right",
-    d: "M 230 330 C 240 360, 320 390, 330 430 C 338 465, 325 495, 310 520",
-    color: "#EC4899",
-    duration: 4.2,
-    delay: 0.4,
-    particleCount: 3,
+    id: "b-center",
+    d: "M 270 340 C 270 380, 270 430, 270 510",
+    color: "#F472B6", duration: 3.5, delay: 0.3, particleCount: 3,
   },
-  // Far right
   {
-    id: "path-bottom-far-right",
-    d: "M 230 330 C 240 360, 360 380, 390 430 C 410 470, 395 500, 375 520",
-    color: "#60A5FA",
-    duration: 4.5,
-    delay: 0.2,
-    particleCount: 2,
+    id: "b-center-right-2",
+    d: "M 270 340 C 275 370, 310 410, 320 450 C 325 480, 320 500, 310 510",
+    color: "#818CF8", duration: 3.8, delay: 0.6, particleCount: 2,
+  },
+  {
+    id: "b-center-right-1",
+    d: "M 270 340 C 280 370, 340 410, 370 450 C 390 480, 380 500, 365 510",
+    color: "#A855F7", duration: 4, delay: 0.4, particleCount: 2,
+  },
+  {
+    id: "b-right",
+    d: "M 270 340 C 285 370, 380 400, 430 440 C 460 460, 450 490, 430 510",
+    color: "#EC4899", duration: 4.5, delay: 0.1, particleCount: 3,
+  },
+  {
+    id: "b-far-right",
+    d: "M 270 340 C 290 370, 420 400, 490 440 C 530 460, 520 490, 500 510",
+    color: "#60A5FA", duration: 5, delay: 0.8, particleCount: 2,
   },
 ];
 
@@ -117,12 +116,12 @@ export default function AnimatedParticleFlow() {
     setMounted(true);
   }, []);
 
-  if (!mounted) return <div className="h-[600px] w-[460px]" />;
+  if (!mounted) return <div className="h-[600px] w-[540px]" />;
 
   return (
     <div className="pointer-events-none absolute inset-0 z-0">
       <svg
-        viewBox="0 0 460 600"
+        viewBox="0 0 540 600"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         className="h-full w-full"
@@ -131,28 +130,28 @@ export default function AnimatedParticleFlow() {
         {/* ── SVG Filters for glow ── */}
         <defs>
           <filter id="glow-purple" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="4" result="blur" />
+            <feGaussianBlur stdDeviation="3" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
           <filter id="glow-pink" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="5" result="blur" />
+            <feGaussianBlur stdDeviation="3" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
           <filter id="glow-blue" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="4" result="blur" />
+            <feGaussianBlur stdDeviation="3" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
           <filter id="particle-glow" x="-200%" y="-200%" width="500%" height="500%">
-            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feGaussianBlur stdDeviation="2.5" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="blur" />
@@ -160,18 +159,18 @@ export default function AnimatedParticleFlow() {
             </feMerge>
           </filter>
 
-          {/* Gradient definitions for paths */}
+          {/* Gradient definitions */}
           <linearGradient id="grad-purple" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#A855F7" stopOpacity="0.6" />
-            <stop offset="100%" stopColor="#A855F7" stopOpacity="0.15" />
+            <stop offset="0%" stopColor="#A855F7" stopOpacity="0.5" />
+            <stop offset="100%" stopColor="#A855F7" stopOpacity="0.1" />
           </linearGradient>
           <linearGradient id="grad-pink" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#EC4899" stopOpacity="0.5" />
-            <stop offset="100%" stopColor="#EC4899" stopOpacity="0.15" />
+            <stop offset="0%" stopColor="#EC4899" stopOpacity="0.4" />
+            <stop offset="100%" stopColor="#EC4899" stopOpacity="0.1" />
           </linearGradient>
           <linearGradient id="grad-blue" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#60A5FA" stopOpacity="0.5" />
-            <stop offset="100%" stopColor="#60A5FA" stopOpacity="0.15" />
+            <stop offset="0%" stopColor="#60A5FA" stopOpacity="0.4" />
+            <stop offset="100%" stopColor="#60A5FA" stopOpacity="0.1" />
           </linearGradient>
         </defs>
 
@@ -189,38 +188,32 @@ export default function AnimatedParticleFlow() {
 function AnimatedPath({ config }: { config: ParticlePathConfig }) {
   const { d, color, duration, delay, particleCount } = config;
 
-  const glowFilter =
-    color === "#A855F7"
-      ? "url(#glow-purple)"
-      : color === "#EC4899"
-      ? "url(#glow-pink)"
-      : "url(#glow-blue)";
-
-  const gradId =
-    color === "#A855F7"
-      ? "url(#grad-purple)"
-      : color === "#EC4899"
-      ? "url(#grad-pink)"
-      : "url(#grad-blue)";
+  const getFilter = () => {
+    if (color.includes("A855F7") || color.includes("8B5CF6") || color.includes("818CF8")) return "url(#glow-purple)";
+    if (color.includes("EC4899") || color.includes("F472B6")) return "url(#glow-pink)";
+    return "url(#glow-blue)";
+  };
 
   return (
     <g>
-      {/* Base path — faint static line */}
+      {/* Base path — very faint static dotted line */}
       <path
         d={d}
         stroke={color}
-        strokeWidth="1"
-        strokeOpacity="0.06"
+        strokeWidth="0.8"
+        strokeOpacity="0.08"
+        strokeDasharray="2 4"
         fill="none"
       />
 
-      {/* Animated dashed stroke — flowing energy */}
+      {/* Animated dashed stroke — flowing energy dots */}
       <motion.path
         d={d}
-        stroke={gradId}
-        strokeWidth="1.5"
+        stroke={color}
+        strokeWidth="1.2"
+        strokeOpacity="0.3"
         fill="none"
-        strokeDasharray="8 16"
+        strokeDasharray="2 8"
         initial={{ strokeDashoffset: 0 }}
         animate={{ strokeDashoffset: -200 }}
         transition={{
@@ -229,23 +222,23 @@ function AnimatedPath({ config }: { config: ParticlePathConfig }) {
           repeat: Infinity,
           ease: "linear",
         }}
-        filter={glowFilter}
+        filter={getFilter()}
         strokeLinecap="round"
       />
 
-      {/* Secondary animated layer */}
+      {/* Secondary flowing layer — offset timing */}
       <motion.path
         d={d}
         stroke={color}
-        strokeWidth="0.8"
-        strokeOpacity="0.25"
+        strokeWidth="0.6"
+        strokeOpacity="0.15"
         fill="none"
-        strokeDasharray="4 24"
+        strokeDasharray="1 12"
         initial={{ strokeDashoffset: 0 }}
         animate={{ strokeDashoffset: -150 }}
         transition={{
-          duration: duration * 0.8,
-          delay: delay + 0.5,
+          duration: duration * 0.7,
+          delay: delay + 0.8,
           repeat: Infinity,
           ease: "linear",
         }}
@@ -255,12 +248,12 @@ function AnimatedPath({ config }: { config: ParticlePathConfig }) {
       {/* Glowing particles traveling along the path */}
       {Array.from({ length: particleCount }).map((_, i) => (
         <FlowingParticle
-          key={`${config.id}-particle-${i}`}
+          key={`${config.id}-p-${i}`}
           pathD={d}
           color={color}
-          duration={duration + i * 0.8}
+          duration={duration + i * 0.6}
           delay={delay + i * (duration / particleCount)}
-          size={2.5 - i * 0.4}
+          size={2.2 - i * 0.3}
         />
       ))}
     </g>
@@ -307,7 +300,6 @@ function FlowingParticle({
       const totalLength = pathRef.current.getTotalLength();
       const progress = (elapsed / (duration * 1000)) % 1;
 
-      // EaseInOut for organic movement
       const eased =
         progress < 0.5
           ? 2 * progress * progress
@@ -337,17 +329,17 @@ function FlowingParticle({
         cy={pos.y}
         r={size * 2.5}
         fill={color}
-        opacity={0.15}
+        opacity={0.12}
       />
       {/* Core particle */}
-      <circle cx={pos.x} cy={pos.y} r={size} fill={color} opacity={0.9} />
+      <circle cx={pos.x} cy={pos.y} r={size} fill={color} opacity={0.85} />
       {/* Bright center */}
       <circle
         cx={pos.x}
         cy={pos.y}
-        r={size * 0.4}
+        r={size * 0.35}
         fill="white"
-        opacity={0.8}
+        opacity={0.7}
       />
     </g>
   );

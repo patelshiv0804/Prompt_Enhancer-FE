@@ -3,10 +3,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Play } from "lucide-react";
 import TrustLogos from "./TrustLogos";
-import RawPromptCard from "./RawPromptCard";
-import AIEngine from "./AIEngine";
-import AnimatedParticleFlow from "./AnimatedParticleFlow";
-import OptimizedForCard from "./OptimizedForCard";
+import HeroParticleBurst from "./HeroParticleBurst";
 
 export default function Hero() {
   return (
@@ -24,6 +21,19 @@ export default function Hero() {
       <div className="relative z-10 mx-auto flex w-full max-w-[1440px] flex-col items-center gap-16 px-6 py-16 lg:flex-row lg:items-center lg:gap-20 lg:px-12 xl:gap-24">
         {/* ── Left Column: Content ── */}
         <div className="flex max-w-xl flex-1 flex-col lg:max-w-[580px]">
+          {/* Badge */}
+          <motion.div
+            className="mb-6 flex items-center gap-2"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <div className="h-[6px] w-[6px] rounded-full bg-brand-violet" />
+            <span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-gray-400">
+              AI-Powered Prompt Intelligence
+            </span>
+          </motion.div>
+
           {/* Heading */}
           <motion.h1
             className="text-[clamp(32px,4.5vw,56px)] font-extrabold leading-[1.1] tracking-tight text-gray-900"
@@ -113,31 +123,16 @@ export default function Hero() {
           <TrustLogos />
         </div>
 
-        {/* ── Right Column: AI Visualization ── */}
+        {/* ── Right Column: Particle Burst with AI Engine Card ── */}
         <motion.div
           className="relative flex flex-1 items-center justify-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3, duration: 1 }}
         >
-          <div className="relative flex h-[580px] w-[460px] flex-col items-center justify-between py-4">
-            {/* Particle flow (SVG overlay) */}
-            <AnimatedParticleFlow />
-
-            {/* Top: Raw Prompt Card */}
-            <div className="relative z-10">
-              <RawPromptCard />
-            </div>
-
-            {/* Center: AI Engine */}
-            <div className="relative z-10">
-              <AIEngine />
-            </div>
-
-            {/* Bottom: Optimized For Card */}
-            <div className="relative z-10">
-              <OptimizedForCard />
-            </div>
+          <div className="relative h-[520px] w-[520px] lg:h-[580px] lg:w-[580px]">
+            {/* The particle burst canvas (includes center icon) */}
+            <HeroParticleBurst />
           </div>
         </motion.div>
       </div>
