@@ -117,12 +117,12 @@ export default function AnimatedParticleFlow() {
     setMounted(true);
   }, []);
 
-  if (!mounted) return <div className="h-[580px] w-[460px]" />;
+  if (!mounted) return <div className="h-[600px] w-[460px]" />;
 
   return (
     <div className="pointer-events-none absolute inset-0 z-0">
       <svg
-        viewBox="0 0 460 580"
+        viewBox="0 0 460 600"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         className="h-full w-full"
@@ -193,15 +193,15 @@ function AnimatedPath({ config }: { config: ParticlePathConfig }) {
     color === "#A855F7"
       ? "url(#glow-purple)"
       : color === "#EC4899"
-        ? "url(#glow-pink)"
-        : "url(#glow-blue)";
+      ? "url(#glow-pink)"
+      : "url(#glow-blue)";
 
   const gradId =
     color === "#A855F7"
       ? "url(#grad-purple)"
       : color === "#EC4899"
-        ? "url(#grad-pink)"
-        : "url(#grad-blue)";
+      ? "url(#grad-pink)"
+      : "url(#grad-blue)";
 
   return (
     <g>
