@@ -1,158 +1,42 @@
 "use client";
 
+import React from "react";
 import { motion } from "framer-motion";
 
 /* ─────────────────────────────────────────────
  * AIEngine — The orange hexagonal icon at the center
  * of the transformation pipeline. Has a 3D cube icon
- * inside, surrounded by concentric dashed orbit rings
- * with orbiting dots.
+ * inside, with radial glow.
+ *
+ * Performance: Concentric orbit rings and their dots have
+ * been removed entirely to maximize performance and simplify
+ * the visual interface.
  * ───────────────────────────────────────────── */
 
-export default function AIEngine() {
+const AIEngine = React.memo(function AIEngine() {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: 0.6, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
       className="relative flex flex-col items-center"
+      style={{ willChange: "transform", transform: "translateZ(0)" }}
     >
-      {/* Concentric orbit rings */}
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-        {/* Outer orbit ring */}
-        <svg
-          width="180"
-          height="180"
-          viewBox="0 0 180 180"
-          fill="none"
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-        >
-          <circle
-            cx="90"
-            cy="90"
-            r="85"
-            stroke="#E5E7EB"
-            strokeWidth="0.8"
-            strokeDasharray="4 6"
-            opacity="0.5"
-          />
-          {/* Orbiting dots on outer ring */}
-          <motion.circle
-            cx="90"
-            cy="5"
-            r="2.5"
-            fill="#A855F7"
-            opacity="0.6"
-            animate={{ rotate: 360 }}
-            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-            style={{ transformOrigin: "90px 90px" }}
-          />
-          <motion.circle
-            cx="175"
-            cy="90"
-            r="2"
-            fill="#EC4899"
-            opacity="0.5"
-            animate={{ rotate: -360 }}
-            transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-            style={{ transformOrigin: "90px 90px" }}
-          />
-          <motion.circle
-            cx="90"
-            cy="175"
-            r="2.5"
-            fill="#60A5FA"
-            opacity="0.6"
-            animate={{ rotate: 360 }}
-            transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
-            style={{ transformOrigin: "90px 90px" }}
-          />
-        </svg>
-
-        {/* Middle orbit ring */}
-        <svg
-          width="130"
-          height="130"
-          viewBox="0 0 130 130"
-          fill="none"
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-        >
-          <circle
-            cx="65"
-            cy="65"
-            r="60"
-            stroke="#E5E7EB"
-            strokeWidth="0.6"
-            strokeDasharray="3 5"
-            opacity="0.4"
-          />
-          <motion.circle
-            cx="125"
-            cy="65"
-            r="2"
-            fill="#A855F7"
-            opacity="0.5"
-            animate={{ rotate: -360 }}
-            transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-            style={{ transformOrigin: "65px 65px" }}
-          />
-          <motion.circle
-            cx="5"
-            cy="65"
-            r="1.5"
-            fill="#EC4899"
-            opacity="0.4"
-            animate={{ rotate: 360 }}
-            transition={{ duration: 22, repeat: Infinity, ease: "linear" }}
-            style={{ transformOrigin: "65px 65px" }}
-          />
-        </svg>
-
-        {/* Inner orbit ring */}
-        <svg
-          width="90"
-          height="90"
-          viewBox="0 0 90 90"
-          fill="none"
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-        >
-          <circle
-            cx="45"
-            cy="45"
-            r="40"
-            stroke="#E5E7EB"
-            strokeWidth="0.5"
-            strokeDasharray="2 4"
-            opacity="0.3"
-          />
-          <motion.circle
-            cx="45"
-            cy="5"
-            r="1.5"
-            fill="#60A5FA"
-            opacity="0.5"
-            animate={{ rotate: 360 }}
-            transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
-            style={{ transformOrigin: "45px 45px" }}
-          />
-        </svg>
-      </div>
-
-      {/* Radial glow aura */}
+      {/* Radial glow aura — no CPU/GPU blur filter. Uses smooth multi-stop gradient */}
       <div
-        className="absolute -inset-16 opacity-60 blur-3xl"
+        className="absolute -inset-24 opacity-60"
         style={{
           background:
-            "radial-gradient(circle, rgba(234,88,12,0.12) 0%, rgba(249,115,22,0.08) 30%, rgba(168,85,247,0.04) 60%, transparent 75%)",
+            "radial-gradient(circle, rgba(234,88,12,0.18) 0%, rgba(249,115,22,0.08) 25%, rgba(168,85,247,0.02) 50%, transparent 70%)",
         }}
       />
 
       {/* Hexagonal orange icon */}
-      <div className="relative z-10 flex h-[72px] w-[72px] items-center justify-center">
+      <div className="relative z-10 flex h-[110px] w-[110px] items-center justify-center">
         {/* Hexagon background */}
         <svg
-          width="72"
-          height="72"
+          width="110"
+          height="110"
           viewBox="0 0 72 72"
           fill="none"
           className="absolute inset-0"
@@ -163,8 +47,8 @@ export default function AIEngine() {
               <stop offset="50%" stopColor="#EA580C" />
               <stop offset="100%" stopColor="#DC2626" />
             </linearGradient>
-            <filter id="hex-shadow" x="-30%" y="-30%" width="160%" height="160%">
-              <feDropShadow dx="0" dy="4" stdDeviation="8" floodColor="#F97316" floodOpacity="0.3" />
+            <filter id="hex-shadow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="3" stdDeviation="5" floodColor="#F97316" floodOpacity="0.25" />
             </filter>
           </defs>
           <path
@@ -183,8 +67,8 @@ export default function AIEngine() {
 
         {/* 3D Cube icon */}
         <svg
-          width="28"
-          height="28"
+          width="42"
+          height="42"
           viewBox="0 0 24 24"
           fill="none"
           stroke="white"
@@ -203,4 +87,6 @@ export default function AIEngine() {
       </div>
     </motion.div>
   );
-}
+});
+
+export default AIEngine;

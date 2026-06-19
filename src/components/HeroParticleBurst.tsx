@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 /* ─────────────────────────────────────────────
  * HeroParticleBurst — 3D spherical particle vortex
@@ -40,7 +40,7 @@ interface Particle {
   sz: number; // depth for sorting & sizing
 }
 
-const PARTICLE_COUNT = 800;
+const PARTICLE_COUNT = 30;
 const PERSPECTIVE = 600; // camera distance — controls 3D "pop"
 
 // Angle-based color: maps the azimuthal angle to a gradient around the sphere
@@ -70,11 +70,33 @@ function colorForAngle(theta: number): string {
 }
 
 export default function HeroParticleBurst() {
+  const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<Particle[]>([]);
   const animFrameRef = useRef<number>(0);
   const mouseRef = useRef({ x: 0, y: 0, active: false });
   const sizeRef = useRef({ w: 0, h: 0, cx: 0, cy: 0, sphereR: 0, coreR: 0 });
+  const [isVisible, setIsVisible] = useState(true);
+
+  // Intersection Observer to monitor viewport visibility
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsVisible(entry.isIntersecting);
+      },
+      { threshold: 0 }
+    );
+    const container = containerRef.current;
+    if (container) {
+      observer.observe(container);
+    }
+    return () => {
+      if (container) {
+        observer.unobserve(container);
+      }
+      observer.disconnect();
+    };
+  }, []);
 
   const spawnParticle = useCallback((p: Particle) => {
     const { sphereR, coreR } = sizeRef.current;
@@ -91,7 +113,7 @@ export default function HeroParticleBurst() {
     p.size = 0.4 + Math.random() * 1.8;
     p.opacity = 0.2 + Math.random() * 0.75;
     p.trail = [];
-    p.trailLength = 5 + Math.floor(Math.random() * 16);
+    p.trailLength = 4 + Math.floor(Math.random() * 6); // reduced from 16 for better speed
     p.phase = Math.random() * Math.PI * 2;
     p.dx = 0;
     p.dy = 0;
@@ -121,7 +143,7 @@ export default function HeroParticleBurst() {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas || !isVisible) return; // Completely pause and teardown when offscreen
     const ctx = canvas.getContext("2d", { alpha: true });
     if (!ctx) return;
 
@@ -322,10 +344,10 @@ export default function HeroParticleBurst() {
       canvas.removeEventListener("mousemove", handleMouseMove);
       canvas.removeEventListener("mouseleave", handleMouseLeave);
     };
-  }, [initParticles, spawnParticle]);
+  }, [isVisible, initParticles, spawnParticle]);
 
   return (
-    <div className="absolute inset-0 h-full w-full">
+    <div ref={containerRef} className="absolute inset-0 h-full w-full">
       <canvas
         ref={canvasRef}
         className="absolute inset-0 h-full w-full"

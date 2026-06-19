@@ -1,24 +1,58 @@
 "use client";
 
+import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import RawPromptCard from "./RawPromptCard";
 import AIEngine from "./AIEngine";
-import AnimatedParticleFlow from "./AnimatedParticleFlow";
+import AnimatedParticleFlow, {
+  ENGINE_CENTER,
+  FLOW_WIDTH,
+  FLOW_HEIGHT,
+} from "./AnimatedParticleFlow";
 import OptimizedForCard from "./OptimizedForCard";
 
 /* ─────────────────────────────────────────────
  * TransformationEngine — The second "page" section.
  *
- * Layout matches the reference image:
- *   - Left column: section badge + heading
- *   - Right column: full pipeline visualization
+ * Layout:
+ *   - Left column: section badge + heading (overlaid)
+ *   - Full-width pipeline visualization
  *     Raw Prompt Card → AI Engine → Optimized For Card
- *     with particle flow lines + "AI Enhancement Engine" label
+ *   - Engine position is derived from the path convergence
+ *     point so the hexagon always sits exactly where all
+ *     incoming and outgoing particle paths meet.
  * ───────────────────────────────────────────── */
 
+/* Convert SVG-space coordinates to CSS % within the container */
+const engineLeftPct = `${(ENGINE_CENTER.x / FLOW_WIDTH) * 100}%`;
+const engineTopPct = `${(ENGINE_CENTER.y / FLOW_HEIGHT) * 100}%`;
+
 export default function TransformationEngine() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsVisible(entry.isIntersecting);
+      },
+      { rootMargin: "200px 0px" } // trigger load slightly before it scrolls into view
+    );
+    const section = sectionRef.current;
+    if (section) {
+      observer.observe(section);
+    }
+    return () => {
+      if (section) {
+        observer.unobserve(section);
+      }
+      observer.disconnect();
+    };
+  }, []);
+
   return (
     <section
+      ref={sectionRef}
       className="relative overflow-hidden bg-[#FAFBFC]"
       id="transformation-engine"
       style={{ minHeight: "100vh" }}
@@ -48,17 +82,17 @@ export default function TransformationEngine() {
         />
       </div>
 
-      <div className="relative z-10 mx-auto flex w-full max-w-[1440px] flex-col gap-8 px-6 py-16 lg:flex-row lg:items-start lg:gap-8 lg:px-12 lg:py-20">
-        {/* ── Left Column: Section Label + Heading ── */}
+      <div className="relative z-10 mx-auto w-full max-w-[1440px] px-6 py-12 lg:px-12 lg:py-16 flex flex-col items-center">
+        {/* ── Centered Header: Section Label + Heading ── */}
         <motion.div
-          className="flex flex-shrink-0 flex-col pt-8 lg:w-[280px] lg:pt-16"
-          initial={{ opacity: 0, x: -40 }}
-          whileInView={{ opacity: 1, x: 0 }}
+          className="relative z-20 flex flex-col items-center text-center mb-12 max-w-2xl"
+          initial={{ opacity: 0, y: -25 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
         >
           {/* Section badge */}
-          <div className="mb-5 flex items-center gap-2.5">
+          <div className="mb-4 flex items-center gap-2.5">
             <div className="flex h-5 w-5 items-center justify-center rounded-[5px] bg-gradient-to-br from-violet-500 to-purple-600">
               <svg
                 width="10"
@@ -76,78 +110,98 @@ export default function TransformationEngine() {
           </div>
 
           {/* Heading */}
-          <h2 className="text-[clamp(26px,3vw,40px)] font-extrabold leading-[1.15] tracking-tight text-gray-900">
-            One prompt.
-            <br />
-            Optimized{" "}
-            <span className="gradient-text italic">everywhere.</span>
+          <h2 className="text-[clamp(32px,3.8vw,46px)] font-extrabold leading-[1.2] tracking-tight text-gray-900">
+            One prompt.{" "}
+            <span className="gradient-text italic">Optimized everywhere.</span>
           </h2>
         </motion.div>
 
-        {/* ── Right Column: Full AI Visualization Pipeline ── */}
+        {/* ── Full-width AI Visualization Pipeline ── */}
         <motion.div
-          className="relative flex flex-1 items-center justify-center"
+          className="relative flex w-full items-center justify-center"
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true, amount: 0.15 }}
           transition={{ delay: 0.2, duration: 1 }}
         >
-          <div className="relative flex h-[600px] w-[540px] flex-col items-center justify-between py-2">
-            {/* Particle flow (SVG overlay) */}
-            <AnimatedParticleFlow />
+          {/*
+           * The container dimensions match the SVG viewBox exactly (1060×780).
+           * All child elements are absolutely positioned so the engine can be
+           * placed at the exact convergence point of the path system.
+           */}
+          <div
+            className="relative"
+            style={{ width: FLOW_WIDTH, height: FLOW_HEIGHT }}
+          >
+            {/* Particle flow (SVG overlay — covers full container) */}
+            {isVisible && <AnimatedParticleFlow />}
 
-            {/* Top: Raw Prompt Card */}
-            <div className="relative z-10">
+            {/* Top: Raw Prompt Card — centered horizontally at top */}
+            <div className="absolute left-1/2 top-2 z-10 -translate-x-1/2">
               <RawPromptCard />
             </div>
 
-            {/* Center: AI Engine with label */}
-            <div className="relative z-10 flex items-center gap-6">
+            {/* Center: AI Engine — placed at the exact convergence node.
+             *  transform: translate(-50%, -50%) centers the hexagon on the point. */}
+            <div
+              className="absolute z-10"
+              style={{
+                left: engineLeftPct,
+                top: engineTopPct,
+                transform: "translate(-50%, -50%)",
+              }}
+            >
               <AIEngine />
-              {/* "AI Enhancement Engine" label with curved arrow */}
-              <motion.div
-                className="flex items-center gap-2"
-                initial={{ opacity: 0, x: 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.8, duration: 0.6 }}
-              >
-                <svg
-                  width="55"
-                  height="35"
-                  viewBox="0 0 55 35"
-                  fill="none"
-                  className="text-gray-300"
-                >
-                  <path
-                    d="M2 32 C 12 32, 25 5, 50 5"
-                    stroke="currentColor"
-                    strokeWidth="1"
-                    strokeDasharray="3 3"
-                    fill="none"
-                  />
-                  <path
-                    d="M47 2 L51 5 L47 8"
-                    stroke="currentColor"
-                    strokeWidth="1"
-                    fill="none"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                <span
-                  className="whitespace-nowrap text-[13px] italic text-gray-400"
-                  style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
-                >
-                  AI Enhancement
-                  <br />
-                  Engine
-                </span>
-              </motion.div>
             </div>
 
-            {/* Bottom: Optimized For Card */}
-            <div className="relative z-10">
+            {/* "AI Enhancement Engine" label — positioned to the right of the engine */}
+            <motion.div
+              className="absolute z-10 flex items-center gap-2"
+              style={{
+                left: `calc(${engineLeftPct} + 80px)`,
+                top: engineTopPct,
+                transform: "translateY(-50%)",
+              }}
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.8, duration: 0.6 }}
+            >
+              <svg
+                width="60"
+                height="38"
+                viewBox="0 0 55 35"
+                fill="none"
+                className="text-gray-300"
+              >
+                <path
+                  d="M2 32 C 12 32, 25 5, 50 5"
+                  stroke="currentColor"
+                  strokeWidth="1"
+                  strokeDasharray="3 3"
+                  fill="none"
+                />
+                <path
+                  d="M47 2 L51 5 L47 8"
+                  stroke="currentColor"
+                  strokeWidth="1"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <span
+                className="whitespace-nowrap text-[14px] italic text-gray-400"
+                style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+              >
+                AI Enhancement
+                <br />
+                Engine
+              </span>
+            </motion.div>
+
+            {/* Bottom: Optimized For Card — centered horizontally at bottom */}
+            <div className="absolute bottom-2 left-1/2 z-10 -translate-x-1/2">
               <OptimizedForCard />
             </div>
           </div>
