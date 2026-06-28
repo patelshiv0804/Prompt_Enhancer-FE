@@ -1,828 +1,332 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  LucideIcon,
-  Sparkles,
-  Folder,
-  Cpu,
-  Layers,
-  History,
-  BarChart3,
-  Users,
-  FileText,
-  Search,
-  Code2,
-  Shield,
-  BookOpen
-} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Sparkles, BookOpen, Cpu, Layers, FileText, Search, type LucideIcon } from "lucide-react";
 
-// Feature node interface
-interface FeatureNode {
+interface Node {
   id: string;
   title: string;
   shortDesc: string;
   fullDesc: string;
   icon: LucideIcon;
   color: string;
-  glowColor: string;
-  orbitIndex: number; // 0: Inner, 1: Middle, 2: Outer
-  angleOffset: number; // phase offset in radians
+  glow: string;
+  side: "left" | "right";
+  gridR: number; // Row index in 3D grid
+  gridC: number; // Column index in 3D grid
+  delay: number;
 }
 
-// Grid vertex for 3D simulation
-interface Vertex3D {
-  x: number;
-  y: number;
-  z: number;
-  px?: number; // projected screen x
-  py?: number; // projected screen y
-}
+// Symmetric left and right node placement - leaving the center 100% clear.
+const NODES: Node[] = [
+  // Left side nodes
+  { id: "opt", title: "Prompt Optimization", shortDesc: "AI-driven enhancement",    fullDesc: "Refines instructions using contextual expansion and model-specific styling.",        icon: Sparkles, color: "#8B5CF6", glow: "rgba(139,92,246,0.28)", side: "left",  gridR: 5,  gridC: 2,  delay: 0 },
+  { id: "cmp", title: "Prompt Comparison",   shortDesc: "Side-by-side evaluation",  fullDesc: "Compare models simultaneously with custom criteria and token cost details.",         icon: Layers,   color: "#6366F1", glow: "rgba(99,102,241,0.28)",  side: "left",  gridR: 7,  gridC: 4,  delay: 0.25 },
+  { id: "lib", title: "Prompt Library",      shortDesc: "Centralized repository",   fullDesc: "Organize, tag, version, and deploy approved prompts with access control.",          icon: BookOpen, color: "#A855F7", glow: "rgba(168,85,247,0.28)", side: "left",  gridR: 9,  gridC: 2,  delay: 0.5 },
 
-// Floating particle interface
-interface Particle3D {
-  x: number;
-  y: number;
-  z: number;
-  vx: number;
-  vy: number;
-  vz: number;
-  size: number;
-  opacity: number;
-}
+  // Right side nodes
+  { id: "src", title: "Semantic Search",     shortDesc: "AI vector search",         fullDesc: "Find prompts conceptually using natural language queries and intent understanding.",   icon: Search,   color: "#8B5CF6", glow: "rgba(139,92,246,0.28)", side: "right", gridR: 5,  gridC: 15, delay: 0.15 },
+  { id: "tpl", title: "Variables & Templates", shortDesc: "Reusable setups",        fullDesc: "Dynamic prompts using variable placeholders for context, profiles, or data.",        icon: FileText, color: "#6366F1", glow: "rgba(99,102,241,0.28)",  side: "right", gridR: 7,  gridC: 13, delay: 0.65 },
+  { id: "mdl", title: "AI Models",           shortDesc: "Unified provider routing", fullDesc: "Test prompts across GPT-4o, Claude 3.5, Gemini 1.5, Llama 3 seamlessly.",           icon: Cpu,      color: "#60A5FA", glow: "rgba(96,165,250,0.28)",  side: "right", gridR: 9,  gridC: 15, delay: 1.0 },
+];
 
 export default function PromptIQUniverse() {
-  const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  
-  const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
-  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
-  const [time, setTime] = useState(0);
+  const rafRef = useRef(0);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [hoverId, setHoverId] = useState<string | null>(null);
 
-  // 12 PromptIQ capabilities
-  const nodes: FeatureNode[] = useMemo(() => [
-    // --- Orbit 0 (Inner): radius ~180px, speed ~0.15 rad/s
-    {
-      id: "opt",
-      title: "Prompt Optimization",
-      shortDesc: "AI-driven prompt enhancement",
-      fullDesc: "Automatically refines user instructions using dynamic contextual expansion, structural improvements, and model-specific styling to output optimal responses.",
-      icon: Sparkles,
-      color: "var(--color-brand-violet)", // #8B5CF6
-      glowColor: "rgba(139, 92, 246, 0.4)",
-      orbitIndex: 0,
-      angleOffset: 0,
-    },
-    {
-      id: "lib",
-      title: "Prompt Library",
-      shortDesc: "Centralized secure repository",
-      fullDesc: "A collaborative corporate hub for organizing, tagging, versioning, and deploying approved prompts across team workspaces with instant access control.",
-      icon: BookOpen,
-      color: "var(--color-brand-purple-light)", // #A855F7
-      glowColor: "rgba(168, 85, 247, 0.4)",
-      orbitIndex: 0,
-      angleOffset: Math.PI / 2,
-    },
-    {
-      id: "models",
-      title: "AI Models Integration",
-      shortDesc: "Unified provider routing",
-      fullDesc: "Test, manage, and scale prompts across GPT-4o, Claude 3.5 Sonnet, Gemini 1.5 Pro, Llama 3, and custom fine-tuned model environments seamlessly.",
-      icon: Cpu,
-      color: "var(--color-brand-blue)", // #60A5FA
-      glowColor: "rgba(96, 165, 250, 0.4)",
-      orbitIndex: 0,
-      angleOffset: Math.PI,
-    },
-    {
-      id: "security",
-      title: "Enterprise Security",
-      shortDesc: "PII masking and audit logs",
-      fullDesc: "Strict compliance controls featuring automated personal data (PII) redaction, encryption-at-rest, RBAC, and detailed usage logging audits.",
-      icon: Shield,
-      color: "var(--color-brand-pink)", // #EC4899
-      glowColor: "rgba(236, 72, 153, 0.4)",
-      orbitIndex: 0,
-      angleOffset: (3 * Math.PI) / 2,
-    },
+  // refs for dynamic positioning from the canvas animation loop
+  const nodeRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const aiEngineRef = useRef<HTMLDivElement>(null);
 
-    // --- Orbit 1 (Middle): radius ~260px, speed ~0.10 rad/s
-    {
-      id: "compare",
-      title: "Prompt Comparison",
-      shortDesc: "Side-by-side evaluation",
-      fullDesc: "Run comparisons across models simultaneously. Grade output quality with custom evaluation criteria, response latencies, and token cost details.",
-      icon: Layers,
-      color: "var(--color-brand-purple)", // #6366F1
-      glowColor: "rgba(99, 102, 241, 0.4)",
-      orbitIndex: 1,
-      angleOffset: Math.PI / 4,
-    },
-    {
-      id: "colls",
-      title: "Collections",
-      shortDesc: "Custom tag-based folders",
-      fullDesc: "Group prompts dynamically by product lines, clients, or specific tasks. Structure collections with search terms and tags for structured cataloging.",
-      icon: Folder,
-      color: "var(--color-brand-purple-light)",
-      glowColor: "rgba(168, 85, 247, 0.4)",
-      orbitIndex: 1,
-      angleOffset: (3 * Math.PI) / 4,
-    },
-    {
-      id: "history",
-      title: "Version History",
-      shortDesc: "Audit revision tracks",
-      fullDesc: "Automatic tracking of modifications, code diff overlays, author stamps, rollback capabilities, and git-style prompt commit branches.",
-      icon: History,
-      color: "var(--color-brand-violet)",
-      glowColor: "rgba(139, 92, 246, 0.4)",
-      orbitIndex: 1,
-      angleOffset: (5 * Math.PI) / 4,
-    },
-    {
-      id: "analytics",
-      title: "Advanced Analytics",
-      shortDesc: "Token and cost reports",
-      fullDesc: "Aggregated reports on token volume, billing estimates, performance curves, execution failure frequencies, and model success matrices.",
-      icon: BarChart3,
-      color: "var(--color-brand-pink)",
-      glowColor: "rgba(236, 72, 153, 0.4)",
-      orbitIndex: 1,
-      angleOffset: (7 * Math.PI) / 4,
-    },
+  const activeRef = useRef<string | null>(null);
+  const hoverRef = useRef<string | null>(null);
 
-    // --- Orbit 2 (Outer): radius ~340px, speed ~0.06 rad/s
-    {
-      id: "team",
-      title: "Team Collaboration",
-      shortDesc: "Real-time prompt reviews",
-      fullDesc: "Review, test, comment, and iterate on prompts with team members. Includes peer approvals before promoting prompts to production endpoints.",
-      icon: Users,
-      color: "var(--color-brand-blue)",
-      glowColor: "rgba(96, 165, 250, 0.4)",
-      orbitIndex: 2,
-      angleOffset: Math.PI / 6,
-    },
-    {
-      id: "templates",
-      title: "Variables & Templates",
-      shortDesc: "Reusable structured setups",
-      fullDesc: "Design dynamic prompts using curly-brace variable placeholders. Easily feed run-time client context, user profiles, or raw data streams.",
-      icon: FileText,
-      color: "var(--color-brand-purple)",
-      glowColor: "rgba(99, 102, 241, 0.4)",
-      orbitIndex: 2,
-      angleOffset: (5 * Math.PI) / 6,
-    },
-    {
-      id: "search",
-      title: "Semantic Search",
-      shortDesc: "AI-driven vector search",
-      fullDesc: "Find prompts conceptually in milliseconds. Understands natural language queries, intent, and relationships instead of basic text filters.",
-      icon: Search,
-      color: "var(--color-brand-violet)",
-      glowColor: "rgba(139, 92, 246, 0.4)",
-      orbitIndex: 2,
-      angleOffset: (9 * Math.PI) / 6,
-    },
-    {
-      id: "api",
-      title: "API Endpoint Access",
-      shortDesc: "Direct deployment keys",
-      fullDesc: "Deploy any prompt as a production-grade, low-latency API endpoint. Includes lightweight edge client SDKs and hot-reloading keys.",
-      icon: Code2,
-      color: "var(--color-brand-pink)",
-      glowColor: "rgba(236, 72, 153, 0.4)",
-      orbitIndex: 2,
-      angleOffset: (13 * Math.PI) / 6,
-    },
-  ], []);
-
-  // Animation ticks using requestAnimationFrame
   useEffect(() => {
-    let animationFrameId: number;
-    let lastTime = performance.now();
+    activeRef.current = activeId;
+  }, [activeId]);
 
-    const loop = (now: number) => {
-      const delta = (now - lastTime) / 1000;
-      lastTime = now;
+  useEffect(() => {
+    hoverRef.current = hoverId;
+  }, [hoverId]);
 
-      // Determine rotation speed. Slow down significantly when a node is active
-      const speedFactor = activeNodeId ? 0.08 : 0.4;
-      setTime((prev) => prev + delta * speedFactor);
-
-      animationFrameId = requestAnimationFrame(loop);
-    };
-
-    animationFrameId = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(animationFrameId);
-  }, [activeNodeId]);
-
-  // 3D Wave grid mesh background + Floating particles (HTML5 Canvas)
+  // ── Canvas: 3D wave grid ──────────────────────────────────────────────────
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    const ctx = canvas.getContext("2d", { alpha: true })!;
+    const TILT = 1.05, cosT = Math.cos(TILT), sinT = Math.sin(TILT), CAM = 700;
+    const COLS = 18, ROWS = 14, SX = 72, SY = 52;
+    let cw = 0, ch = 0;
 
-    let width = canvas.width = canvas.clientWidth;
-    let height = canvas.height = canvas.clientHeight;
+    function resize() {
+      const dpr = Math.min(devicePixelRatio || 1, 2);
+      cw = canvas!.clientWidth; ch = canvas!.clientHeight;
+      canvas!.width = cw * dpr; canvas!.height = ch * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    resize();
+    const ro = new ResizeObserver(resize); ro.observe(canvas);
 
-    const handleResize = () => {
-      if (!canvas) return;
-      width = canvas.width = canvas.clientWidth;
-      height = canvas.height = canvas.clientHeight;
-    };
-    window.addEventListener("resize", handleResize);
+    function proj(u: number, v: number, z: number, mcx: number, mcy: number) {
+      const ry = v * cosT - z * sinT, rz = v * sinT + z * cosT;
+      const s = CAM / (CAM + rz + 80);
+      return { px: mcx + u * s, py: mcy + ry * s };
+    }
 
-    // Setup 3D mesh grid points
-    const cols = 15;
-    const rows = 12;
-    const spacingX = 80;
-    const spacingY = 55;
-    const meshCY = height * 0.58; // grid center Y shifted slightly down for floor perspective
-    const meshCX = width * 0.5;
+    let t = 0;
+    function draw() {
+      t += 0.013;
+      ctx.clearRect(0, 0, cw, ch);
+      const mcx = cw / 2, mcy = ch * 0.66;
 
-    // Define 45 floating particles
-    const particles: Particle3D[] = Array.from({ length: 45 }, () => ({
-      x: (Math.random() - 0.5) * width * 1.5,
-      y: (Math.random() - 0.5) * height * 1.5,
-      z: (Math.random() - 0.5) * 400,
-      vx: (Math.random() - 0.5) * 6,
-      vy: -12 - Math.random() * 20, // float upwards
-      vz: (Math.random() - 0.5) * 8,
-      size: 1 + Math.random() * 2,
-      opacity: 0.15 + Math.random() * 0.4,
-    }));
-
-    let localTime = 0;
-
-    const render = () => {
-      localTime += 0.015;
-      ctx.clearRect(0, 0, width, height);
-
-      // Grid mesh tilt angle (in radians)
-      const tilt = 1.05; // ~60 degrees tilt back
-      const cosTilt = Math.cos(tilt);
-      const sinTilt = Math.sin(tilt);
-      const cameraDist = 650;
-
-      // Project and store grid vertices
-      const vertices: Vertex3D[][] = [];
-      for (let r = 0; r < rows; r++) {
-        vertices[r] = [];
-        for (let c = 0; c < cols; c++) {
-          const u = (c - (cols - 1) / 2) * spacingX;
-          const v = (r - (rows - 1) / 2) * spacingY;
-
-          // Wave function to compute height (z-axis displacement)
-          // Simple combination of traveling sine wave & concentric circular wave
-          const distFromCenter = Math.sqrt(u * u + v * v);
-          const w1 = Math.sin(u * 0.007 + localTime) * Math.cos(v * 0.007 + localTime * 0.8) * 35;
-          const w2 = Math.sin(distFromCenter * 0.009 - localTime * 1.5) * 15;
-          const z = w1 + w2;
-
-          // Camera transformation: rotate around X-axis (tilt)
-          const rotY = v * cosTilt - z * sinTilt;
-          const rotZ = v * sinTilt + z * cosTilt;
-
-          // Perspective scaling
-          const scale = cameraDist / (cameraDist + rotZ);
-          const px = meshCX + u * scale;
-          const py = meshCY + rotY * scale;
-
-          vertices[r][c] = { x: u, y: v, z, px, py };
+      // Build vertex grid
+      type V = { px: number; py: number; vy: number };
+      const G: V[][] = [];
+      for (let r = 0; r < ROWS; r++) {
+        G[r] = [];
+        for (let c = 0; c < COLS; c++) {
+          const u = (c - (COLS - 1) / 2) * SX, v = (r - (ROWS - 1) / 2) * SY;
+          const d = Math.sqrt(u * u + v * v);
+          const wz = Math.sin(u * 0.008 + t) * Math.cos(v * 0.008 + t * 0.75) * 30 + Math.sin(d * 0.01 - t * 1.3) * 12;
+          const { px, py } = proj(u, v, wz, mcx, mcy);
+          G[r][c] = { px, py, vy: v };
         }
       }
 
-      // Draw Grid Lines with dynamic opacity based on depth
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          const current = vertices[r][c];
-
-          // 1. Draw horizontal connections (columns)
-          if (c < cols - 1) {
-            const next = vertices[r][c + 1];
-            // Fade out lines in the distance (deeper z-values)
-            const alpha = Math.max(0.01, Math.min(0.24, 0.22 - (current.y + 200) * 0.0004));
-            
-            ctx.beginPath();
-            ctx.moveTo(current.px!, current.py!);
-            ctx.lineTo(next.px!, next.py!);
-            
-            // Subtle indigo-to-purple gradient blend
-            const grad = ctx.createLinearGradient(current.px!, current.py!, next.px!, next.py!);
-            grad.addColorStop(0, `rgba(99, 102, 241, ${alpha})`);
-            grad.addColorStop(1, `rgba(139, 92, 246, ${alpha})`);
-            
-            ctx.strokeStyle = grad;
-            ctx.lineWidth = 1.0;
-            ctx.stroke();
-          }
-
-          // 2. Draw vertical connections (rows)
-          if (r < rows - 1) {
-            const next = vertices[r + 1][c];
-            const alpha = Math.max(0.01, Math.min(0.24, 0.22 - (current.y + 200) * 0.0004));
-            
-            ctx.beginPath();
-            ctx.moveTo(current.px!, current.py!);
-            ctx.lineTo(next.px!, next.py!);
-            
-            const grad = ctx.createLinearGradient(current.px!, current.py!, next.px!, next.py!);
-            grad.addColorStop(0, `rgba(139, 92, 246, ${alpha})`);
-            grad.addColorStop(1, `rgba(236, 72, 153, ${alpha})`);
-            
-            ctx.strokeStyle = grad;
-            ctx.lineWidth = 1.0;
-            ctx.stroke();
-          }
-        }
-      }
-
-      // Draw glowing vertices (intersections) on the mesh
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          // Draw dots occasionally to keep it uncluttered
-          if ((r + c) % 3 === 0) {
-            const vert = vertices[r][c];
-            const alpha = Math.max(0, Math.min(0.85, 0.65 - (vert.y + 200) * 0.0007));
-            
-            if (alpha > 0.05) {
-              ctx.beginPath();
-              ctx.arc(vert.px!, vert.py!, 1.5, 0, 2 * Math.PI);
-              ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
-              ctx.fill();
-
-              // Subtle glowing corona on the vertices
-              if ((r + c) % 6 === 0) {
-                ctx.beginPath();
-                ctx.arc(vert.px!, vert.py!, 5, 0, 2 * Math.PI);
-                ctx.fillStyle = `rgba(139, 92, 246, ${alpha * 0.28})`;
-                ctx.fill();
-              }
-            }
-          }
-        }
-      }
-
-      // Render Floating Particles in 3D Space
-      particles.forEach((p) => {
-        // Drift particle
-        p.y += p.vy * 0.016; // float up
-        p.x += p.vx * 0.016;
-        p.z += p.vz * 0.016;
-
-        // Reset if it drifts off top
-        if (p.y < -height * 0.8) {
-          p.y = height * 0.8;
-          p.x = (Math.random() - 0.5) * width * 1.5;
-        }
-
-        // Camera tilt math
-        const rotY = p.y * cosTilt - p.z * sinTilt;
-        const rotZ = p.y * sinTilt + p.z * cosTilt;
-        const scale = cameraDist / (cameraDist + rotZ);
-
-        if (scale > 0) {
-          const px = meshCX + p.x * scale;
-          const py = meshCY + rotY * scale;
-
-          // Draw if on-screen
-          if (px > 0 && px < width && py > 0 && py < height) {
-            const size = p.size * scale;
-            const alpha = p.opacity * Math.max(0, Math.min(1, 1 - rotZ / 500));
-
-            ctx.beginPath();
-            ctx.arc(px, py, size, 0, 2 * Math.PI);
-            ctx.fillStyle = `rgba(139, 92, 246, ${alpha})`;
-            ctx.fill();
-            
-            // Inner core
-            ctx.beginPath();
-            ctx.arc(px, py, size * 0.5, 0, 2 * Math.PI);
-            ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.9})`;
-            ctx.fill();
-          }
+      // Draw soft shadows on canvas under the weighted balls to ground them
+      NODES.forEach(n => {
+        const pt = G[n.gridR]?.[n.gridC];
+        if (pt) {
+          const bob = Math.sin(t * 1.5 + n.delay * 2) * 3;
+          const shadowScale = 1 - (bob / 12);
+          ctx.beginPath();
+          ctx.ellipse(pt.px, pt.py + 5, 17 * shadowScale, 5 * shadowScale, 0, 0, 2 * Math.PI);
+          ctx.fillStyle = "rgba(0, 0, 0, 0.07)";
+          ctx.fill();
         }
       });
-    };
 
-    let localFrameId: number;
-    const animationLoop = () => {
-      render();
-      localFrameId = requestAnimationFrame(animationLoop);
-    };
-    animationLoop();
+      // Draw shadow for the central AI Engine
+      const centerPt = G[7]?.[9];
+      if (centerPt) {
+        ctx.beginPath();
+        ctx.ellipse(centerPt.px, centerPt.py + 8, 32, 8, 0, 0, 2 * Math.PI);
+        ctx.fillStyle = "rgba(234, 88, 12, 0.12)";
+        ctx.fill();
+      }
 
-    return () => {
-      cancelAnimationFrame(localFrameId);
-      window.removeEventListener("resize", handleResize);
-    };
+      // ─ Horizontal lines (gorgeous soft warm grey-violet) ─
+      const GC = "175, 170, 185";
+      ctx.lineWidth = 1.15;
+      for (let r = 0; r < ROWS; r++) {
+        ctx.beginPath();
+        for (let c = 0; c < COLS; c++) {
+          const { px, py } = G[r][c];
+          c === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+        }
+        const depthNorm = r / (ROWS - 1);
+        const a = 0.12 + depthNorm * 0.46; // 0.12 (far) to 0.58 (near)
+        const g = ctx.createLinearGradient(G[r][0].px, 0, G[r][COLS - 1].px, 0);
+        g.addColorStop(0, `rgba(${GC}, 0)`);
+        g.addColorStop(0.12, `rgba(${GC}, ${a})`);
+        g.addColorStop(0.88, `rgba(${GC}, ${a})`);
+        g.addColorStop(1, `rgba(${GC}, 0)`);
+        ctx.strokeStyle = g; ctx.stroke();
+      }
+
+      // ─ Vertical lines ─
+      for (let c = 0; c < COLS; c++) {
+        ctx.beginPath();
+        for (let r = 0; r < ROWS; r++) {
+          const { px, py } = G[r][c];
+          r === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+        }
+        const side = 1 - Math.abs((c - (COLS - 1) / 2) / ((COLS - 1) / 2));
+        ctx.strokeStyle = `rgba(${GC}, ${0.06 + side * 0.34})`; ctx.stroke();
+      }
+
+      // ─ Intersection dots ─
+      for (let r = 1; r < ROWS - 1; r += 2) for (let c = 1; c < COLS - 1; c += 2) {
+        const { px, py } = G[r][c];
+        const a = 0.18 + (r / (ROWS - 1)) * 0.52;
+        ctx.beginPath(); ctx.arc(px, py, 1.8, 0, 6.28);
+        ctx.fillStyle = `rgba(${GC}, ${a})`; ctx.fill();
+      }
+
+      // ─ Edge fades ─
+      const fL = ctx.createLinearGradient(0, 0, cw * 0.09, 0);
+      fL.addColorStop(0, "rgba(255,255,255,1)"); fL.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = fL; ctx.fillRect(0, 0, cw * 0.09, ch);
+
+      const fR = ctx.createLinearGradient(cw * 0.91, 0, cw, 0);
+      fR.addColorStop(0, "rgba(255,255,255,0)"); fR.addColorStop(1, "rgba(255,255,255,1)");
+      ctx.fillStyle = fR; ctx.fillRect(cw * 0.91, 0, cw * 0.09, ch);
+
+      const fB = ctx.createLinearGradient(0, ch * 0.91, 0, ch);
+      fB.addColorStop(0, "rgba(255,255,255,0)"); fB.addColorStop(1, "rgba(255,255,255,1)");
+      ctx.fillStyle = fB; ctx.fillRect(0, ch * 0.91, cw, ch * 0.09);
+
+      // Top fade — keep above 40% clean
+      const fT = ctx.createLinearGradient(0, 0, 0, ch * 0.40);
+      fT.addColorStop(0, "rgba(255,255,255,1)"); fT.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = fT; ctx.fillRect(0, 0, cw, ch * 0.40);
+
+      // Dynamically position the Central AI Engine
+      const engineEl = aiEngineRef.current;
+      if (engineEl) {
+        const pt = G[7]?.[9];
+        if (pt) {
+          engineEl.style.left = `${pt.px}px`;
+          engineEl.style.top = `${pt.py}px`;
+          engineEl.style.transform = "translate(-50%,-50%)";
+        }
+      }
+
+      // Dynamically position nodes in sync with wave animation
+      NODES.forEach(n => {
+        const el = nodeRefs.current[n.id];
+        if (!el) return;
+        const pt = G[n.gridR]?.[n.gridC];
+        if (pt) {
+          const isActive = activeRef.current === n.id;
+          const isDimmed = activeRef.current !== null && !isActive;
+          const bob = Math.sin(t * 1.5 + n.delay * 2) * 3;
+          el.style.left = `${pt.px}px`;
+          el.style.top = `${pt.py + bob}px`;
+          el.style.transform = `translate(-50%,-50%) scale(${isActive ? 1.15 : 1})`;
+          el.style.opacity = String(isActive ? 1 : isDimmed ? 0.22 : 1);
+          el.style.zIndex = String(isActive ? 500 : 10);
+        }
+      });
+
+      rafRef.current = requestAnimationFrame(draw);
+    }
+    rafRef.current = requestAnimationFrame(draw);
+    return () => { cancelAnimationFrame(rafRef.current); ro.disconnect(); };
   }, []);
 
-  // Compute absolute orbit coordinates based on current time
-  const sceneDimensions = { width: 620, height: 480 };
-  const CX = sceneDimensions.width / 2;
-  const CY = sceneDimensions.height / 2 + 10; // offset center slightly down to balance
-
-  // Calculate projected positions of all nodes
-  const projectedNodes = useMemo(() => {
-    // 3D orbit radii and inclination paths
-    const orbitSetups = [
-      { rx: 175, ry: 60, rz: 175, tiltAngle: -0.15, dir: 1, speed: 0.16 }, // Inner
-      { rx: 245, ry: 90, rz: 245, tiltAngle: 0.22, dir: -1, speed: 0.11 }, // Middle
-      { rx: 320, ry: 120, rz: 320, tiltAngle: -0.08, dir: 1, speed: 0.07 }, // Outer
-    ];
-
-    return nodes.map((node) => {
-      const setup = orbitSetups[node.orbitIndex];
-      // Angle: startOffset + direction * time * speed
-      const angle = node.angleOffset + setup.dir * time * setup.speed;
-
-      // 3D coordinates on inclined orbital plane
-      const cosA = Math.cos(angle);
-      const sinA = Math.sin(angle);
-      
-      const x0 = cosA * setup.rx;
-      const y0 = sinA * setup.ry;
-      const z = sinA * setup.rz; // depth axis: positive is front, negative is back
-
-      // Tilt orbit path around Z-axis
-      const cosTilt = Math.cos(setup.tiltAngle);
-      const sinTilt = Math.sin(setup.tiltAngle);
-      const x = x0 * cosTilt - y0 * sinTilt;
-      const y = x0 * sinTilt + y0 * cosTilt;
-
-      // 3D depth scale factor
-      // z ranges from -rz to +rz. Max depth maps to scale 0.76, max proximity maps to 1.24
-      const scale = 1.0 + (z / setup.rz) * 0.22;
-      const opacity = 0.55 + ((z + setup.rz) / (2 * setup.rz)) * 0.45; // dimmer in background
-      
-      // Project to 2D
-      const px = CX + x;
-      const py = CY + y;
-
-      // Dynamic z-index: range ~1000 to ~7000 (central engine is at 4000)
-      const zIndex = Math.round(4000 + (z / setup.rz) * 2900);
-
-      // Float offset
-      const floatOffset = Math.sin(time * 1.5 + node.angleOffset) * 6;
-
-      return {
-        ...node,
-        px,
-        py: py + floatOffset,
-        scale,
-        opacity,
-        zIndex,
-        zDepth: z,
-      };
-    });
-  }, [nodes, time, CX, CY]);
-
-  // Handle clicking on background to close active nodes
-  const handleBackgroundClick = () => {
-    if (activeNodeId) {
-      setActiveNodeId(null);
-    }
-  };
-
   return (
-    <div
-      ref={containerRef}
-      className="relative select-none"
-      style={{
-        width: "100%",
-        height: sceneDimensions.height,
-        maxWidth: "680px",
-        margin: "0 auto",
-      }}
-      onClick={handleBackgroundClick}
-    >
-      {/* 1. Canvas 3D Perspective Wave Grid and Particles */}
-      <canvas
-        ref={canvasRef}
-        className="absolute inset-0 z-0 pointer-events-none rounded-2xl"
-        style={{
-          width: "100%",
-          height: "100%",
-          maskImage: "radial-gradient(ellipse at center, black 60%, transparent 95%)",
-          WebkitMaskImage: "radial-gradient(ellipse at center, black 60%, transparent 95%)",
-        }}
-      />
+    <div className="absolute inset-0" onClick={() => setActiveId(null)}>
+      {/* Canvas wave grid */}
+      <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none" style={{ width: "100%", height: "100%" }} />
 
-      {/* 2. Soft Ambient Lighting Aura underneath the scene */}
-      <div
-        className="pointer-events-none absolute -inset-10 opacity-30 z-0 animate-pulse-glow"
-        style={{
-          background: "radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.16) 0%, rgba(236, 72, 153, 0.08) 35%, transparent 65%)",
-          filter: "blur(20px)",
-        }}
-      />
+      {/* Ambient purple glow at grid center */}
+      <div className="pointer-events-none absolute inset-0"
+        style={{ background: "radial-gradient(ellipse 55% 40% at 50% 66%, rgba(139,92,246,0.05) 0%, transparent 70%)" }} />
 
-      {/* 3. Central AI Engine Sphere */}
-      <div
-        className="absolute"
-        style={{
-          left: CX,
-          top: CY,
-          transform: "translate(-50%, -50%)",
-          zIndex: 4000,
-        }}
-      >
+      {/* ── Central AI Engine ── */}
+      <div ref={aiEngineRef} className="absolute" style={{ zIndex: 50 }}>
         <div className="relative flex items-center justify-center">
-          {/* Radial breathing glow backplates */}
-          <motion.div
-            className="absolute h-36 w-36 rounded-full"
-            style={{
-              background: "radial-gradient(circle, rgba(249, 115, 22, 0.35) 0%, rgba(234, 88, 12, 0.12) 40%, rgba(139, 92, 246, 0.02) 70%, transparent 100%)",
-            }}
-            animate={{
-              scale: activeNodeId ? [1, 1.08, 1] : [1, 1.15, 1],
-              opacity: activeNodeId ? [0.6, 0.8, 0.6] : [0.75, 0.95, 0.75],
-            }}
-            transition={{
-              duration: activeNodeId ? 2.0 : 4.0,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-
-          <motion.div
-            className="absolute h-24 w-24 rounded-full"
-            style={{
-              background: "radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(251, 146, 60, 0.8) 25%, rgba(234, 88, 12, 0.25) 60%, transparent 100%)",
-            }}
-            animate={{
-              scale: [1, 1.08, 1],
-              opacity: [0.7, 0.9, 0.7],
-            }}
-            transition={{
-              duration: 3,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-
-          {/* Central Orbiting Holographic Rings (Tilted) */}
+          <motion.div className="absolute rounded-full"
+            style={{ width: 144, height: 144, background: "radial-gradient(circle, rgba(249,115,22,0.22) 0%, rgba(234,88,12,0.06) 55%, transparent 100%)" }}
+            animate={{ scale: [1, 1.14, 1], opacity: [0.65, 0.95, 0.65] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }} />
+          <motion.div className="absolute rounded-full"
+            style={{ width: 96, height: 96, background: "radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(251,146,60,0.70) 28%, rgba(234,88,12,0.15) 65%, transparent 100%)" }}
+            animate={{ scale: [1, 1.08, 1], opacity: [0.65, 0.9, 0.65] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }} />
           <div className="absolute pointer-events-none" style={{ transform: "rotateX(70deg) rotateY(-20deg)" }}>
-            <motion.div
-              className="border border-[#F97316]/40 rounded-full"
-              style={{ width: 140, height: 140 }}
-              animate={{ rotate: 360 }}
-              transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
-            />
+            <motion.div className="border border-[#F97316]/30 rounded-full" style={{ width: 138, height: 138 }}
+              animate={{ rotate: 360 }} transition={{ duration: 13, repeat: Infinity, ease: "linear" }} />
           </div>
           <div className="absolute pointer-events-none" style={{ transform: "rotateX(65deg) rotateY(25deg)" }}>
-            <motion.div
-              className="border border-[#8B5CF6]/30 rounded-full"
-              style={{ width: 165, height: 165 }}
-              animate={{ rotate: -360 }}
-              transition={{ duration: 16, repeat: Infinity, ease: "linear" }}
-            />
+            <motion.div className="border border-[#8B5CF6]/20 rounded-full" style={{ width: 166, height: 166 }}
+              animate={{ rotate: -360 }} transition={{ duration: 17, repeat: Infinity, ease: "linear" }} />
           </div>
-
-          {/* Main glowing engine ball */}
-          <motion.div
-            className="relative z-10 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[#F97316] via-[#EA580C] to-[#DC2626] shadow-[0_0_35px_#EA580C,0_0_15px_#F97316_inset]"
-            style={{ border: "1.5px solid rgba(255,255,255,0.4)" }}
-            animate={{
-              y: [-2, 2, -2],
-            }}
-            transition={{
-              duration: 4,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          >
-            {/* Inner Core icon - 3D Cube resembling AIEngine */}
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="white"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)] animate-pulse"
-            >
-              <path d="M12 2 L22 7 L22 17 L12 22 L2 17 L2 7 Z" />
-              <path d="M2 7 L12 12 L22 7" />
-              <path d="M12 12 L12 22" />
+          <motion.div className="relative z-10 flex h-16 w-16 items-center justify-center rounded-full"
+            style={{ background: "linear-gradient(135deg,#F97316,#EA580C,#DC2626)", boxShadow: "0 0 28px #EA580C,0 0 10px #F97316 inset", border: "1.5px solid rgba(255,255,255,0.35)" }}
+            animate={{ y: [-2, 2, -2] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2L22 7L22 17L12 22L2 17L2 7Z" /><path d="M2 7L12 12L22 7" /><path d="M12 12L12 22" />
             </svg>
           </motion.div>
-
-          {/* Glowing particle ring around core */}
-          <div className="absolute text-center mt-28 z-20 pointer-events-none select-none">
-            <span className="text-[10px] tracking-[0.25em] font-extrabold uppercase text-[#EA580C] bg-white/70 backdrop-blur-md px-2 py-0.5 rounded-full border border-orange-500/20 shadow-sm shadow-orange-500/10">
-              AI Engine
-            </span>
+          <div className="absolute pointer-events-none" style={{ top: "calc(50% + 42px)", left: "50%", transform: "translateX(-50%)", whiteSpace: "nowrap" }}>
+            <span className="text-[10px] tracking-[0.22em] font-extrabold uppercase text-[#EA580C] bg-white/80 backdrop-blur-md px-2 py-0.5 rounded-full border border-orange-400/20 shadow-sm">AI Engine</span>
           </div>
         </div>
       </div>
 
-      {/* 4. Orbiting Feature Nodes */}
-      {projectedNodes.map((node) => {
-        const NodeIcon = node.icon;
-        
-        // Active/inactive styling overrides
-        const isActive = activeNodeId === node.id;
-        const isHovered = hoveredNodeId === node.id;
-        const isDimmed = activeNodeId !== null && !isActive;
-
-        // Base opacity based on depth, faded if another node is active
-        const baseOpacity = isDimmed ? 0.12 : node.opacity;
+      {/* ── Feature nodes — LEFT & RIGHT sides only ── */}
+      {NODES.map(n => {
+        const NodeIcon = n.icon;
+        const isActive = activeId === n.id;
+        const isHovered = hoverId === n.id;
+        const labelOnRight = n.side === "left";
 
         return (
           <div
-            key={node.id}
-            className="absolute transition-all duration-300 ease-out"
-            style={{
-              left: node.px,
-              top: node.py,
-              transform: `translate(-50%, -50%) scale(${isActive ? 1.15 : isHovered ? 1.08 : node.scale})`,
-              zIndex: isActive ? 9999 : node.zIndex,
-              opacity: isActive ? 1.0 : baseOpacity,
-            }}
+            key={n.id}
+            ref={el => { nodeRefs.current[n.id] = el; }}
+            className="absolute cursor-pointer"
+            style={{ left: 0, top: 0, transform: "translate(-50%,-50%)", zIndex: isActive ? 200 : 10 }}
+            onClick={e => { e.stopPropagation(); setActiveId(isActive ? null : n.id); }}
+            onMouseEnter={() => setHoverId(n.id)}
+            onMouseLeave={() => setHoverId(null)}
           >
-            {/* Clickable node wrapper */}
-            <div
-              className="relative cursor-pointer group"
-              onClick={(e) => {
-                e.stopPropagation(); // prevent background click from closing
-                setActiveNodeId(isActive ? null : node.id);
-              }}
-              onMouseEnter={() => setHoveredNodeId(node.id)}
-              onMouseLeave={() => setHoveredNodeId(null)}
-            >
-              {/* Outer pulsing ring (on hover or active) */}
-              <AnimatePresence>
-                {(isHovered || isActive) && (
-                  <motion.div
-                    className="absolute -inset-3.5 rounded-full z-0 pointer-events-none"
-                    style={{
-                      border: `1.5px solid ${node.color}`,
-                      boxShadow: `0 0 16px ${node.glowColor}`,
-                    }}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{
-                      opacity: [0.8, 0.4, 0.8],
-                      scale: [1, 1.06, 1],
-                    }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    transition={{
-                      duration: 2.5,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                    }}
-                  />
-                )}
-              </AnimatePresence>
-
-              {/* Holographic link lines back to AI Engine (drawn in CSS/SVG overlay) */}
-              {isActive && (
-                <svg
-                  className="absolute pointer-events-none overflow-visible z-0"
-                  style={{
-                    left: 0,
-                    top: 0,
-                    width: 0,
-                    height: 0,
-                  }}
-                >
-                  <motion.line
-                    x1={0}
-                    y1={0}
-                    x2={CX - node.px}
-                    y2={CY - node.py}
-                    stroke={`url(#lineGrad-${node.id})`}
-                    strokeWidth="2"
-                    strokeDasharray="4 4"
-                    initial={{ strokeDashoffset: 0 }}
-                    animate={{ strokeDashoffset: -20 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                  />
-                  <defs>
-                    <linearGradient id={`lineGrad-${node.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor={node.color} stopOpacity="1" />
-                      <stop offset="100%" stopColor="#EA580C" stopOpacity="0.4" />
-                    </linearGradient>
-                  </defs>
-                </svg>
+            {/* Pulse ring */}
+            <AnimatePresence>
+              {(isHovered || isActive) && (
+                <motion.div className="absolute -inset-3 rounded-full pointer-events-none"
+                  style={{ border: `1.5px solid ${n.color}`, boxShadow: `0 0 12px ${n.glow}` }}
+                  initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: [0.8, 0.35, 0.8], scale: [1, 1.06, 1] }}
+                  exit={{ opacity: 0, scale: 0.8 }} transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }} />
               )}
+            </AnimatePresence>
 
-              {/* Node Badge Element */}
-              <div
-                className={`relative z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white transition-all shadow-sm border`}
-                style={{
-                  borderColor: isHovered || isActive ? node.color : "rgba(139,92,246,0.12)",
-                  boxShadow: isHovered || isActive 
-                    ? `0 0 12px ${node.glowColor}, 0 2px 8px rgba(0,0,0,0.05)`
-                    : "0 1px 3px rgba(0,0,0,0.04)",
-                  background: isHovered || isActive 
-                    ? "rgba(255,255,255,1.0)" 
-                    : "rgba(255,255,255,0.92)",
-                }}
-              >
-                {/* Small indicator dot in back of badge */}
-                <div
-                  className="absolute bottom-[-3px] right-[-3px] h-3 w-3 rounded-full border border-white"
-                  style={{ background: node.color }}
-                />
-                
-                {/* Badge Icon */}
-                <NodeIcon 
-                  size={18} 
-                  style={{ 
-                    color: isHovered || isActive ? node.color : "var(--color-brand-purple)",
-                    transform: isHovered || isActive ? "scale(1.08)" : "none",
-                    transition: "all 0.2s ease"
-                  }} 
-                />
-              </div>
-
-              {/* Floating label badge (displays when NOT active to keep visual noise low, only hovered/front nodes) */}
-              {!isActive && (
-                <div
-                  className={`absolute top-1/2 left-12 -translate-y-1/2 whitespace-nowrap px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all duration-200 pointer-events-none border`}
-                  style={{
-                    opacity: isHovered || node.zDepth > 80 ? 1 : 0.45,
-                    background: isHovered ? "white" : "rgba(255, 255, 255, 0.8)",
-                    backdropFilter: "blur(6px)",
-                    borderColor: isHovered ? node.color : "rgba(229,231,235,0.8)",
-                    color: isHovered ? "#1A1A2E" : "#6B7280",
-                    boxShadow: isHovered ? `0 4px 12px rgba(99,102,241,0.08)` : "none",
-                    transform: isHovered ? "translateY(-50%) translateX(2px)" : "translateY(-50%)",
-                  }}
-                >
-                  {node.title}
-                </div>
-              )}
-
-              {/* 5. Glassmorphism Tooltip Info Panel on Hover & Click */}
-              <AnimatePresence>
-                {(isHovered || isActive) && (
-                  <motion.div
-                    className="absolute z-50 p-4 rounded-xl border pointer-events-auto"
-                    style={{
-                      // Layout positioning logic: prevent panels from escaping the boundaries
-                      left: node.px < CX ? "50px" : "auto",
-                      right: node.px >= CX ? "50px" : "auto",
-                      top: node.py < CY ? "0px" : "auto",
-                      bottom: node.py >= CY ? "0px" : "auto",
-                      width: isActive ? "270px" : "190px",
-                      background: "rgba(255, 255, 255, 0.94)",
-                      backdropFilter: "blur(18px)",
-                      borderColor: isActive ? node.color : "rgba(139, 92, 246, 0.15)",
-                      boxShadow: isActive
-                        ? `0 12px 36px rgba(99, 102, 241, 0.15), 0 4px 12px ${node.glowColor}`
-                        : "0 8px 24px rgba(0,0,0,0.06)",
-                    }}
-                    initial={{ opacity: 0, scale: 0.92, y: 5 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.92, y: 5 }}
-                    transition={{ duration: 0.22, ease: [0.215, 0.61, 0.355, 1] }}
-                    onClick={(e) => e.stopPropagation()} // stop clicks from closing
-                  >
-                    {/* Header */}
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <div
-                        className="p-1 rounded-md"
-                        style={{ background: `${node.glowColor}` }}
-                      >
-                        <NodeIcon size={12} style={{ color: node.color }} />
-                      </div>
-                      <h4 className="text-[12px] font-bold text-[#0A0A0A] uppercase tracking-wide">
-                        {node.title}
-                      </h4>
-                    </div>
-
-                    {/* Description Text */}
-                    <p className="text-[11px] leading-relaxed text-[#6B7280]">
-                      {isActive ? node.fullDesc : node.shortDesc}
-                    </p>
-
-                    {/* Interactive Help Hint for click */}
-                    {isActive && (
-                      <div className="mt-2.5 pt-2.5 border-t border-gray-100 flex items-center justify-between text-[9px] text-[#8B5CF6] font-semibold">
-                        <span>Active System Module</span>
-                        <button
-                          className="hover:underline cursor-pointer"
-                          onClick={() => setActiveNodeId(null)}
-                        >
-                          Dismiss
-                        </button>
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+            {/* Sphere — premium glossy 3D glass ball resting on grid */}
+            <div className="relative flex items-center justify-center rounded-full"
+              style={{
+                width: 52, height: 52,
+                background: `radial-gradient(circle at 35% 35%, #ffffff 0%, #f9fafb 32%, #f3f4f6 60%, ${n.glow.replace('0.28', '0.12')} 85%, ${n.glow.replace('0.28', '0.22')} 100%)`,
+                boxShadow: isHovered || isActive
+                  ? `0 10px 24px -4px rgba(0,0,0,0.12), inset 2px 2px 4px rgba(255,255,255,0.9), inset -2px -2px 6px rgba(0,0,0,0.06)`
+                  : `0 6px 18px -4px rgba(0,0,0,0.08), inset 2px 2px 3px rgba(255,255,255,0.95), inset -2px -2px 5px rgba(0,0,0,0.04)`,
+                border: `1px solid ${isHovered || isActive ? n.color : "rgba(210, 205, 225, 0.55)"}`,
+                transition: "box-shadow 0.25s ease, border-color 0.25s ease, background 0.25s ease",
+              }}>
+              <NodeIcon size={17} style={{ color: isHovered || isActive ? n.color : "#9CA3AF", transition: "color 0.2s" }} />
             </div>
+
+            {/* Floating label */}
+            {!isActive && (
+              <div className={`absolute top-1/2 -translate-y-1/2 whitespace-nowrap px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider pointer-events-none border transition-all duration-150 ${labelOnRight ? "left-15" : "right-15"}`}
+                style={{
+                  opacity: isHovered ? 1 : 0.50, background: isHovered ? "white" : "rgba(255,255,255,0.85)", backdropFilter: "blur(6px)",
+                  borderColor: isHovered ? n.color : "rgba(229,231,235,0.7)", color: isHovered ? "#1A1A2E" : "#5B6278"
+                }}>
+                {n.title}
+              </div>
+            )}
+
+            {/* Info panel */}
+            <AnimatePresence>
+              {(isHovered || isActive) && (
+                <motion.div className={`absolute z-50 p-4 rounded-xl border pointer-events-auto ${labelOnRight ? "left-15" : "right-15"}`}
+                  style={{
+                    top: "-10px", width: isActive ? "260px" : "180px", background: "rgba(255,255,255,0.96)", backdropFilter: "blur(18px)",
+                    borderColor: isActive ? n.color : "rgba(139,92,246,0.13)",
+                    boxShadow: isActive ? `0 12px 32px rgba(99,102,241,0.13), 0 4px 10px ${n.glow}` : "0 8px 20px rgba(0,0,0,0.07)"
+                  }}
+                  initial={{ opacity: 0, scale: 0.92, x: labelOnRight ? -6 : 6 }} animate={{ opacity: 1, scale: 1, x: 0 }}
+                  exit={{ opacity: 0, scale: 0.92, x: labelOnRight ? -6 : 6 }} transition={{ duration: 0.18, ease: [0.215, 0.61, 0.355, 1] }}
+                  onClick={e => e.stopPropagation()}>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <div className="p-1 rounded-md" style={{ background: n.glow }}>
+                      <NodeIcon size={11} style={{ color: n.color }} />
+                    </div>
+                    <h4 className="text-[11px] font-bold text-[#0A0A0A] uppercase tracking-wide">{n.title}</h4>
+                  </div>
+                  <p className="text-[11px] leading-relaxed text-[#6B7280]">{isActive ? n.fullDesc : n.shortDesc}</p>
+                  {isActive && (
+                    <div className="mt-2 pt-2 border-t border-gray-100 flex items-center justify-between text-[9px] text-[#8B5CF6] font-semibold">
+                      <span>Active Module</span>
+                      <button className="hover:underline" onClick={() => setActiveId(null)}>Dismiss</button>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         );
       })}
