@@ -18,7 +18,7 @@ export default function Hero() {
       {/* ── Centered text overlay ── */}
       <div
         className="absolute inset-0 z-[1000] flex flex-col items-center justify-start pointer-events-none"
-        style={{ paddingTop: "clamp(80px, 12vh, 140px)" }}
+        style={{ paddingTop: "clamp(32px, 5vh, 60px)" }}
       >
         {/* Badge */}
         <motion.div
@@ -62,24 +62,6 @@ export default function Hero() {
             remarkable
           </span>{" "}results.
         </motion.h1>
-
-        {/* Subtitle */}
-        {/* <motion.p
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.32 }}
-          style={{
-            marginTop: 22,
-            fontSize: "clamp(15px, 1.6vw, 18px)",
-            lineHeight: 1.65,
-            color: "#667085",
-            textAlign: "center",
-            maxWidth: 480,
-            padding: "0 24px",
-          }}
-        >
-          Prompt Enhancer helps you write better prompts so AI can give you better answers.
-        </motion.p> */}
 
         {/* CTAs */}
         <motion.div
