@@ -1,7 +1,6 @@
 import dynamic from "next/dynamic";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
-import StatsSection from "@/components/StatsSection";
 import PromptTransformationShowcase from "@/components/PromptTransformationShowcase";
 import BentoFeatures from "@/components/BentoFeatures";
 
@@ -14,7 +13,6 @@ export default function Home() {
     <main className="flex min-h-screen flex-col bg-white">
       <Navbar />
       <Hero />
-      <StatsSection />
       <TransformationEngine />
       <PromptTransformationShowcase />
       <BentoFeatures />

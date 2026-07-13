@@ -145,37 +145,13 @@ export default function PromptTransformationShowcase() {
     },
   };
 
-  const leftCardVariants: Variants = {
+  const consoleVariants: Variants = {
     hidden: { opacity: 0, y: 35 },
     visible: {
       opacity: 1,
       y: 0,
       transition: {
-        duration: 0.7,
-        ease: [0.22, 1, 0.36, 1],
-      },
-    },
-  };
-
-  const arrowVariants: Variants = {
-    hidden: { opacity: 0, scale: 0.4 },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      transition: {
-        duration: 0.5,
-        ease: [0.22, 1, 0.36, 1],
-      },
-    },
-  };
-
-  const rightCardVariants: Variants = {
-    hidden: { opacity: 0, y: 35 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.7,
+        duration: 0.8,
         ease: [0.22, 1, 0.36, 1],
       },
     },
@@ -263,173 +239,175 @@ export default function PromptTransformationShowcase() {
 
           {/* RIGHT COLUMN */}
           <div className="flex flex-col gap-6 md:gap-8 w-full">
-            {/* Prompt Cards Grid */}
-            <div className="relative grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch w-full">
-              {/* Center Arrow Button */}
+            {/* Unified macOS console window */}
+            <motion.div
+              variants={consoleVariants}
+              className="w-full"
+            >
               <motion.div
-                variants={arrowVariants}
-                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 hidden md:flex h-12 w-12 items-center justify-center rounded-full bg-white text-gray-900 shadow-[0_4px_25px_rgba(0,0,0,0.3)] hover:scale-105 active:scale-95 transition-transform duration-200 cursor-pointer"
+                animate={{ y: [0, -6, 0] }}
+                transition={{
+                  duration: 6,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+                className="w-full bg-[#08080E]/60 border border-white/[0.08] rounded-[22px] overflow-hidden shadow-[0_30px_70px_rgba(0,0,0,0.65),0_0_50px_rgba(139,92,246,0.05)] backdrop-blur-xl relative"
               >
-                <span className="text-xl font-semibold select-none">→</span>
-              </motion.div>
+                {/* Header bar */}
+                <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.06] bg-[#07070B]/85 select-none">
+                  {/* Traffic lights */}
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#FF5F56]/15" />
+                    <div className="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#FFBD2E]/15" />
+                    <div className="w-3 h-3 rounded-full bg-[#27C93F] border border-[#27C93F]/15" />
+                  </div>
+                  {/* Window title */}
+                  <div className="text-[12px] font-mono text-white/40 tracking-wider">
+                    prompt-transformer.sh
+                  </div>
+                  {/* Status Indicator */}
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />
+                    <span className="text-[10px] font-mono text-white/30 uppercase tracking-wider">active</span>
+                  </div>
+                </div>
 
-              {/* LEFT CARD: Your prompt */}
-              <motion.div
-                variants={leftCardVariants}
-                className="h-full flex"
-              >
-                <motion.div
-                  animate={{ y: [0, -6, 0] }}
-                  transition={{
-                    duration: 6,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                  className="w-full flex flex-col justify-between bg-white/[0.02] border border-white/[0.08] rounded-[20px] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-md"
-                >
-                  <div>
-                    <div className="flex items-center gap-2.5 mb-4">
-                      {/* Your Prompt Icon (Terminal cursor shape) */}
-                      <svg
-                        width="15"
-                        height="15"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        className="text-white/60"
-                      >
-                        <polyline points="4 17 10 11 4 5" strokeLinecap="round" strokeLinejoin="round" />
-                        <line x1="12" y1="19" x2="20" y2="19" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                      <span className="text-[13px] font-medium text-white/90">Your prompt</span>
-                    </div>
-
-                    <div className="bg-black/45 border border-white/[0.04] rounded-xl p-5 text-[14px] leading-relaxed text-white/70 min-h-[140px] font-sans">
-                      Write a product launch announcement.
-                    </div>
+                {/* Content grid */}
+                <div className="relative grid grid-cols-1 md:grid-cols-2 gap-0 items-stretch">
+                  
+                  {/* Desktop Center Arrow Button */}
+                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 hidden md:flex h-10 w-10 items-center justify-center rounded-full bg-white text-gray-900 shadow-[0_4px_25px_rgba(139,92,246,0.4)] border border-white/[0.08] hover:scale-110 active:scale-95 transition-transform duration-200 cursor-pointer">
+                    <span className="text-lg font-bold select-none">→</span>
                   </div>
 
-                  <div className="text-[12px] text-white/30 font-mono mt-6">
-                    28/1000
-                  </div>
-                </motion.div>
-              </motion.div>
-
-              {/* Mobile-only Arrow */}
-              <div className="flex md:hidden my-2 justify-center z-10">
-                <motion.div
-                  variants={arrowVariants}
-                  className="h-10 w-10 flex items-center justify-center rounded-full bg-white text-gray-900 shadow-md"
-                >
-                  <span className="text-lg font-semibold rotate-90 select-none">→</span>
-                </motion.div>
-              </div>
-
-              {/* RIGHT CARD: Enhanced prompt */}
-              <motion.div
-                variants={rightCardVariants}
-                className="h-full flex"
-              >
-                <motion.div
-                  animate={{ y: [0, -6, 0] }}
-                  transition={{
-                    duration: 6,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: 0.3, // Slightly staggered floating
-                  }}
-                  className="w-full flex flex-col justify-between bg-white/[0.02] border border-white/[0.08] rounded-[20px] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-md"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2.5">
-                        {/* Enhanced Prompt Sparkle Icon */}
+                  {/* LEFT PANE: Your prompt (Input) */}
+                  <div className="p-6 md:p-8 flex flex-col justify-between bg-[#08080C]/20">
+                    <div>
+                      <div className="flex items-center gap-2.5 mb-5">
                         <svg
-                          width="15"
-                          height="15"
+                          width="14"
+                          height="14"
                           viewBox="0 0 24 24"
                           fill="none"
                           stroke="currentColor"
-                          strokeWidth="2"
-                          className="text-[#A78BFA]"
+                          strokeWidth="2.5"
+                          className="text-white/50"
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M9.813 15.904L9 21l-.813-5.096L3.096 15 8 14.187 8.813 9.096 9.813 14.19 14.9 15l-5.09 1.096z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M19.071 4.929l-.26 1.63L17.18 6.82l1.63.26.26 1.63.26-1.63 1.63-.26-1.63-.26-.26-1.63z"
-                          />
+                          <polyline points="4 17 10 11 4 5" strokeLinecap="round" strokeLinejoin="round" />
+                          <line x1="12" y1="19" x2="20" y2="19" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
-                        <span className="text-[13px] font-medium text-white/90">Enhanced prompt</span>
+                        <span className="text-[13px] font-medium text-white/80 font-mono">Your prompt</span>
                       </div>
 
-                      {/* Copy Button */}
-                      <button
-                        onClick={handleCopy}
-                        className="flex items-center gap-1.5 text-[11px] text-white/60 hover:text-white transition-colors cursor-pointer bg-white/5 hover:bg-white/10 px-2.5 py-1.5 rounded-lg border border-white/[0.06] active:scale-95"
-                      >
-                        {copied ? (
-                          <>
-                            <svg
-                              width="12"
-                              height="12"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2.5"
-                              className="text-green-400"
-                            >
-                              <polyline points="20 6 9 17 4 12" />
-                            </svg>
-                            <span className="text-green-400 font-medium">Copied!</span>
-                          </>
-                        ) : (
-                          <>
-                            <svg
-                              width="12"
-                              height="12"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                            >
-                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                            </svg>
-                            <span>Copy</span>
-                          </>
-                        )}
-                      </button>
+                      <div className="bg-[#030307]/50 border border-white/[0.04] rounded-xl p-5 text-[14px] leading-relaxed text-white/70 min-h-[140px] font-sans">
+                        Write a product launch announcement.
+                      </div>
                     </div>
 
-                    <div className="bg-[#030307]/50 border border-white/[0.04] rounded-xl p-5 text-[14px] leading-relaxed text-white/90 font-sans">
-                      {enhancedText}
+                    <div className="text-[11px] text-white/30 font-mono mt-6">
+                      28/1000
                     </div>
                   </div>
 
-                  {/* Bottom tags */}
-                  <div className="flex flex-wrap gap-2 mt-6">
-                    <span className="text-[10.5px] font-semibold tracking-wider px-3 py-1 rounded-full border bg-blue-500/10 border-blue-500/20 text-[#60A5FA]">
-                      Clearer
-                    </span>
-                    <span className="text-[10.5px] font-semibold tracking-wider px-3 py-1 rounded-full border bg-purple-500/10 border-purple-500/20 text-[#C084FC]">
-                      Context rich
-                    </span>
-                    <span className="text-[10.5px] font-semibold tracking-wider px-3 py-1 rounded-full border bg-pink-500/10 border-pink-500/20 text-[#F472B6]">
-                      Actionable
-                    </span>
-                    <span className="text-[10.5px] font-semibold tracking-wider px-3 py-1 rounded-full border bg-orange-500/10 border-orange-500/20 text-[#FB923C]">
-                      Impactful
-                    </span>
+                  {/* Mobile Divider Arrow (DOM flow) */}
+                  <div className="flex md:hidden justify-center items-center my-[-18px] z-20 pointer-events-none">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-gray-900 shadow-[0_4px_15px_rgba(139,92,246,0.35)] border border-white/[0.08] pointer-events-auto active:scale-95 transition-transform">
+                      <span className="text-md font-bold select-none rotate-90 leading-none">→</span>
+                    </div>
                   </div>
-                </motion.div>
+
+                  {/* RIGHT PANE: Enhanced prompt (Output) */}
+                  <div className="p-6 md:p-8 flex flex-col justify-between bg-[#08080C]/40 border-t border-white/[0.06] md:border-t-0 md:border-l border-white/[0.06]">
+                    <div>
+                      <div className="flex items-center justify-between mb-5">
+                        <div className="flex items-center gap-2.5">
+                          <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            className="text-[#A78BFA]"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M9.813 15.904L9 21l-.813-5.096L3.096 15 8 14.187 8.813 9.096 9.813 14.19 14.9 15l-5.09 1.096z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M19.071 4.929l-.26 1.63L17.18 6.82l1.63.26.26 1.63.26-1.63 1.63-.26-1.63-.26-.26-1.63z"
+                            />
+                          </svg>
+                          <span className="text-[13px] font-medium text-white/80 font-mono">Enhanced prompt</span>
+                        </div>
+
+                        {/* Copy Button */}
+                        <button
+                          onClick={handleCopy}
+                          className="flex items-center gap-1.5 text-[11px] text-white/60 hover:text-white transition-colors cursor-pointer bg-white/5 hover:bg-white/10 px-2.5 py-1.5 rounded-lg border border-white/[0.06] active:scale-95"
+                        >
+                          {copied ? (
+                            <>
+                              <svg
+                                width="12"
+                                height="12"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2.5"
+                                className="text-green-400"
+                              >
+                                <polyline points="20 6 9 17 4 12" />
+                              </svg>
+                              <span className="text-green-400 font-medium">Copied!</span>
+                            </>
+                          ) : (
+                            <>
+                              <svg
+                                width="12"
+                                height="12"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                              >
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                              </svg>
+                              <span>Copy</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      <div className="bg-[#030307]/60 border border-[#8B5CF6]/20 shadow-[0_0_15px_rgba(139,92,246,0.06)] rounded-xl p-5 text-[14px] leading-relaxed text-white/90 font-sans">
+                        {enhancedText}
+                      </div>
+                    </div>
+
+                    {/* Bottom tags */}
+                    <div className="flex flex-wrap gap-2 mt-6">
+                      <span className="text-[10.5px] font-semibold tracking-wider px-3 py-1 rounded-full border bg-blue-500/10 border-blue-500/20 text-[#60A5FA]">
+                        Clearer
+                      </span>
+                      <span className="text-[10.5px] font-semibold tracking-wider px-3 py-1 rounded-full border bg-purple-500/10 border-purple-500/20 text-[#C084FC]">
+                        Context rich
+                      </span>
+                      <span className="text-[10.5px] font-semibold tracking-wider px-3 py-1 rounded-full border bg-pink-500/10 border-pink-500/20 text-[#F472B6]">
+                        Actionable
+                      </span>
+                      <span className="text-[10.5px] font-semibold tracking-wider px-3 py-1 rounded-full border bg-orange-500/10 border-orange-500/20 text-[#FB923C]">
+                        Impactful
+                      </span>
+                    </div>
+                  </div>
+
+                </div>
               </motion.div>
-            </div>
+            </motion.div>
 
             {/* 6-Dimensional Analysis Panel */}
             <motion.div
