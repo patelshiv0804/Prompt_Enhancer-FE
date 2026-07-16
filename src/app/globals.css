@@ -52,18 +52,41 @@ body {
 
 /* ── Floating animation ── */
 @keyframes float {
-  0%, 100% { transform: translate3d(0, 0, 0); }
-  50% { transform: translate3d(0, -12px, 0); }
+
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  50% {
+    transform: translate3d(0, -12px, 0);
+  }
 }
 
 @keyframes float-delayed {
-  0%, 100% { transform: translate3d(0, 0, 0); }
-  50% { transform: translate3d(0, -8px, 0); }
+
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  50% {
+    transform: translate3d(0, -8px, 0);
+  }
 }
 
 @keyframes pulse-glow {
-  0%, 100% { opacity: 0.15; transform: scale(1) translateZ(0); }
-  50% { opacity: 0.3; transform: scale(1.05) translateZ(0); }
+
+  0%,
+  100% {
+    opacity: 0.15;
+    transform: scale(1) translateZ(0);
+  }
+
+  50% {
+    opacity: 0.3;
+    transform: scale(1.05) translateZ(0);
+  }
 }
 
 .animate-float {
@@ -112,8 +135,17 @@ body {
 
 /* ── Platform ring pulse ── */
 @keyframes pulse-ring {
-  0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
-  50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.04); }
+
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  50% {
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(1.04);
+  }
 }
 
 /* ── Freeze animations while scrolling ── */
@@ -143,9 +175,12 @@ body {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
 .no-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -177,7 +212,7 @@ body {
   /* ── Glass ── */
   --glass-bg: rgba(255, 255, 255, 0.70);
   --glass-border: 1px solid rgba(124, 58, 237, 0.08);
-  --glass-shadow: 0 20px 60px rgba(109, 40, 217, 0.06), 0 8px 24px rgba(0,0,0,0.04);
+  --glass-shadow: 0 20px 60px rgba(109, 40, 217, 0.06), 0 8px 24px rgba(0, 0, 0, 0.04);
   --glass-inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.70);
   --glass-blur: blur(24px);
   --glass-radius: 28px;
@@ -257,73 +292,155 @@ body {
 
 /* ── Shared Animations ── */
 @keyframes ambientFloat {
-  0%   { transform: translate(0, 0) scale(1); }
-  50%  { transform: translate(30px, 20px) scale(1.1); }
-  100% { transform: translate(-20px, 30px) scale(0.95); }
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate(30px, 20px) scale(1.1);
+  }
+
+  100% {
+    transform: translate(-20px, 30px) scale(0.95);
+  }
 }
 
 @keyframes shimmer {
-  0%   { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 @keyframes groupItemsIn {
-  from { opacity: 0; transform: translateY(-6px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes dropdownFadeIn {
-  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 @keyframes barShine {
-  0%   { left: -40%; }
-  100% { left: 140%; }
+  0% {
+    left: -40%;
+  }
+
+  100% {
+    left: 140%;
+  }
 }
 
 @keyframes shimmerSweep {
-  0%   { transform: translateX(-100%); }
-  100% { transform: translateX(200%); }
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(200%);
+  }
 }
 
 @keyframes ringPulse {
-  0%, 100% { filter: drop-shadow(0 0 8px rgba(124, 58, 237, 0.25)); }
-  50%       { filter: drop-shadow(0 0 16px rgba(124, 58, 237, 0.4)); }
+
+  0%,
+  100% {
+    filter: drop-shadow(0 0 8px rgba(124, 58, 237, 0.25));
+  }
+
+  50% {
+    filter: drop-shadow(0 0 16px rgba(124, 58, 237, 0.4));
+  }
 }
 
 @keyframes fadeSlideUp {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes dimCardEnter {
-  from { opacity: 0; transform: translateY(14px) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 @keyframes pulseGlow {
-  0%   { transform: scale(1); opacity: 1; }
-  50%  { transform: scale(1.15); opacity: 0.7; }
-  100% { transform: scale(1); opacity: 1; }
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.15);
+    opacity: 0.7;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 @keyframes fadeInRise {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Skeleton shimmer utility */
 .dashboard-root .skeleton {
-  background: linear-gradient(90deg, rgba(124,58,237,0.04) 25%, rgba(124,58,237,0.10) 50%, rgba(124,58,237,0.04) 75%);
+  background: linear-gradient(90deg, rgba(124, 58, 237, 0.04) 25%, rgba(124, 58, 237, 0.10) 50%, rgba(124, 58, 237, 0.04) 75%);
   background-size: 200% 100%;
   animation: shimmer 2s infinite linear;
   border-radius: 6px;
 }
 
 @media (max-width: 1024px) {
-  .workspace-container { padding: 0 32px; }
+  .workspace-container {
+    padding: 0 32px;
+  }
 }
+
 @media (max-width: 768px) {
-  .workspace-container { padding: 0 16px; padding-bottom: 80px; }
+  .workspace-container {
+    padding: 0 16px;
+    padding-bottom: 80px;
+  }
 }

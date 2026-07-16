@@ -563,7 +563,8 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
         padding: '12px 20px', background: 'rgba(255,255,255,0.85)', borderRadius: 16,
         border: '1px solid rgba(124,58,237,0.10)', boxShadow: '0 2px 12px rgba(109,40,217,0.04)',
         backdropFilter: 'blur(12px)',
-        maxWidth: 1100, margin: '0 auto', width: '100%', boxSizing: 'border-box'
+        maxWidth: 1100, margin: '0 auto', width: '100%', boxSizing: 'border-box',
+        position: 'relative', zIndex: 10,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{
@@ -613,7 +614,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
               <div style={{
                 position: 'absolute', top: 'calc(100% + 6px)', right: 0, width: 220, background: '#FFFFFF',
                 borderRadius: 14, boxShadow: '0 10px 30px rgba(0,0,0,0.12)', border: '1px solid rgba(124,58,237,0.12)',
-                padding: 6, zIndex: 50,
+                padding: 6, zIndex: 100,
               }}>
                 <div style={{ fontSize: 10, fontWeight: 700, color: '#94A3B8', padding: '6px 10px 4px', letterSpacing: '0.6px' }}>STYLE MEMORY</div>
                 {styleOptions.map(opt => (
@@ -651,7 +652,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
               <div style={{
                 position: 'absolute', top: 'calc(100% + 6px)', right: 0, width: 240, background: '#FFFFFF',
                 borderRadius: 14, boxShadow: '0 10px 30px rgba(0,0,0,0.12)', border: '1px solid rgba(124,58,237,0.12)',
-                padding: 6, zIndex: 50,
+                padding: 6, zIndex: 100,
               }}>
                 <div style={{ fontSize: 10, fontWeight: 700, color: '#94A3B8', padding: '6px 10px 4px', letterSpacing: '0.6px' }}>TARGET AI MODEL</div>
                 {targetModels.map(model => (

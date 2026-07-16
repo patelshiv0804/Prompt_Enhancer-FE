@@ -18,16 +18,16 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Workspace',
     items: [
-      { id: 'optimizer',  icon: Sparkles,        label: 'Optimizer',  shortcut: '⌘1' },
-      { id: 'templates',  icon: LayoutTemplate,  label: 'Templates',  shortcut: '⌘2' },
-      { id: 'vault',      icon: Library,         label: 'Vault',      shortcut: '⌘3' },
+      { id: 'optimizer', icon: Sparkles, label: 'Optimizer', shortcut: '⌘1' },
+      { id: 'templates', icon: LayoutTemplate, label: 'Templates', shortcut: '⌘2' },
+      { id: 'vault', icon: Library, label: 'Vault', shortcut: '⌘3' },
     ],
   },
   {
     label: 'Personalize',
     items: [
       { id: 'style-memory', icon: Fingerprint, label: 'Style Memory' },
-      { id: 'settings',     icon: Settings,    label: 'Settings' },
+      { id: 'settings', icon: Settings, label: 'Settings' },
     ],
   },
 ];
@@ -43,18 +43,18 @@ const SIDEBAR_HISTORY_ACCENTS: Record<string, string> = {
   youtube: '#EF4444', general: '#7C3AED', email: '#0EA5E9',
 };
 const MOCK_RECENT = [
-  { id: 'r1', prompt: 'Write a viral Twitter thread about AI in healthcare',  category: 'marketing',    score: 94, isFavorite: true,  ago: '2m' },
-  { id: 'r2', prompt: 'Debug my React useEffect infinite loop issue',         category: 'coding',       score: 88, isFavorite: false, ago: '1h' },
-  { id: 'r3', prompt: 'Cinematic shot of neon rain on cyberpunk streets',     category: 'cinematic',    score: 91, isFavorite: false, ago: '3h' },
-  { id: 'r4', prompt: 'Explain quantum entanglement to a 10-year-old',        category: 'research',     score: 76, isFavorite: false, ago: '5h' },
-  { id: 'r5', prompt: 'Generate a product launch email sequence',             category: 'email',        score: 83, isFavorite: true,  ago: 'Yesterday' },
-  { id: 'r6', prompt: 'YouTube thumbnail prompt for tech review video',       category: 'youtube',      score: 79, isFavorite: false, ago: 'Yesterday' },
-  { id: 'r7', prompt: 'Anime-style landscape with cherry blossoms',           category: 'image-gen',    score: 95, isFavorite: true,  ago: '2d' },
-  { id: 'r8', prompt: 'Write a compelling SaaS landing page headline',        category: 'marketing',    score: 87, isFavorite: false, ago: '3d' },
+  { id: 'r1', prompt: 'Write a viral Twitter thread about AI in healthcare', category: 'marketing', score: 94, isFavorite: true, ago: '2m' },
+  { id: 'r2', prompt: 'Debug my React useEffect infinite loop issue', category: 'coding', score: 88, isFavorite: false, ago: '1h' },
+  { id: 'r3', prompt: 'Cinematic shot of neon rain on cyberpunk streets', category: 'cinematic', score: 91, isFavorite: false, ago: '3h' },
+  { id: 'r4', prompt: 'Explain quantum entanglement to a 10-year-old', category: 'research', score: 76, isFavorite: false, ago: '5h' },
+  { id: 'r5', prompt: 'Generate a product launch email sequence', category: 'email', score: 83, isFavorite: true, ago: 'Yesterday' },
+  { id: 'r6', prompt: 'YouTube thumbnail prompt for tech review video', category: 'youtube', score: 79, isFavorite: false, ago: 'Yesterday' },
+  { id: 'r7', prompt: 'Anime-style landscape with cherry blossoms', category: 'image-gen', score: 95, isFavorite: true, ago: '2d' },
+  { id: 'r8', prompt: 'Write a compelling SaaS landing page headline', category: 'marketing', score: 87, isFavorite: false, ago: '3d' },
 ];
 
 export default function Sidebar() {
-  const router   = useRouter();
+  const router = useRouter();
   const pathname = usePathname();
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [recentCollapsed, setRecentCollapsed] = useState(false);
@@ -113,14 +113,14 @@ export default function Sidebar() {
                 </span>
                 {isCollapsed
                   ? <ChevronRight size={12} style={{ color: 'rgba(109,40,217,0.35)', flexShrink: 0 }} />
-                  : <ChevronDown  size={12} style={{ color: 'rgba(109,40,217,0.35)', flexShrink: 0 }} />
+                  : <ChevronDown size={12} style={{ color: 'rgba(109,40,217,0.35)', flexShrink: 0 }} />
                 }
               </button>
 
               {!isCollapsed && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 1, animation: 'groupItemsIn 0.18s ease-out' }}>
                   {group.items.map(item => {
-                    const Icon   = item.icon;
+                    const Icon = item.icon;
                     const active = isActive(item.id);
                     return (
                       <button
@@ -175,7 +175,7 @@ export default function Sidebar() {
           <div
             role="button" tabIndex={0}
             onClick={() => setRecentCollapsed(v => !v)}
-            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setRecentCollapsed(v => !v); }}}
+            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setRecentCollapsed(v => !v); } }}
             aria-expanded={!recentCollapsed}
             style={{
               display: 'flex', alignItems: 'center', gap: 6, padding: '5px 8px',
@@ -188,7 +188,7 @@ export default function Sidebar() {
             <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'rgba(45,27,105,0.45)', flex: 1 }}>Recent</span>
             <button
               id="sidebar-history-view-all"
-              onClick={e => { e.stopPropagation(); router.push('/dashboard/history'); }}
+              onClick={e => { e.stopPropagation(); router.push('/dashboard/vault'); }}
               style={{
                 fontSize: 10, fontWeight: 600, color: '#6D28D9', background: 'none', border: 'none',
                 cursor: 'pointer', padding: '2px 5px', borderRadius: 4, marginRight: 2,
@@ -197,14 +197,14 @@ export default function Sidebar() {
             >View all</button>
             {recentCollapsed
               ? <ChevronRight size={12} style={{ color: 'rgba(109,40,217,0.35)', flexShrink: 0 }} />
-              : <ChevronDown  size={12} style={{ color: 'rgba(109,40,217,0.35)', flexShrink: 0 }} />
+              : <ChevronDown size={12} style={{ color: 'rgba(109,40,217,0.35)', flexShrink: 0 }} />
             }
           </div>
 
           {!recentCollapsed && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 1, animation: 'groupItemsIn 0.18s ease-out' }}>
               {MOCK_RECENT.map(item => {
-                const Icon   = SIDEBAR_HISTORY_ICONS[item.category] || Clock;
+                const Icon = SIDEBAR_HISTORY_ICONS[item.category] || Clock;
                 const accent = SIDEBAR_HISTORY_ACCENTS[item.category] || '#7C3AED';
                 const active = pathname === `/dashboard/chat/${item.id}`;
                 return (

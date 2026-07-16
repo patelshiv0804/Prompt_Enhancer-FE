@@ -218,7 +218,6 @@ export default function VersionHeader({
         </span>
         {isCurrent && <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', color: '#C4B5FD' }}>Current</span>}
         {isBest && !isCurrent && <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', color: '#FCD34D' }}>Best</span>}
-        {isSearched && !isCurrent && <span style={{ fontSize: 9, fontWeight: 700, color: '#60D8FA' }}>Found</span>}
       </div>
     );
   });

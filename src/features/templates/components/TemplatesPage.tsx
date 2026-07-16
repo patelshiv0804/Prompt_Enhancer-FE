@@ -44,7 +44,7 @@ const CATEGORY_ICON_MAP: Record<string, React.ElementType> = {
 /* ── Template Card ── */
 function TemplateCard({ template }: { template: Template }) {
   const [bookmarked, setBookmarked] = useState(false);
-  const [copied,     setCopied]     = useState(false);
+  const [copied, setCopied] = useState(false);
   const Icon = CATEGORY_ICON_MAP[template.category] || Sparkles;
 
   return (
@@ -53,7 +53,7 @@ function TemplateCard({ template }: { template: Template }) {
       display: 'flex', flexDirection: 'column', gap: 12, position: 'relative', overflow: 'hidden',
       boxShadow: '0 2px 10px rgba(109,40,217,0.05)', transition: 'transform 250ms ease, box-shadow 250ms ease, border-color 250ms ease',
     }}
-    className="hover:translate-y-[-3px] hover:shadow-[0_8px_28px_rgba(109,40,217,0.10)] hover:!border-[rgba(124,58,237,0.18)]"
+      className="hover:translate-y-[-3px] hover:shadow-[0_8px_28px_rgba(109,40,217,0.10)] hover:!border-[rgba(124,58,237,0.18)]"
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{
@@ -159,7 +159,7 @@ function FeaturedHero({ template }: { template: Template }) {
 /* ── Main Page ── */
 export default function TemplatesPage() {
   const [activeCategory, setActiveCategory] = useState('all');
-  const [searchQuery,    setSearchQuery]    = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const featuredTemplate = DUMMY_TEMPLATES.find(t => t.isFeatured)!;
   const filteredTemplates = useMemo(() => {
@@ -172,8 +172,8 @@ export default function TemplatesPage() {
     return list;
   }, [activeCategory, searchQuery]);
 
-  const trendingTemplates  = filteredTemplates.filter(t => t.isTrending);
-  const allOtherTemplates  = filteredTemplates.filter(t => !t.isTrending);
+  const trendingTemplates = filteredTemplates.filter(t => t.isTrending);
+  const allOtherTemplates = filteredTemplates.filter(t => !t.isTrending);
 
   const sectionTitle: React.CSSProperties = { fontSize: 16, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 };
 
@@ -198,8 +198,8 @@ export default function TemplatesPage() {
       {/* Category Chips */}
       <div id="categories-row" style={{ display: 'flex', gap: 8, marginBottom: 32, flexWrap: 'wrap' }}>
         {CATEGORIES.map(cat => {
-          const Icon    = cat.icon;
-          const active  = activeCategory === cat.id;
+          const Icon = cat.icon;
+          const active = activeCategory === cat.id;
           return (
             <button key={cat.id} id={`category-chip-${cat.id}`} onClick={() => setActiveCategory(cat.id)}
               style={{
