@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
   Plus, X, Zap, ChevronRight, ArrowRight,
   Fingerprint, Palette, Film, Trees, User as UserIcon,
-  Sparkles, ChevronDown, Pencil,
+  Sparkles, ChevronDown, Pencil, Trash2,
 } from 'lucide-react';
 
 /* ═══════════════════════════════════════════════════
@@ -20,6 +20,7 @@ interface StyleProfile {
   injectionPrompt: string;
   tags: string[];
   enabled: boolean;
+  lastUsed?: string;
 }
 
 type Category = 'character' | 'art-style' | 'cinematic-style' | 'environment';
@@ -55,6 +56,7 @@ const MOCK_PROFILES: StyleProfile[] = [
     injectionPrompt: 'Apply cyberpunk aesthetic: neon glow, chrome implants, rain-soaked streets, holographic HUD overlays.',
     tags: ['#sci-fi', '#character', '#neon', '#cyberpunk'],
     enabled: true,
+    lastUsed: '1d ago',
   },
   {
     id: 'sp-2',
@@ -64,6 +66,7 @@ const MOCK_PROFILES: StyleProfile[] = [
     injectionPrompt: 'Render in watercolor style: soft edges, paper texture, transparent layering, muted warm palette.',
     tags: ['#watercolor', '#soft', '#artistic', '#pastel'],
     enabled: false,
+    lastUsed: '3d ago',
   },
   {
     id: 'sp-3',
@@ -73,6 +76,7 @@ const MOCK_PROFILES: StyleProfile[] = [
     injectionPrompt: 'Apply film noir style: high contrast B&W, deep shadows, low-key lighting, 1940s atmosphere, grain texture.',
     tags: ['#noir', '#cinematic', '#monochrome'],
     enabled: true,
+    lastUsed: '2h ago',
   },
   {
     id: 'sp-4',
@@ -82,6 +86,7 @@ const MOCK_PROFILES: StyleProfile[] = [
     injectionPrompt: 'Create enchanted forest setting: bioluminescent plants, volumetric fog, ancient trees, magical particles, twilight.',
     tags: ['#forest', '#fantasy', '#magical', '#nature'],
     enabled: false,
+    lastUsed: '5d ago',
   },
   {
     id: 'sp-5',
@@ -91,6 +96,7 @@ const MOCK_PROFILES: StyleProfile[] = [
     injectionPrompt: 'Design in anime style: large eyes, cel shading, vibrant palette, dynamic pose, speed lines, detailed hair.',
     tags: ['#anime', '#character', '#vibrant'],
     enabled: true,
+    lastUsed: 'Just now',
   },
 ];
 
@@ -137,10 +143,11 @@ function ToggleSwitch({ enabled, onToggle }: { enabled: boolean; onToggle: () =>
 }
 
 /* ── Profile Card ── */
-function ProfileCard({ profile, onToggle, onEdit }: {
+function ProfileCard({ profile, onToggle, onEdit, onDelete }: {
   profile: StyleProfile;
   onToggle: () => void;
   onEdit: () => void;
+  onDelete: () => void;
 }) {
   return (
     <div style={{
@@ -148,66 +155,48 @@ function ProfileCard({ profile, onToggle, onEdit }: {
       border: `1px solid ${profile.enabled ? 'rgba(124,58,237,0.18)' : 'rgba(124,58,237,0.10)'}`,
       borderRadius: 16,
       padding: '24px',
-      display: 'flex', flexDirection: 'column', gap: 12,
+      display: 'flex', flexDirection: 'column', gap: 16,
       justifyContent: 'space-between',
       height: '100%',
-      minHeight: 220,
+      minHeight: 280,
       boxShadow: '0 4px 12px rgba(109,40,217,0.06), 0 1px 3px rgba(0,0,0,0.04)',
       transition: 'transform 250ms ease, box-shadow 250ms ease, border-color 250ms ease',
       animation: 'dimCardEnter 400ms ease both',
-      opacity: profile.enabled ? 1 : 0.75,
+      opacity: profile.enabled ? 1 : 0.8,
     }}
     className="hover:translate-y-[-3px] hover:shadow-[0_8px_24px_rgba(109,40,217,0.09),0_2px_6px_rgba(0,0,0,0.05)] hover:!border-[rgba(124,58,237,0.18)] hover:!opacity-100"
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1 }}>
-        {/* Top row: Avatar + Name + Toggle + Edit */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1 }}>
+        {/* Top row: Avatar + Name + Category + Delete */}
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
           <CategoryAvatar category={profile.category} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: 'var(--color-text-primary)', lineHeight: 1.3 }}>
               {profile.name}
             </p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
               <span style={{
                 fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px',
                 color: CATEGORY_META[profile.category].color, opacity: 0.8,
               }}>
                 {CATEGORY_OPTIONS.find(c => c.id === profile.category)?.label}
               </span>
-              {profile.enabled && (
-                <>
-                  <span style={{ color: 'rgba(124,58,237,0.15)', fontSize: 11 }}>•</span>
-                  <div style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 4,
-                    color: '#10B981', fontSize: 11, fontWeight: 600,
-                  }}>
-                    <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#10B981' }} />
-                    Auto-injecting
-                  </div>
-                </>
-              )}
             </div>
           </div>
 
-          {/* Controls */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, marginTop: 2 }}>
-            {/* Edit button */}
-            <button
-              onClick={onEdit}
-              title="Edit profile"
-              style={{
-                width: 30, height: 30, borderRadius: 8, border: 'none', cursor: 'pointer',
-                background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: 'var(--color-text-secondary)', transition: 'all 200ms ease',
-              }}
-              className="hover:!bg-[rgba(124,58,237,0.08)] hover:!text-[var(--color-primary)]"
-            >
-              <Pencil size={14} strokeWidth={1.8} />
-            </button>
-
-            {/* Toggle */}
-            <ToggleSwitch enabled={profile.enabled} onToggle={onToggle} />
-          </div>
+          {/* Delete Button */}
+          <button
+            onClick={onDelete}
+            title="Delete profile"
+            style={{
+              width: 28, height: 28, borderRadius: 6, border: 'none', cursor: 'pointer',
+              background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'var(--color-text-secondary)', transition: 'all 200ms ease', flexShrink: 0,
+            }}
+            className="hover:!bg-[rgba(239,68,68,0.08)] hover:!text-[#EF4444]"
+          >
+            <Trash2 size={14} strokeWidth={1.8} />
+          </button>
         </div>
 
         {/* Description */}
@@ -217,18 +206,70 @@ function ProfileCard({ profile, onToggle, onEdit }: {
         }}>
           {profile.description}
         </p>
+
+        {/* Tags */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {profile.tags.map(tag => (
+            <span key={tag} style={{
+              fontSize: 11.5, fontWeight: 500, padding: '3px 10px', borderRadius: 9999,
+              background: 'rgba(124,58,237,0.06)', color: 'var(--color-text-secondary)',
+            }}>
+              {tag}
+            </span>
+          ))}
+        </div>
       </div>
 
-      {/* Tags */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 'auto' }}>
-        {profile.tags.map(tag => (
-          <span key={tag} style={{
-            fontSize: 11.5, fontWeight: 500, padding: '3px 10px', borderRadius: 9999,
-            background: 'rgba(124,58,237,0.06)', color: 'var(--color-text-secondary)',
+      {/* Bottom Footer Section */}
+      <div style={{
+        borderTop: '1px solid rgba(124,58,237,0.08)',
+        paddingTop: 14,
+        marginTop: 4,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 10,
+      }}>
+        {/* Row 1: Auto-inject + Toggle */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{
+            fontSize: 13.5,
+            fontWeight: 600,
+            color: '#312E81',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
           }}>
-            {tag}
+            Auto-inject <span style={{ color: 'var(--color-primary)', fontSize: 12 }}>✦</span>
           </span>
-        ))}
+          <ToggleSwitch enabled={profile.enabled} onToggle={onToggle} />
+        </div>
+
+        {/* Row 2: Edit Profile + Metadata */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <button
+            onClick={onEdit}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              cursor: 'pointer',
+              fontSize: 13,
+              fontWeight: 600,
+              color: 'var(--color-primary)',
+              transition: 'opacity 200ms ease',
+            }}
+            className="hover:opacity-80"
+          >
+            <Pencil size={13} strokeWidth={2} />
+            Edit Profile
+          </button>
+          <span style={{ fontSize: 12, color: 'var(--color-text-secondary)', opacity: 0.8 }}>
+            Last used {profile.lastUsed || 'Never'}
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -247,7 +288,7 @@ function AddNewCard({ onClick }: { onClick: () => void }) {
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
         gap: 12, cursor: 'pointer',
         height: '100%',
-        minHeight: 220,
+        minHeight: 280,
         transition: 'all 250ms ease',
       }}
       className="hover:!border-[rgba(124,58,237,0.35)] hover:!bg-[rgba(124,58,237,0.03)] hover:translate-y-[-2px]"
@@ -717,6 +758,12 @@ export default function StyleMemoryPage() {
     setDrawerOpen(true);
   };
 
+  const handleDelete = (id: string) => {
+    if (window.confirm('Are you sure you want to delete this style profile?')) {
+      setProfiles(prev => prev.filter(p => p.id !== id));
+    }
+  };
+
   const openCreateDrawer = () => {
     setEditingProfile(null);
     setDrawerOpen(true);
@@ -805,6 +852,7 @@ export default function StyleMemoryPage() {
                 profile={profile}
                 onToggle={() => handleToggle(profile.id)}
                 onEdit={() => handleEdit(profile)}
+                onDelete={() => handleDelete(profile.id)}
               />
             </div>
           ))}

@@ -78,6 +78,20 @@ export default function Sidebar() {
         boxShadow: '0 2px 24px rgba(109,40,217,0.07), 0 1px 4px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.80)',
       }}
     >
+      <style>{`
+        .sidebar-history-item {
+          transition: background-color 160ms ease !important;
+        }
+        .sidebar-history-item:hover {
+          background-color: rgba(124, 58, 237, 0.07) !important;
+        }
+        .sidebar-history-item.active {
+          background-color: rgba(124, 58, 237, 0.12) !important;
+        }
+        .sidebar-history-item.active:hover {
+          background-color: rgba(124, 58, 237, 0.18) !important;
+        }
+      `}</style>
       {/* Logo */}
       <div style={{ padding: '20px 20px 16px', flexShrink: 0, borderBottom: '1px solid rgba(124,58,237,0.07)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -214,13 +228,11 @@ export default function Sidebar() {
                     title={item.prompt}
                     onClick={() => router.push(`/dashboard/chat/${item.id}`)}
                     style={{
-                      display: 'flex', alignItems: 'center', gap: 9, padding: active ? '8px 10px 8px 8px' : '8px 10px',
-                      borderRadius: 10, background: active ? 'rgba(124,58,237,0.12)' : 'transparent',
-                      border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left',
-                      borderLeft: active ? '2px solid #7C3AED' : '2px solid transparent',
-                      transition: 'background 160ms ease', flexShrink: 0,
+                      display: 'flex', alignItems: 'center', gap: 9, padding: '8px 10px',
+                      borderRadius: 10, border: 'none', cursor: 'pointer', width: '100%',
+                      textAlign: 'left', flexShrink: 0,
                     }}
-                    className={!active ? 'hover:bg-[rgba(124,58,237,0.07)]' : ''}
+                    className={`sidebar-history-item ${active ? 'active' : ''}`}
                   >
                     <div style={{
                       width: 26, height: 26, borderRadius: 7, display: 'flex', alignItems: 'center',
