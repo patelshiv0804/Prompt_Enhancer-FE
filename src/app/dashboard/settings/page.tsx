@@ -379,216 +379,247 @@ export default function SettingsPage() {
           {/* ═══════════════════════════════════════════════════
              1. Profile Overview Card (Left Column)
              ═══════════════════════════════════════════════════ */}
+          {/* ═══════════════════════════════════════════ *
+           *  PROFILE CARD — Premium redesign            *
+           * ═══════════════════════════════════════════ */}
           <div style={{
             background: colors.cardBg,
             border: `1px solid ${colors.cardBorder}`,
-            borderRadius: 16,
-            padding: '24px',
+            borderRadius: 20,
             boxShadow: colors.cardShadow,
             display: 'flex',
             flexDirection: 'column',
-            gap: 20,
+            overflow: 'hidden',
             transition: 'background 250ms ease, border-color 250ms ease, box-shadow 250ms ease',
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                {/* Circular Avatar */}
-                {avatarUrl ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img 
-                    src={avatarUrl} 
-                    alt="User Profile" 
-                    onError={() => setAvatarUrl(null)} // fallback if URL breaks
-                    style={{
-                      width: 64, height: 64, borderRadius: '50%',
-                      objectFit: 'cover', border: `1px solid ${colors.cardBorder}`,
-                      boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
-                    }} 
-                  />
-                ) : (
-                  avatarPreset === 0 ? (
-                    // Fallback initials
-                    <div style={{
-                      width: 64, height: 64, borderRadius: '50%',
-                      background: 'linear-gradient(135deg, rgba(124,58,237,0.18), rgba(167,139,250,0.12))',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 20, fontWeight: 700, color: '#7C3AED',
-                      border: '1px solid rgba(124, 58, 237, 0.20)',
-                      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.7)',
-                    }}>
-                      {getInitials(displayName)}
-                    </div>
-                  ) : (
-                    // Preset gradient avatar
-                    renderPresetAvatar(avatarPreset, 64, 26)
-                  )
-                )}
 
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <h3 style={{ fontSize: 16, fontWeight: 700, color: colors.textPrimary, margin: 0, transition: 'color 250ms ease' }}>
-                      {displayName || 'Anonymous User'}
-                    </h3>
+            {/* ── Hero Banner ── */}
+            <div style={{
+              position: 'relative',
+              height: 112,
+              background: isDark
+                ? 'linear-gradient(135deg, #1a0a3e 0%, #2d1065 40%, #1a0a3e 70%, #160831 100%)'
+                : 'linear-gradient(135deg, #6d28d9 0%, #7c3aed 30%, #9333ea 60%, #a855f7 100%)',
+              overflow: 'hidden',
+              flexShrink: 0,
+            }}>
+              {/* Mesh circles */}
+              <div style={{ position: 'absolute', width: 180, height: 180, borderRadius: '50%', top: -60, left: -40, background: 'rgba(255,255,255,0.07)', pointerEvents: 'none' }} />
+              <div style={{ position: 'absolute', width: 140, height: 140, borderRadius: '50%', top: -20, right: 20, background: 'rgba(255,255,255,0.05)', pointerEvents: 'none' }} />
+              <div style={{ position: 'absolute', width: 80, height: 80, borderRadius: '50%', bottom: -30, left: '40%', background: 'rgba(255,255,255,0.06)', pointerEvents: 'none' }} />
+              {/* Sparkle dots */}
+              {[[18,22],[72,14],[88,52],[40,60],[120,8],[160,40]].map(([lft,tp],i) => (
+                <div key={i} style={{ position:'absolute', left: lft, top: tp, width: i%2===0?3:2, height: i%2===0?3:2, borderRadius:'50%', background:'rgba(255,255,255,0.45)', pointerEvents:'none' }} />
+              ))}
+              {/* "Pro" floating tag */}
+              <div style={{
+                position:'absolute', top:14, right:16,
+                fontSize:9, fontWeight:700, letterSpacing:'0.8px', textTransform:'uppercase',
+                color:'#fff', background:'rgba(255,255,255,0.18)',
+                border:'1px solid rgba(255,255,255,0.30)',
+                backdropFilter:'blur(8px)',
+                padding:'3px 10px', borderRadius:99,
+              }}>
+                {plan} Plan
+              </div>
+            </div>
 
-                    {/* Plan Badge */}
+            {/* ── Avatar + Name Row ── */}
+            <div style={{ padding: '0 22px', position: 'relative' }}>
+              {/* Floating avatar — overlaps banner */}
+              <div style={{ position: 'relative', display: 'inline-block', marginTop: -36 }}>
+                {/* Glow ring */}
+                <div style={{
+                  position:'absolute', inset:-4, borderRadius:'50%',
+                  background: 'linear-gradient(135deg, #7c3aed, #a855f7, #ec4899)',
+                  zIndex: 0,
+                }} />
+                {/* White gap ring */}
+                <div style={{
+                  position:'absolute', inset:-2, borderRadius:'50%',
+                  background: colors.cardBg,
+                  zIndex: 1,
+                }} />
+                {/* Avatar */}
+                <div style={{ position:'relative', zIndex:2 }}>
+                  {avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={avatarUrl} alt="User Profile" onError={() => setAvatarUrl(null)}
+                      style={{ width:72, height:72, borderRadius:'50%', objectFit:'cover', display:'block' }} />
+                  ) : avatarPreset === 0 ? (
                     <div style={{
-                      fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px',
-                      background: planBadgeStyles[plan].bg, color: planBadgeStyles[plan].color,
-                      padding: '2px 8px', borderRadius: 9999, flexShrink: 0,
-                      boxShadow: plan === 'Free' ? 'none' : '0 2px 6px rgba(124,58,237,0.25)',
-                    }}>
-                      {planBadgeStyles[plan].text}
-                    </div>
-                  </div>
-                  {/* Default Role Badge/Pill */}
-                  <div style={{ marginTop: 4 }}>
-                    <span style={{
-                      fontSize: 10, fontWeight: 700, color: '#7C3AED',
-                      background: isDark ? 'rgba(167, 139, 250, 0.15)' : 'rgba(124, 58, 237, 0.08)',
-                      padding: '2.5px 9px', borderRadius: 6, border: isDark ? '1px solid rgba(167, 139, 250, 0.2)' : '1px solid rgba(124, 58, 237, 0.15)',
-                      textTransform: 'uppercase', letterSpacing: '0.5px',
-                      display: 'inline-block'
-                    }}>
-                      {userRole}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
-                    <span style={{ fontSize: 13, color: colors.textSecondary, transition: 'color 250ms ease' }}>
-                      {email}
-                    </span>
-                    <span style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 2,
-                      fontSize: 10, fontWeight: 600, color: '#10B981',
-                      background: 'rgba(16, 185, 129, 0.08)',
-                      padding: '1px 6px', borderRadius: 4, border: '1px solid rgba(16, 185, 129, 0.15)'
-                    }}>
-                      <Check size={8} strokeWidth={3} /> verified
-                    </span>
-                  </div>
+                      width:72, height:72, borderRadius:'50%',
+                      background:'linear-gradient(135deg, rgba(124,58,237,0.18), rgba(167,139,250,0.12))',
+                      display:'flex', alignItems:'center', justifyContent:'center',
+                      fontSize:22, fontWeight:700, color:'#7C3AED',
+                    }}>{getInitials(displayName)}</div>
+                  ) : renderPresetAvatar(avatarPreset, 72, 28)}
+                </div>
+                {/* Online dot */}
+                <div style={{ position:'absolute', bottom:3, right:3, zIndex:3, width:12, height:12, borderRadius:'50%', background:'#10B981', border:`2px solid ${colors.cardBg}`, boxShadow:'0 0 0 2px rgba(16,185,129,0.25)' }} />
+              </div>
+
+              {/* Name + badges */}
+              <div style={{ marginTop: 10, marginBottom: 16 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', marginBottom:4 }}>
+                  <h3 style={{ fontSize:17, fontWeight:800, color:colors.textPrimary, margin:0, letterSpacing:'-0.3px' }}>
+                    {displayName || 'Anonymous User'}
+                  </h3>
+                  <span style={{
+                    fontSize:9, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.6px',
+                    background: isDark ? 'rgba(167,139,250,0.18)' : 'rgba(124,58,237,0.10)',
+                    color:'#7C3AED', border: isDark ? '1px solid rgba(167,139,250,0.25)' : '1px solid rgba(124,58,237,0.18)',
+                    padding:'2.5px 9px', borderRadius:6,
+                  }}>{userRole}</span>
+                </div>
+                <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                  <span style={{ fontSize:12.5, color:colors.textSecondary }}>{email}</span>
+                  <span style={{
+                    display:'inline-flex', alignItems:'center', gap:3,
+                    fontSize:10, fontWeight:600, color:'#10B981',
+                    background:'rgba(16,185,129,0.08)', border:'1px solid rgba(16,185,129,0.18)',
+                    padding:'1.5px 7px', borderRadius:5,
+                  }}>
+                    <Check size={8} strokeWidth={3} /> verified
+                  </span>
                 </div>
               </div>
             </div>
 
-            <div style={{ height: 1, background: colors.divider }} />
+            {/* ── Stats Strip ── */}
+            <div style={{
+              display:'grid', gridTemplateColumns:'1fr 1fr 1fr',
+              borderTop:`1px solid ${colors.divider}`,
+              borderBottom:`1px solid ${colors.divider}`,
+            }}>
+              {[
+                { label:'Prompts', value:'1,248', icon:'⚡' },
+                { label:'Avg. Score', value:'84', icon:'🎯' },
+                { label:'Day Streak', value:'12', icon:'🔥' },
+              ].map((stat, i, arr) => (
+                <div key={stat.label} style={{
+                  display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+                  padding:'14px 8px', gap:3,
+                  borderRight: i < arr.length - 1 ? `1px solid ${colors.divider}` : 'none',
+                }}>
+                  <div style={{ fontSize:14 }}>{stat.icon}</div>
+                  <div style={{ fontSize:15, fontWeight:800, color:colors.textPrimary, letterSpacing:'-0.4px' }}>{stat.value}</div>
+                  <div style={{ fontSize:10.5, color:colors.textSecondary, fontWeight:500 }}>{stat.label}</div>
+                </div>
+              ))}
+            </div>
 
-            {/* Account Details Checklist */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 12.5, fontWeight: 600, color: colors.textPrimary }}>Account Status</span>
-                <span style={{ fontSize: 12, color: colors.textSecondary }}>Member since {createdAt}</span>
+            {/* ── Activity Sparkline ── */}
+            <div style={{ padding:'16px 22px 0' }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+                <span style={{ fontSize:11.5, fontWeight:700, color:colors.textPrimary, letterSpacing:'-0.1px' }}>Weekly Activity</span>
+                <span style={{ fontSize:10.5, color:colors.textSecondary }}>This week</span>
+              </div>
+              <div style={{ display:'flex', alignItems:'flex-end', gap:4, height:40 }}>
+                {[30,55,40,70,90,65,85].map((h,i) => {
+                  const days = ['M','T','W','T','F','S','S'];
+                  const isToday = i === 6;
+                  return (
+                    <div key={i} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
+                      <div style={{
+                        width:'100%', borderRadius:4,
+                        height: `${Math.round((h/100)*32)}px`,
+                        background: isToday
+                          ? 'linear-gradient(180deg, #a855f7, #7c3aed)'
+                          : isDark ? 'rgba(167,139,250,0.2)' : 'rgba(124,58,237,0.12)',
+                        transition:'height 0.4s cubic-bezier(0.22,1,0.36,1)',
+                        boxShadow: isToday ? '0 2px 8px rgba(124,58,237,0.35)' : 'none',
+                      }} />
+                      <span style={{ fontSize:9, color: isToday ? '#7c3aed' : colors.textSecondary, fontWeight: isToday ? 700 : 400 }}>{days[i]}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* ── Account Status + Onboarding ── */}
+            <div style={{ padding:'16px 22px', display:'flex', flexDirection:'column', gap:10 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                <span style={{ fontSize:11.5, fontWeight:700, color:colors.textPrimary }}>Account Status</span>
+                <span style={{ fontSize:11, color:colors.textSecondary }}>Since {createdAt}</span>
               </div>
 
-              {/* Onboarding Complete subtle panel */}
               {!onboardingComplete ? (
                 <div style={{
-                  background: 'rgba(124, 58, 237, 0.05)',
-                  border: '1px dashed rgba(124, 58, 237, 0.20)',
-                  borderRadius: 12,
-                  padding: '12px 16px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 10,
-                  marginTop: 4,
+                  background: isDark ? 'rgba(124,58,237,0.10)' : 'rgba(124,58,237,0.05)',
+                  border:'1px dashed rgba(124,58,237,0.22)', borderRadius:12, padding:'10px 14px',
+                  display:'flex', flexDirection:'column', gap:8,
                 }}>
-                  <button 
-                    onClick={() => setShowOnboardingDetail(!showOnboardingDetail)}
-                    style={{
-                      background: 'none', border: 'none', padding: 0, margin: 0,
-                      cursor: 'pointer', display: 'flex', alignItems: 'center', 
-                      justifyContent: 'space-between', width: '100%',
-                      textAlign: 'left', fontSize: 13, fontWeight: 600, color: '#7C3AED',
-                    }}
+                  <button onClick={() => setShowOnboardingDetail(!showOnboardingDetail)}
+                    style={{ background:'none', border:'none', padding:0, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'space-between', width:'100%', textAlign:'left', fontSize:12.5, fontWeight:600, color:'#7C3AED' }}
                   >
-                    <span>Complete your onboarding ({onboardingPercent}%) →</span>
-                    <ChevronDown size={14} style={{
-                      transform: showOnboardingDetail ? 'rotate(180deg)' : 'none',
-                      transition: 'transform 200ms ease',
-                    }} />
+                    <span>Complete onboarding ({onboardingPercent}%) →</span>
+                    <ChevronDown size={13} style={{ transform:showOnboardingDetail?'rotate(180deg)':'none', transition:'transform 200ms ease' }} />
                   </button>
-
-                  <div style={{ height: 5, background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(124,58,237,0.1)', borderRadius: 10, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${onboardingPercent}%`, background: 'linear-gradient(135deg, #7C3AED, #A855F7)', borderRadius: 10, transition: 'width 300ms ease' }} />
+                  <div style={{ height:4, background:isDark?'rgba(255,255,255,0.08)':'rgba(124,58,237,0.10)', borderRadius:99, overflow:'hidden' }}>
+                    <div style={{ height:'100%', width:`${onboardingPercent}%`, background:'linear-gradient(90deg,#7C3AED,#A855F7)', borderRadius:99, transition:'width 300ms ease' }} />
                   </div>
-
                   {showOnboardingDetail && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+                    <div style={{ display:'flex', flexDirection:'column', gap:7, marginTop:2 }}>
                       {onboardingTasks.map(task => (
-                        <div key={task.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
-                          {task.done ? (
-                            <CheckCircle2 size={13} style={{ color: '#10B981', flexShrink: 0 }} />
-                          ) : (
-                            <div style={{ width: 13, height: 13, borderRadius: '50%', border: `1.5px solid ${colors.textSecondary}`, flexShrink: 0 }} />
-                          )}
-                          <span style={{ 
-                            color: task.done ? colors.textSecondary : colors.textPrimary,
-                            textDecoration: task.done ? 'line-through' : 'none',
-                            opacity: task.done ? 0.7 : 1,
-                          }}>
-                            {task.label}
-                          </span>
+                        <div key={task.id} style={{ display:'flex', alignItems:'center', gap:8, fontSize:11.5 }}>
+                          {task.done ? <CheckCircle2 size={12} style={{ color:'#10B981', flexShrink:0 }} /> : <div style={{ width:12, height:12, borderRadius:'50%', border:`1.5px solid ${colors.textSecondary}`, flexShrink:0 }} />}
+                          <span style={{ color:task.done?colors.textSecondary:colors.textPrimary, textDecoration:task.done?'line-through':'none', opacity:task.done?0.65:1 }}>{task.label}</span>
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
               ) : (
-                <div style={{
-                  background: 'rgba(16, 185, 129, 0.05)',
-                  border: '1px solid rgba(16, 185, 129, 0.15)',
-                  borderRadius: 12,
-                  padding: '12px 14px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  fontSize: 12.5,
-                  fontWeight: 500,
-                  color: '#059669',
-                  marginTop: 4,
-                }}>
-                  <CheckCircle2 size={15} />
+                <div style={{ background:'rgba(16,185,129,0.06)', border:'1px solid rgba(16,185,129,0.18)', borderRadius:10, padding:'10px 13px', display:'flex', alignItems:'center', gap:8, fontSize:12.5, fontWeight:500, color:'#059669' }}>
+                  <CheckCircle2 size={14} />
                   <span>Onboarding profile completed successfully</span>
                 </div>
               )}
             </div>
 
-            {/* Plan selection settings */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Subscription Plan</span>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {(['Free', 'Pro', 'Team', 'Enterprise'] as const).map(p => (
-                  <button
-                    key={p}
-                    onClick={() => { setPlan(p); triggerToast(`Plan shifted to ${p}`); }}
+            {/* ── Subscription Plan ── */}
+            <div style={{ padding:'0 22px 18px', display:'flex', flexDirection:'column', gap:8 }}>
+              <span style={{ fontSize:10.5, fontWeight:700, color:colors.textSecondary, textTransform:'uppercase', letterSpacing:'0.5px' }}>Subscription Plan</span>
+              <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
+                {(['Free','Pro','Team','Enterprise'] as const).map(p => (
+                  <button key={p} onClick={() => { setPlan(p); triggerToast(`Plan shifted to ${p}`); }}
                     style={{
-                      padding: '5px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 500,
-                      cursor: 'pointer', border: '1px solid',
-                      transition: 'all 200ms ease',
-                      background: plan === p 
-                        ? (planBadgeStyles[p].bg.includes('gradient') ? '#7C3AED' : 'rgba(107, 114, 128, 0.2)') 
-                        : colors.surfaceBg,
-                      borderColor: plan === p ? '#7C3AED' : colors.cardBorder,
-                      color: plan === p ? '#FFFFFF' : colors.textSecondary,
+                      padding:'5px 13px', borderRadius:8, fontSize:12, fontWeight:600,
+                      cursor:'pointer', border:'1px solid', transition:'all 200ms cubic-bezier(0.22,1,0.36,1)',
+                      background: plan===p ? '#7C3AED' : colors.surfaceBg,
+                      borderColor: plan===p ? '#7C3AED' : colors.cardBorder,
+                      color: plan===p ? '#FFFFFF' : colors.textSecondary,
+                      boxShadow: plan===p ? '0 4px 12px rgba(124,58,237,0.30)' : 'none',
                     }}
                     className="interactive-pill"
-                  >
-                    {p}
-                  </button>
+                  >{p}</button>
                 ))}
               </div>
             </div>
 
-            <div style={{ marginTop: 'auto', paddingTop: 16 }}>
-              <button 
-                id="edit-profile-btn"
-                onClick={openEditModal}
-                className="btn-secondary"
+            {/* ── Edit Profile CTA ── */}
+            <div style={{ padding:'0 22px 22px', marginTop:'auto' }}>
+              <button id="edit-profile-btn" onClick={openEditModal}
                 style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                  padding: '9px 18px', borderRadius: 10, fontSize: 13, fontWeight: 600,
-                  cursor: 'pointer', width: '100%',
+                  display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+                  padding:'11px 18px', borderRadius:12, fontSize:13, fontWeight:700,
+                  cursor:'pointer', width:'100%', border:'none',
+                  background: isDark
+                    ? 'linear-gradient(135deg, rgba(124,58,237,0.25) 0%, rgba(168,85,247,0.18) 100%)'
+                    : 'linear-gradient(135deg, rgba(124,58,237,0.08) 0%, rgba(168,85,247,0.05) 100%)',
+                  color: '#7C3AED',
+                  boxShadow: isDark
+                    ? 'inset 0 1px 0 rgba(167,139,250,0.15), 0 2px 8px rgba(0,0,0,0.25)'
+                    : 'inset 0 1px 0 rgba(255,255,255,0.9), 0 2px 8px rgba(124,58,237,0.10)',
+                  outline: `1.5px solid ${isDark ? 'rgba(167,139,250,0.20)' : 'rgba(124,58,237,0.15)'}`,
+                  transition:'all 220ms cubic-bezier(0.22,1,0.36,1)',
                 }}
+                className="btn-edit-profile"
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform='translateY(-2px)'; (e.currentTarget as HTMLButtonElement).style.boxShadow='0 8px 24px rgba(124,58,237,0.25)'; (e.currentTarget as HTMLButtonElement).style.outlineColor='rgba(124,58,237,0.35)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform=''; (e.currentTarget as HTMLButtonElement).style.boxShadow= isDark ? 'inset 0 1px 0 rgba(167,139,250,0.15), 0 2px 8px rgba(0,0,0,0.25)' : 'inset 0 1px 0 rgba(255,255,255,0.9), 0 2px 8px rgba(124,58,237,0.10)'; (e.currentTarget as HTMLButtonElement).style.outlineColor=isDark?'rgba(167,139,250,0.20)':'rgba(124,58,237,0.15)'; }}
               >
-                <Camera size={14} />
+                <Camera size={15} strokeWidth={2} />
                 Edit Profile
               </button>
             </div>

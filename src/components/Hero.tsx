@@ -17,8 +17,8 @@ export default function Hero() {
 
       {/* ── Centered text overlay ── */}
       <div
-        className="absolute inset-0 z-[1000] flex flex-col items-center justify-start pointer-events-none"
-        style={{ paddingTop: "clamp(32px, 5vh, 60px)" }}
+        className="absolute inset-0 z-10 flex flex-col items-center justify-start pointer-events-none"
+        style={{ paddingTop: "clamp(64px, 8vh, 90px)" }}
       >
         {/* Badge */}
         <motion.div

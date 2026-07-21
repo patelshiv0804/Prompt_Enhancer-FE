@@ -34,10 +34,10 @@ const CATEGORIES: { id: Category | 'all'; label: string }[] = [
 ];
 
 const CATEGORY_META: Record<Category, { icon: React.ElementType; color: string }> = {
-  'character':       { icon: UserIcon,     color: '#7C3AED' },
-  'art-style':       { icon: Palette,      color: '#EC4899' },
-  'cinematic-style': { icon: Film,         color: '#F59E0B' },
-  'environment':     { icon: Trees,        color: '#10B981' },
+  'character': { icon: UserIcon, color: '#7C3AED' },
+  'art-style': { icon: Palette, color: '#EC4899' },
+  'cinematic-style': { icon: Film, color: '#F59E0B' },
+  'environment': { icon: Trees, color: '#10B981' },
 };
 
 const CATEGORY_OPTIONS: { id: Category; label: string }[] = [
@@ -164,7 +164,7 @@ function ProfileCard({ profile, onToggle, onEdit, onDelete }: {
       animation: 'dimCardEnter 400ms ease both',
       opacity: profile.enabled ? 1 : 0.8,
     }}
-    className="hover:translate-y-[-3px] hover:shadow-[0_8px_24px_rgba(109,40,217,0.09),0_2px_6px_rgba(0,0,0,0.05)] hover:!border-[rgba(124,58,237,0.18)] hover:!opacity-100"
+      className="hover:translate-y-[-3px] hover:shadow-[0_8px_24px_rgba(109,40,217,0.09),0_2px_6px_rgba(0,0,0,0.05)] hover:!border-[rgba(124,58,237,0.18)] hover:!opacity-100"
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1 }}>
         {/* Top row: Avatar + Name + Category + Delete */}
@@ -310,155 +310,385 @@ function AddNewCard({ onClick }: { onClick: () => void }) {
   );
 }
 
-/* ── Injection Flow Card ── */
+/* ── Injection Flow Card — Premium Redesign ── */
 function InjectionFlowCard() {
   const [activeIdx, setActiveIdx] = useState(0);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
       setActiveIdx(prev => (prev + 1) % 3);
-    }, 2800);
+    }, 2600);
     return () => clearInterval(timer);
   }, []);
 
   const steps = [
-    { label: 'Base Prompt', icon: Sparkles, color: '#38BDF8', bg: 'rgba(56,189,248,0.12)', border: 'rgba(56,189,248,0.20)' },
-    { label: 'Style Profile', icon: Fingerprint, color: '#C084FC', bg: 'rgba(192,132,252,0.12)', border: 'rgba(192,132,252,0.20)' },
-    { label: 'Optimized Output', icon: Zap, color: '#34D399', bg: 'rgba(52,211,153,0.12)', border: 'rgba(52,211,153,0.20)' },
+    {
+      label: 'Base Prompt',
+      subtitle: 'Your raw creative input',
+      icon: Sparkles,
+      color: '#38BDF8',
+      colorRgb: '56,189,248',
+      gradient: 'linear-gradient(135deg, #38BDF8 0%, #818CF8 100%)',
+    },
+    {
+      label: 'Style Profile',
+      subtitle: 'Signature injection layer',
+      icon: Fingerprint,
+      color: '#C084FC',
+      colorRgb: '192,132,252',
+      gradient: 'linear-gradient(135deg, #A855F7 0%, #EC4899 100%)',
+    },
+    {
+      label: 'Optimized Output',
+      subtitle: 'Production-ready result',
+      icon: Zap,
+      color: '#34D399',
+      colorRgb: '52,211,153',
+      gradient: 'linear-gradient(135deg, #34D399 0%, #22D3EE 100%)',
+    },
   ];
 
   return (
     <div style={{
-      background: 'linear-gradient(135deg, #1a0a3d 0%, #2D1B69 40%, #0E0B18 100%)',
-      border: '1px solid rgba(255,255,255,0.08)',
-      borderRadius: 24,
-      padding: '32px 40px',
-      boxShadow: '0 8px 32px rgba(109,40,217,0.22), 0 2px 8px rgba(0,0,0,0.12)',
-      marginBottom: 36,
       position: 'relative',
+      borderRadius: 28,
+      marginBottom: 36,
+      padding: 1,
+      background: 'linear-gradient(135deg, rgba(124,58,237,0.35) 0%, rgba(56,189,248,0.20) 30%, rgba(192,132,252,0.30) 60%, rgba(52,211,153,0.25) 100%)',
       overflow: 'hidden',
     }}>
-      {/* Local keyframes style tag */}
+      {/* Shimmer border sweep */}
       <style>{`
-        @keyframes flowDash {
-          to {
-            stroke-dashoffset: -20;
-          }
+        @keyframes ifc-borderShimmer {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
         }
-        @keyframes glowPulse-blue {
-          0%, 100% { transform: scale(1.02); box-shadow: 0 0 14px rgba(56,189,248,0.2), inset 0 0 8px rgba(56,189,248,0.1); }
-          50% { transform: scale(1.08); box-shadow: 0 0 28px rgba(56,189,248,0.65), inset 0 0 12px rgba(56,189,248,0.2); }
+        @keyframes ifc-floatOrb1 {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          33% { transform: translate(40px, -20px) scale(1.15); }
+          66% { transform: translate(-20px, 15px) scale(0.9); }
         }
-        @keyframes glowPulse-purple {
-          0%, 100% { transform: scale(1.02); box-shadow: 0 0 14px rgba(192,132,252,0.2), inset 0 0 8px rgba(192,132,252,0.1); }
-          50% { transform: scale(1.08); box-shadow: 0 0 28px rgba(192,132,252,0.65), inset 0 0 12px rgba(192,132,252,0.2); }
+        @keyframes ifc-floatOrb2 {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          50% { transform: translate(-30px, -25px) scale(1.2); }
         }
-        @keyframes glowPulse-green {
-          0%, 100% { transform: scale(1.02); box-shadow: 0 0 14px rgba(52,211,153,0.2), inset 0 0 8px rgba(52,211,153,0.1); }
-          50% { transform: scale(1.08); box-shadow: 0 0 28px rgba(52,211,153,0.65), inset 0 0 12px rgba(52,211,153,0.2); }
+        @keyframes ifc-floatOrb3 {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          40% { transform: translate(25px, 20px) scale(0.85); }
+          80% { transform: translate(-15px, -10px) scale(1.1); }
         }
-        .step-active-0 { animation: glowPulse-blue 2.2s infinite ease-in-out !important; }
-        .step-active-1 { animation: glowPulse-purple 2.2s infinite ease-in-out !important; }
-        .step-active-2 { animation: glowPulse-green 2.2s infinite ease-in-out !important; }
+        @keyframes ifc-nodeBreath {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.06); }
+        }
+        @keyframes ifc-ringPulse {
+          0% { transform: scale(0.85); opacity: 0.7; }
+          50% { transform: scale(1.2); opacity: 0; }
+          100% { transform: scale(0.85); opacity: 0; }
+        }
+        @keyframes ifc-nodeGlow0 {
+          0%, 100% { box-shadow: 0 0 20px rgba(56,189,248,0.15), 0 0 60px rgba(56,189,248,0.05), inset 0 1px 0 rgba(255,255,255,0.08); }
+          50% { box-shadow: 0 0 30px rgba(56,189,248,0.45), 0 0 80px rgba(56,189,248,0.15), inset 0 1px 0 rgba(255,255,255,0.15); }
+        }
+        @keyframes ifc-nodeGlow1 {
+          0%, 100% { box-shadow: 0 0 20px rgba(192,132,252,0.15), 0 0 60px rgba(192,132,252,0.05), inset 0 1px 0 rgba(255,255,255,0.08); }
+          50% { box-shadow: 0 0 30px rgba(192,132,252,0.45), 0 0 80px rgba(192,132,252,0.15), inset 0 1px 0 rgba(255,255,255,0.15); }
+        }
+        @keyframes ifc-nodeGlow2 {
+          0%, 100% { box-shadow: 0 0 20px rgba(52,211,153,0.15), 0 0 60px rgba(52,211,153,0.05), inset 0 1px 0 rgba(255,255,255,0.08); }
+          50% { box-shadow: 0 0 30px rgba(52,211,153,0.45), 0 0 80px rgba(52,211,153,0.15), inset 0 1px 0 rgba(255,255,255,0.15); }
+        }
+        @keyframes ifc-packetTravel {
+          0% { offset-distance: 0%; opacity: 0; }
+          10% { opacity: 1; }
+          90% { opacity: 1; }
+          100% { offset-distance: 100%; opacity: 0; }
+        }
+        @keyframes ifc-flowDash {
+          to { stroke-dashoffset: -24; }
+        }
+        .ifc-active-node-0 { animation: ifc-nodeGlow0 2.4s infinite ease-in-out, ifc-nodeBreath 2.4s infinite ease-in-out !important; }
+        .ifc-active-node-1 { animation: ifc-nodeGlow1 2.4s infinite ease-in-out, ifc-nodeBreath 2.4s infinite ease-in-out !important; }
+        .ifc-active-node-2 { animation: ifc-nodeGlow2 2.4s infinite ease-in-out, ifc-nodeBreath 2.4s infinite ease-in-out !important; }
       `}</style>
 
-      {/* Background radial glows */}
+      {/* Inner card */}
       <div style={{
-        position: 'absolute', inset: 0,
-        background: 'radial-gradient(ellipse at 30% 50%, rgba(167,139,250,0.15) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(124,58,237,0.12) 0%, transparent 50%)',
-        pointerEvents: 'none',
-      }} />
+        background: 'linear-gradient(145deg, #0C0620 0%, #150D30 30%, #1A0E3A 55%, #0D0920 100%)',
+        borderRadius: 27,
+        padding: '40px 48px 44px',
+        position: 'relative',
+        overflow: 'hidden',
+      }}>
 
-      <div style={{ position: 'relative', zIndex: 1 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: '#EDE9FE', opacity: 0.65 }}>
-            How It Works
-          </span>
+        {/* ─── Layered background effects ─── */}
+        {/* Aurora mesh */}
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.7 }}>
+          <div style={{
+            position: 'absolute', top: '-20%', left: '-10%', width: '60%', height: '140%',
+            background: 'radial-gradient(ellipse, rgba(124,58,237,0.18) 0%, transparent 65%)',
+            filter: 'blur(40px)',
+          }} />
+          <div style={{
+            position: 'absolute', top: '-30%', right: '-5%', width: '50%', height: '120%',
+            background: 'radial-gradient(ellipse, rgba(56,189,248,0.10) 0%, transparent 60%)',
+            filter: 'blur(50px)',
+          }} />
+          <div style={{
+            position: 'absolute', bottom: '-20%', left: '30%', width: '45%', height: '100%',
+            background: 'radial-gradient(ellipse, rgba(52,211,153,0.08) 0%, transparent 55%)',
+            filter: 'blur(45px)',
+          }} />
         </div>
-        <h3 style={{ fontSize: 18, fontWeight: 700, color: '#EDE9FE', letterSpacing: -0.3, margin: '0 0 8px' }}>
-          Smart Style Injection Flow
-        </h3>
-        <p style={{ fontSize: 13.5, color: 'rgba(221,214,254,0.70)', margin: '0 0 28px', lineHeight: 1.55, maxWidth: 640 }}>
-          Your enabled style profiles are automatically appended to your base prompts during optimization, instantly giving your drafts the desired creative signature.
-        </p>
 
-        {/* 3-step flow */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0, padding: '10px 0' }}>
-          {steps.map((step, i) => {
-            const isActive = activeIdx === i;
-            const isConnectorActive = activeIdx === i && i < steps.length - 1;
-            return (
-              <React.Fragment key={step.label}>
-                {/* Step */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, flex: '0 0 auto' }}>
-                  <div
-                    className={isActive ? `step-active-${i}` : ''}
-                    style={{
-                      width: 58, height: 58, borderRadius: '50%',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      background: step.bg,
-                      border: isActive ? `2px solid ${step.color}` : `1px solid ${step.border}`,
-                      color: step.color,
-                      opacity: isActive ? 1 : 0.45,
-                      transition: 'all 500ms cubic-bezier(0.16, 1, 0.3, 1)',
-                    }}
-                  >
-                    <step.icon size={25} strokeWidth={1.6} />
-                  </div>
-                  <span style={{
-                    fontSize: 12.5,
-                    fontWeight: 600,
-                    color: '#EDE9FE',
-                    whiteSpace: 'nowrap',
-                    opacity: isActive ? 1 : 0.5,
-                    transition: 'opacity 500ms cubic-bezier(0.16, 1, 0.3, 1)',
-                  }}>
-                    {step.label}
-                  </span>
-                </div>
+        {/* Floating orbs */}
+        <div style={{
+          position: 'absolute', top: '15%', left: '8%', width: 120, height: 120,
+          borderRadius: '50%', pointerEvents: 'none',
+          background: 'radial-gradient(circle, rgba(168,85,247,0.12) 0%, transparent 70%)',
+          animation: 'ifc-floatOrb1 12s ease-in-out infinite',
+        }} />
+        <div style={{
+          position: 'absolute', top: '40%', right: '12%', width: 90, height: 90,
+          borderRadius: '50%', pointerEvents: 'none',
+          background: 'radial-gradient(circle, rgba(56,189,248,0.10) 0%, transparent 70%)',
+          animation: 'ifc-floatOrb2 10s ease-in-out infinite',
+        }} />
+        <div style={{
+          position: 'absolute', bottom: '10%', left: '50%', width: 80, height: 80,
+          borderRadius: '50%', pointerEvents: 'none',
+          background: 'radial-gradient(circle, rgba(52,211,153,0.08) 0%, transparent 70%)',
+          animation: 'ifc-floatOrb3 14s ease-in-out infinite',
+        }} />
 
-                {/* SVG Live Connector */}
-                {i < steps.length - 1 && (
+        {/* Fine dot grid overlay */}
+        <div style={{
+          position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.04,
+          backgroundImage: 'radial-gradient(circle, #FFFFFF 1px, transparent 1px)',
+          backgroundSize: '24px 24px',
+        }} />
+
+        {/* ─── Content ─── */}
+        <div style={{ position: 'relative', zIndex: 2 }}>
+
+          {/* Header */}
+          <div style={{ marginBottom: 36 }}>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '5px 14px 5px 10px', borderRadius: 9999,
+              background: 'rgba(124,58,237,0.10)',
+              border: '1px solid rgba(167,139,250,0.15)',
+              marginBottom: 16,
+            }}>
+              <div style={{
+                width: 18, height: 18, borderRadius: '50%',
+                background: 'linear-gradient(135deg, #7C3AED, #A855F7)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Zap size={10} strokeWidth={2.5} color="#FFFFFF" />
+              </div>
+              <span style={{
+                fontSize: 11, fontWeight: 700, textTransform: 'uppercase',
+                letterSpacing: '1.2px', color: '#C4B5FD',
+              }}>
+                How It Works
+              </span>
+            </div>
+
+            <h3 style={{
+              fontSize: 24, fontWeight: 800, letterSpacing: -0.5, margin: '0 0 10px',
+              background: 'linear-gradient(135deg, #EDE9FE 0%, #C4B5FD 40%, #A78BFA 70%, #38BDF8 100%)',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              lineHeight: 1.25,
+            }}>
+              Smart Style Injection Flow
+            </h3>
+            <p style={{
+              fontSize: 14, color: 'rgba(196,181,253,0.55)', margin: 0,
+              lineHeight: 1.65, maxWidth: 560,
+            }}>
+              Your enabled style profiles are automatically appended to your base prompts during optimization, instantly giving your drafts the desired creative signature.
+            </p>
+          </div>
+
+          {/* ─── 3-Step Flow Pipeline ─── */}
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            gap: 0, padding: '8px 0 4px',
+          }}>
+            {steps.map((step, i) => {
+              const isActive = activeIdx === i;
+              const isNext = activeIdx === i && i < steps.length - 1;
+              return (
+                <React.Fragment key={step.label}>
+                  {/* Step Node */}
                   <div style={{
-                    display: 'flex', alignItems: 'center',
-                    padding: '0 20px', marginBottom: 28,
+                    display: 'flex', flexDirection: 'column', alignItems: 'center',
+                    gap: 14, flex: '0 0 auto', position: 'relative',
                   }}>
-                    <svg width="84" height="12" viewBox="0 0 84 12" style={{ overflow: 'visible' }}>
-                      {/* Background track line */}
-                      <line
-                        x1="0" y1="6" x2="76" y2="6"
-                        stroke="rgba(221,214,254,0.12)"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                      />
-                      {/* Active animated flow line */}
-                      <line
-                        x1="0" y1="6" x2="76" y2="6"
-                        stroke={isConnectorActive ? step.color : 'rgba(221,214,254,0.25)'}
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeDasharray={isConnectorActive ? '8, 6' : 'none'}
+                    {/* Outer pulse ring (active only) */}
+                    {isActive && (
+                      <div style={{
+                        position: 'absolute', top: 0, left: '50%',
+                        width: 70, height: 70,
+                        marginLeft: -35,
+                        borderRadius: '50%',
+                        border: `2px solid ${step.color}`,
+                        opacity: 0,
+                        animation: 'ifc-ringPulse 2.4s infinite ease-out',
+                        pointerEvents: 'none',
+                      }} />
+                    )}
+
+                    {/* Main circle */}
+                    <div
+                      className={isActive ? `ifc-active-node-${i}` : ''}
+                      style={{
+                        width: 70, height: 70, borderRadius: '50%',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        position: 'relative',
+                        background: isActive
+                          ? `radial-gradient(circle at 35% 35%, rgba(${step.colorRgb},0.25) 0%, rgba(${step.colorRgb},0.08) 60%, transparent 100%)`
+                          : `radial-gradient(circle at 35% 35%, rgba(${step.colorRgb},0.08) 0%, rgba(${step.colorRgb},0.03) 60%, transparent 100%)`,
+                        border: isActive
+                          ? `2px solid rgba(${step.colorRgb},0.55)`
+                          : `1px solid rgba(${step.colorRgb},0.12)`,
+                        backdropFilter: 'blur(8px)',
+                        transition: 'all 600ms cubic-bezier(0.16, 1, 0.3, 1)',
+                      }}
+                    >
+                      {/* Inner decorative ring */}
+                      <div style={{
+                        position: 'absolute', inset: 6, borderRadius: '50%',
+                        border: `1px solid rgba(${step.colorRgb},${isActive ? 0.2 : 0.06})`,
+                        transition: 'border-color 600ms ease',
+                      }} />
+                      <step.icon
+                        size={26}
+                        strokeWidth={isActive ? 2 : 1.5}
                         style={{
-                          animation: isConnectorActive ? 'flowDash 0.8s linear infinite' : 'none',
-                          transition: 'stroke 400ms ease',
+                          color: step.color,
+                          opacity: isActive ? 1 : 0.35,
+                          filter: isActive ? `drop-shadow(0 0 8px rgba(${step.colorRgb},0.5))` : 'none',
+                          transition: 'all 600ms cubic-bezier(0.16, 1, 0.3, 1)',
                         }}
                       />
-                      {/* Arrowhead */}
-                      <path
-                        d="M 72 2 L 78 6 L 72 10"
-                        fill="none"
-                        stroke={isConnectorActive ? step.color : 'rgba(221,214,254,0.35)'}
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        style={{ transition: 'stroke 400ms ease' }}
-                      />
-                    </svg>
+                    </div>
+
+                    {/* Label + subtitle */}
+                    <div style={{ textAlign: 'center', minWidth: 110 }}>
+                      <span style={{
+                        fontSize: 13, fontWeight: 700,
+                        color: isActive ? '#EDE9FE' : 'rgba(237,233,254,0.4)',
+                        display: 'block', whiteSpace: 'nowrap',
+                        transition: 'color 500ms ease',
+                        letterSpacing: '-0.01em',
+                      }}>
+                        {step.label}
+                      </span>
+                      <span style={{
+                        fontSize: 11, fontWeight: 500,
+                        color: isActive ? `rgba(${step.colorRgb},0.7)` : 'rgba(167,139,250,0.2)',
+                        display: 'block', marginTop: 3, whiteSpace: 'nowrap',
+                        transition: 'color 500ms ease',
+                      }}>
+                        {step.subtitle}
+                      </span>
+                    </div>
                   </div>
-                )}
-              </React.Fragment>
-            );
-          })}
+
+                  {/* ─── Connector ─── */}
+                  {i < steps.length - 1 && (
+                    <div style={{
+                      display: 'flex', alignItems: 'center',
+                      padding: '0 12px', marginBottom: 40,
+                      position: 'relative',
+                    }}>
+                      <svg width="100" height="20" viewBox="0 0 100 20" style={{ overflow: 'visible' }}>
+                        <defs>
+                          <linearGradient id={`ifc-connGrad-${i}`} x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor={steps[i].color} stopOpacity={isNext ? 0.6 : 0.1} />
+                            <stop offset="100%" stopColor={steps[i + 1].color} stopOpacity={isNext ? 0.6 : 0.1} />
+                          </linearGradient>
+                          <filter id={`ifc-connGlow-${i}`}>
+                            <feGaussianBlur stdDeviation="2" result="blur" />
+                            <feMerge>
+                              <feMergeNode in="blur" />
+                              <feMergeNode in="SourceGraphic" />
+                            </feMerge>
+                          </filter>
+                        </defs>
+                        {/* Track background */}
+                        <line
+                          x1="4" y1="10" x2="88" y2="10"
+                          stroke="rgba(167,139,250,0.08)"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                        />
+                        {/* Active flow line */}
+                        <line
+                          x1="4" y1="10" x2="88" y2="10"
+                          stroke={`url(#ifc-connGrad-${i})`}
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeDasharray={isNext ? '6, 8' : 'none'}
+                          style={{
+                            animation: isNext ? 'ifc-flowDash 1s linear infinite' : 'none',
+                            transition: 'all 500ms ease',
+                          }}
+                          filter={isNext ? `url(#ifc-connGlow-${i})` : undefined}
+                        />
+                        {/* Traveling data packet */}
+                        {isNext && (
+                          <circle r="3.5" fill={steps[i].color} opacity="0.9"
+                            style={{
+                              filter: `drop-shadow(0 0 6px ${steps[i].color})`,
+                              offsetPath: `path('M 4 10 L 88 10')`,
+                              animation: 'ifc-packetTravel 1.4s ease-in-out infinite',
+                            }}
+                          />
+                        )}
+                        {/* Arrow head */}
+                        <path
+                          d="M 84 5 L 92 10 L 84 15"
+                          fill="none"
+                          stroke={isNext ? steps[i + 1].color : 'rgba(167,139,250,0.15)'}
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          style={{
+                            transition: 'stroke 500ms ease',
+                            opacity: isNext ? 0.8 : 0.3,
+                          }}
+                        />
+                      </svg>
+                    </div>
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </div>
+
+          {/* Bottom progress indicator */}
+          <div style={{
+            display: 'flex', justifyContent: 'center', gap: 6, marginTop: 20,
+          }}>
+            {steps.map((step, i) => (
+              <div key={i} style={{
+                width: activeIdx === i ? 24 : 6, height: 6,
+                borderRadius: 9999,
+                background: activeIdx === i
+                  ? step.gradient
+                  : 'rgba(167,139,250,0.12)',
+                transition: 'all 500ms cubic-bezier(0.16, 1, 0.3, 1)',
+                boxShadow: activeIdx === i ? `0 0 12px rgba(${step.colorRgb},0.3)` : 'none',
+              }} />
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -474,7 +704,7 @@ function ProfileModal({
   onSave: (profile: Omit<StyleProfile, 'id'>) => void;
   editingProfile?: StyleProfile | null;
 }) {
-  const [name, setName]         = useState('');
+  const [name, setName] = useState('');
   const [category, setCategory] = useState<Category>('character');
   const [injection, setInjection] = useState('');
   const [tagsInput, setTagsInput] = useState('');
@@ -728,7 +958,7 @@ function ProfileModal({
 
 export default function StyleMemoryPage() {
   const router = useRouter();
-  const [profiles, setProfiles]     = useState<StyleProfile[]>(MOCK_PROFILES);
+  const [profiles, setProfiles] = useState<StyleProfile[]>(MOCK_PROFILES);
   const [activeFilter, setActiveFilter] = useState<Category | 'all'>('all');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editingProfile, setEditingProfile] = useState<StyleProfile | null>(null);

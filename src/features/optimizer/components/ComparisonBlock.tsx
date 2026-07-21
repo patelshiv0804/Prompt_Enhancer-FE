@@ -42,14 +42,22 @@ function useCountUp(target: number, active: boolean, duration = 1200): number {
   const [value, setValue] = useState(0);
   useEffect(() => {
     if (!active) { setValue(0); return; }
-    let current = 0;
-    const step = target / (duration / 16);
-    const timer = setInterval(() => {
-      current += step;
-      if (current >= target) { setValue(target); clearInterval(timer); }
-      else setValue(Math.floor(current));
-    }, 16);
-    return () => clearInterval(timer);
+    let rafId: number;
+    let startTime: number | null = null;
+    const startVal = 0;
+
+    const animate = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const elapsed = timestamp - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+      setValue(Math.round(startVal + eased * (target - startVal)));
+      if (progress < 1) rafId = requestAnimationFrame(animate);
+      else setValue(target);
+    };
+
+    rafId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafId);
   }, [target, active, duration]);
   return value;
 }

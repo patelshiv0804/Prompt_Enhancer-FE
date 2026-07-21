@@ -177,15 +177,18 @@ export default function WorksEverywhere() {
         background: "linear-gradient(180deg, #070710 0%, #0A0A18 40%, #0C0B1D 70%, #0D0D1A 100%)",
       }}
     >
-      {/* ── Keyframe Animations for Orbit and Logo ── */}
+      {/* ═ Keyframe Animations for Orbit and Logo ═ */}
       <style dangerouslySetInnerHTML={{
         __html: `
         @keyframes rotateOrbit {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
+          from { transform: rotate(0deg) translateZ(0); }
+          to { transform: rotate(360deg) translateZ(0); }
         }
         .animate-rotate-orbit {
           animation: rotateOrbit 40s linear infinite;
+          will-change: transform;
+          backface-visibility: hidden;
+          transform: translateZ(0);
         }
       `}} />
 
@@ -373,6 +376,7 @@ export default function WorksEverywhere() {
                     0 0 60px rgba(139,92,246,0.05),
                     inset 0 0 40px rgba(139,92,246,0.03)
                   `,
+                  willChange: "transform",
                 }}
               />
 
@@ -426,6 +430,7 @@ export default function WorksEverywhere() {
                 className="absolute z-30 pointer-events-auto"
                 animate={{ scale: [1.0, 1.03, 1.0] }}
                 transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                style={{ willChange: "transform" }}
               >
                 <div
                   className="relative flex items-center justify-center"
@@ -487,6 +492,7 @@ export default function WorksEverywhere() {
                         ease: "easeInOut",
                         delay: floatDelays[i],
                       }}
+                      style={{ willChange: "transform" }}
                     >
 
                       {/* ── LAYER 7: Floating AI Brand Logo Outside the card ── */}
@@ -507,7 +513,7 @@ export default function WorksEverywhere() {
                             ease: "easeInOut",
                             delay: floatDelays[i] + 0.3,
                           }}
-                          className="flex items-center justify-center hover:scale-110 transition-transform duration-200 cursor-pointer"
+                          className="flex items-center justify-center cursor-pointer"
                           style={{
                             width: 44,
                             height: 44,
@@ -520,7 +526,10 @@ export default function WorksEverywhere() {
                               0 0 0 1px rgba(255, 255, 255, 0.4),
                               0 0 15px rgba(139, 92, 246, 0.1)
                             `,
+                            willChange: "transform",
+                            transition: "transform 220ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1)",
                           }}
+                          whileHover={{ scale: 1.1, transition: { duration: 0.22, ease: [0.22, 1, 0.36, 1] } }}
                         >
                           {card.brandIcon}
                         </motion.div>
@@ -685,6 +694,7 @@ export default function WorksEverywhere() {
                     height: p.size,
                     background: "rgba(167, 139, 250, 0.45)",
                     boxShadow: "0 0 10px rgba(167, 139, 250, 0.4)",
+                    willChange: "transform, opacity",
                   }}
                   animate={{ opacity: [0.3, 0.8, 0.3], scale: [0.8, 1.2, 0.8] }}
                   transition={{ duration: p.dur, repeat: Infinity, ease: "easeInOut", delay: p.delay }}

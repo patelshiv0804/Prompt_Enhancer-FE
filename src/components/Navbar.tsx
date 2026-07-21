@@ -20,7 +20,7 @@ export default function Navbar() {
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="sticky top-0 z-50 h-20 border-b border-gray-100/80 bg-white/80 backdrop-blur-xl"
+      className="sticky top-0 z-[1000] h-20 border-b border-gray-100/80 bg-white/80 backdrop-blur-xl"
     >
       <div className="mx-auto flex h-full max-w-[1440px] items-center justify-between px-6 lg:px-12">
         {/* Logo */}
@@ -35,11 +35,10 @@ export default function Navbar() {
             <a
               key={link.label}
               href={link.href}
-              className={`px-4 py-2 text-sm font-medium transition-colors duration-200 ${
-                link.active
+              className={`px-4 py-2 text-sm font-medium transition-colors duration-200 ${link.active
                   ? "text-gray-900 underline decoration-[1.5px] underline-offset-[20px]"
                   : "text-gray-500 hover:text-gray-900"
-              }`}
+                }`}
             >
               {link.label}
             </a>
@@ -87,9 +86,8 @@ export default function Navbar() {
                   key={link.label}
                   href={link.href}
                   onClick={() => setMobileOpen(false)}
-                  className={`rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
-                    link.active ? "bg-gray-100 text-gray-900" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
-                  }`}
+                  className={`rounded-lg px-4 py-3 text-sm font-medium transition-colors ${link.active ? "bg-gray-100 text-gray-900" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+                    }`}
                 >
                   {link.label}
                 </a>

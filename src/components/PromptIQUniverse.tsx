@@ -343,7 +343,7 @@ export default function PromptIQUniverse() {
         { c: 2.5, r: 13.0, sz: 12, h: 0, rgb: "139,92,246" },  // Far left
         { c: 5.5, r: 19.5, sz: 11, h: 0, rgb: "96,165,250" },  // Mid left
         { c: 10.5, r: 21.5, sz: 15, h: 0, rgb: "99,102,241" }, // Center bottom
-        { c: 10.0, r: 9.5,  sz: 10, h: 0, rgb: "244,114,182" }, // Center top-ish
+        { c: 10.0, r: 9.5, sz: 10, h: 0, rgb: "244,114,182" }, // Center top-ish
         { c: 14.5, r: 19.0, sz: 12, h: 0, rgb: "168,85,247" }, // Mid right
         { c: 18.5, r: 13.5, sz: 13, h: 0, rgb: "236,72,153" }, // Far right
       ];

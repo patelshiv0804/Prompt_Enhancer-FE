@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { ChevronDown, Zap } from 'lucide-react';
 
@@ -119,34 +120,43 @@ export default function Header({ activeTab = 'Draft', onTabChange }: HeaderProps
                 <ChevronDown size={13} style={{ opacity: 0.5 }} />
               </button>
 
-              {showStyleDropdown && (
-                <div style={{
-                  position: 'absolute', top: 'calc(100% + 8px)', right: 0, background: 'white',
-                  border: '1px solid rgba(124,58,237,0.10)', borderRadius: 12, minWidth: 200,
-                  overflow: 'hidden', zIndex: 100,
-                  boxShadow: '0 8px 24px rgba(109,40,217,0.10), 0 2px 8px rgba(0,0,0,0.06)',
-                  animation: 'dropdownFadeIn 150ms ease',
-                }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-secondary)', padding: '10px 12px 6px' }}>
-                    Style Memory
-                  </div>
-                  <div style={{ padding: 4, display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    {styles.map(style => (
-                      <button key={style.name} onClick={() => { setActiveStyle(style.name); setShowStyleDropdown(false); }}
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 10px',
-                          fontSize: 13, fontWeight: 500, color: 'var(--color-text-primary)',
-                          borderRadius: 8, textAlign: 'left', border: 'none', cursor: 'pointer', background: 'transparent',
-                        }}
-                        className="hover:bg-[rgba(124,58,237,0.05)]"
-                      >
-                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: style.color, display: 'inline-block' }} />
-                        {style.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <AnimatePresence>
+                {showStyleDropdown && (
+                  <motion.div
+                    key="style-dropdown"
+                    initial={{ opacity: 0, y: -6, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                    transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+                    style={{
+                    position: 'absolute', top: 'calc(100% + 8px)', right: 0, background: 'white',
+                    border: '1px solid rgba(124,58,237,0.10)', borderRadius: 12, minWidth: 200,
+                    overflow: 'hidden', zIndex: 100,
+                    boxShadow: '0 8px 24px rgba(109,40,217,0.10), 0 2px 8px rgba(0,0,0,0.06)',
+                    transformOrigin: 'top right',
+                  }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-secondary)', padding: '10px 12px 6px' }}>
+                      Style Memory
+                    </div>
+                    <div style={{ padding: 4, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      {styles.map(style => (
+                        <button key={style.name} onClick={() => { setActiveStyle(style.name); setShowStyleDropdown(false); }}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 10px',
+                            fontSize: 13, fontWeight: 500, color: 'var(--color-text-primary)',
+                            borderRadius: 8, textAlign: 'left', border: 'none', cursor: 'pointer', background: 'transparent',
+                            transition: 'background 150ms ease',
+                          }}
+                          className="hover:bg-[rgba(124,58,237,0.05)]"
+                        >
+                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: style.color, display: 'inline-block' }} />
+                          {style.name}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Target dropdown */}
@@ -166,53 +176,63 @@ export default function Header({ activeTab = 'Draft', onTabChange }: HeaderProps
                 <ChevronDown size={13} style={{ opacity: 0.6 }} />
               </button>
 
-              {showTargetDropdown && (
-                <div style={{
-                  position: 'absolute', top: 'calc(100% + 8px)', right: 0, background: 'white',
-                  border: '1px solid rgba(124,58,237,0.10)', borderRadius: 12, minWidth: 220,
-                  overflow: 'hidden', zIndex: 100,
-                  boxShadow: '0 8px 24px rgba(109,40,217,0.10), 0 2px 8px rgba(0,0,0,0.06)',
-                  animation: 'dropdownFadeIn 150ms ease',
-                }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-secondary)', padding: '10px 12px 6px' }}>
-                    Target AI model
-                  </div>
-                  <div style={{ padding: 4, display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    {models.map(model => (
-                      <button key={model} onClick={() => { setActiveTarget(model); setShowTargetDropdown(false); }}
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 10px',
-                          fontSize: 13, fontWeight: 500, color: 'var(--color-text-primary)',
-                          borderRadius: 8, textAlign: 'left', border: 'none', cursor: 'pointer', background: 'transparent',
-                        }}
-                        className="hover:bg-[rgba(124,58,237,0.05)]"
-                      >
-                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--color-primary)', flexShrink: 0, opacity: activeTarget === model ? 1 : 0 }} />
-                        {model}
-                      </button>
-                    ))}
-                  </div>
-                  <div style={{ height: 1, background: 'rgba(124,58,237,0.08)', margin: '4px 0' }} />
-                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-secondary)', padding: '6px 12px' }}>
-                    Optimizer Engine
-                  </div>
-                  <div style={{ padding: 4, display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    {engines.map(engine => (
-                      <button key={engine} onClick={() => { setActiveEngine(engine); setShowTargetDropdown(false); }}
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 10px',
-                          fontSize: 13, fontWeight: 500, color: 'var(--color-text-primary)',
-                          borderRadius: 8, textAlign: 'left', border: 'none', cursor: 'pointer', background: 'transparent',
-                        }}
-                        className="hover:bg-[rgba(124,58,237,0.05)]"
-                      >
-                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--color-primary)', flexShrink: 0, opacity: activeEngine === engine ? 1 : 0 }} />
-                        {engine}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <AnimatePresence>
+                {showTargetDropdown && (
+                  <motion.div
+                    key="target-dropdown"
+                    initial={{ opacity: 0, y: -6, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                    transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+                    style={{
+                    position: 'absolute', top: 'calc(100% + 8px)', right: 0, background: 'white',
+                    border: '1px solid rgba(124,58,237,0.10)', borderRadius: 12, minWidth: 220,
+                    overflow: 'hidden', zIndex: 100,
+                    boxShadow: '0 8px 24px rgba(109,40,217,0.10), 0 2px 8px rgba(0,0,0,0.06)',
+                    transformOrigin: 'top right',
+                  }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-secondary)', padding: '10px 12px 6px' }}>
+                      Target AI model
+                    </div>
+                    <div style={{ padding: 4, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      {models.map(model => (
+                        <button key={model} onClick={() => { setActiveTarget(model); setShowTargetDropdown(false); }}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 10px',
+                            fontSize: 13, fontWeight: 500, color: 'var(--color-text-primary)',
+                            borderRadius: 8, textAlign: 'left', border: 'none', cursor: 'pointer', background: 'transparent',
+                            transition: 'background 150ms ease',
+                          }}
+                          className="hover:bg-[rgba(124,58,237,0.05)]"
+                        >
+                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--color-primary)', flexShrink: 0, opacity: activeTarget === model ? 1 : 0, transition: 'opacity 150ms ease' }} />
+                          {model}
+                        </button>
+                      ))}
+                    </div>
+                    <div style={{ height: 1, background: 'rgba(124,58,237,0.08)', margin: '4px 0' }} />
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-secondary)', padding: '6px 12px' }}>
+                      Optimizer Engine
+                    </div>
+                    <div style={{ padding: 4, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      {engines.map(engine => (
+                        <button key={engine} onClick={() => { setActiveEngine(engine); setShowTargetDropdown(false); }}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 10px',
+                            fontSize: 13, fontWeight: 500, color: 'var(--color-text-primary)',
+                            borderRadius: 8, textAlign: 'left', border: 'none', cursor: 'pointer', background: 'transparent',
+                            transition: 'background 150ms ease',
+                          }}
+                          className="hover:bg-[rgba(124,58,237,0.05)]"
+                        >
+                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--color-primary)', flexShrink: 0, opacity: activeEngine === engine ? 1 : 0, transition: 'opacity 150ms ease' }} />
+                          {engine}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </>
         )}

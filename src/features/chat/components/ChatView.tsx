@@ -477,12 +477,11 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
     return () => clearTimeout(t);
   }, [chatId]);
 
-  const displayVersionIndex = hoveredVersionIndex !== null ? hoveredVersionIndex : activeVersionIndex;
-  const version = sessionVersions[displayVersionIndex];
-  const activeVersion = sessionVersions[activeVersionIndex];
+  const version = sessionVersions[activeVersionIndex];
+  const activeVersion = version;
   const bestIndex = sessionVersions.reduce((best, v, i) => v.overallScore > sessionVersions[best].overallScore ? i : best, 0);
 
-  const animatedScore = useCountUp(activeVersion.overallScore, ready);
+  const animatedScore = useCountUp(version.overallScore, ready);
   const radius = 44;
   const circ = 2 * Math.PI * radius;
   const offset = circ - (animatedScore / 100) * circ;
@@ -555,15 +554,19 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', height: '100%', flex: 1, overflowY: 'auto',
-      padding: '20px 48px ', background: 'var(--color-canvas, #FAFBFC)', gap: 28,
+      background: 'var(--color-canvas, #FAFBFC)',
     }}>
+      <div style={{
+        maxWidth: 1100, margin: '0 auto', width: '100%', padding: '20px 48px',
+        display: 'flex', flexDirection: 'column', gap: 28, flex: 1,
+      }}>
       {/* Header Bar */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '12px 20px', background: 'rgba(255,255,255,0.85)', borderRadius: 16,
         border: '1px solid rgba(124,58,237,0.10)', boxShadow: '0 2px 12px rgba(109,40,217,0.04)',
         backdropFilter: 'blur(12px)',
-        maxWidth: 1100, margin: '0 auto', width: '100%', boxSizing: 'border-box',
+        width: '100%', boxSizing: 'border-box',
         position: 'relative', zIndex: 10,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -692,7 +695,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
       </div>
 
       {/* Main Content */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 28, maxWidth: 1100, margin: '0 auto', width: '100%' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 28, width: '100%' }}>
         {/* Version Header Timeline */}
         {!compareMode && (
           <VersionHeader
@@ -736,7 +739,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
               {renderOptimizedPanel(sessionVersions[compareIndex], `v${sessionVersions[compareIndex].versionNumber}`)}
-              {renderOptimizedPanel(sessionVersions[displayVersionIndex], `v${sessionVersions[displayVersionIndex].versionNumber}`)}
+              {renderOptimizedPanel(sessionVersions[activeVersionIndex], `v${sessionVersions[activeVersionIndex].versionNumber}`)}
             </div>
           </div>
         ) : (
@@ -897,6 +900,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
         onToggleStar={handleToggleStar}
         onHoverVersion={setHoveredVersionIndex}
       />
+      </div>
     </div>
   );
 }

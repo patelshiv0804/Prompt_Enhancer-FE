@@ -16,14 +16,23 @@ function useCountUp(target: number, active: boolean, duration = 1200): number {
   const [value, setValue] = useState(0);
   useEffect(() => {
     if (!active) { setValue(0); return; }
-    let current = 0;
-    const step = target / (duration / 16);
-    const timer = setInterval(() => {
-      current += step;
-      if (current >= target) { setValue(target); clearInterval(timer); }
-      else setValue(Math.floor(current));
-    }, 16);
-    return () => clearInterval(timer);
+    let rafId: number;
+    let startTime: number | null = null;
+    const startVal = 0;
+
+    const animate = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const elapsed = timestamp - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // easeOutExpo for spring-like deceleration
+      const eased = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+      setValue(Math.round(startVal + eased * (target - startVal)));
+      if (progress < 1) rafId = requestAnimationFrame(animate);
+      else setValue(target);
+    };
+
+    rafId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafId);
   }, [target, active, duration]);
   return value;
 }
@@ -77,13 +86,13 @@ export default function ScoreSection({ isAnalyzed, isOptimized }: ScoreSectionPr
   };
 
   return (
-    <div style={{ width: '100%', marginTop: 32, animation: 'fadeInRise 500ms ease-out forwards' }}>
+    <div style={{ width: '100%', marginTop: 32, animation: 'fadeInRise 500ms cubic-bezier(0.22, 1, 0.36, 1) forwards' }}>
       <div
         style={{
           display: 'flex', background: '#FFFFFF', border: '1px solid rgba(124,58,237,0.10)',
           borderRadius: 28, boxShadow: '0 4px 24px rgba(109,40,217,0.07), 0 1px 4px rgba(0,0,0,0.04)',
           padding: 32, gap: 40, position: 'relative', overflow: 'hidden',
-          transition: 'transform 300ms ease-in-out, box-shadow 300ms ease-in-out',
+          transition: 'transform 280ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 280ms cubic-bezier(0.22, 1, 0.36, 1)',
         }}
         className="hover:translate-y-[-3px] hover:shadow-[0_12px_48px_rgba(109,40,217,0.10),0_4px_12px_rgba(0,0,0,0.05)]"
       >
@@ -161,7 +170,7 @@ export default function ScoreSection({ isAnalyzed, isOptimized }: ScoreSectionPr
                   background: 'rgba(124,58,237,0.03)', border: '1px solid rgba(124,58,237,0.09)',
                   borderRadius: 12, padding: 16, position: 'relative', overflow: 'hidden',
                   display: 'flex', flexDirection: 'column', gap: 8,
-                  transition: 'transform 250ms ease, box-shadow 250ms ease, background 250ms ease',
+                  transition: 'transform 250ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 250ms cubic-bezier(0.22, 1, 0.36, 1), background 200ms ease',
                 }}
                 className="hover:translate-y-[-3px] hover:!bg-[rgba(124,58,237,0.05)] hover:shadow-[0_8px_24px_rgba(109,40,217,0.09)]"
               >
@@ -185,7 +194,7 @@ export default function ScoreSection({ isAnalyzed, isOptimized }: ScoreSectionPr
                 </div>
 
                 <div style={{ height: 3, background: 'rgba(124,58,237,0.08)', borderRadius: 99, overflow: 'hidden', margin: '2px 0 4px' }}>
-                  <div style={{ height: '100%', borderRadius: 99, width: `${displayed}%`, background: scoreColor(displayed), transition: 'width 0.8s ease-out' }} />
+                  <div style={{ height: '100%', borderRadius: 99, width: `${displayed}%`, background: scoreColor(displayed), transition: 'width 0.9s cubic-bezier(0.22, 1, 0.36, 1)' }} />
                 </div>
 
                 <p style={{ fontSize: 12, color: 'var(--color-text-secondary)', lineHeight: 1.5, margin: 0 }}>{dim.desc}</p>

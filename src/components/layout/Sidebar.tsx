@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter, usePathname } from 'next/navigation';
 import {
   Sparkles, LayoutTemplate, Library, Fingerprint,
@@ -131,8 +132,16 @@ export default function Sidebar() {
                 }
               </button>
 
-              {!isCollapsed && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 1, animation: 'groupItemsIn 0.18s ease-out' }}>
+              <AnimatePresence initial={false}>
+                {!isCollapsed && (
+                  <motion.div
+                    key="nav-items"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                    style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: 1 }}
+                  >
                   {group.items.map(item => {
                     const Icon = item.icon;
                     const active = isActive(item.id);
@@ -172,8 +181,9 @@ export default function Sidebar() {
                       </button>
                     );
                   })}
-                </div>
-              )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           );
         })}
@@ -215,8 +225,16 @@ export default function Sidebar() {
             }
           </div>
 
-          {!recentCollapsed && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 1, animation: 'groupItemsIn 0.18s ease-out' }}>
+          <AnimatePresence initial={false}>
+            {!recentCollapsed && (
+              <motion.div
+                key="recent-items"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: 1 }}
+              >
               {MOCK_RECENT.map(item => {
                 const Icon = SIDEBAR_HISTORY_ICONS[item.category] || Clock;
                 const accent = SIDEBAR_HISTORY_ACCENTS[item.category] || '#7C3AED';
@@ -257,8 +275,9 @@ export default function Sidebar() {
                   </button>
                 );
               })}
-            </div>
-          )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
