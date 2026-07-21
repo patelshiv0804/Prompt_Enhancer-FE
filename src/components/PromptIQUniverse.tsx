@@ -790,7 +790,7 @@ export default function PromptIQUniverse() {
       if (cPt && engineAlpha > 0.01) {
         mX.beginPath();
         mX.ellipse(cPt.px + bgPx, cPt.py + bgPy + 8, 32, 8, 0, 0, 6.283);
-        mX.fillStyle = `rgba(234,88,12, ${0.12 * engineAlpha})`;
+        mX.fillStyle = `rgba(139,92,246, ${0.14 * engineAlpha})`;
         mX.fill();
       }
 
@@ -922,54 +922,53 @@ export default function PromptIQUniverse() {
         <div className="relative flex items-center justify-center">
           <motion.div
             className="absolute rounded-full"
-            style={{ width: 144, height: 144, background: "radial-gradient(circle, rgba(249,115,22,0.22) 0%, rgba(234,88,12,0.06) 55%, transparent 100%)" }}
+            style={{ width: 104, height: 104, background: "radial-gradient(circle, rgba(139,92,246,0.25) 0%, rgba(124,58,237,0.08) 55%, transparent 100%)" }}
             animate={{ scale: [1, 1.14, 1], opacity: [0.65, 0.95, 0.65] }}
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
           />
           <motion.div
             className="absolute rounded-full"
-            style={{ width: 96, height: 96, background: "radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(251,146,60,0.70) 28%, rgba(234,88,12,0.15) 65%, transparent 100%)" }}
+            style={{ width: 72, height: 72, background: "radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(167,139,250,0.50) 35%, rgba(139,92,246,0.15) 65%, transparent 100%)" }}
             animate={{ scale: [1, 1.08, 1], opacity: [0.65, 0.9, 0.65] }}
             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
           />
           <div className="absolute pointer-events-none" style={{ transform: "rotateX(70deg) rotateY(-20deg)" }}>
             <motion.div
-              className="border border-[#F97316]/30 rounded-full"
-              style={{ width: 138, height: 138 }}
+              className="border border-[#8B5CF6]/35 rounded-full"
+              style={{ width: 100, height: 100 }}
               animate={{ rotate: 360 }}
               transition={{ duration: 13, repeat: Infinity, ease: "linear" }}
             />
           </div>
           <div className="absolute pointer-events-none" style={{ transform: "rotateX(65deg) rotateY(25deg)" }}>
             <motion.div
-              className="border border-[#8B5CF6]/20 rounded-full"
-              style={{ width: 166, height: 166 }}
+              className="border border-[#EC4899]/25 rounded-full"
+              style={{ width: 122, height: 122 }}
               animate={{ rotate: -360 }}
               transition={{ duration: 17, repeat: Infinity, ease: "linear" }}
             />
           </div>
           <motion.div
-            className="relative z-10 flex h-16 w-16 items-center justify-center rounded-full"
+            className="relative z-10 flex h-[48px] w-[48px] items-center justify-center rounded-xl bg-white/95 backdrop-blur-md"
             style={{
-              background: "linear-gradient(135deg,#F97316,#EA580C,#DC2626)",
-              boxShadow: "0 0 28px #EA580C,0 0 10px #F97316 inset",
-              border: "1.5px solid rgba(255,255,255,0.35)",
+              boxShadow: "0 0 20px rgba(139,92,246,0.30), 0 0 8px rgba(167,139,250,0.18) inset",
+              border: "1.5px solid rgba(139,92,246,0.35)",
             }}
             animate={{ y: [-2, 2, -2] }}
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
           >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2L22 7L22 17L12 22L2 17L2 7Z" />
-              <path d="M2 7L12 12L22 7" />
-              <path d="M12 12L12 22" />
-            </svg>
+            <img
+              src="/logo_1.svg"
+              alt="AURE Logo"
+              className="h-[28px] w-[28px] object-contain drop-shadow-[0_2px_6px_rgba(139,92,246,0.30)]"
+            />
           </motion.div>
           <div
             className="absolute pointer-events-none"
-            style={{ top: "calc(50% + 42px)", left: "50%", transform: "translateX(-50%)", whiteSpace: "nowrap" }}
+            style={{ top: "calc(50% + 32px)", left: "50%", transform: "translateX(-50%)", whiteSpace: "nowrap" }}
           >
-            <span className="text-[10px] tracking-[0.22em] font-extrabold uppercase text-[#EA580C] bg-white/80 backdrop-blur-md px-2 py-0.5 rounded-full border border-orange-400/20 shadow-sm">
-              AI Engine
+            <span className="text-[9px] tracking-[0.20em] font-extrabold uppercase text-[#7C3AED] bg-white/90 backdrop-blur-md px-2 py-0.5 rounded-full border border-purple-400/20 shadow-sm">
+              AURE Engine
             </span>
           </div>
         </div>

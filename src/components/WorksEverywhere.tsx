@@ -630,16 +630,11 @@ export default function WorksEverywhere() {
                             {/* Logo + name + sparkle */}
                             <div className="flex items-center justify-between mb-2">
                               <div className="flex items-center gap-1.5">
-                                <svg width="14" height="14" viewBox="0 0 40 40" fill="none">
-                                  <defs>
-                                    <linearGradient id="aure-a-micro" x1="0" y1="40" x2="40" y2="0">
-                                      <stop offset="0%" stopColor="#8B5CF6" />
-                                      <stop offset="50%" stopColor="#6366F1" />
-                                      <stop offset="100%" stopColor="#EC4899" />
-                                    </linearGradient>
-                                  </defs>
-                                  <path d="M20 4 L36 34 H28 L24.5 26 H15.5 L12 34 H4 L20 4Z M18 21 H22 L20 14 L18 21Z" fill="url(#aure-a-micro)" />
-                                </svg>
+                                <img
+                                  src="/logo_1.svg"
+                                  alt="AURE Logo"
+                                  className="h-3.5 w-3.5 object-contain"
+                                />
                                 <span style={{ fontSize: 11.5, fontWeight: 800, color: "#110e30" }}>AURE</span>
                               </div>
                               {/* Purple Star Icon */}
