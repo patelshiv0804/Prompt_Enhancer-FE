@@ -99,14 +99,28 @@ const ROLES = ["Doctor", "Developer", "Farmer", "Businessman", "Teacher", "Desig
 function CardStyleRole() {
   const [active, setActive] = useState("Doctor");
   const [on, setOn] = useState(true);
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Auto-cycle roles every 2.5s, pause on hover
+  useEffect(() => {
+    if (isHovered) return;
+    const id = setInterval(() => {
+      setActive(prev => ROLES[(ROLES.indexOf(prev) + 1) % ROLES.length]);
+    }, 2500);
+    return () => clearInterval(id);
+  }, [isHovered]);
 
   return (
-    <div style={CARD}>
-      <div style={{
-        position: "absolute", top: -70, right: -70, width: 240, height: 240,
-        borderRadius: "50%", background: "radial-gradient(circle, rgba(167,139,250,0.10) 0%, transparent 70%)",
-        pointerEvents: "none",
-      }} />
+    <div style={CARD} onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
+      <motion.div
+        animate={{ opacity: [0.6, 1, 0.6], scale: [1, 1.1, 1] }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+        style={{
+          position: "absolute", top: -70, right: -70, width: 240, height: 240,
+          borderRadius: "50%", background: "radial-gradient(circle, rgba(167,139,250,0.14) 0%, transparent 70%)",
+          pointerEvents: "none",
+        }}
+      />
 
       <span style={LBL}>Role Memory</span>
       <h2 style={{ fontSize: 26, fontWeight: 760, color: P.ink, letterSpacing: "-0.025em", lineHeight: 1.18, margin: "0 0 10px" }}>
@@ -148,7 +162,7 @@ function CardStyleRole() {
         <div style={{ flex: 1 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 3 }}>
             <span style={{ fontSize: 13.5, fontWeight: 660, color: P.ink, letterSpacing: "-0.01em" }}>{active}</span>
-            <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 999, background: "rgba(167,139,250,0.12)", color: P.purple }}>Active</span>
+            <motion.span animate={{ opacity: [0.7, 1, 0.7] }} transition={{ duration: 2, repeat: Infinity }} style={{ fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 999, background: "rgba(167,139,250,0.12)", color: P.purple }}>Active</motion.span>
           </div>
           <p style={{ fontSize: 11.5, color: P.g400, margin: 0 }}>Professional · Precise · Empathetic</p>
         </div>
@@ -159,7 +173,7 @@ function CardStyleRole() {
         marginTop: "auto", display: "flex", alignItems: "center", gap: 10,
         padding: "11px 14px", background: "rgba(139,92,246,0.04)", borderRadius: 14, cursor: "pointer",
       }}>
-        <Sp size={11} c={P.lav} />
+        <motion.div animate={{ rotate: [0, 360] }} transition={{ duration: 8, repeat: Infinity, ease: "linear" }} style={{ display: "flex" }}><Sp size={11} c={P.lav} /></motion.div>
         <span style={{ flex: 1, fontSize: 12.5, fontWeight: 500, color: P.g600, letterSpacing: "-0.01em" }}>Auto-apply to all prompts</span>
         <div style={{ width: 38, height: 22, borderRadius: 999, background: on ? P.purple : P.g300, position: "relative", transition: "background 0.2s ease", flexShrink: 0 }}>
           <div style={{ position: "absolute", top: 3, left: on ? 18 : 3, width: 16, height: 16, borderRadius: "50%", background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,0.20)", transition: "left 0.2s ease" }} />
@@ -195,87 +209,11 @@ const CHAIN_EDGES = [
 
 function chipW(label: string) { return Math.max(label.length * 6.0 + 24, 76); }
 
-function CardChaining() {
-  return (
-    <div style={CARD}>
-      <div style={{
-        position: "absolute", top: -50, right: -50, width: 180, height: 180,
-        borderRadius: "50%", background: "radial-gradient(circle, rgba(236,72,153,0.07) 0%, transparent 70%)",
-        pointerEvents: "none",
-      }} />
-
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
-        <span style={LBL}>Chaining</span>
-        <span style={{ fontSize: 10.5, fontWeight: 620, color: P.purple, background: "rgba(139,92,246,0.08)", padding: "4px 12px", borderRadius: 999, marginTop: -2 }}>7 nodes</span>
-      </div>
-      <h2 style={{ fontSize: 26, fontWeight: 760, color: P.ink, letterSpacing: "-0.025em", lineHeight: 1.18, margin: "0 0 10px" }}>Prompt Chaining</h2>
-      <p style={{ fontSize: 13.5, color: P.g500, lineHeight: 1.65, margin: "0 0 24px", maxWidth: 440 }}>
-        One idea. A complete content pipeline. Every step deliberate and connected.
-      </p>
-
-      {/* Organic SVG flow — fills remaining vertical space */}
-      <div style={{ flex: 1, minHeight: 0, display: "flex", alignItems: "center" }}>
-        <svg viewBox="0 0 535 198" width="100%" height="100%" fill="none" style={{ overflow: "visible" }}>
-          {/* Edges */}
-          {CHAIN_EDGES.map((e, i) => {
-            const na = CHAIN_NODES.find(n => n.id === e.a)!;
-            const nb = CHAIN_NODES.find(n => n.id === e.b)!;
-            const pk = na.pink || nb.pink;
-            return (
-              <motion.path key={`${e.a}-${e.b}`}
-                d={`M${na.x},${na.y} Q${e.cpx},${e.cpy} ${nb.x},${nb.y}`}
-                stroke={pk ? "rgba(236,72,153,0.18)" : "rgba(139,92,246,0.17)"}
-                strokeWidth={1.4} strokeDasharray="4 5" strokeLinecap="round"
-                initial={{ pathLength: 0, opacity: 0 }}
-                whileInView={{ pathLength: 1, opacity: 1 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 1.0, delay: 0.1 + i * 0.09, ease: "easeInOut" }}
-              />
-            );
-          })}
-
-          {/* Nodes */}
-          {CHAIN_NODES.map((n, i) => {
-            const w = chipW(n.label);
-            return (
-              <motion.g key={n.id}
-                initial={{ opacity: 0, scale: 0.6 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ delay: 0.2 + i * 0.08, duration: 0.45, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
-              >
-                {/* halo */}
-                <ellipse cx={n.x} cy={n.y} rx={w / 2 + 8} ry={16} fill={n.pink ? "rgba(236,72,153,0.06)" : "rgba(139,92,246,0.06)"} />
-                {/* chip */}
-                <rect x={n.x - w / 2} y={n.y - 13} width={w} height={26} rx={8}
-                  fill="white" stroke={n.pink ? "rgba(236,72,153,0.15)" : "rgba(139,92,246,0.13)"} strokeWidth={1.2} />
-                {/* dot */}
-                <circle cx={n.x - w / 2 + 10} cy={n.y} r={3.5} fill={n.pink ? P.pink : P.lav} />
-                {/* label */}
-                <text x={n.x - w / 2 + 20} y={n.y + 0.5}
-                  fontSize={9.5} fontWeight="590" fill="#374151"
-                  dominantBaseline="middle"
-                  fontFamily="system-ui,-apple-system,sans-serif"
-                  letterSpacing="-0.2">
-                  {n.label}
-                </text>
-              </motion.g>
-            );
-          })}
-
-          {/* Floating particles */}
-          {[{ x: 154, y: 88 }, { x: 298, y: 102 }, { x: 450, y: 80 }].map((pt, i) => (
-            <motion.circle key={`p${i}`} cx={pt.x} cy={pt.y} r={2.5}
-              fill={i % 2 === 0 ? P.lav : P.pink}
-              animate={{ y: [0, -7, 0], opacity: [0.3, 0.65, 0.3] }}
-              transition={{ duration: 2.4 + i * 0.7, repeat: Infinity, ease: "easeInOut", delay: i * 0.5 }}
-            />
-          ))}
-        </svg>
-      </div>
-    </div>
-  );
-}
+/* ═══════════════════════════════════════════════════════════════════
+ *  CARD 2 — Prompt Chaining (Disabled/Commented Out per user request)
+ * ═══════════════════════════════════════════════════════════════════
+function CardChaining() { ... }
+*/
 
 /* ═══════════════════════════════════════════════════════════════════
  *  CARD 3 — Multi-Model Optimization
@@ -352,9 +290,12 @@ function CardMultiModel() {
                 strokeDasharray="5 6"
                 strokeLinecap="round"
                 initial={{ pathLength: 0, opacity: 0 }}
-                whileInView={{ pathLength: 1, opacity: 1 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 1.2, delay: 0.15 + i * 0.12, ease: "easeOut" }}
+                animate={{ pathLength: 1, opacity: 1, strokeDashoffset: [0, -22] }}
+                transition={{
+                  pathLength: { duration: 1.2, delay: 0.15 + i * 0.12, ease: "easeOut" },
+                  opacity: { duration: 1.2, delay: 0.15 + i * 0.12, ease: "easeOut" },
+                  strokeDashoffset: { duration: 2 + i * 0.3, repeat: Infinity, ease: "linear", delay: 1.5 },
+                }}
               />
             );
           })}
@@ -366,10 +307,13 @@ function CardMultiModel() {
             return (
               <motion.g
                 key={m.name}
-                initial={{ opacity: 0, scale: 0.7, y: 12 }}
-                whileInView={{ opacity: 1, scale: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ delay: 0.1 + i * 0.1, duration: 0.55, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
+                initial={{ opacity: 0, scale: 0.7 }}
+                animate={{ opacity: 1, scale: 1, y: [0, -5 - i * 1.5, 0] }}
+                transition={{
+                  opacity: { delay: 0.1 + i * 0.1, duration: 0.55, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+                  scale: { delay: 0.1 + i * 0.1, duration: 0.55, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+                  y: { duration: 3 + i * 0.6, repeat: Infinity, ease: "easeInOut", delay: 1 + i * 0.3 },
+                }}
               >
                 {/* card shadow / glow */}
                 <rect
@@ -414,9 +358,11 @@ function CardMultiModel() {
           {/* Central "Prompt" node */}
           <motion.g
             initial={{ opacity: 0, scale: 0.5 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ delay: 0.05, duration: 0.6, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
+            animate={{ opacity: 1, scale: [1, 1.06, 1] }}
+            transition={{
+              opacity: { delay: 0.05, duration: 0.6, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+              scale: { duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.7 },
+            }}
           >
             <circle cx={MODEL_CENTER.x} cy={MODEL_CENTER.y} r={30} fill="white" stroke="rgba(139,92,246,0.18)" strokeWidth={1.5} />
             <circle cx={MODEL_CENTER.x} cy={MODEL_CENTER.y} r={22} fill="rgba(139,92,246,0.07)" />
@@ -471,39 +417,79 @@ function CardMultiModel() {
  *  Metric cards float as absolute-positioned chips above the chart,
  *  at different Y positions — creating overlap and depth hierarchy.
  * ═══════════════════════════════════════════════════════════════════ */
-function AnimNum({ to, delay = 0 }: { to: string; delay?: number }) {
+function AnimNum({ target, displaySuffix = "", delay = 0 }: { target: number; displaySuffix?: string; delay?: number }) {
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true });
+  const [displayVal, setDisplayVal] = useState(0);
+
+  useEffect(() => {
+    if (!inView) return;
+    let startTimestamp: number | null = null;
+    const duration = 1600;
+
+    const step = (timestamp: number) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      const easedProgress = 1 - Math.pow(1 - progress, 3);
+      setDisplayVal(Math.floor(easedProgress * target));
+
+      if (progress < 1) {
+        window.requestAnimationFrame(step);
+      } else {
+        setDisplayVal(target);
+      }
+    };
+
+    const timer = setTimeout(() => {
+      window.requestAnimationFrame(step);
+    }, delay * 1000);
+
+    return () => clearTimeout(timer);
+  }, [inView, target, delay]);
+
+  const formatted =
+    target >= 10000
+      ? (displayVal / 1000).toFixed(1) + "K"
+      : displayVal.toLocaleString();
+
   return (
-    <motion.span ref={ref}
-      initial={{ opacity: 0 }} animate={inView ? { opacity: 1 } : {}}
-      transition={{ delay, duration: 0.5 }}>
-      {inView ? to : "—"}
+    <motion.span ref={ref}>
+      {formatted}{displaySuffix}
     </motion.span>
   );
 }
 
 function MiniSpark({ pts, c }: { pts: string; c: string }) {
   return (
-    <svg width="52" height="18" viewBox="0 0 52 18" fill="none">
-      <polyline points={pts} stroke={c} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    <svg width="60" height="20" viewBox="0 0 60 20" fill="none" style={{ overflow: "visible" }}>
+      <motion.polyline
+        points={pts}
+        stroke={c}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+        initial={{ pathLength: 0 }}
+        animate={{ pathLength: 1 }}
+        transition={{ duration: 1.4, ease: "easeInOut" }}
+      />
     </svg>
   );
 }
 
 const METRICS = [
-  { label: "Prompts Analyzed", val: "1,248",  c: P.purple, pts: "2,16 10,11 20,13 30,7 40,4 52,2",  top: 0,  left: "0%",   w: 148 },
-  { label: "Avg. PromptScore", val: "78",      c: P.lav,    pts: "2,14 10,9 20,12 30,5 40,8 52,3",   top: 22, left: "26%",  w: 132 },
-  { label: "Tokens Saved",     val: "56.7K",   c: P.pink,   pts: "2,16 10,13 20,9 30,11 40,5 52,2",  top: 6,  left: "50%",  w: 136 },
-  { label: "Times Optimized",  val: "2,341",   c: P.violet, pts: "2,17 10,14 20,12 30,10 40,7 52,4", top: 30, left: "74%",  w: 140 },
+  { label: "Prompts Analyzed", target: 1248, suffix: "",       c: P.purple, pts: "2,16 12,11 24,13 36,7 48,4 58,2" },
+  { label: "Avg. PromptScore", target: 78,   suffix: "/100",  c: P.lav,    pts: "2,14 12,9 24,12 36,5 48,8 58,3"  },
+  { label: "Tokens Saved",     target: 56700, suffix: "",      c: P.pink,   pts: "2,16 12,13 24,9 36,11 48,5 58,2" },
+  { label: "Times Optimized",  target: 2341, suffix: "",       c: P.violet, pts: "2,17 12,14 24,12 36,10 48,7 58,4" },
 ];
 
 function HeroBigChart() {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true });
-  const data = [6, 10, 8, 14, 20, 16, 26, 24, 34, 40, 36, 52];
-  const W = 560, H = 160;
-  const mx = 56;
+  const data = [8, 12, 10, 16, 22, 18, 28, 26, 36, 42, 38, 54];
+  const W = 620, H = 170;
+  const mx = 60;
   const px = (i: number) => (i / (data.length - 1)) * W;
   const py = (v: number) => H - (v / mx) * H;
   const linePts = data.map((v, i) => `${px(i)},${py(v)}`).join(" ");
@@ -511,42 +497,88 @@ function HeroBigChart() {
 
   return (
     <div ref={ref} style={{ position: "relative" }}>
-      {/* Chart header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-        <span style={{ fontSize: 12, fontWeight: 660, color: P.g600, letterSpacing: "-0.01em" }}>Your Progress</span>
-        <span style={{ fontSize: 10.5, color: P.g400, background: P.g100, padding: "3px 10px", borderRadius: 999 }}>This Month</span>
+      {/* Chart header with Live Status Indicator */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: P.g700, letterSpacing: "-0.01em" }}>
+          Your Optimization Growth
+        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 6,
+            padding: "4px 10px", borderRadius: 999,
+            background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.20)",
+            fontSize: 10, fontWeight: 700, color: "#059669", letterSpacing: "0.02em"
+          }}>
+            <span style={{ position: "relative", display: "flex", width: 6, height: 6 }}>
+              <motion.span
+                animate={{ scale: [1, 2, 1], opacity: [0.75, 0, 0.75] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+                style={{ position: "absolute", inset: 0, borderRadius: "50%", background: "#10B981" }}
+              />
+              <span style={{ position: "relative", width: 6, height: 6, borderRadius: "50%", background: "#059669" }} />
+            </span>
+            LIVE UPDATES
+          </div>
+          <span style={{ fontSize: 10.5, color: P.g500, background: P.g100, padding: "4px 10px", borderRadius: 999, fontWeight: 500 }}>
+            This Month
+          </span>
+        </div>
       </div>
 
-      {/* The dominant chart */}
-      <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" fill="none">
-        {/* Grid lines — very subtle */}
+      {/* The live chart */}
+      <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" fill="none" style={{ overflow: "visible" }}>
         {[40, 80, 120].map(y => (
-          <line key={y} x1="0" y1={y} x2={W} y2={y} stroke="rgba(139,92,246,0.05)" strokeWidth={1} strokeDasharray="4 6" />
+          <line key={y} x1="0" y1={y} x2={W} y2={y} stroke="rgba(139,92,246,0.06)" strokeWidth={1} strokeDasharray="4 6" />
         ))}
         <defs>
           <linearGradient id="heroAreaG" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="rgba(139,92,246,0.18)" />
-            <stop offset="75%" stopColor="rgba(167,139,250,0.04)" />
+            <stop offset="0%" stopColor="rgba(139,92,246,0.25)" />
+            <stop offset="60%" stopColor="rgba(167,139,250,0.06)" />
             <stop offset="100%" stopColor="rgba(139,92,246,0.00)" />
           </linearGradient>
         </defs>
         {inView && (
           <>
-            <motion.path d={areaD} fill="url(#heroAreaG)"
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-              transition={{ delay: 0.15, duration: 0.8 }} />
-            <motion.polyline points={linePts}
-              stroke={P.purple} strokeWidth="2.5"
-              strokeLinecap="round" strokeLinejoin="round"
+            <motion.path
+              d={areaD}
+              fill="url(#heroAreaG)"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.15, duration: 0.8 }}
+            />
+            <motion.polyline
+              points={linePts}
+              stroke={P.purple}
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
               initial={{ pathLength: 0, opacity: 0 }}
               animate={{ pathLength: 1, opacity: 1 }}
-              transition={{ delay: 0.25, duration: 1.8, ease: "easeInOut" }} />
-            {/* Data point dots — only on key highs */}
+              transition={{ delay: 0.2, duration: 1.6, ease: "easeInOut" }}
+            />
+            {/* Glowing data points along curve */}
             {[4, 7, 9, 11].map(i => (
-              <motion.circle key={i} cx={px(i)} cy={py(data[i])} r="4"
-                fill="white" stroke={P.purple} strokeWidth="2"
-                initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.8 + i * 0.08, duration: 0.35 }} />
+              <g key={i}>
+                <motion.circle
+                  cx={px(i)}
+                  cy={py(data[i])}
+                  r="7"
+                  fill="rgba(139,92,246,0.20)"
+                  animate={{ scale: [1, 1.4, 1] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: i * 0.2 }}
+                />
+                <motion.circle
+                  cx={px(i)}
+                  cy={py(data[i])}
+                  r="4"
+                  fill="white"
+                  stroke={P.purple}
+                  strokeWidth="2.5"
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.6 + i * 0.08, duration: 0.35 }}
+                />
+              </g>
             ))}
           </>
         )}
@@ -561,64 +593,76 @@ function CardAnalytics() {
       {/* Hero ambient glow */}
       <div style={{
         position: "absolute", top: -60, right: -60, width: 300, height: 300,
-        borderRadius: "50%", background: "radial-gradient(circle, rgba(167,139,250,0.08) 0%, transparent 65%)",
+        borderRadius: "50%", background: "radial-gradient(circle, rgba(167,139,250,0.12) 0%, transparent 65%)",
         pointerEvents: "none",
       }} />
       <div style={{
         position: "absolute", bottom: -40, left: -40, width: 200, height: 200,
-        borderRadius: "50%", background: "radial-gradient(circle, rgba(236,72,153,0.05) 0%, transparent 65%)",
+        borderRadius: "50%", background: "radial-gradient(circle, rgba(236,72,153,0.06) 0%, transparent 65%)",
         pointerEvents: "none",
       }} />
 
-      {/* ── Compact header ── */}
-      <span style={LBL}>Analytics</span>
-      <h2 style={{ fontSize: 26, fontWeight: 760, color: P.ink, letterSpacing: "-0.025em", lineHeight: 1.1, margin: "0 0 6px" }}>
-        Analytics Dashboard
-      </h2>
-      <p style={{ fontSize: 13, color: P.g500, lineHeight: 1.6, margin: "0 0 20px" }}>
-        Track improvement and productivity every day.
-      </p>
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
+        <div>
+          <span style={LBL}>Analytics</span>
+          <h2 style={{ fontSize: 26, fontWeight: 760, color: P.ink, letterSpacing: "-0.025em", lineHeight: 1.1, margin: "0 0 4px" }}>
+            Analytics Dashboard
+          </h2>
+          <p style={{ fontSize: 13, color: P.g500, lineHeight: 1.5, margin: 0 }}>
+            Track prompt performance, quality score, and productivity in real-time.
+          </p>
+        </div>
+      </div>
 
-      {/* ── Floating metric cards — ABSOLUTE over chart for depth ── */}
-      {/* Wrapper: gives chart its space + provides positioning context */}
-      <div style={{ flex: 1, minHeight: 0, position: "relative", display: "flex", flexDirection: "column" }}>
+      {/* 4-column metric cards grid */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(4, 1fr)",
+        gap: 12,
+        marginBottom: 20,
+      }}>
+        {METRICS.map((m, i) => (
+          <motion.div
+            key={m.label}
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: i * 0.08, duration: 0.45 }}
+            whileHover={{ y: -3, scale: 1.02 }}
+            style={{
+              background: "linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(250,248,255,0.92) 100%)",
+              borderRadius: 18,
+              border: `1px solid ${m.c}25`,
+              boxShadow: `0 4px 16px rgba(0,0,0,0.03), 0 0 0 1px ${m.c}12`,
+              padding: "12px 14px",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              transition: "all 0.2s ease",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+              <p style={{ fontSize: 10, color: P.g500, margin: 0, fontWeight: 620, letterSpacing: "0.01em" }}>
+                {m.label}
+              </p>
+              <motion.span animate={{ scale: [1, 1.5, 1], opacity: [0.6, 1, 0.6] }} transition={{ duration: 2, repeat: Infinity, delay: i * 0.3 }} style={{ width: 6, height: 6, borderRadius: "50%", background: m.c, boxShadow: `0 0 6px ${m.c}`, display: "block" }} />
+            </div>
 
-        {/* Metric chips — float at the top, different heights */}
-        <div style={{ position: "relative", height: 90, marginBottom: 8, flexShrink: 0 }}>
-          {METRICS.map((m, i) => (
-            <motion.div
-              key={m.label}
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
-              style={{
-                position: "absolute",
-                top: m.top,
-                left: m.left,
-                width: m.w,
-                background: "rgba(255,255,255,0.95)",
-                backdropFilter: "blur(8px)",
-                borderRadius: 16,
-                border: `1px solid ${m.c}20`,
-                boxShadow: `0 2px 12px rgba(0,0,0,0.05), 0 0 0 1px ${m.c}10`,
-                padding: "10px 14px",
-                zIndex: 4 - i,
-              }}
-            >
-              <p style={{ fontSize: 9.5, color: P.g400, margin: "0 0 3px", fontWeight: 520, letterSpacing: "0.01em" }}>{m.label}</p>
-              <div style={{ fontSize: 19, fontWeight: 740, color: m.c, lineHeight: 1, marginBottom: 6, letterSpacing: "-0.025em" }}>
-                <AnimNum to={m.val} delay={i * 0.12} />
-              </div>
+            <div style={{ fontSize: 21, fontWeight: 800, color: m.c, lineHeight: 1, marginBottom: 8, letterSpacing: "-0.03em" }}>
+              <AnimNum target={m.target} displaySuffix={m.suffix} delay={i * 0.1} />
+            </div>
+
+            <div style={{ marginTop: "auto" }}>
               <MiniSpark pts={m.pts} c={m.c} />
-            </motion.div>
-          ))}
-        </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
 
-        {/* Chart — dominates remaining height (~70% of card) */}
-        <div style={{ flex: 1, minHeight: 0 }}>
-          <HeroBigChart />
-        </div>
+      {/* Live Big Chart */}
+      <div style={{ flex: 1, minHeight: 0 }}>
+        <HeroBigChart />
       </div>
     </div>
   );
@@ -643,6 +687,18 @@ const STAGS = [
 ];
 
 function CardSearch() {
+  const fullText = "Search prompts, templates\u2026";
+  const [charIdx, setCharIdx] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setCharIdx(prev => (prev + 1) % (fullText.length + 12));
+    }, 100);
+    return () => clearInterval(id);
+  }, []);
+
+  const displayText = fullText.slice(0, Math.min(charIdx, fullText.length));
+
   return (
     <div style={{ ...CARD_SM, overflow: "hidden" }}>
       {/* Radial glow behind search icon */}
@@ -671,26 +727,28 @@ function CardSearch() {
       </div>
       <p style={{ fontSize: 11.5, color: P.g500, margin: "0 0 10px", lineHeight: 1.5 }}>Find any prompt in seconds.</p>
 
-      {/* DOMINANT search bar — the hero element */}
-      <div style={{
-        display: "flex", alignItems: "center", gap: 8,
-        background: "linear-gradient(135deg, rgba(139,92,246,0.06) 0%, rgba(167,139,250,0.04) 100%)",
-        borderRadius: 13,
-        border: "1.5px solid rgba(139,92,246,0.18)",
-        boxShadow: "0 0 0 4px rgba(139,92,246,0.06), 0 2px 12px rgba(139,92,246,0.08)",
-        padding: "10px 14px",
-        marginBottom: 12,
-      }}>
+      <motion.div
+        animate={{ boxShadow: ["0 0 0 4px rgba(139,92,246,0.04), 0 2px 12px rgba(139,92,246,0.06)", "0 0 0 6px rgba(139,92,246,0.12), 0 2px 18px rgba(139,92,246,0.16)", "0 0 0 4px rgba(139,92,246,0.04), 0 2px 12px rgba(139,92,246,0.06)"] }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        style={{
+          display: "flex", alignItems: "center", gap: 8,
+          background: "linear-gradient(135deg, rgba(139,92,246,0.06) 0%, rgba(167,139,250,0.04) 100%)",
+          borderRadius: 13,
+          border: "1.5px solid rgba(139,92,246,0.18)",
+          boxShadow: "0 0 0 4px rgba(139,92,246,0.06), 0 2px 12px rgba(139,92,246,0.08)",
+          padding: "10px 14px",
+          marginBottom: 12,
+        }}>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={P.purple} strokeWidth="2.2">
           <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
         </svg>
-        <span style={{ fontSize: 12, color: P.g400, letterSpacing: "-0.01em", flex: 1 }}>Search prompts, templates…</span>
+        <span style={{ fontSize: 12, color: P.g400, letterSpacing: "-0.01em", flex: 1 }}>{displayText}<motion.span animate={{ opacity: [1, 0] }} transition={{ duration: 0.6, repeat: Infinity }} style={{ display: "inline-block", width: 1, height: 13, background: P.purple, marginLeft: 1, verticalAlign: "middle" }} /></span>
         {/* Keyboard shortcut hint */}
         <span style={{
           fontSize: 9.5, color: P.lav, background: "rgba(167,139,250,0.10)",
           padding: "2px 6px", borderRadius: 5, fontWeight: 600, letterSpacing: "0.02em",
         }}>⌘K</span>
-      </div>
+      </motion.div>
 
       {/* Organically scattered tags — different sizes, slight offsets */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: 5, alignItems: "center" }}>
@@ -755,9 +813,11 @@ function CardVault() {
         {VCARDS.map((c, i) => (
           <motion.div key={c.title}
             initial={{ opacity: 0, y: 14 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.08 + i * 0.1, duration: 0.5 }}
+            animate={{ opacity: 1, y: [0, -3 - i, 0] }}
+            transition={{
+              opacity: { delay: 0.08 + i * 0.1, duration: 0.5 },
+              y: { duration: 3.5 + i * 0.5, repeat: Infinity, ease: "easeInOut", delay: 0.8 + i * 0.3 },
+            }}
             style={{
               background: "#fff", borderRadius: 20,
               border: "1px solid rgba(139,92,246,0.07)",
@@ -769,11 +829,13 @@ function CardVault() {
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 7 }}>
               <span style={{ fontSize: 12.5, fontWeight: 650, color: P.ink, letterSpacing: "-0.01em", lineHeight: 1.4, flex: 1 }}>{c.title}</span>
-              <svg width="12" height="12" viewBox="0 0 24 24"
+              <motion.svg width="12" height="12" viewBox="0 0 24 24"
                 fill={c.star ? P.pink : "none"} stroke={c.star ? P.pink : P.g300} strokeWidth="1.6"
+                animate={c.star ? { scale: [1, 1.3, 1], rotate: [0, 15, -15, 0] } : {}}
+                transition={c.star ? { duration: 3, repeat: Infinity, ease: "easeInOut" } : {}}
                 style={{ flexShrink: 0, marginLeft: 8 }}>
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-              </svg>
+              </motion.svg>
             </div>
             <div style={{ display: "flex", gap: 4, marginBottom: 5 }}>
               {c.tags.map(t => (
@@ -792,9 +854,11 @@ function CardVault() {
             display: "flex", alignItems: "center", gap: 5,
           }}>
             View all prompts
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={P.purple} strokeWidth="2">
+            <motion.svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={P.purple} strokeWidth="2"
+              animate={{ x: [0, 4, 0] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}>
               <path d="M5 12h14M12 5l7 7-7 7" />
-            </svg>
+            </motion.svg>
           </button>
         </div>
       </div>
@@ -830,17 +894,24 @@ function CardSmartTags() {
         Organize and never lose a prompt.
       </p>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-        {VTAGS.map(t => (
-          <span key={t.label} style={{
-            padding: "5px 12px", borderRadius: 999,
-            background: t.bg, color: t.c, fontSize: 11.5, fontWeight: 550, cursor: "pointer", letterSpacing: "-0.01em",
-          }}>{t.label}</span>
+        {VTAGS.map((t, i) => (
+          <motion.span key={t.label}
+            animate={{ scale: [1, 1.08, 1], y: [0, -2, 0] }}
+            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: i * 0.4 }}
+            whileHover={{ scale: 1.12 }}
+            style={{
+              padding: "5px 12px", borderRadius: 999,
+              background: t.bg, color: t.c, fontSize: 11.5, fontWeight: 550, cursor: "pointer", letterSpacing: "-0.01em",
+            }}>{t.label}</motion.span>
         ))}
-        <span style={{
-          padding: "5px 12px", borderRadius: 999, background: "transparent",
-          border: "1.5px dashed rgba(139,92,246,0.22)", color: P.lav,
-          fontSize: 11.5, fontWeight: 550, cursor: "pointer",
-        }}>+ Add Tag</span>
+        <motion.span
+          animate={{ opacity: [0.5, 1, 0.5] }}
+          transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+          style={{
+            padding: "5px 12px", borderRadius: 999, background: "transparent",
+            border: "1.5px dashed rgba(139,92,246,0.22)", color: P.lav,
+            fontSize: 11.5, fontWeight: 550, cursor: "pointer",
+          }}>+ Add Tag</motion.span>
       </div>
     </div>
   );
@@ -926,9 +997,12 @@ function CardExport() {
                 strokeDasharray="4 5"
                 strokeLinecap="round"
                 initial={{ pathLength: 0, opacity: 0 }}
-                whileInView={{ pathLength: 1, opacity: 1 }}
-                viewport={{ once: true, amount: 0.3 }}
-                transition={{ duration: 0.9, delay: 0.1 + i * 0.12, ease: "easeOut" }}
+                animate={{ pathLength: 1, opacity: 1, strokeDashoffset: [0, -18] }}
+                transition={{
+                  pathLength: { duration: 0.9, delay: 0.1 + i * 0.12, ease: "easeOut" },
+                  opacity: { duration: 0.9, delay: 0.1 + i * 0.12, ease: "easeOut" },
+                  strokeDashoffset: { duration: 1.8 + i * 0.3, repeat: Infinity, ease: "linear", delay: 1.2 },
+                }}
               />
             );
           })}
@@ -941,9 +1015,12 @@ function CardExport() {
               <motion.g
                 key={f.label}
                 initial={{ opacity: 0, scale: 0.6 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true, amount: 0.3 }}
-                transition={{ delay: 0.15 + i * 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
+                animate={{ opacity: 1, scale: 1, y: [0, -3 - i * 1.5, 0] }}
+                transition={{
+                  opacity: { delay: 0.15 + i * 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+                  scale: { delay: 0.15 + i * 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+                  y: { duration: 3 + i * 0.7, repeat: Infinity, ease: "easeInOut", delay: 1 + i * 0.25 },
+                }}
               >
                 {/* glow behind chip */}
                 <rect x={fx - chipW / 2 - 3} y={fy - chipH / 2 - 3} width={chipW + 6} height={chipH + 6} rx={12} fill={`${f.c}10`} />
@@ -963,9 +1040,11 @@ function CardExport() {
           {/* Center AURE node */}
           <motion.g
             initial={{ opacity: 0, scale: 0.5 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ delay: 0.05, duration: 0.55, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
+            animate={{ opacity: 1, scale: [1, 1.08, 1] }}
+            transition={{
+              opacity: { delay: 0.05, duration: 0.55, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+              scale: { duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.6 },
+            }}
           >
             <circle cx={CX} cy={CY} r={24} fill="white" stroke="rgba(139,92,246,0.20)" strokeWidth={1.5} />
             <circle cx={CX} cy={CY} r={17} fill="rgba(139,92,246,0.07)" />
@@ -1004,23 +1083,23 @@ const HIST = [
 
 function CardHistory() {
   return (
-    <div style={CARD}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-        <div style={{ width: 30, height: 30, borderRadius: 9, background: "rgba(139,92,246,0.08)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={P.purple} strokeWidth="1.9">
+    <div style={CARD_SM}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+        <div style={{ width: 28, height: 28, borderRadius: 9, background: "rgba(139,92,246,0.08)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={P.purple} strokeWidth="1.9">
             <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
           </svg>
         </div>
-        <span style={{ fontSize: 17, fontWeight: 700, color: P.ink, letterSpacing: "-0.02em" }}>History &amp; Versions</span>
+        <span style={{ fontSize: 15, fontWeight: 700, color: P.ink, letterSpacing: "-0.02em" }}>History &amp; Versions</span>
       </div>
-      <p style={{ fontSize: 13, color: P.g500, lineHeight: 1.65, margin: "0 0 24px" }}>
+      <p style={{ fontSize: 11.5, color: P.g500, lineHeight: 1.5, margin: "0 0 12px" }}>
         Every change saved. Go back, compare, and improve.
       </p>
 
-      <div style={{ position: "relative", paddingLeft: 20 }}>
+      <div style={{ position: "relative", paddingLeft: 18 }}>
         {/* Gradient vertical timeline line */}
         <div style={{
-          position: "absolute", left: 7, top: 4, bottom: 0, width: 1.5,
+          position: "absolute", left: 6, top: 4, bottom: 4, width: 1.5,
           background: "linear-gradient(to bottom, rgba(139,92,246,0.30) 0%, rgba(139,92,246,0.05) 100%)",
         }} />
 
@@ -1030,26 +1109,38 @@ function CardHistory() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ delay: i * 0.1, duration: 0.4 }}
-            // Organic spacing: v3→v2 gap is wider than v2→v1 gap
-            style={{ position: "relative", marginBottom: i === 0 ? 22 : i === 1 ? 17 : 0 }}
+            style={{ position: "relative", marginBottom: i < HIST.length - 1 ? 12 : 0 }}
           >
             <div style={{
-              position: "absolute", left: -15, top: 4,
-              width: 9, height: 9, borderRadius: "50%",
+              position: "absolute", left: -14, top: 4,
+              width: 8, height: 8, borderRadius: "50%",
               background: h.active ? P.purple : "rgba(139,92,246,0.22)",
               border: `2px solid ${h.active ? P.lav : "rgba(196,181,253,0.30)"}`,
-              boxShadow: h.active ? "0 0 10px rgba(139,92,246,0.45)" : "none",
+              boxShadow: h.active ? "0 0 8px rgba(139,92,246,0.45)" : "none",
             }} />
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+            {h.active && (
+              <motion.div
+                animate={{ scale: [1, 2.5, 1], opacity: [0.6, 0, 0.6] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
+                style={{
+                  position: "absolute", left: -14, top: 4,
+                  width: 8, height: 8, borderRadius: "50%",
+                  background: "rgba(139,92,246,0.25)",
+                  pointerEvents: "none",
+                }}
+              />
+            )}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
                 <span style={{
-                  fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 999,
+                  fontSize: 9.5, fontWeight: 700, padding: "1px 6px", borderRadius: 999,
                   background: h.active ? "rgba(139,92,246,0.10)" : "rgba(0,0,0,0.04)",
                   color: h.active ? P.purple : P.g400,
+                  flexShrink: 0,
                 }}>{h.v}</span>
-                <span style={{ fontSize: 12.5, fontWeight: 520, color: h.active ? P.g700 : P.g500, letterSpacing: "-0.01em" }}>{h.label}</span>
+                <span style={{ fontSize: 11.5, fontWeight: 520, color: h.active ? P.g700 : P.g500, letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{h.label}</span>
               </div>
-              <span style={{ fontSize: 10.5, color: P.g400, whiteSpace: "nowrap" }}>{h.time}</span>
+              <span style={{ fontSize: 10, color: P.g400, whiteSpace: "nowrap", flexShrink: 0 }}>{h.time}</span>
             </div>
           </motion.div>
         ))}
@@ -1078,8 +1169,8 @@ function CardBatch() {
     if (!inView) return;
     const t = setTimeout(() => {
       const id = setInterval(() => setProg(p => {
-        if (p >= 100) { clearInterval(id); return 100; }
-        return p + 1.6;
+        if (p >= 100) return 0;
+        return p + 0.8;
       }), 22);
       return () => clearInterval(id);
     }, 500);
@@ -1150,9 +1241,13 @@ function CardBatch() {
       <motion.button
         whileHover={{ scale: 1.015, boxShadow: "0 8px 32px rgba(139,92,246,0.32)" }}
         whileTap={{ scale: 0.985 }}
+        animate={{ backgroundPosition: ["0% 50%", "200% 50%"] }}
+        transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
         style={{
           alignSelf: "flex-start", padding: "14px 32px", borderRadius: 16,
-          background: GRAD, border: "none", color: "#fff",
+          background: "linear-gradient(90deg, #A78BFA 0%, #8B5CF6 25%, #EC4899 50%, #8B5CF6 75%, #A78BFA 100%)",
+          backgroundSize: "200% 100%",
+          border: "none", color: "#fff",
           fontSize: 15, fontWeight: 680, cursor: "pointer",
           boxShadow: "0 6px 24px rgba(139,92,246,0.26)", letterSpacing: "-0.01em",
         }}
@@ -1212,67 +1307,55 @@ export default function BentoFeatures() {
         </motion.div>
 
         {/* ══════════════════════════════════════════════════════════
-            THE BENTO GRID
-            ──────────────
-            grid-template-areas assigns named regions.
-            "vault" appears in rows 3+4 → CSS Grid automatically
-            spans Vault across both rows. No grid-row:span needed.
-            gridTemplateRows sets explicit pixel heights per row.
-            All cards use height:100% to fill their grid area.
+            THE BENTO GRID (RE-DESIGNED & BALANCED)
+            ─────────────────────────────────────────
+            CardChaining & CardBatch removed.
+            Row 1: Style & Role Memory (6 cols) | Multi-Model (6 cols)
+            Row 2: Analytics & Score (7 cols)  | Prompt Vault (5 cols)
+            Row 3: Smart Tags (3) | Export (3) | Search (3) | History (3)
+            Row 4: CTA Bar (12 cols)
             ══════════════════════════════════════════════════════════ */}
         <div style={{
           display: "grid",
           gridTemplateAreas: `
-            "chain chain chain chain chain chain chain role  role  role  role  role"
-            "model model model model model anlyt anlyt anlyt anlyt anlyt anlyt anlyt"
-            "srch  srch  srch  vault vault vault smart smart smart xport xport xport"
-            "histy histy histy vault vault vault batch batch batch batch batch batch"
+            "role  role  role  role  role  role  model model model model model model"
+            "anlyt anlyt anlyt anlyt anlyt anlyt anlyt vault vault vault vault vault"
+            "smart smart smart xport xport xport srch  srch  srch  histy histy histy"
             "cta   cta   cta   cta   cta   cta   cta   cta   cta   cta   cta   cta"
           `,
           gridTemplateColumns: "repeat(12, 1fr)",
-          gridTemplateRows:    "460px 520px 240px 400px auto",
+          gridTemplateRows:    "460px 480px 260px auto",
           gap: 16,
         }}>
 
-          {/* ── Row 1 ── */}
+          {/* ── Row 1: Hero Cards ── */}
           <motion.div custom={0} variants={FU} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.05 }} style={{ gridArea: "role" }}>
             <CardStyleRole />
           </motion.div>
-          <motion.div custom={1} variants={FU} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.05 }} style={{ gridArea: "chain" }}>
-            <CardChaining />
-          </motion.div>
-
-          {/* ── Row 2 ── */}
-          <motion.div custom={2} variants={FU} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.05 }} style={{ gridArea: "model" }}>
+          <motion.div custom={1} variants={FU} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.05 }} style={{ gridArea: "model" }}>
             <CardMultiModel />
           </motion.div>
-          <motion.div custom={3} variants={FU} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.05 }} style={{ gridArea: "anlyt" }}>
+
+          {/* ── Row 2: Analytics & Vault ── */}
+          <motion.div custom={2} variants={FU} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.05 }} style={{ gridArea: "anlyt" }}>
             <CardAnalytics />
           </motion.div>
-
-          {/* ── Rows 3+4 — The Interlocking Zone ──
-               Vault (gridArea="vault") spans cols 4-6, rows 3+4.
-               Search/Smart/Export fill cols 1-3 and 7-12 in row 3.
-               History fills cols 1-3 in row 4, below Search.
-               Batch fills cols 7-12 in row 4, covering Smart+Export's area → puzzle piece.
-          ── */}
-          <motion.div custom={4} variants={FU} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.05 }} style={{ gridArea: "srch" }}>
-            <CardSearch />
-          </motion.div>
-          <motion.div custom={5} variants={FU} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.05 }} style={{ gridArea: "vault" }}>
+          <motion.div custom={3} variants={FU} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.05 }} style={{ gridArea: "vault" }}>
             <CardVault />
           </motion.div>
-          <motion.div custom={6} variants={FU} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.05 }} style={{ gridArea: "smart" }}>
+
+          {/* ── Row 3: Workflow Utilities (4 Cards x 3 Cols) ── */}
+          <motion.div custom={4} variants={FU} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.05 }} style={{ gridArea: "smart" }}>
             <CardSmartTags />
           </motion.div>
-          <motion.div custom={7} variants={FU} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.05 }} style={{ gridArea: "xport" }}>
+          <motion.div custom={5} variants={FU} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.05 }} style={{ gridArea: "xport" }}>
             <CardExport />
           </motion.div>
-          <motion.div custom={8} variants={FU} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.05 }} style={{ gridArea: "histy" }}>
-            <CardHistory />
+          <motion.div custom={6} variants={FU} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.05 }} style={{ gridArea: "srch" }}>
+            <CardSearch />
           </motion.div>
-          <motion.div custom={9} variants={FU} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.05 }} style={{ gridArea: "batch" }}>
-            <CardBatch />
+          <motion.div custom={7} variants={FU} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.05 }} style={{ gridArea: "histy" }}>
+            <CardHistory />
           </motion.div>
 
           {/* ── CTA ── */}
