@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
@@ -16,38 +16,59 @@ const navLinks: NavItem[] = [
   { id: "transformation-engine", label: "Optimizer", href: "#transformation-engine" },
   { id: "examples", label: "Examples", href: "#examples" },
   { id: "features", label: "Features", href: "#features" },
-  { id: "privacy", label: "Privacy", href: "#privacy" },
+  { id: "faq", label: "FAQ", href: "#faq" },
 ];
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeId, setActiveId] = useState<string>("extension");
+  const isClickScrolling = useRef(false);
+  const clickScrollTimer = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    const sectionIds = navLinks.map((item) => item.id);
-    const observerCallback: IntersectionObserverCallback = (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          setActiveId(entry.target.id);
+    // Check initial hash on load if present
+    if (typeof window !== "undefined" && window.location.hash) {
+      const hashId = window.location.hash.replace("#", "");
+      if (navLinks.some((n) => n.id === hashId)) {
+        setActiveId(hashId);
+      }
+    }
+
+    const handleScroll = () => {
+      if (isClickScrolling.current) return;
+
+      const scrollPosition = window.scrollY + 120;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+
+      // If scrolled near bottom of page, activate last section (FAQ)
+      if (window.scrollY + windowHeight >= documentHeight - 60) {
+        setActiveId(navLinks[navLinks.length - 1].id);
+        return;
+      }
+
+      let currentSectionId = navLinks[0].id;
+      for (const link of navLinks) {
+        const el = document.getElementById(link.id);
+        if (el) {
+          const top = el.offsetTop;
+          const height = el.offsetHeight;
+          if (scrollPosition >= top && scrollPosition < top + height) {
+            currentSectionId = link.id;
+            break;
+          }
         }
-      });
+      }
+
+      setActiveId(currentSectionId);
     };
 
-    const observerOptions: IntersectionObserverInit = {
-      root: null,
-      rootMargin: "-20% 0px -40% 0px",
-      threshold: 0.15,
-    };
-
-    const observer = new IntersectionObserver(observerCallback, observerOptions);
-
-    sectionIds.forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) observer.observe(el);
-    });
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
 
     return () => {
-      observer.disconnect();
+      window.removeEventListener("scroll", handleScroll);
+      if (clickScrollTimer.current) clearTimeout(clickScrollTimer.current);
     };
   }, []);
 
@@ -55,11 +76,27 @@ export default function Navbar() {
     e.preventDefault();
     setMobileOpen(false);
     setActiveId(id);
+    isClickScrolling.current = true;
+
+    if (clickScrollTimer.current) clearTimeout(clickScrollTimer.current);
+
     const targetEl = document.getElementById(id);
     if (targetEl) {
-      targetEl.scrollIntoView({ behavior: "smooth", block: "start" });
+      const navOffset = 80;
+      const elementPosition = targetEl.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - navOffset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth",
+      });
+
       window.history.pushState(null, "", `#${id}`);
     }
+
+    clickScrollTimer.current = setTimeout(() => {
+      isClickScrolling.current = false;
+    }, 850);
   };
 
   return (

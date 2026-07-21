@@ -4,7 +4,7 @@ import Hero from "@/components/Hero";
 import WorksEverywhere from "@/components/WorksEverywhere";
 import PromptTransformationShowcase from "@/components/PromptTransformationShowcase";
 import BentoFeatures from "@/components/BentoFeatures";
-import PrivacySection from "@/components/PrivacySection";
+import FAQSection from "@/components/FAQSection";
 
 const TransformationEngine = dynamic(() => import("@/components/TransformationEngine"), {
   loading: () => <div style={{ minHeight: "100vh" }} className="bg-[#FAFBFC]" />,
@@ -19,7 +19,7 @@ export default function Home() {
       <TransformationEngine />
       <PromptTransformationShowcase />
       <BentoFeatures />
-      <PrivacySection />
+      <FAQSection />
     </main>
   );
 }
