@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 
 export default function PrivacySection() {
   return (
-    <section className="w-full bg-[#FAFBFC] pb-24 pt-6 px-6 md:px-12 lg:px-16" id="privacy-section">
+    <section className="w-full bg-[#FAFBFC] pb-24 pt-6 px-6 md:px-12 lg:px-16" id="privacy">
       <div className="mx-auto max-w-[1200px]">
         <motion.div
           initial={{ opacity: 0, y: 30 }}

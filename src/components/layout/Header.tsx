@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { ChevronDown, Zap } from 'lucide-react';
+import { useEnabledStyleOptions } from '@/features/style-memory/services/styleMemoryService';
 
 interface HeaderProps {
   activeTab?: string;
@@ -32,12 +33,15 @@ export default function Header({ activeTab = 'Draft', onTabChange }: HeaderProps
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const styles = [
-    { name: 'None',                  color: '#9ca3af' },
-    { name: 'Cinematic Noir',        color: '#f59e0b' },
-    { name: 'Editorial Warm',        color: '#ea580c' },
-    { name: 'Product Launch Voice',  color: '#0ea5e9' },
-  ];
+  const styleOptions = useEnabledStyleOptions();
+  const styles = styleOptions.map(o => ({ name: o.label, color: o.color }));
+
+  useEffect(() => {
+    if (!styles.some(s => s.name === activeStyle)) {
+      setActiveStyle('None');
+    }
+  }, [styles, activeStyle]);
+
   const models  = ['ChatGPT', 'Claude', 'Gemini', 'Grok', 'Midjourney', 'VEO', 'DALL-E', 'Stable Diffusion'];
   const engines = ['Claude Sonnet 4.5', 'GPT-5.2'];
 

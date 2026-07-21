@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import VersionHeader from './VersionHeader';
 import VersionHistoryDrawer from './VersionHistoryDrawer';
+import { useEnabledStyleOptions } from '@/features/style-memory/services/styleMemoryService';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface Dimension {
@@ -446,12 +447,13 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const styleOptions = [
-    { label: 'None', color: '#94A3B8' },
-    { label: 'Cinematic Noir', color: '#FBBF24' },
-    { label: 'Editorial Warm', color: '#F97316' },
-    { label: 'Product Launch Voice', color: '#38BDF8' },
-  ];
+  const styleOptions = useEnabledStyleOptions();
+
+  useEffect(() => {
+    if (!styleOptions.some(o => o.label === selectedStyle)) {
+      setSelectedStyle('None');
+    }
+  }, [styleOptions, selectedStyle]);
 
   const targetModels = [
     'ChatGPT', 'Claude', 'Gemini', 'Grok', 'Midjourney', 'VEO', 'DALL-E', 'Stable Diffusion'
@@ -609,7 +611,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                 border: '1px solid rgba(124,58,237,0.15)', color: '#334155', cursor: 'pointer',
               }}
             >
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: styleOptions.find(o => o.label === selectedStyle)?.color }} />
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: styleOptions.find(o => o.label === selectedStyle)?.color || '#94A3B8' }} />
               Style <span style={{ color: '#CBD5E1' }}>|</span> <span style={{ color: '#1E293B' }}>{selectedStyle}</span>
               <ChevronDown size={14} style={{ color: '#94A3B8' }} />
             </button>

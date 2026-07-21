@@ -113,7 +113,7 @@ function CardStyleRole() {
         Style &amp;&nbsp;Role<br />Memory
       </h2>
       <p style={{ fontSize: 13.5, color: P.g500, lineHeight: 1.65, margin: "0 0 20px" }}>
-        Set your role once. PromptIQ adapts every output to match your professional context.
+        Set your role once. AURE adapts every output to match your professional context.
       </p>
 
       <p style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: P.g400, marginBottom: 10 }}>
@@ -850,7 +850,7 @@ function CardSmartTags() {
  *  CARD 8 — Export Anywhere (cinematic redesign)
  *  Grid area: "xport" — 3/12 cols, row 3 (240px, compact)
  *
- *  Visual: radial node network. Center "IQ" node glows.
+ *  Visual: radial node network. Center "AURE" node glows.
  *  4 format cards orbit at different depths + angles.
  *  Curved lines connect center → each format.
  *  Particles orbit slowly to imply live data flow.
@@ -903,14 +903,14 @@ function CardExport() {
       <div style={{ flex: 1, minHeight: 0 }}>
         <svg viewBox="0 0 220 190" width="100%" height="100%" fill="none" style={{ overflow: "visible", display: "block" }}>
           <defs>
-            <radialGradient id="iqGlow" cx="50%" cy="50%" r="50%">
+            <radialGradient id="aureGlow" cx="50%" cy="50%" r="50%">
               <stop offset="0%" stopColor="rgba(139,92,246,0.25)" />
               <stop offset="100%" stopColor="rgba(139,92,246,0)" />
             </radialGradient>
           </defs>
 
           {/* Center glow */}
-          <circle cx={CX} cy={CY} r={42} fill="url(#iqGlow)" />
+          <circle cx={CX} cy={CY} r={42} fill="url(#aureGlow)" />
 
           {/* Curved connection lines: center → each format node */}
           {EXPS.map((f, i) => {
@@ -960,7 +960,7 @@ function CardExport() {
             );
           })}
 
-          {/* Center IQ node */}
+          {/* Center AURE node */}
           <motion.g
             initial={{ opacity: 0, scale: 0.5 }}
             whileInView={{ opacity: 1, scale: 1 }}
@@ -969,9 +969,9 @@ function CardExport() {
           >
             <circle cx={CX} cy={CY} r={24} fill="white" stroke="rgba(139,92,246,0.20)" strokeWidth={1.5} />
             <circle cx={CX} cy={CY} r={17} fill="rgba(139,92,246,0.07)" />
-            <text x={CX} y={CY + 1} fontSize={10} fontWeight="800" fill={P.purple}
+            <text x={CX} y={CY + 1} fontSize={9} fontWeight="800" fill={P.purple}
               textAnchor="middle" dominantBaseline="middle"
-              fontFamily="system-ui,-apple-system,sans-serif" letterSpacing="0.03em">IQ</text>
+              fontFamily="system-ui,-apple-system,sans-serif" letterSpacing="0.03em">AURE</text>
           </motion.g>
 
           {/* Slowly orbiting particles */}

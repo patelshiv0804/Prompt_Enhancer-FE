@@ -43,7 +43,7 @@ export default function SettingsPage() {
   
   // Profile Info
   const [displayName, setDisplayName] = useState<string>('Alex P.');
-  const [email] = useState<string>('alex.p@promptiq.ai');
+  const [email] = useState<string>('alex.p@aure.ai');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarPreset, setAvatarPreset] = useState<number>(4); // 4 = Fingerprint gradient preset
   const [userRole, setUserRole] = useState<string>('Creator');
@@ -272,7 +272,7 @@ export default function SettingsPage() {
   useEffect(() => {
     if (calculatedOnboardingComplete && !onboardingComplete) {
       setOnboardingComplete(true);
-      triggerToast('Onboarding completed! Welcome to PromptIQ 🚀');
+      triggerToast('Onboarding completed! Welcome to AURE 🚀');
     }
   }, [calculatedOnboardingComplete, onboardingComplete]);
 

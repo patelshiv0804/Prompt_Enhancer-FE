@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════════════════
- * PromptIQUniverse — Unabyss-Style Gravity Wells & Light Theme
+ * AUREUniverse — Unabyss-Style Gravity Wells & Light Theme
  *
  * All particles are simulated in 3D Grid Space (c, r) and project
  * onto the 3D wave grid, making them bob and warp with the waves.

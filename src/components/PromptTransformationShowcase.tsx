@@ -184,7 +184,7 @@ export default function PromptTransformationShowcase() {
 
 
   return (
-    <section className="w-full bg-[#FAFBFC] pb-20 px-6 md:px-12 lg:px-16" id="transformation-showcase">
+    <section className="w-full bg-[#FAFBFC] pb-20 px-6 md:px-12 lg:px-16" id="examples">
       <motion.div
         variants={containerVariants}
         initial="hidden"

@@ -7,6 +7,7 @@ import {
   Fingerprint, Palette, Film, Trees, User as UserIcon,
   Sparkles, ChevronDown, Pencil, Trash2,
 } from 'lucide-react';
+import { useStyleProfiles } from '@/features/style-memory/services/styleMemoryService';
 
 /* ═══════════════════════════════════════════════════
    Types & Constants
@@ -958,7 +959,7 @@ function ProfileModal({
 
 export default function StyleMemoryPage() {
   const router = useRouter();
-  const [profiles, setProfiles] = useState<StyleProfile[]>(MOCK_PROFILES);
+  const [profiles, setProfiles] = useStyleProfiles();
   const [activeFilter, setActiveFilter] = useState<Category | 'all'>('all');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editingProfile, setEditingProfile] = useState<StyleProfile | null>(null);
@@ -970,17 +971,17 @@ export default function StyleMemoryPage() {
   const handleSaveProfile = (data: Omit<StyleProfile, 'id'>) => {
     if (editingProfile) {
       // Update existing
-      setProfiles(prev => prev.map(p => p.id === editingProfile.id ? { ...p, ...data } : p));
+      setProfiles(profiles.map(p => p.id === editingProfile.id ? { ...p, ...data } : p));
     } else {
       // Create new
       const newProfile: StyleProfile = { ...data, id: `sp-${Date.now()}` };
-      setProfiles(prev => [newProfile, ...prev]);
+      setProfiles([newProfile, ...profiles]);
     }
     setEditingProfile(null);
   };
 
   const handleToggle = (id: string) => {
-    setProfiles(prev => prev.map(p => p.id === id ? { ...p, enabled: !p.enabled } : p));
+    setProfiles(profiles.map(p => p.id === id ? { ...p, enabled: !p.enabled } : p));
   };
 
   const handleEdit = (profile: StyleProfile) => {
@@ -990,7 +991,7 @@ export default function StyleMemoryPage() {
 
   const handleDelete = (id: string) => {
     if (window.confirm('Are you sure you want to delete this style profile?')) {
-      setProfiles(prev => prev.filter(p => p.id !== id));
+      setProfiles(profiles.filter(p => p.id !== id));
     }
   };
 

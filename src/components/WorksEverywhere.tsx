@@ -172,7 +172,7 @@ export default function WorksEverywhere() {
   return (
     <section
       className="relative w-full overflow-hidden"
-      id="works-everywhere"
+      id="extension"
       style={{
         background: "linear-gradient(180deg, #070710 0%, #0A0A18 40%, #0C0B1D 70%, #0D0D1A 100%)",
       }}
