@@ -1259,6 +1259,185 @@ function CardBatch() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
+ *  CARD 11 — Prompt Templates
+ *  Grid area: "tmpl" — 6/12 cols, new row
+ *
+ *  Visual: floating template preview cards with category pills,
+ *  animated stagger entrance, and a "Browse Library" CTA.
+ * ═══════════════════════════════════════════════════════════════════ */
+
+const TEMPLATES = [
+  {
+    title: "SEO Blog Writer",
+    desc: "Rank-optimized article outlines with keyword density targets",
+    category: "Marketing",
+    catColor: "#EC4899",
+    catBg: "rgba(236,72,153,0.08)",
+    icon: "📝",
+  },
+  {
+    title: "Code Reviewer",
+    desc: "Deep analysis with security, performance & style feedback",
+    category: "Engineering",
+    catColor: P.violet,
+    catBg: "rgba(124,58,237,0.08)",
+    icon: "🔍",
+  },
+  {
+    title: "Product Launch",
+    desc: "Go-to-market copy, taglines & feature announcements",
+    category: "Business",
+    catColor: "#F59E0B",
+    catBg: "rgba(245,158,11,0.08)",
+    icon: "🚀",
+  },
+  {
+    title: "Image Prompt",
+    desc: "Cinematic scene descriptions for Midjourney & DALL·E",
+    category: "Creative",
+    catColor: P.purple,
+    catBg: "rgba(139,92,246,0.08)",
+    icon: "🎨",
+  },
+];
+
+const TCAT_PILLS = [
+  { label: "All", active: true },
+  { label: "Marketing" },
+  { label: "Engineering" },
+  { label: "Creative" },
+  { label: "Business" },
+];
+
+function CardTemplates() {
+  return (
+    <div style={CARD}>
+      {/* Ambient background glow */}
+      <div style={{
+        position: "absolute", top: -20, right: -20, width: 200, height: 200,
+        background: "radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 65%)",
+        pointerEvents: "none",
+      }} />
+      <div style={{
+        position: "absolute", bottom: -30, left: "30%", width: 180, height: 180,
+        background: "radial-gradient(circle, rgba(236,72,153,0.05) 0%, transparent 65%)",
+        pointerEvents: "none",
+      }} />
+
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+        <div style={{
+          width: 32, height: 32, borderRadius: 10,
+          background: "linear-gradient(135deg, rgba(139,92,246,0.14) 0%, rgba(236,72,153,0.08) 100%)",
+          border: "1px solid rgba(139,92,246,0.16)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          boxShadow: "0 0 12px rgba(139,92,246,0.12)",
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={P.purple} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1" />
+            <rect x="14" y="3" width="7" height="7" rx="1" />
+            <rect x="3" y="14" width="7" height="7" rx="1" />
+            <rect x="14" y="14" width="7" height="7" rx="1" />
+          </svg>
+        </div>
+        <div>
+          <span style={LBL}>TEMPLATE LIBRARY</span>
+          <h3 style={{ fontSize: 20, fontWeight: 780, color: P.ink, margin: 0, letterSpacing: "-0.025em", lineHeight: 1.1 }}>
+            Prompt Templates
+          </h3>
+        </div>
+      </div>
+
+      <p style={{ fontSize: 13.5, color: P.g500, lineHeight: 1.55, margin: "0 0 16px" }}>
+        Pre-built, expert-crafted templates for every use case. Start fast, customize freely.
+      </p>
+
+      {/* Category filter pills */}
+      <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap" }}>
+        {TCAT_PILLS.map((cat, i) => (
+          <motion.span
+            key={cat.label}
+            whileHover={{ scale: 1.06 }}
+            style={{
+              padding: "4px 12px", borderRadius: 999, fontSize: 11, fontWeight: 600,
+              cursor: "pointer", letterSpacing: "-0.01em", transition: "all 160ms ease",
+              background: cat.active ? P.purple : "rgba(139,92,246,0.06)",
+              color: cat.active ? "#fff" : P.g500,
+              border: cat.active ? "none" : "1px solid rgba(139,92,246,0.10)",
+            }}
+          >
+            {cat.label}
+          </motion.span>
+        ))}
+      </div>
+
+      {/* Template cards grid */}
+      <div style={{
+        display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, flex: 1,
+      }}>
+        {TEMPLATES.map((t, i) => (
+          <motion.div
+            key={t.title}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            whileHover={{
+              y: -3,
+              boxShadow: "0 8px 24px rgba(139,92,246,0.12)",
+              borderColor: "rgba(139,92,246,0.20)",
+            }}
+            style={{
+              background: "#fff",
+              border: "1px solid rgba(9,9,11,0.06)",
+              borderRadius: 16,
+              padding: "16px 14px",
+              cursor: "pointer",
+              transition: "border-color 200ms ease",
+              display: "flex", flexDirection: "column", gap: 8,
+              position: "relative", overflow: "hidden",
+            }}
+          >
+            {/* Subtle top-left glow per card */}
+            <div style={{
+              position: "absolute", top: -8, left: -8, width: 50, height: 50,
+              background: `radial-gradient(circle, ${t.catBg} 0%, transparent 70%)`,
+              pointerEvents: "none", opacity: 0.8,
+            }} />
+
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
+              <span style={{ fontSize: 20 }}>{t.icon}</span>
+              <span style={{
+                padding: "2px 8px", borderRadius: 999,
+                background: t.catBg, color: t.catColor,
+                fontSize: 9.5, fontWeight: 650,
+              }}>{t.category}</span>
+            </div>
+            <h4 style={{ fontSize: 13.5, fontWeight: 700, color: P.ink, margin: 0, letterSpacing: "-0.02em" }}>{t.title}</h4>
+            <p style={{ fontSize: 11, color: P.g400, margin: 0, lineHeight: 1.45 }}>{t.desc}</p>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Bottom CTA */}
+      <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid rgba(139,92,246,0.06)" }}>
+        <button style={{
+          background: "none", border: "none", padding: 0, cursor: "pointer",
+          fontSize: 12.5, fontWeight: 600, color: P.purple, letterSpacing: "-0.01em",
+          display: "flex", alignItems: "center", gap: 6,
+        }}>
+          Browse all templates
+          <motion.svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={P.purple} strokeWidth="2"
+            animate={{ x: [0, 4, 0] }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}>
+            <path d="M5 12h14M12 5l7 7-7 7" />
+          </motion.svg>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
  *  MAIN SECTION EXPORT
  * ═══════════════════════════════════════════════════════════════════ */
 export default function BentoFeatures() {
@@ -1313,7 +1492,8 @@ export default function BentoFeatures() {
             Row 1: Style & Role Memory (6 cols) | Multi-Model (6 cols)
             Row 2: Analytics & Score (7 cols)  | Prompt Vault (5 cols)
             Row 3: Smart Tags (3) | Export (3) | Search (3) | History (3)
-            Row 4: CTA Bar (12 cols)
+            Row 4: Templates (6 cols) | (empty fills from row 3 overflow)
+            Row 5: CTA Bar (12 cols)
             ══════════════════════════════════════════════════════════ */}
         <div style={{
           display: "grid",
@@ -1321,10 +1501,11 @@ export default function BentoFeatures() {
             "role  role  role  role  role  role  model model model model model model"
             "anlyt anlyt anlyt anlyt anlyt anlyt anlyt vault vault vault vault vault"
             "smart smart smart xport xport xport srch  srch  srch  histy histy histy"
+            "tmpl  tmpl  tmpl  tmpl  tmpl  tmpl  tmpl  tmpl  tmpl  tmpl  tmpl  tmpl"
             "cta   cta   cta   cta   cta   cta   cta   cta   cta   cta   cta   cta"
           `,
           gridTemplateColumns: "repeat(12, 1fr)",
-          gridTemplateRows:    "460px 480px 260px auto",
+          gridTemplateRows:    "460px 480px 260px 420px auto",
           gap: 16,
         }}>
 
@@ -1356,6 +1537,11 @@ export default function BentoFeatures() {
           </motion.div>
           <motion.div custom={7} variants={FU} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.05 }} style={{ gridArea: "histy" }}>
             <CardHistory />
+          </motion.div>
+
+          {/* ── Row 4: Templates ── */}
+          <motion.div custom={8} variants={FU} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.05 }} style={{ gridArea: "tmpl" }}>
+            <CardTemplates />
           </motion.div>
 
           {/* ── CTA ── */}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter, usePathname } from 'next/navigation';
 import {
@@ -59,12 +59,20 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [recentCollapsed, setRecentCollapsed] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const toggleGroup = (label: string) =>
     setCollapsedGroups(prev => ({ ...prev, [label]: !prev[label] }));
 
   const navigate = (page: ActivePage) => router.push(`/dashboard/${page}`);
-  const isActive = (page: ActivePage) => pathname === `/dashboard/${page}` || (page === 'optimizer' && pathname === '/dashboard');
+  const isActive = (page: ActivePage) => {
+    if (!mounted) return false;
+    return pathname === `/dashboard/${page}` || (page === 'optimizer' && pathname === '/dashboard');
+  };
 
   const currentChatId = pathname.startsWith('/dashboard/chat/') ? pathname.split('/dashboard/chat/')[1] : null;
 
@@ -299,8 +307,8 @@ export default function Sidebar() {
           style={{
             display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
             borderRadius: 12, width: '100%', cursor: 'pointer',
-            background: pathname === '/dashboard/profile' || pathname.includes('view=profile') ? 'rgba(124,58,237,0.14)' : 'rgba(255,255,255,0.55)',
-            border: pathname === '/dashboard/profile' || pathname.includes('view=profile') ? '1px solid rgba(124,58,237,0.30)' : '1px solid rgba(124,58,237,0.10)',
+            background: mounted && (pathname === '/dashboard/profile' || pathname.includes('view=profile')) ? 'rgba(124,58,237,0.14)' : 'rgba(255,255,255,0.55)',
+            border: mounted && (pathname === '/dashboard/profile' || pathname.includes('view=profile')) ? '1px solid rgba(124,58,237,0.30)' : '1px solid rgba(124,58,237,0.10)',
             textAlign: 'left', boxShadow: '0 1px 4px rgba(109,40,217,0.06)', transition: 'all 160ms ease',
           }}
           className="hover:!bg-[rgba(255,255,255,0.80)] hover:border-[rgba(124,58,237,0.18)]"
