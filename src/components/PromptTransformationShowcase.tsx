@@ -222,7 +222,7 @@ export default function PromptTransformationShowcase() {
             <span className="text-[11px] font-bold tracking-[0.22em] text-white/40 uppercase">
               SEE THE TRANSFORMATION
             </span>
-            <h2 className="text-[clamp(32px,4.5vw,46px)] font-semibold text-white tracking-tight leading-[1.1] mt-5 mb-6">
+            <h2 className="text-[clamp(36px,4.5vw,54px)] font-extrabold text-white tracking-tight leading-[1.12] mt-5 mb-6">
               Better prompts.
               <br />
               Better outcomes.

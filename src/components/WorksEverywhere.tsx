@@ -261,9 +261,9 @@ export default function WorksEverywhere() {
             <h2
               className="mb-6"
               style={{
-                fontSize: "clamp(36px, 5vw, 58px)",
+                fontSize: "clamp(36px, 4.5vw, 54px)",
                 fontWeight: 800,
-                lineHeight: 1.05,
+                lineHeight: 1.12,
                 letterSpacing: "-0.03em",
                 color: "#fff",
               }}

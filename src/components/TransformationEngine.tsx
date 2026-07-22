@@ -110,7 +110,7 @@ export default function TransformationEngine() {
           </div>
 
           {/* Heading */}
-          <h2 className="text-[clamp(32px,3.8vw,46px)] font-extrabold leading-[1.2] tracking-tight text-gray-900">
+          <h2 className="text-[clamp(36px,4.5vw,54px)] font-extrabold leading-[1.12] tracking-tight text-gray-900">
             One prompt.{" "}
             <span className="gradient-text italic">Optimized everywhere.</span>
           </h2>

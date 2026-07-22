@@ -131,7 +131,7 @@ export default function FAQSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="mt-4 text-3xl font-extrabold tracking-tight text-gray-900 md:text-4xl lg:text-5xl"
+            className="mt-4 text-[clamp(36px,4.5vw,54px)] font-extrabold leading-[1.12] tracking-tight text-gray-900"
           >
             Everything you need to know <br className="hidden sm:inline" />
             about <span className="bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 bg-clip-text text-transparent">AURE</span>

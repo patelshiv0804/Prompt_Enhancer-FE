@@ -1072,78 +1072,176 @@ function CardExport() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
- *  CARD 9 — History & Versions
- *  Grid area: "histy" — 3/12 cols, row 4 (400px)
+ *  CARD 9 — History & Versions  (Premium Redesign)
+ *  Grid area: "histy" — 6/12 cols, row 4 (420px)
+ *  Design: Apple-tier timeline with diff preview, animated glows,
+ *  and a polished restore CTA.
  * ═══════════════════════════════════════════════════════════════════ */
 const HIST = [
-  { v: "v3", label: "Optimized for VEO", time: "Today, 10:24 AM",    active: true  },
-  { v: "v2", label: "Improved context",  time: "Yesterday, 4:15 PM", active: false },
-  { v: "v1", label: "Initial prompt",    time: "May 10, 9:30 AM",    active: false },
+  { v: "v3", label: "Optimized for VEO",  time: "Today, 10:24 AM",    active: true,  changes: "+2 −1", score: 96 },
+  { v: "v2", label: "Improved context",   time: "Yesterday, 4:15 PM", active: false, changes: "+5 −3", score: 82 },
+  { v: "v1", label: "Initial prompt",     time: "May 10, 9:30 AM",    active: false, changes: "—",     score: 64 },
 ];
 
 function CardHistory() {
   return (
-    <div style={CARD_SM}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-        <div style={{ width: 28, height: 28, borderRadius: 9, background: "rgba(139,92,246,0.08)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={P.purple} strokeWidth="1.9">
+    <div style={{ ...CARD, padding: "28px" }}>
+      {/* Ambient corner glows */}
+      <motion.div
+        animate={{ opacity: [0.5, 0.9, 0.5], scale: [1, 1.15, 1] }}
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+        style={{
+          position: "absolute", top: -60, right: -60, width: 220, height: 220,
+          borderRadius: "50%", background: "radial-gradient(circle, rgba(139,92,246,0.10) 0%, transparent 65%)",
+          pointerEvents: "none",
+        }}
+      />
+      <div style={{
+        position: "absolute", bottom: -40, left: -40, width: 180, height: 180,
+        borderRadius: "50%", background: "radial-gradient(circle, rgba(236,72,153,0.05) 0%, transparent 60%)",
+        pointerEvents: "none",
+      }} />
+
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+        <div style={{
+          width: 32, height: 32, borderRadius: 10,
+          background: "linear-gradient(135deg, rgba(139,92,246,0.12) 0%, rgba(236,72,153,0.06) 100%)",
+          border: "1px solid rgba(139,92,246,0.14)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          boxShadow: "0 0 12px rgba(139,92,246,0.10)",
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={P.purple} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
           </svg>
         </div>
-        <span style={{ fontSize: 15, fontWeight: 700, color: P.ink, letterSpacing: "-0.02em" }}>History &amp; Versions</span>
+        <div>
+          <span style={LBL}>Version Control</span>
+          <h3 style={{ fontSize: 20, fontWeight: 780, color: P.ink, margin: 0, letterSpacing: "-0.025em", lineHeight: 1.1 }}>
+            History &amp; Versions
+          </h3>
+        </div>
       </div>
-      <p style={{ fontSize: 11.5, color: P.g500, lineHeight: 1.5, margin: "0 0 12px" }}>
-        Every change saved. Go back, compare, and improve.
+
+      <p style={{ fontSize: 13.5, color: P.g500, lineHeight: 1.55, margin: "0 0 20px" }}>
+        Every change saved. Go back, compare, and improve with one click.
       </p>
 
-      <div style={{ position: "relative", paddingLeft: 18 }}>
+      {/* Timeline */}
+      <div style={{ position: "relative", paddingLeft: 24, flex: 1 }}>
         {/* Gradient vertical timeline line */}
         <div style={{
-          position: "absolute", left: 6, top: 4, bottom: 4, width: 1.5,
-          background: "linear-gradient(to bottom, rgba(139,92,246,0.30) 0%, rgba(139,92,246,0.05) 100%)",
+          position: "absolute", left: 8, top: 8, bottom: 8, width: 2,
+          background: "linear-gradient(to bottom, rgba(139,92,246,0.35) 0%, rgba(139,92,246,0.08) 100%)",
+          borderRadius: 999,
         }} />
 
         {HIST.map((h, i) => (
           <motion.div key={h.v}
-            initial={{ opacity: 0, x: -10 }}
+            initial={{ opacity: 0, x: -16 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            transition={{ delay: i * 0.1, duration: 0.4 }}
-            style={{ position: "relative", marginBottom: i < HIST.length - 1 ? 12 : 0 }}
+            transition={{ delay: i * 0.12, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            style={{ position: "relative", marginBottom: i < HIST.length - 1 ? 16 : 0 }}
           >
+            {/* Dot + ping */}
             <div style={{
-              position: "absolute", left: -14, top: 4,
-              width: 8, height: 8, borderRadius: "50%",
-              background: h.active ? P.purple : "rgba(139,92,246,0.22)",
-              border: `2px solid ${h.active ? P.lav : "rgba(196,181,253,0.30)"}`,
-              boxShadow: h.active ? "0 0 8px rgba(139,92,246,0.45)" : "none",
+              position: "absolute", left: -19, top: 14,
+              width: 10, height: 10, borderRadius: "50%",
+              background: h.active ? P.purple : "rgba(139,92,246,0.18)",
+              border: `2.5px solid ${h.active ? P.lav : "rgba(196,181,253,0.28)"}`,
+              boxShadow: h.active ? "0 0 12px rgba(139,92,246,0.50)" : "none",
+              zIndex: 2,
             }} />
             {h.active && (
               <motion.div
-                animate={{ scale: [1, 2.5, 1], opacity: [0.6, 0, 0.6] }}
-                transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
+                animate={{ scale: [1, 3, 1], opacity: [0.5, 0, 0.5] }}
+                transition={{ duration: 2.5, repeat: Infinity, ease: "easeOut" }}
                 style={{
-                  position: "absolute", left: -14, top: 4,
-                  width: 8, height: 8, borderRadius: "50%",
-                  background: "rgba(139,92,246,0.25)",
-                  pointerEvents: "none",
+                  position: "absolute", left: -19, top: 14,
+                  width: 10, height: 10, borderRadius: "50%",
+                  background: "rgba(139,92,246,0.20)",
+                  pointerEvents: "none", zIndex: 1,
                 }}
               />
             )}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
-                <span style={{
-                  fontSize: 9.5, fontWeight: 700, padding: "1px 6px", borderRadius: 999,
-                  background: h.active ? "rgba(139,92,246,0.10)" : "rgba(0,0,0,0.04)",
-                  color: h.active ? P.purple : P.g400,
-                  flexShrink: 0,
-                }}>{h.v}</span>
-                <span style={{ fontSize: 11.5, fontWeight: 520, color: h.active ? P.g700 : P.g500, letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{h.label}</span>
+
+            {/* Version card */}
+            <motion.div
+              whileHover={{ y: -2, boxShadow: "0 6px 20px rgba(139,92,246,0.12)", borderColor: "rgba(139,92,246,0.18)" }}
+              style={{
+                background: h.active ? "rgba(139,92,246,0.03)" : "#fff",
+                border: `1px solid ${h.active ? "rgba(139,92,246,0.12)" : "rgba(9,9,11,0.06)"}`,
+                borderRadius: 14, padding: "12px 14px",
+                cursor: "pointer", transition: "all 200ms ease",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{
+                    fontSize: 10, fontWeight: 750, padding: "2px 8px", borderRadius: 999,
+                    background: h.active ? "rgba(139,92,246,0.12)" : "rgba(0,0,0,0.04)",
+                    color: h.active ? P.purple : P.g400,
+                  }}>{h.v}</span>
+                  <span style={{ fontSize: 13, fontWeight: 620, color: h.active ? P.ink : P.g600, letterSpacing: "-0.01em" }}>{h.label}</span>
+                  {h.active && (
+                    <motion.span
+                      animate={{ opacity: [0.7, 1, 0.7] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                      style={{
+                        fontSize: 9, fontWeight: 650, padding: "2px 7px", borderRadius: 999,
+                        background: "rgba(16,185,129,0.10)", color: "#10B981",
+                      }}
+                    >Current</motion.span>
+                  )}
+                </div>
+                <span style={{ fontSize: 10.5, color: P.g400, whiteSpace: "nowrap" }}>{h.time}</span>
               </div>
-              <span style={{ fontSize: 10, color: P.g400, whiteSpace: "nowrap", flexShrink: 0 }}>{h.time}</span>
-            </div>
+
+              {/* Inline diff + score */}
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <span style={{
+                  fontSize: 10, fontWeight: 600, color: P.g400,
+                  fontFamily: "ui-monospace, SFMono-Regular, Consolas, monospace",
+                }}>{h.changes}</span>
+                <div style={{ flex: 1, height: 3, borderRadius: 999, background: "rgba(139,92,246,0.06)", overflow: "hidden" }}>
+                  <motion.div
+                    initial={{ width: 0 }}
+                    whileInView={{ width: `${h.score}%` }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.3 + i * 0.15, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                    style={{
+                      height: "100%", borderRadius: 999,
+                      background: h.score >= 90 ? "linear-gradient(90deg, #8B5CF6, #10B981)" : h.score >= 75 ? "linear-gradient(90deg, #8B5CF6, #A78BFA)" : "rgba(139,92,246,0.25)",
+                    }}
+                  />
+                </div>
+                <span style={{
+                  fontSize: 10, fontWeight: 700,
+                  color: h.score >= 90 ? "#10B981" : h.score >= 75 ? P.purple : P.g400,
+                }}>{h.score}</span>
+              </div>
+            </motion.div>
           </motion.div>
         ))}
+      </div>
+
+      {/* Bottom CTA */}
+      <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid rgba(139,92,246,0.06)" }}>
+        <motion.button
+          whileHover={{ scale: 1.01, boxShadow: "0 6px 24px rgba(139,92,246,0.18)" }}
+          whileTap={{ scale: 0.98 }}
+          style={{
+            width: "100%", padding: "11px 0", borderRadius: 12,
+            background: "rgba(139,92,246,0.06)", border: "1px solid rgba(139,92,246,0.10)",
+            color: P.purple, fontSize: 12.5, fontWeight: 650, cursor: "pointer",
+            letterSpacing: "-0.01em", transition: "all 160ms ease",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+          }}
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={P.purple} strokeWidth="2" strokeLinecap="round"><path d="M3 12a9 9 0 1 0 9-9 4.5 4.5 0 0 0-4.5 4.5" /><path d="M3 3v4.5h4.5" /></svg>
+          Restore previous version
+        </motion.button>
       </div>
     </div>
   );
@@ -1259,11 +1357,11 @@ function CardBatch() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
- *  CARD 11 — Prompt Templates
- *  Grid area: "tmpl" — 6/12 cols, new row
+ *  CARD 11 — Prompt Templates  (Premium Redesign)
+ *  Grid area: "tmpl" — 6/12 cols, row 4 (420px)
  *
- *  Visual: floating template preview cards with category pills,
- *  animated stagger entrance, and a "Browse Library" CTA.
+ *  Design: Apple/Notion-tier template gallery with usage stats,
+ *  glassmorphic cards, animated category filters, and a premium CTA.
  * ═══════════════════════════════════════════════════════════════════ */
 
 const TEMPLATES = [
@@ -1273,7 +1371,16 @@ const TEMPLATES = [
     category: "Marketing",
     catColor: "#EC4899",
     catBg: "rgba(236,72,153,0.08)",
-    icon: "📝",
+    icon: (
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#EC4899" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="16" y1="13" x2="8" y2="13"/>
+        <line x1="16" y1="17" x2="8" y2="17"/>
+      </svg>
+    ),
+    uses: "2.4k",
+    gradient: "linear-gradient(135deg, rgba(236,72,153,0.06) 0%, rgba(139,92,246,0.03) 100%)",
   },
   {
     title: "Code Reviewer",
@@ -1281,7 +1388,14 @@ const TEMPLATES = [
     category: "Engineering",
     catColor: P.violet,
     catBg: "rgba(124,58,237,0.08)",
-    icon: "🔍",
+    icon: (
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={P.violet} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="16 18 22 12 16 6"/>
+        <polyline points="8 6 2 12 8 18"/>
+      </svg>
+    ),
+    uses: "1.8k",
+    gradient: "linear-gradient(135deg, rgba(124,58,237,0.06) 0%, rgba(139,92,246,0.03) 100%)",
   },
   {
     title: "Product Launch",
@@ -1289,7 +1403,14 @@ const TEMPLATES = [
     category: "Business",
     catColor: "#F59E0B",
     catBg: "rgba(245,158,11,0.08)",
-    icon: "🚀",
+    icon: (
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.71.13-1.65-.63-2.42-.77-.76-1.71-1.34-2.37-.58z"/>
+        <path d="M12 15l-3-3m0 0l3-3m-3 3h12"/>
+      </svg>
+    ),
+    uses: "3.1k",
+    gradient: "linear-gradient(135deg, rgba(245,158,11,0.06) 0%, rgba(139,92,246,0.03) 100%)",
   },
   {
     title: "Image Prompt",
@@ -1297,30 +1418,42 @@ const TEMPLATES = [
     category: "Creative",
     catColor: P.purple,
     catBg: "rgba(139,92,246,0.08)",
-    icon: "🎨",
+    icon: (
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={P.purple} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+        <circle cx="8.5" cy="8.5" r="1.5"/>
+        <polyline points="21 15 16 10 5 21"/>
+      </svg>
+    ),
+    uses: "4.7k",
+    gradient: "linear-gradient(135deg, rgba(139,92,246,0.06) 0%, rgba(236,72,153,0.03) 100%)",
   },
 ];
 
 const TCAT_PILLS = [
-  { label: "All", active: true },
-  { label: "Marketing" },
-  { label: "Engineering" },
-  { label: "Creative" },
-  { label: "Business" },
+  { label: "All", active: true, dot: P.purple },
+  { label: "Marketing", dot: "#EC4899" },
+  { label: "Engineering", dot: P.violet },
+  { label: "Creative", dot: P.purple },
+  { label: "Business", dot: "#F59E0B" },
 ];
 
 function CardTemplates() {
   return (
-    <div style={CARD}>
-      {/* Ambient background glow */}
+    <div style={{ ...CARD, padding: "28px" }}>
+      {/* Ambient background glows */}
+      <motion.div
+        animate={{ opacity: [0.4, 0.8, 0.4], scale: [1, 1.12, 1] }}
+        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+        style={{
+          position: "absolute", top: -40, right: -40, width: 200, height: 200,
+          borderRadius: "50%", background: "radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 65%)",
+          pointerEvents: "none",
+        }}
+      />
       <div style={{
-        position: "absolute", top: -20, right: -20, width: 200, height: 200,
-        background: "radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 65%)",
-        pointerEvents: "none",
-      }} />
-      <div style={{
-        position: "absolute", bottom: -30, left: "30%", width: 180, height: 180,
-        background: "radial-gradient(circle, rgba(236,72,153,0.05) 0%, transparent 65%)",
+        position: "absolute", bottom: -30, left: "25%", width: 180, height: 180,
+        borderRadius: "50%", background: "radial-gradient(circle, rgba(236,72,153,0.05) 0%, transparent 65%)",
         pointerEvents: "none",
       }} />
 
@@ -1341,31 +1474,39 @@ function CardTemplates() {
           </svg>
         </div>
         <div>
-          <span style={LBL}>TEMPLATE LIBRARY</span>
+          <span style={LBL}>Template Library</span>
           <h3 style={{ fontSize: 20, fontWeight: 780, color: P.ink, margin: 0, letterSpacing: "-0.025em", lineHeight: 1.1 }}>
             Prompt Templates
           </h3>
         </div>
       </div>
 
-      <p style={{ fontSize: 13.5, color: P.g500, lineHeight: 1.55, margin: "0 0 16px" }}>
+      <p style={{ fontSize: 13.5, color: P.g500, lineHeight: 1.55, margin: "0 0 14px" }}>
         Pre-built, expert-crafted templates for every use case. Start fast, customize freely.
       </p>
 
-      {/* Category filter pills */}
+      {/* Category filter pills with dot indicators */}
       <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap" }}>
-        {TCAT_PILLS.map((cat, i) => (
+        {TCAT_PILLS.map((cat) => (
           <motion.span
             key={cat.label}
-            whileHover={{ scale: 1.06 }}
+            whileHover={{ scale: 1.06, y: -1 }}
+            whileTap={{ scale: 0.97 }}
             style={{
-              padding: "4px 12px", borderRadius: 999, fontSize: 11, fontWeight: 600,
+              padding: "5px 12px", borderRadius: 999, fontSize: 11, fontWeight: 600,
               cursor: "pointer", letterSpacing: "-0.01em", transition: "all 160ms ease",
-              background: cat.active ? P.purple : "rgba(139,92,246,0.06)",
+              background: cat.active ? P.purple : "rgba(139,92,246,0.04)",
               color: cat.active ? "#fff" : P.g500,
-              border: cat.active ? "none" : "1px solid rgba(139,92,246,0.10)",
+              border: cat.active ? "1px solid transparent" : "1px solid rgba(139,92,246,0.08)",
+              display: "flex", alignItems: "center", gap: 5,
             }}
           >
+            {!cat.active && (
+              <span style={{
+                width: 5, height: 5, borderRadius: "50%",
+                background: cat.dot, flexShrink: 0,
+              }} />
+            )}
             {cat.label}
           </motion.span>
         ))}
@@ -1378,39 +1519,56 @@ function CardTemplates() {
         {TEMPLATES.map((t, i) => (
           <motion.div
             key={t.title}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ opacity: 0, y: 14 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: i * 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             whileHover={{
-              y: -3,
-              boxShadow: "0 8px 24px rgba(139,92,246,0.12)",
-              borderColor: "rgba(139,92,246,0.20)",
+              y: -4,
+              boxShadow: "0 12px 32px rgba(139,92,246,0.14), 0 2px 8px rgba(0,0,0,0.04)",
+              borderColor: "rgba(139,92,246,0.22)",
             }}
             style={{
-              background: "#fff",
+              background: t.gradient,
               border: "1px solid rgba(9,9,11,0.06)",
               borderRadius: 16,
-              padding: "16px 14px",
+              padding: "16px",
               cursor: "pointer",
-              transition: "border-color 200ms ease",
-              display: "flex", flexDirection: "column", gap: 8,
+              transition: "border-color 200ms ease, box-shadow 200ms ease",
+              display: "flex", flexDirection: "column", gap: 6,
               position: "relative", overflow: "hidden",
             }}
           >
-            {/* Subtle top-left glow per card */}
+            {/* Ambient corner glow */}
             <div style={{
-              position: "absolute", top: -8, left: -8, width: 50, height: 50,
+              position: "absolute", top: -12, left: -12, width: 60, height: 60,
               background: `radial-gradient(circle, ${t.catBg} 0%, transparent 70%)`,
-              pointerEvents: "none", opacity: 0.8,
+              pointerEvents: "none", opacity: 1.2,
             }} />
 
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
-              <span style={{ fontSize: 20 }}>{t.icon}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{
+                  width: 28, height: 28, borderRadius: 8,
+                  background: t.catBg, display: "flex", alignItems: "center", justifyContent: "center",
+                  flexShrink: 0
+                }}>
+                  {t.icon}
+                </div>
+                <span style={{
+                  padding: "2px 8px", borderRadius: 999,
+                  background: t.catBg, color: t.catColor,
+                  fontSize: 9.5, fontWeight: 650,
+                }}>{t.category}</span>
+              </div>
+              {/* Usage count */}
               <span style={{
-                padding: "2px 8px", borderRadius: 999,
-                background: t.catBg, color: t.catColor,
-                fontSize: 9.5, fontWeight: 650,
-              }}>{t.category}</span>
+                fontSize: 9.5, fontWeight: 600, color: P.g400,
+                display: "flex", alignItems: "center", gap: 3,
+              }}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={P.g400} strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                {t.uses}
+              </span>
             </div>
             <h4 style={{ fontSize: 13.5, fontWeight: 700, color: P.ink, margin: 0, letterSpacing: "-0.02em" }}>{t.title}</h4>
             <p style={{ fontSize: 11, color: P.g400, margin: 0, lineHeight: 1.45 }}>{t.desc}</p>
@@ -1420,18 +1578,24 @@ function CardTemplates() {
 
       {/* Bottom CTA */}
       <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid rgba(139,92,246,0.06)" }}>
-        <button style={{
-          background: "none", border: "none", padding: 0, cursor: "pointer",
-          fontSize: 12.5, fontWeight: 600, color: P.purple, letterSpacing: "-0.01em",
-          display: "flex", alignItems: "center", gap: 6,
-        }}>
+        <motion.button
+          whileHover={{ scale: 1.01, boxShadow: "0 6px 24px rgba(139,92,246,0.18)" }}
+          whileTap={{ scale: 0.98 }}
+          style={{
+            width: "100%", padding: "11px 0", borderRadius: 12,
+            background: "rgba(139,92,246,0.06)", border: "1px solid rgba(139,92,246,0.10)",
+            color: P.purple, fontSize: 12.5, fontWeight: 650, cursor: "pointer",
+            letterSpacing: "-0.01em", transition: "all 160ms ease",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+          }}
+        >
           Browse all templates
-          <motion.svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={P.purple} strokeWidth="2"
+          <motion.svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={P.purple} strokeWidth="2"
             animate={{ x: [0, 4, 0] }}
             transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}>
             <path d="M5 12h14M12 5l7 7-7 7" />
           </motion.svg>
-        </button>
+        </motion.button>
       </div>
     </div>
   );
@@ -1471,8 +1635,8 @@ export default function BentoFeatures() {
           </div>
 
           <h2 style={{
-            fontSize: "clamp(40px, 4.2vw, 64px)", fontWeight: 800, color: P.ink,
-            letterSpacing: "-0.03em", lineHeight: 1.1, margin: "0 0 18px",
+            fontSize: "clamp(36px, 4.5vw, 54px)", fontWeight: 800, color: P.ink,
+            letterSpacing: "-0.03em", lineHeight: 1.12, margin: "0 0 18px",
           }}>
             Everything you need to prompt{" "}
             <span style={{ background: GRAD, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
@@ -1491,8 +1655,8 @@ export default function BentoFeatures() {
             CardChaining & CardBatch removed.
             Row 1: Style & Role Memory (6 cols) | Multi-Model (6 cols)
             Row 2: Analytics & Score (7 cols)  | Prompt Vault (5 cols)
-            Row 3: Smart Tags (3) | Export (3) | Search (3) | History (3)
-            Row 4: Templates (6 cols) | (empty fills from row 3 overflow)
+            Row 3: Smart Tags (4) | Export (4) | Search (4)
+            Row 4: History (6 cols) | Templates (6 cols)
             Row 5: CTA Bar (12 cols)
             ══════════════════════════════════════════════════════════ */}
         <div style={{
@@ -1500,12 +1664,12 @@ export default function BentoFeatures() {
           gridTemplateAreas: `
             "role  role  role  role  role  role  model model model model model model"
             "anlyt anlyt anlyt anlyt anlyt anlyt anlyt vault vault vault vault vault"
-            "smart smart smart xport xport xport srch  srch  srch  histy histy histy"
-            "tmpl  tmpl  tmpl  tmpl  tmpl  tmpl  tmpl  tmpl  tmpl  tmpl  tmpl  tmpl"
+            "smart smart smart smart xport xport xport xport srch  srch  srch  srch"
+            "histy histy histy histy histy histy tmpl  tmpl  tmpl  tmpl  tmpl  tmpl"
             "cta   cta   cta   cta   cta   cta   cta   cta   cta   cta   cta   cta"
           `,
           gridTemplateColumns: "repeat(12, 1fr)",
-          gridTemplateRows:    "460px 480px 260px 420px auto",
+          gridTemplateRows:    "460px 480px 260px 510px auto",
           gap: 16,
         }}>
 
@@ -1525,7 +1689,7 @@ export default function BentoFeatures() {
             <CardVault />
           </motion.div>
 
-          {/* ── Row 3: Workflow Utilities (4 Cards x 3 Cols) ── */}
+          {/* ── Row 3: Workflow Utilities (3 Cards × 4 Cols) ── */}
           <motion.div custom={4} variants={FU} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.05 }} style={{ gridArea: "smart" }}>
             <CardSmartTags />
           </motion.div>
@@ -1535,11 +1699,11 @@ export default function BentoFeatures() {
           <motion.div custom={6} variants={FU} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.05 }} style={{ gridArea: "srch" }}>
             <CardSearch />
           </motion.div>
+
+          {/* ── Row 4: History & Templates (2 Cards × 6 Cols) ── */}
           <motion.div custom={7} variants={FU} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.05 }} style={{ gridArea: "histy" }}>
             <CardHistory />
           </motion.div>
-
-          {/* ── Row 4: Templates ── */}
           <motion.div custom={8} variants={FU} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.05 }} style={{ gridArea: "tmpl" }}>
             <CardTemplates />
           </motion.div>
