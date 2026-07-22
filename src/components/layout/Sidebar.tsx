@@ -295,11 +295,13 @@ export default function Sidebar() {
         <div style={{ height: 1, background: 'rgba(124,58,237,0.09)', margin: '0 0 10px' }} />
         <button
           id="user-profile-btn"
+          onClick={() => router.push('/dashboard/profile')}
           style={{
             display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
             borderRadius: 12, width: '100%', cursor: 'pointer',
-            background: 'rgba(255,255,255,0.55)', border: '1px solid rgba(124,58,237,0.10)',
-            textAlign: 'left', boxShadow: '0 1px 4px rgba(109,40,217,0.06)', transition: 'background 160ms ease',
+            background: pathname === '/dashboard/profile' || pathname.includes('view=profile') ? 'rgba(124,58,237,0.14)' : 'rgba(255,255,255,0.55)',
+            border: pathname === '/dashboard/profile' || pathname.includes('view=profile') ? '1px solid rgba(124,58,237,0.30)' : '1px solid rgba(124,58,237,0.10)',
+            textAlign: 'left', boxShadow: '0 1px 4px rgba(109,40,217,0.06)', transition: 'all 160ms ease',
           }}
           className="hover:!bg-[rgba(255,255,255,0.80)] hover:border-[rgba(124,58,237,0.18)]"
         >

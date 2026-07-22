@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { 
   User, Check, Settings, AlertTriangle, Trash2, Camera, 
   Save, Sparkles, Code, Palette, Fingerprint, Zap, 
@@ -36,7 +37,26 @@ function ToggleSwitch({ enabled, onToggle, ariaLabel }: ToggleSwitchProps) {
   );
 }
 
-export default function SettingsPage() {
+export interface SettingsPageProps {
+  initialTab?: 'profile' | 'settings';
+}
+
+function SettingsContent({ initialTab = 'settings' }: SettingsPageProps) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const queryTab = searchParams?.get('tab') || searchParams?.get('view');
+
+  const [activeTab, setActiveTab] = useState<'profile' | 'settings'>(() => {
+    if (queryTab === 'profile') return 'profile';
+    if (queryTab === 'settings') return 'settings';
+    return initialTab;
+  });
+
+  useEffect(() => {
+    if (queryTab === 'profile') setActiveTab('profile');
+    else if (queryTab === 'settings') setActiveTab('settings');
+  }, [queryTab]);
+
   /* ═══════════════════════════════════════════════════
      State Definitions
      ═══════════════════════════════════════════════════ */
@@ -349,49 +369,96 @@ export default function SettingsPage() {
           }
         `}</style>
 
-        {/* ── Page Title Header (Eyebrow + Bold Title) ── */}
-        <div style={{ padding: '28px 0 24px' }}>
-          <span style={{
-            fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase',
-            letterSpacing: '0.9px', color: colors.textSecondary,
-            display: 'block', marginBottom: 8, transition: 'color 250ms ease',
-          }}>
-            PERSONAL ACCOUNT & PREFERENCES
-          </span>
+        {/* ── Page Title Header (Eyebrow + Bold Title + Segmented Pills) ── */}
+        <div style={{ padding: '28px 0 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
             <div>
+              <span style={{
+                fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase',
+                letterSpacing: '0.9px', color: colors.textSecondary,
+                display: 'block', marginBottom: 8, transition: 'color 250ms ease',
+              }}>
+                {activeTab === 'profile' ? 'USER ACCOUNT & BADGES' : 'SYSTEM & AI PREFERENCES'}
+              </span>
               <h1 style={{ 
                 fontSize: 22, fontWeight: 700, color: colors.textPrimary, 
                 letterSpacing: -0.3, margin: '0 0 6px', transition: 'color 250ms ease' 
               }}>
-                Profile & Settings
+                {activeTab === 'profile' ? 'User Profile' : 'Settings & Preferences'}
               </h1>
               <p style={{ fontSize: 14, color: colors.textSecondary, margin: 0, transition: 'color 250ms ease' }}>
-                Customize your account details, default workspace behaviors, and personalization modes
+                {activeTab === 'profile' 
+                  ? 'Manage your personal account profile, subscription plan, and activity stats'
+                  : 'Customize your default workspace behaviors, theme, and AI model preferences'}
               </p>
+            </div>
+
+            {/* Segmented Control Pills */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 4,
+              background: 'rgba(124, 58, 237, 0.06)', padding: 4,
+              borderRadius: 14, border: '1px solid rgba(124, 58, 237, 0.10)',
+              flexShrink: 0,
+            }}>
+              <button
+                onClick={() => {
+                  setActiveTab('profile');
+                  router.push('/dashboard/profile');
+                }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 7,
+                  padding: '7px 16px', borderRadius: 10, fontSize: 13,
+                  fontWeight: activeTab === 'profile' ? 700 : 500,
+                  border: 'none', cursor: 'pointer', transition: 'all 200ms ease',
+                  background: activeTab === 'profile' ? '#FFFFFF' : 'transparent',
+                  color: activeTab === 'profile' ? '#6D28D9' : colors.textSecondary,
+                  boxShadow: activeTab === 'profile' ? '0 2px 8px rgba(124, 58, 237, 0.12)' : 'none',
+                }}
+              >
+                <User size={14} /> Profile
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab('settings');
+                  router.push('/dashboard/settings');
+                }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 7,
+                  padding: '7px 16px', borderRadius: 10, fontSize: 13,
+                  fontWeight: activeTab === 'settings' ? 700 : 500,
+                  border: 'none', cursor: 'pointer', transition: 'all 200ms ease',
+                  background: activeTab === 'settings' ? '#FFFFFF' : 'transparent',
+                  color: activeTab === 'settings' ? '#6D28D9' : colors.textSecondary,
+                  boxShadow: activeTab === 'settings' ? '0 2px 8px rgba(124, 58, 237, 0.12)' : 'none',
+                }}
+              >
+                <Settings size={14} /> Settings
+              </button>
             </div>
           </div>
         </div>
 
-        {/* ── Layout Grid ── */}
-        <div className="settings-grid">
+        {/* ── Container Layout ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24, width: '100%', marginBottom: 24 }}>
           
           {/* ═══════════════════════════════════════════════════
              1. Profile Overview Card (Left Column)
              ═══════════════════════════════════════════════════ */}
-          {/* ═══════════════════════════════════════════ *
-           *  PROFILE CARD — Premium redesign            *
-           * ═══════════════════════════════════════════ */}
-          <div style={{
-            background: colors.cardBg,
-            border: `1px solid ${colors.cardBorder}`,
-            borderRadius: 20,
-            boxShadow: colors.cardShadow,
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-            transition: 'background 250ms ease, border-color 250ms ease, box-shadow 250ms ease',
-          }}>
+          {/* PROFILE CARD */}
+          {activeTab === 'profile' && (
+            <div style={{
+              background: colors.cardBg,
+              border: `1px solid ${colors.cardBorder}`,
+              borderRadius: 20,
+              boxShadow: colors.cardShadow,
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              transition: 'background 250ms ease, border-color 250ms ease, box-shadow 250ms ease',
+              width: '100%',
+              maxWidth: 720,
+              margin: '0 auto',
+            }}>
 
             {/* ── Hero Banner ── */}
             <div style={{
@@ -624,21 +691,24 @@ export default function SettingsPage() {
               </button>
             </div>
           </div>
+        )}
 
-          {/* ═══════════════════════════════════════════════════
-             2. Preferences Card (Right Column)
-             ═══════════════════════════════════════════════════ */}
-          <div style={{
-            background: colors.cardBg,
-            border: `1px solid ${colors.cardBorder}`,
-            borderRadius: 16,
-            padding: '24px',
-            boxShadow: colors.cardShadow,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 20,
-            transition: 'background 250ms ease, border-color 250ms ease, box-shadow 250ms ease',
-          }}>
+        {/* PREFERENCES CARD */}
+        {activeTab === 'settings' && (
+            <div style={{
+              background: colors.cardBg,
+              border: `1px solid ${colors.cardBorder}`,
+              borderRadius: 20,
+              padding: '28px 32px',
+              boxShadow: colors.cardShadow,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 20,
+              transition: 'background 250ms ease, border-color 250ms ease, box-shadow 250ms ease',
+              width: '100%',
+              maxWidth: 720,
+              margin: '0 auto',
+            }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h2 style={{ fontSize: 16, fontWeight: 700, color: colors.textPrimary, margin: 0, transition: 'color 250ms ease' }}>
                 AI Preferences
@@ -846,8 +916,9 @@ export default function SettingsPage() {
               </button>
             </div>
           </div>
-        </div>
+        )}
       </div>
+    </div>
 
       {/* ═══════════════════════════════════════════════════
          Modal Dialog: Edit Profile Modal
@@ -1096,5 +1167,17 @@ export default function SettingsPage() {
         </div>
       )}
     </>
+  );
+}
+
+export default function SettingsPage({ initialTab = 'settings' }: SettingsPageProps) {
+  return (
+    <Suspense fallback={
+      <div style={{ padding: 48, color: '#7C3AED', fontSize: 14, fontWeight: 600 }}>
+        Loading Settings...
+      </div>
+    }>
+      <SettingsContent initialTab={initialTab} />
+    </Suspense>
   );
 }
