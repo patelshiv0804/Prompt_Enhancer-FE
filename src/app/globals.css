@@ -46,6 +46,11 @@ body {
   scrollbar-width: none !important;
 }
 
+button:focus,
+button:focus-visible {
+  outline: none;
+}
+
 ::-webkit-scrollbar {
   display: none !important;
   width: 0 !important;

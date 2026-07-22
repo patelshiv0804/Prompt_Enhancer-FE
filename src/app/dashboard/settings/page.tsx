@@ -236,7 +236,7 @@ export default function SettingsPage() {
      Dynamic Design Theme Mapping
      ═══════════════════════════════════════════════════ */
   const colors = {
-    canvasBg: isDark ? '#0E0B18' : 'var(--color-canvas, #FAFAFC)',
+    canvasBg: isDark ? '#0E0B18' : 'transparent',
     cardBg: isDark ? '#160F26' : '#FFFFFF',
     cardBorder: isDark ? 'rgba(167, 139, 250, 0.15)' : 'rgba(124, 58, 237, 0.10)',
     cardShadow: isDark 
@@ -761,7 +761,7 @@ export default function SettingsPage() {
                 {savedFeedback['default_model'] && <span style={{ fontSize: 11, color: '#10B981' }}>Updated ✓</span>}
               </div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {['ChatGPT', 'Claude', 'Gemini', 'Grok', 'Midjourney'].map(modelOpt => {
+                {['ChatGPT', 'Claude', 'Gemini', 'Grok', 'Midjourney', 'VEO', 'Perplexity'].map(modelOpt => {
                   const isSelected = defaultModel === modelOpt;
                   return (
                     <button

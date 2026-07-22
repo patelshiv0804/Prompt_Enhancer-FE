@@ -456,8 +456,17 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
   }, [styleOptions, selectedStyle]);
 
   const targetModels = [
-    'ChatGPT', 'Claude', 'Gemini', 'Grok', 'Midjourney', 'VEO', 'DALL-E', 'Stable Diffusion'
+    'ChatGPT', 'Claude', 'Gemini', 'Grok', 'Midjourney', 'VEO', 'Perplexity'
   ];
+  const modelIcons: Record<string, string> = {
+    'ChatGPT': '/chatgpt-icon.svg',
+    'Claude': '/claude-ai-icon.svg',
+    'Gemini': '/google-gemini-icon.svg',
+    'Grok': '/grok-icon.svg',
+    'Midjourney': '/midjourney-color-icon.svg',
+    'VEO': '/veo-icon.svg',
+    'Perplexity': '/perplexity-ai-icon.svg',
+  };
   const optimizerEngines = ['Claude Sonnet 4.5', 'GPT-5.2'];
   const [ready, setReady] = useState(false);
   const [inputValue, setInputValue] = useState('');
@@ -556,7 +565,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', height: '100%', flex: 1, overflowY: 'auto',
-      background: 'var(--color-canvas, #FAFBFC)',
+      background: 'transparent',
     }}>
       <div style={{
         maxWidth: 1100, margin: '0 auto', width: '100%', padding: '20px 48px',
@@ -601,98 +610,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
             </button>
           )}
 
-          {/* Style dropdown */}
-          <div style={{ position: 'relative' }} ref={styleDropdownRef}>
-            <button
-              onClick={() => setIsStyleOpen(!isStyleOpen)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 8, padding: '7px 14px', borderRadius: 10,
-                fontSize: 12.5, fontWeight: 600, background: 'rgba(255,255,255,0.90)',
-                border: '1px solid rgba(124,58,237,0.15)', color: '#334155', cursor: 'pointer',
-              }}
-            >
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: styleOptions.find(o => o.label === selectedStyle)?.color || '#94A3B8' }} />
-              Style <span style={{ color: '#CBD5E1' }}>|</span> <span style={{ color: '#1E293B' }}>{selectedStyle}</span>
-              <ChevronDown size={14} style={{ color: '#94A3B8' }} />
-            </button>
-            {isStyleOpen && (
-              <div style={{
-                position: 'absolute', top: 'calc(100% + 6px)', right: 0, width: 220, background: '#FFFFFF',
-                borderRadius: 14, boxShadow: '0 10px 30px rgba(0,0,0,0.12)', border: '1px solid rgba(124,58,237,0.12)',
-                padding: 6, zIndex: 100,
-              }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: '#94A3B8', padding: '6px 10px 4px', letterSpacing: '0.6px' }}>STYLE MEMORY</div>
-                {styleOptions.map(opt => (
-                  <div
-                    key={opt.label} onClick={() => { setSelectedStyle(opt.label); setIsStyleOpen(false); }}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8,
-                      fontSize: 12.5, fontWeight: 600, color: selectedStyle === opt.label ? '#6D28D9' : '#334155',
-                      background: selectedStyle === opt.label ? 'rgba(124,58,237,0.08)' : 'transparent', cursor: 'pointer',
-                    }}
-                    className="hover:bg-[rgba(124,58,237,0.05)]"
-                  >
-                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: opt.color }} />
-                    {opt.label}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Target dropdown */}
-          <div style={{ position: 'relative' }} ref={targetDropdownRef}>
-            <button
-              onClick={() => setIsTargetOpen(!isTargetOpen)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 8, padding: '7px 14px', borderRadius: 10,
-                fontSize: 12.5, fontWeight: 600, background: 'rgba(255,255,255,0.90)',
-                border: '1px solid rgba(124,58,237,0.15)', color: '#334155', cursor: 'pointer',
-              }}
-            >
-              Target <span style={{ color: '#CBD5E1' }}>|</span> <span style={{ color: '#1E293B' }}>{selectedTarget}</span>
-              <ChevronDown size={14} style={{ color: '#94A3B8' }} />
-            </button>
-            {isTargetOpen && (
-              <div style={{
-                position: 'absolute', top: 'calc(100% + 6px)', right: 0, width: 240, background: '#FFFFFF',
-                borderRadius: 14, boxShadow: '0 10px 30px rgba(0,0,0,0.12)', border: '1px solid rgba(124,58,237,0.12)',
-                padding: 6, zIndex: 100,
-              }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: '#94A3B8', padding: '6px 10px 4px', letterSpacing: '0.6px' }}>TARGET AI MODEL</div>
-                {targetModels.map(model => (
-                  <div
-                    key={model} onClick={() => { setSelectedTarget(model); setIsTargetOpen(false); }}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8,
-                      fontSize: 12.5, fontWeight: 600, color: selectedTarget === model ? '#6D28D9' : '#334155',
-                      background: selectedTarget === model ? 'rgba(124,58,237,0.08)' : 'transparent', cursor: 'pointer',
-                    }}
-                    className="hover:bg-[rgba(124,58,237,0.05)]"
-                  >
-                    {selectedTarget === model ? <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#A855F7' }} /> : <span style={{ width: 6 }} />}
-                    {model}
-                  </div>
-                ))}
-                <div style={{ height: 1, background: '#F1F5F9', margin: '6px 4px' }} />
-                <div style={{ fontSize: 10, fontWeight: 700, color: '#94A3B8', padding: '6px 10px 4px', letterSpacing: '0.6px' }}>OPTIMIZER ENGINE</div>
-                {optimizerEngines.map(engine => (
-                  <div
-                    key={engine} onClick={() => { setSelectedEngine(engine); setIsTargetOpen(false); }}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8,
-                      fontSize: 12.5, fontWeight: 600, color: selectedEngine === engine ? '#6D28D9' : '#334155',
-                      background: selectedEngine === engine ? 'rgba(124,58,237,0.08)' : 'transparent', cursor: 'pointer',
-                    }}
-                    className="hover:bg-[rgba(124,58,237,0.05)]"
-                  >
-                    {selectedEngine === engine ? <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#A855F7' }} /> : <span style={{ width: 6 }} />}
-                    {engine}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          {/* Style dropdown and Target dropdown removed from top */}
         </div>
       </div>
 
@@ -816,8 +734,6 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
 
             {/* Side-by-side prompt comparison */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-              {renderOptimizedPanel(version, `Optimized · v${version.versionNumber}`)}
-
               {/* Original panel */}
               <div style={{
                 background: '#FFFFFF', borderRadius: 20, padding: 24,
@@ -836,6 +752,8 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                   {session.originalPrompt}
                 </div>
               </div>
+
+              {renderOptimizedPanel(version, `Optimized · v${version.versionNumber}`)}
             </div>
 
             {/* Score Breakdown Dimensions Grid */}

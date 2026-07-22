@@ -71,6 +71,21 @@ export default function VersionHeader({
     }
   }, [versions]);
 
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (!searchQuery.trim()) return;
+      const num = parseInt(searchQuery.replace(/^[vV]/, ''), 10);
+      if (isNaN(num)) return;
+      const idx = versions.findIndex(v => v.versionNumber === num);
+      if (idx !== -1) {
+        const bubble = versions[idx] as typeof versions[number] & { originalIndex?: number };
+        const targetIndex = bubble.originalIndex !== undefined ? bubble.originalIndex : idx;
+        onSelectVersion?.(targetIndex);
+      }
+    }
+  }, [searchQuery, versions, onSelectVersion]);
+
   const clearSearch = useCallback(() => { setSearchQuery(''); setSearchMatch(null); setSearchNotFound(false); }, []);
 
   const handleScroll = useCallback(() => {
@@ -256,7 +271,9 @@ export default function VersionHeader({
           <Search size={12} style={{ position: 'absolute', left: 12, color: searchNotFound ? 'rgba(239, 68, 68, 0.8)' : searchMatch !== null ? 'rgba(167, 139, 250, 1)' : 'rgba(196, 181, 253, 0.6)' }} />
           <input
             type="text" placeholder="Jump to version… v3, v46" value={searchQuery}
-            onChange={e => handleSearch(e.target.value)} spellCheck={false}
+            onChange={e => handleSearch(e.target.value)}
+            onKeyDown={handleKeyDown}
+            spellCheck={false}
             style={{
               padding: '0 18px 0 20px', fontSize: 12, fontWeight: 500, background: 'transparent',
               border: 'none', outline: 'none', color: 'rgba(255, 255, 255, 0.9)', width: '100%', letterSpacing: '0.2px',

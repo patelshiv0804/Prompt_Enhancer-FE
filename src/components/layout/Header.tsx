@@ -42,7 +42,16 @@ export default function Header({ activeTab = 'Draft', onTabChange }: HeaderProps
     }
   }, [styles, activeStyle]);
 
-  const models  = ['ChatGPT', 'Claude', 'Gemini', 'Grok', 'Midjourney', 'VEO', 'DALL-E', 'Stable Diffusion'];
+  const models  = ['ChatGPT', 'Claude', 'Gemini', 'Grok', 'Midjourney', 'VEO', 'Perplexity'];
+  const modelIcons: Record<string, string> = {
+    'ChatGPT': '/chatgpt-icon.svg',
+    'Claude': '/claude-ai-icon.svg',
+    'Gemini': '/google-gemini-icon.svg',
+    'Grok': '/grok-icon.svg',
+    'Midjourney': '/midjourney-color-icon.svg',
+    'VEO': '/veo-icon.svg',
+    'Perplexity': '/perplexity-ai-icon.svg',
+  };
   const engines = ['Claude Sonnet 4.5', 'GPT-5.2'];
 
   const activeStyleObj = styles.find(s => s.name === activeStyle) || styles[0];
@@ -176,6 +185,21 @@ export default function Header({ activeTab = 'Draft', onTabChange }: HeaderProps
               >
                 <span style={{ opacity: 0.75 }}>Target</span>
                 <span style={{ opacity: 0.4 }}>|</span>
+                {modelIcons[activeTarget] && (
+                  <img
+                    src={modelIcons[activeTarget]}
+                    alt={activeTarget}
+                    width={15}
+                    height={15}
+                    style={{
+                      width: 15,
+                      height: 15,
+                      objectFit: 'contain',
+                      flexShrink: 0,
+                      filter: activeTarget === 'Grok' ? 'brightness(0) invert(1)' : 'none',
+                    }}
+                  />
+                )}
                 <span style={{ fontWeight: 600 }}>{activeTarget}</span>
                 <ChevronDown size={13} style={{ opacity: 0.6 }} />
               </button>
@@ -210,27 +234,21 @@ export default function Header({ activeTab = 'Draft', onTabChange }: HeaderProps
                           className="hover:bg-[rgba(124,58,237,0.05)]"
                         >
                           <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--color-primary)', flexShrink: 0, opacity: activeTarget === model ? 1 : 0, transition: 'opacity 150ms ease' }} />
-                          {model}
-                        </button>
-                      ))}
-                    </div>
-                    <div style={{ height: 1, background: 'rgba(124,58,237,0.08)', margin: '4px 0' }} />
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-secondary)', padding: '6px 12px' }}>
-                      Optimizer Engine
-                    </div>
-                    <div style={{ padding: 4, display: 'flex', flexDirection: 'column', gap: 1 }}>
-                      {engines.map(engine => (
-                        <button key={engine} onClick={() => { setActiveEngine(engine); setShowTargetDropdown(false); }}
-                          style={{
-                            display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 10px',
-                            fontSize: 13, fontWeight: 500, color: 'var(--color-text-primary)',
-                            borderRadius: 8, textAlign: 'left', border: 'none', cursor: 'pointer', background: 'transparent',
-                            transition: 'background 150ms ease',
-                          }}
-                          className="hover:bg-[rgba(124,58,237,0.05)]"
-                        >
-                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--color-primary)', flexShrink: 0, opacity: activeEngine === engine ? 1 : 0, transition: 'opacity 150ms ease' }} />
-                          {engine}
+                          {modelIcons[model] && (
+                            <img
+                              src={modelIcons[model]}
+                              alt={model}
+                              width={16}
+                              height={16}
+                              style={{
+                                width: 16,
+                                height: 16,
+                                objectFit: 'contain',
+                                flexShrink: 0,
+                              }}
+                            />
+                          )}
+                          <span>{model}</span>
                         </button>
                       ))}
                     </div>

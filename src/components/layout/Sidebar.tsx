@@ -82,12 +82,21 @@ export default function Sidebar() {
       <style>{`
         .sidebar-history-item {
           transition: background-color 160ms ease !important;
+          outline: none !important;
+          border: none !important;
+        }
+        .sidebar-history-item:focus,
+        .sidebar-history-item:focus-visible,
+        .sidebar-history-item:active {
+          outline: none !important;
+          box-shadow: none !important;
         }
         .sidebar-history-item:hover {
           background-color: rgba(124, 58, 237, 0.07) !important;
         }
         .sidebar-history-item.active {
           background-color: rgba(124, 58, 237, 0.12) !important;
+          outline: none !important;
         }
         .sidebar-history-item.active:hover {
           background-color: rgba(124, 58, 237, 0.18) !important;
