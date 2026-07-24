@@ -274,7 +274,7 @@ export default function PromptTransformationShowcase() {
 
                 {/* Content grid */}
                 <div className="relative grid grid-cols-1 md:grid-cols-2 gap-0 items-stretch">
-                  
+
                   {/* Desktop Center Arrow Button */}
                   <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 hidden md:flex h-10 w-10 items-center justify-center rounded-full bg-white text-gray-900 shadow-[0_4px_25px_rgba(139,92,246,0.4)] border border-white/[0.08] hover:scale-110 active:scale-95 transition-transform duration-200 cursor-pointer">
                     <span className="text-lg font-bold select-none">→</span>

@@ -29,37 +29,37 @@ import { motion, useInView } from "framer-motion";
 
 /* ── Design Tokens ── */
 const P = {
-  purple:  "#8B5CF6",
-  lav:     "#A78BFA",
-  violet:  "#7C3AED",
-  pink:    "#EC4899",
-  ink:     "#09090B",
-  g800:    "#1F2937",
-  g700:    "#374151",
-  g600:    "#4B5563",
-  g500:    "#6B7280",
-  g400:    "#9CA3AF",
-  g300:    "#D1D5DB",
-  g200:    "#E5E7EB",
-  g100:    "#F4F4F5",
-  bg:      "#FAFAFC",
+  purple: "#8B5CF6",
+  lav: "#A78BFA",
+  violet: "#7C3AED",
+  pink: "#EC4899",
+  ink: "#09090B",
+  g800: "#1F2937",
+  g700: "#374151",
+  g600: "#4B5563",
+  g500: "#6B7280",
+  g400: "#9CA3AF",
+  g300: "#D1D5DB",
+  g200: "#E5E7EB",
+  g100: "#F4F4F5",
+  bg: "#FAFAFC",
 };
 
 const GRAD = "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 55%, #EC4899 100%)";
 
 /* ── Card shell — MUST have height:100% to fill grid cell ── */
 const CARD: React.CSSProperties = {
-  background:    "#ffffff",
-  borderRadius:  32,
-  border:        "1px solid rgba(9,9,11,0.055)",
-  boxShadow:     "0 1px 2px rgba(0,0,0,0.03), 0 4px 20px rgba(0,0,0,0.04), 0 0 0 0.5px rgba(139,92,246,0.025)",
-  padding:       "32px",
-  height:        "100%",
-  boxSizing:     "border-box" as const,
-  display:       "flex",
+  background: "#ffffff",
+  borderRadius: 32,
+  border: "1px solid rgba(9,9,11,0.055)",
+  boxShadow: "0 1px 2px rgba(0,0,0,0.03), 0 4px 20px rgba(0,0,0,0.04), 0 0 0 0.5px rgba(139,92,246,0.025)",
+  padding: "32px",
+  height: "100%",
+  boxSizing: "border-box" as const,
+  display: "flex",
   flexDirection: "column" as const,
-  position:      "relative" as const,
-  overflow:      "hidden" as const,
+  position: "relative" as const,
+  overflow: "hidden" as const,
 };
 
 /* Compact variant for 240px-row cards */
@@ -67,7 +67,7 @@ const CARD_SM: React.CSSProperties = { ...CARD, padding: "22px 24px" };
 
 /* ── Fade-up entrance ── */
 const FU = {
-  hidden:  { opacity: 0, y: 24 },
+  hidden: { opacity: 0, y: 24 },
   visible: (i: number) => ({
     opacity: 1, y: 0,
     transition: { delay: i * 0.06, duration: 0.65, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
@@ -188,21 +188,21 @@ function CardStyleRole() {
  *  Grid area: "chain" — 7/12 cols, row 1 (460px)
  * ═══════════════════════════════════════════════════════════════════ */
 const CHAIN_NODES = [
-  { id: "A", label: "Story Concept",   x: 58,  y: 36,  pink: false },
-  { id: "B", label: "Scene Breakdown", x: 200, y: 21,  pink: false },
-  { id: "C", label: "Image Prompts",   x: 338, y: 40,  pink: false },
-  { id: "D", label: "VEO Prompts",     x: 467, y: 25,  pink: false },
-  { id: "E", label: "Thumbnail",       x: 107, y: 148, pink: true  },
-  { id: "F", label: "Title & Hook",    x: 255, y: 165, pink: true  },
-  { id: "G", label: "Description",     x: 402, y: 142, pink: true  },
+  { id: "A", label: "Story Concept", x: 58, y: 36, pink: false },
+  { id: "B", label: "Scene Breakdown", x: 200, y: 21, pink: false },
+  { id: "C", label: "Image Prompts", x: 338, y: 40, pink: false },
+  { id: "D", label: "VEO Prompts", x: 467, y: 25, pink: false },
+  { id: "E", label: "Thumbnail", x: 107, y: 148, pink: true },
+  { id: "F", label: "Title & Hook", x: 255, y: 165, pink: true },
+  { id: "G", label: "Description", x: 402, y: 142, pink: true },
 ];
 const CHAIN_EDGES = [
-  { a: "A", b: "B", cpx: 129, cpy: 21  },
-  { a: "B", b: "C", cpx: 269, cpy: 22  },
-  { a: "C", b: "D", cpx: 403, cpy: 22  },
-  { a: "B", b: "E", cpx: 154, cpy: 92  },
+  { a: "A", b: "B", cpx: 129, cpy: 21 },
+  { a: "B", b: "C", cpx: 269, cpy: 22 },
+  { a: "C", b: "D", cpx: 403, cpy: 22 },
+  { a: "B", b: "E", cpx: 154, cpy: 92 },
   { a: "C", b: "F", cpx: 297, cpy: 106 },
-  { a: "D", b: "G", cpx: 435, cpy: 85  },
+  { a: "D", b: "G", cpx: 435, cpy: 85 },
   { a: "E", b: "F", cpx: 181, cpy: 163 },
   { a: "F", b: "G", cpx: 329, cpy: 168 },
 ];
@@ -221,11 +221,11 @@ function CardChaining() { ... }
  * ═══════════════════════════════════════════════════════════════════ */
 /* Model data — palette strictly purple/lavender/pink per brand rules */
 const MODELS = [
-  { ab: "GP", name: "ChatGPT",    c: P.purple, bg: "rgba(139,92,246,0.10)",  pos: { x: 52,  y: 68  }, size: 58 },
-  { ab: "Cl", name: "Claude",     c: P.lav,    bg: "rgba(167,139,250,0.10)", pos: { x: 168, y: 32  }, size: 52 },
-  { ab: "Ge", name: "Gemini",     c: P.violet, bg: "rgba(124,58,237,0.10)",  pos: { x: 295, y: 48  }, size: 60 },
-  { ab: "Mj", name: "Midjourney", c: P.pink,   bg: "rgba(236,72,153,0.10)",  pos: { x: 390, y: 22  }, size: 50 },
-  { ab: "Ve", name: "VEO",        c: "#C084FC", bg: "rgba(192,132,252,0.10)", pos: { x: 80,  y: 178 }, size: 46 },
+  { ab: "GP", name: "ChatGPT", c: P.purple, bg: "rgba(139,92,246,0.10)", pos: { x: 52, y: 68 }, size: 58 },
+  { ab: "Cl", name: "Claude", c: P.lav, bg: "rgba(167,139,250,0.10)", pos: { x: 168, y: 32 }, size: 52 },
+  { ab: "Ge", name: "Gemini", c: P.violet, bg: "rgba(124,58,237,0.10)", pos: { x: 295, y: 48 }, size: 60 },
+  { ab: "Mj", name: "Midjourney", c: P.pink, bg: "rgba(236,72,153,0.10)", pos: { x: 390, y: 22 }, size: 50 },
+  { ab: "Ve", name: "VEO", c: "#C084FC", bg: "rgba(192,132,252,0.10)", pos: { x: 80, y: 178 }, size: 46 },
 ];
 /* Central prompt node in SVG coordinates */
 const MODEL_CENTER = { x: 230, y: 230 };
@@ -478,10 +478,10 @@ function MiniSpark({ pts, c }: { pts: string; c: string }) {
 }
 
 const METRICS = [
-  { label: "Prompts Analyzed", target: 1248, suffix: "",       c: P.purple, pts: "2,16 12,11 24,13 36,7 48,4 58,2" },
-  { label: "Avg. PromptScore", target: 78,   suffix: "/100",  c: P.lav,    pts: "2,14 12,9 24,12 36,5 48,8 58,3"  },
-  { label: "Tokens Saved",     target: 56700, suffix: "",      c: P.pink,   pts: "2,16 12,13 24,9 36,11 48,5 58,2" },
-  { label: "Times Optimized",  target: 2341, suffix: "",       c: P.violet, pts: "2,17 12,14 24,12 36,10 48,7 58,4" },
+  { label: "Prompts Analyzed", target: 1248, suffix: "", c: P.purple, pts: "2,16 12,11 24,13 36,7 48,4 58,2" },
+  { label: "Avg. PromptScore", target: 78, suffix: "/100", c: P.lav, pts: "2,14 12,9 24,12 36,5 48,8 58,3" },
+  { label: "Tokens Saved", target: 56700, suffix: "", c: P.pink, pts: "2,16 12,13 24,9 36,11 48,5 58,2" },
+  { label: "Times Optimized", target: 2341, suffix: "", c: P.violet, pts: "2,17 12,14 24,12 36,10 48,7 58,4" },
 ];
 
 function HeroBigChart() {
@@ -679,11 +679,11 @@ function CardAnalytics() {
 /* Tags: different sizes + colors for organic scatter feel */
 const STAGS = [
   { label: "YouTube Shorts", sz: 11.5, bg: "rgba(167,139,250,0.12)", c: P.violet, fw: 580 },
-  { label: "Midjourney",     sz: 10.5, bg: "rgba(236,72,153,0.09)",  c: "#be185d", fw: 540 },
-  { label: "VEO",            sz: 13,   bg: "rgba(139,92,246,0.13)",  c: P.purple, fw: 640 },
-  { label: "Marketing",      sz: 10,   bg: "rgba(167,139,250,0.09)", c: P.lav,    fw: 520 },
-  { label: "Coding",         sz: 12,   bg: "rgba(124,58,237,0.09)",  c: P.violet, fw: 600 },
-  { label: "Product Launch", sz: 10.5, bg: "rgba(236,72,153,0.08)",  c: "#be185d", fw: 540 },
+  { label: "Midjourney", sz: 10.5, bg: "rgba(236,72,153,0.09)", c: "#be185d", fw: 540 },
+  { label: "VEO", sz: 13, bg: "rgba(139,92,246,0.13)", c: P.purple, fw: 640 },
+  { label: "Marketing", sz: 10, bg: "rgba(167,139,250,0.09)", c: P.lav, fw: 520 },
+  { label: "Coding", sz: 12, bg: "rgba(124,58,237,0.09)", c: P.violet, fw: 600 },
+  { label: "Product Launch", sz: 10.5, bg: "rgba(236,72,153,0.08)", c: "#be185d", fw: 540 },
 ];
 
 function CardSearch() {
@@ -782,9 +782,9 @@ function CardSearch() {
  *  CSS Grid auto-spans it → 3/12 cols × (240+16+400) = 656px tall.
  * ═══════════════════════════════════════════════════════════════════ */
 const VCARDS = [
-  { title: "Product Launch Campaign", tags: ["Marketing", "ChatGPT"], time: "2 days ago",  star: true  },
-  { title: "VEO Cinematic Scene",     tags: ["VEO", "Midjourney"],    time: "Yesterday",   star: false },
-  { title: "SEO Blog Framework",      tags: ["Coding", "Content"],    time: "3 days ago",  star: false },
+  { title: "Product Launch Campaign", tags: ["Marketing", "ChatGPT"], time: "2 days ago", star: true },
+  { title: "VEO Cinematic Scene", tags: ["VEO", "Midjourney"], time: "Yesterday", star: false },
+  { title: "SEO Blog Framework", tags: ["Coding", "Content"], time: "3 days ago", star: false },
 ];
 
 function CardVault() {
@@ -871,11 +871,11 @@ function CardVault() {
  *  Grid area: "smart" — 3/12 cols, row 3 (240px, compact)
  * ═══════════════════════════════════════════════════════════════════ */
 const VTAGS = [
-  { label: "YouTube",    bg: "rgba(236,72,153,0.09)", c: "#be185d" },
-  { label: "VEO",        bg: "rgba(167,139,250,0.10)", c: P.violet  },
-  { label: "Midjourney", bg: "rgba(139,92,246,0.09)",  c: P.purple  },
-  { label: "Marketing",  bg: "rgba(167,139,250,0.08)", c: P.lav     },
-  { label: "Coding",     bg: "rgba(139,92,246,0.07)",  c: P.violet  },
+  { label: "YouTube", bg: "rgba(236,72,153,0.09)", c: "#be185d" },
+  { label: "VEO", bg: "rgba(167,139,250,0.10)", c: P.violet },
+  { label: "Midjourney", bg: "rgba(139,92,246,0.09)", c: P.purple },
+  { label: "Marketing", bg: "rgba(167,139,250,0.08)", c: P.lav },
+  { label: "Coding", bg: "rgba(139,92,246,0.07)", c: P.violet },
 ];
 
 function CardSmartTags() {
@@ -929,10 +929,10 @@ function CardSmartTags() {
 
 /* Format nodes: angle (deg from center) + distance + color */
 const EXPS = [
-  { label: "TXT",  sub: "Plain text",  c: P.purple, angle: 210, r: 74 },
-  { label: "MD",   sub: "Markdown",    c: P.lav,    angle: 320, r: 70 },
-  { label: "JSON", sub: "Structured",  c: P.violet, angle: 50,  r: 78 },
-  { label: "Copy", sub: "Clipboard",   c: P.pink,   angle: 145, r: 68 },
+  { label: "TXT", sub: "Plain text", c: P.purple, angle: 210, r: 74 },
+  { label: "MD", sub: "Markdown", c: P.lav, angle: 320, r: 70 },
+  { label: "JSON", sub: "Structured", c: P.violet, angle: 50, r: 78 },
+  { label: "Copy", sub: "Clipboard", c: P.pink, angle: 145, r: 68 },
 ];
 
 function CardExport() {
@@ -1078,9 +1078,9 @@ function CardExport() {
  *  and a polished restore CTA.
  * ═══════════════════════════════════════════════════════════════════ */
 const HIST = [
-  { v: "v3", label: "Optimized for VEO",  time: "Today, 10:24 AM",    active: true,  changes: "+2 −1", score: 96 },
-  { v: "v2", label: "Improved context",   time: "Yesterday, 4:15 PM", active: false, changes: "+5 −3", score: 82 },
-  { v: "v1", label: "Initial prompt",     time: "May 10, 9:30 AM",    active: false, changes: "—",     score: 64 },
+  { v: "v3", label: "Optimized for VEO", time: "Today, 10:24 AM", active: true, changes: "+2 −1", score: 96 },
+  { v: "v2", label: "Improved context", time: "Yesterday, 4:15 PM", active: false, changes: "+5 −3", score: 82 },
+  { v: "v1", label: "Initial prompt", time: "May 10, 9:30 AM", active: false, changes: "—", score: 64 },
 ];
 
 function CardHistory() {
@@ -1253,9 +1253,9 @@ function CardHistory() {
  *  Wide (6 cols = ~608px) × tall (400px) = visually dominant
  * ═══════════════════════════════════════════════════════════════════ */
 const STAGES = [
-  { label: "Queue",    desc: "12 prompts" },
+  { label: "Queue", desc: "12 prompts" },
   { label: "Optimize", desc: "Processing" },
-  { label: "Export",  desc: "Ready"       },
+  { label: "Export", desc: "Ready" },
 ];
 
 function CardBatch() {
@@ -1373,10 +1373,10 @@ const TEMPLATES = [
     catBg: "rgba(236,72,153,0.08)",
     icon: (
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#EC4899" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-        <polyline points="14 2 14 8 20 8"/>
-        <line x1="16" y1="13" x2="8" y2="13"/>
-        <line x1="16" y1="17" x2="8" y2="17"/>
+        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+        <polyline points="14 2 14 8 20 8" />
+        <line x1="16" y1="13" x2="8" y2="13" />
+        <line x1="16" y1="17" x2="8" y2="17" />
       </svg>
     ),
     uses: "2.4k",
@@ -1390,8 +1390,8 @@ const TEMPLATES = [
     catBg: "rgba(124,58,237,0.08)",
     icon: (
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={P.violet} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <polyline points="16 18 22 12 16 6"/>
-        <polyline points="8 6 2 12 8 18"/>
+        <polyline points="16 18 22 12 16 6" />
+        <polyline points="8 6 2 12 8 18" />
       </svg>
     ),
     uses: "1.8k",
@@ -1405,8 +1405,8 @@ const TEMPLATES = [
     catBg: "rgba(245,158,11,0.08)",
     icon: (
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.71.13-1.65-.63-2.42-.77-.76-1.71-1.34-2.37-.58z"/>
-        <path d="M12 15l-3-3m0 0l3-3m-3 3h12"/>
+        <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.71.13-1.65-.63-2.42-.77-.76-1.71-1.34-2.37-.58z" />
+        <path d="M12 15l-3-3m0 0l3-3m-3 3h12" />
       </svg>
     ),
     uses: "3.1k",
@@ -1420,9 +1420,9 @@ const TEMPLATES = [
     catBg: "rgba(139,92,246,0.08)",
     icon: (
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={P.purple} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-        <circle cx="8.5" cy="8.5" r="1.5"/>
-        <polyline points="21 15 16 10 5 21"/>
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+        <circle cx="8.5" cy="8.5" r="1.5" />
+        <polyline points="21 15 16 10 5 21" />
       </svg>
     ),
     uses: "4.7k",
@@ -1615,7 +1615,7 @@ export default function BentoFeatures() {
         <div style={{ position: "absolute", top: "44%", right: "20%", width: 400, height: 400, borderRadius: "50%", background: "radial-gradient(circle, rgba(139,92,246,0.03) 0%, transparent 65%)" }} />
       </div>
 
-      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 24px", position: "relative", zIndex: 1 }}>
+      <div style={{ maxWidth: 1000, margin: "0 auto", padding: "0 24px", position: "relative", zIndex: 1 }}>
 
         {/* ── Section Header ── */}
         <motion.div
@@ -1669,7 +1669,7 @@ export default function BentoFeatures() {
             "cta   cta   cta   cta   cta   cta   cta   cta   cta   cta   cta   cta"
           `,
           gridTemplateColumns: "repeat(12, 1fr)",
-          gridTemplateRows:    "460px 480px 260px 510px auto",
+          gridTemplateRows: "460px 480px 260px 510px auto",
           gap: 16,
         }}>
 
