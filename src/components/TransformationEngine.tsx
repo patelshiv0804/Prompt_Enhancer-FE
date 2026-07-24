@@ -110,7 +110,7 @@ export default function TransformationEngine() {
           </div>
 
           {/* Heading */}
-          <h2 className="text-[clamp(32px,3.8vw,46px)] font-extrabold leading-[1.2] tracking-tight text-gray-900">
+          <h2 className="text-[clamp(36px,4.5vw,54px)] font-extrabold leading-[1.12] tracking-tight text-gray-900">
             One prompt.{" "}
             <span className="gradient-text italic">Optimized everywhere.</span>
           </h2>
@@ -154,51 +154,7 @@ export default function TransformationEngine() {
               <AIEngine />
             </div>
 
-            {/* "AI Enhancement Engine" label — positioned to the right of the engine */}
-            <motion.div
-              className="absolute z-10 flex items-center gap-2"
-              style={{
-                left: `calc(${engineLeftPct} + 80px)`,
-                top: engineTopPct,
-                transform: "translateY(-50%)",
-              }}
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.8, duration: 0.6 }}
-            >
-              <svg
-                width="60"
-                height="38"
-                viewBox="0 0 55 35"
-                fill="none"
-                className="text-gray-300"
-              >
-                <path
-                  d="M2 32 C 12 32, 25 5, 50 5"
-                  stroke="currentColor"
-                  strokeWidth="1"
-                  strokeDasharray="3 3"
-                  fill="none"
-                />
-                <path
-                  d="M47 2 L51 5 L47 8"
-                  stroke="currentColor"
-                  strokeWidth="1"
-                  fill="none"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              <span
-                className="whitespace-nowrap text-[14px] italic text-gray-400"
-                style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
-              >
-                AI Enhancement
-                <br />
-                Engine
-              </span>
-            </motion.div>
+
 
             {/* Bottom: Optimized For Card — centered horizontally at bottom */}
             <div className="absolute bottom-2 left-1/2 z-10 -translate-x-1/2">

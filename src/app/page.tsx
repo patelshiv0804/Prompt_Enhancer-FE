@@ -1,9 +1,11 @@
 import dynamic from "next/dynamic";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
-import StatsSection from "@/components/StatsSection";
+import WorksEverywhere from "@/components/WorksEverywhere";
 import PromptTransformationShowcase from "@/components/PromptTransformationShowcase";
 import BentoFeatures from "@/components/BentoFeatures";
+import FAQSection from "@/components/FAQSection";
+import Footer from "@/components/Footer";
 
 const TransformationEngine = dynamic(() => import("@/components/TransformationEngine"), {
   loading: () => <div style={{ minHeight: "100vh" }} className="bg-[#FAFBFC]" />,
@@ -14,10 +16,12 @@ export default function Home() {
     <main className="flex min-h-screen flex-col bg-white">
       <Navbar />
       <Hero />
-      <StatsSection />
+      <WorksEverywhere />
       <TransformationEngine />
       <PromptTransformationShowcase />
       <BentoFeatures />
+      <FAQSection />
+      <Footer />
     </main>
   );
 }
