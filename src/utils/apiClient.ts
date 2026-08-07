@@ -48,7 +48,8 @@ export async function apiRequest<T = any>(
     let errorDetail = response.statusText;
     try {
       const errorJson = await response.json();
-      errorDetail = errorJson.detail || errorJson.message || errorDetail;
+      const rawDetail = errorJson.detail || errorJson.message || errorDetail;
+      errorDetail = typeof rawDetail === 'string' ? rawDetail : JSON.stringify(rawDetail);
     } catch {
       // Ignore if not JSON
     }

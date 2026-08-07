@@ -233,8 +233,8 @@ function Pagination({ currentPage, totalPages, onPageChange }: { currentPage: nu
   }
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 32 }}>
-      <button onClick={() => onPageChange(currentPage - 1)} disabled={currentPage === 1}
+    <div id="vault-pagination" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 32 }}>
+      <button id="pagination-prev-btn" onClick={() => onPageChange(currentPage - 1)} disabled={currentPage === 1} title="Previous page"
         style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, border: '1px solid rgba(124,58,237,0.12)', background: '#FFFFFF', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', color: currentPage === 1 ? '#CBD5E1' : '#7C3AED', opacity: currentPage === 1 ? 0.6 : 1 }}
       >
         <ChevronLeft size={16} />
@@ -242,7 +242,7 @@ function Pagination({ currentPage, totalPages, onPageChange }: { currentPage: nu
       {pages.map((p, i) => p === '…' ? (
         <span key={`dots-${i}`} style={{ padding: '0 8px', color: '#94A3B8' }}>…</span>
       ) : (
-        <button key={p} onClick={() => onPageChange(p)}
+        <button key={p} id={`pagination-page-${p}`} onClick={() => onPageChange(p)}
           style={{
             width: 32, height: 32, borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: p === currentPage ? 700 : 500,
             background: p === currentPage ? 'linear-gradient(135deg, #7C3AED, #A855F7)' : 'transparent',
@@ -251,7 +251,7 @@ function Pagination({ currentPage, totalPages, onPageChange }: { currentPage: nu
           className={p !== currentPage ? 'hover:bg-[rgba(124,58,237,0.06)] hover:!text-[var(--color-primary)]' : ''}
         >{p}</button>
       ))}
-      <button onClick={() => onPageChange(currentPage + 1)} disabled={currentPage === totalPages}
+      <button id="pagination-next-btn" onClick={() => onPageChange(currentPage + 1)} disabled={currentPage === totalPages} title="Next page"
         style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, border: '1px solid rgba(124,58,237,0.12)', background: '#FFFFFF', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', color: currentPage === totalPages ? '#CBD5E1' : '#7C3AED', opacity: currentPage === totalPages ? 0.6 : 1 }}
       >
         <ChevronRight size={16} />
@@ -285,6 +285,11 @@ export default function VaultPage() {
     const t = setTimeout(() => setDebSearch(search), 250);
     return () => clearTimeout(t);
   }, [search]);
+
+  /* Reset page to 1 when search or filters change */
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debSearch, activeCategory, sortBy]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -359,9 +364,9 @@ export default function VaultPage() {
   }, [items]);
 
   const activeSortLabel = SORT_OPTIONS.find(s => s.id === sortBy)?.label ?? 'Sort';
-  const pageLoading = loading || statsLoading;
+  const initialLoading  = statsLoading && stats === null;
 
-  if (pageLoading) {
+  if (initialLoading) {
     return (
       <div id="vault-page-loading" style={{ maxWidth: 1100, margin: '0 auto', padding: '0 48px', paddingTop: 8, width: '100%', display: 'flex', flexDirection: 'column', paddingBottom: 64 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '32px 0 28px' }}>

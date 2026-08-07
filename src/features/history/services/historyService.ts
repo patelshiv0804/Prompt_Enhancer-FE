@@ -70,15 +70,25 @@ export async function fetchHistory(page: number, pageSize: number, filters: Hist
     let items: any[] = [];
     let total = 0;
 
+    const isCategoryFilterActive = Boolean(filters.category && filters.category !== 'all');
+    const isSearchActive = Boolean(filters.search && filters.search.trim().length > 0);
+
     // Use semantic search if a search query is active
-    if (filters.search && filters.search.trim().length > 0) {
+    if (isSearchActive) {
       const searchRes = await apiClient.post<any>('/api/v1/prompts/search', {
         prompt: filters.search,
-        limit: 50
+        limit: 100
       });
       if (searchRes && searchRes.results) {
         items = searchRes.results;
-        total = items.length;
+      }
+    } else if (isCategoryFilterActive) {
+      // Fetch larger set of items so client category filter has complete data
+      const res = await apiClient.get<any>(
+        `/api/v1/prompts/?page=1&page_size=100&sort_by=${sortBy}&sort_order=${sortOrder}`
+      );
+      if (res && res.data) {
+        items = res.data;
       }
     } else {
       const res = await apiClient.get<any>(
@@ -86,17 +96,20 @@ export async function fetchHistory(page: number, pageSize: number, filters: Hist
       );
       if (res && res.data) {
         items = res.data;
-        total = res.total || items.length;
+        total = res.total ?? items.length;
       }
     }
 
+    const favSet = new Set(favorites.map((f: any) => String(f)));
+
     // Map backend items to HistoryItem structures
     let mappedItems: HistoryItem[] = items.map((p: any) => {
-      const isFav = favorites.includes(p.id || p.prompt_id);
+      const itemId = String(p.id || p.prompt_id);
+      const isFav = favSet.has(itemId);
       const finalScore = p.new_analysis?.overall_score ?? (p.old_analysis?.overall_score ? Math.min(95, p.old_analysis.overall_score + 35) : 82);
 
       return {
-        id: p.id || p.prompt_id,
+        id: itemId,
         prompt: p.original_prompt || p.title || 'Untitled Prompt',
         optimizedPrompt: p.original_prompt || '',
         category: (p.template?.role || p.template?.mode || p.title?.split(' - ')[1] || 'general').toLowerCase(),
@@ -113,8 +126,13 @@ export async function fetchHistory(page: number, pageSize: number, filters: Hist
     // Handle frontend filters
     if (filters.category === 'favorites') {
       mappedItems = mappedItems.filter(i => i.isFavorite);
-    } else if (filters.category !== 'all') {
+    } else if (filters.category && filters.category !== 'all') {
       mappedItems = mappedItems.filter(i => i.category === filters.category);
+    }
+
+    if (isSearchActive || isCategoryFilterActive) {
+      total = mappedItems.length;
+      mappedItems = mappedItems.slice((page - 1) * pageSize, page * pageSize);
     }
 
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -141,11 +159,13 @@ export async function fetchHistory(page: number, pageSize: number, filters: Hist
 export async function toggleFavorite(id: string, isFavorite: boolean): Promise<void> {
   if (typeof window !== 'undefined') {
     const favorites = JSON.parse(localStorage.getItem('promptiq_favorites') || '[]');
+    const idStr = String(id);
+    const existingIndex = favorites.findIndex((f: any) => String(f) === idStr);
+
     if (isFavorite) {
-      if (!favorites.includes(id)) favorites.push(id);
+      if (existingIndex === -1) favorites.push(idStr);
     } else {
-      const idx = favorites.indexOf(id);
-      if (idx > -1) favorites.splice(idx, 1);
+      if (existingIndex > -1) favorites.splice(existingIndex, 1);
     }
     localStorage.setItem('promptiq_favorites', JSON.stringify(favorites));
   }
