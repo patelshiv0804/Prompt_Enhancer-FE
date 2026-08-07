@@ -1,14 +1,17 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { createPortal } from 'react-dom';
 import { useRouter, usePathname } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 import {
   Sparkles, LayoutTemplate, Library, Fingerprint,
   Settings, User, History as HistoryIcon, Clock,
   Code2, Search, Film, PlaySquare, Image as ImageIcon,
   Megaphone, BookOpen, Mail, Star, ChevronDown, ChevronRight,
+  LogOut,
 } from 'lucide-react';
+import { fetchHistory } from '@/features/history/services/historyService';
 
 export type ActivePage = 'optimizer' | 'history' | 'templates' | 'vault' | 'style-memory' | 'chaining' | 'settings' | 'chat';
 
@@ -19,16 +22,16 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Workspace',
     items: [
-      { id: 'optimizer', icon: Sparkles, label: 'Optimizer', shortcut: '⌘1' },
-      { id: 'templates', icon: LayoutTemplate, label: 'Templates', shortcut: '⌘2' },
-      { id: 'vault', icon: Library, label: 'Vault', shortcut: '⌘3' },
+      { id: 'optimizer',  icon: Sparkles,        label: 'Optimizer',  shortcut: '⌘1' },
+      { id: 'templates',  icon: LayoutTemplate,  label: 'Templates',  shortcut: '⌘2' },
+      { id: 'vault',      icon: Library,         label: 'Vault',      shortcut: '⌘3' },
     ],
   },
   {
     label: 'Personalize',
     items: [
       { id: 'style-memory', icon: Fingerprint, label: 'Style Memory' },
-      { id: 'settings', icon: Settings, label: 'Settings' },
+      { id: 'settings',     icon: Settings,    label: 'Settings' },
     ],
   },
 ];
@@ -44,35 +47,51 @@ const SIDEBAR_HISTORY_ACCENTS: Record<string, string> = {
   youtube: '#EF4444', general: '#7C3AED', email: '#0EA5E9',
 };
 const MOCK_RECENT = [
-  { id: 'r1', prompt: 'Write a viral Twitter thread about AI in healthcare', category: 'marketing', score: 94, isFavorite: true, ago: '2m' },
-  { id: 'r2', prompt: 'Debug my React useEffect infinite loop issue', category: 'coding', score: 88, isFavorite: false, ago: '1h' },
-  { id: 'r3', prompt: 'Cinematic shot of neon rain on cyberpunk streets', category: 'cinematic', score: 91, isFavorite: false, ago: '3h' },
-  { id: 'r4', prompt: 'Explain quantum entanglement to a 10-year-old', category: 'research', score: 76, isFavorite: false, ago: '5h' },
-  { id: 'r5', prompt: 'Generate a product launch email sequence', category: 'email', score: 83, isFavorite: true, ago: 'Yesterday' },
-  { id: 'r6', prompt: 'YouTube thumbnail prompt for tech review video', category: 'youtube', score: 79, isFavorite: false, ago: 'Yesterday' },
-  { id: 'r7', prompt: 'Anime-style landscape with cherry blossoms', category: 'image-gen', score: 95, isFavorite: true, ago: '2d' },
-  { id: 'r8', prompt: 'Write a compelling SaaS landing page headline', category: 'marketing', score: 87, isFavorite: false, ago: '3d' },
+  { id: 'r1', prompt: 'Write a viral Twitter thread about AI in healthcare',  category: 'marketing',    score: 94, isFavorite: true,  ago: '2m' },
+  { id: 'r2', prompt: 'Debug my React useEffect infinite loop issue',         category: 'coding',       score: 88, isFavorite: false, ago: '1h' },
+  { id: 'r3', prompt: 'Cinematic shot of neon rain on cyberpunk streets',     category: 'cinematic',    score: 91, isFavorite: false, ago: '3h' },
+  { id: 'r4', prompt: 'Explain quantum entanglement to a 10-year-old',        category: 'research',     score: 76, isFavorite: false, ago: '5h' },
+  { id: 'r5', prompt: 'Generate a product launch email sequence',             category: 'email',        score: 83, isFavorite: true,  ago: 'Yesterday' },
+  { id: 'r6', prompt: 'YouTube thumbnail prompt for tech review video',       category: 'youtube',      score: 79, isFavorite: false, ago: 'Yesterday' },
+  { id: 'r7', prompt: 'Anime-style landscape with cherry blossoms',           category: 'image-gen',    score: 95, isFavorite: true,  ago: '2d' },
+  { id: 'r8', prompt: 'Write a compelling SaaS landing page headline',        category: 'marketing',    score: 87, isFavorite: false, ago: '3d' },
 ];
 
 export default function Sidebar() {
-  const router = useRouter();
+  const router   = useRouter();
   const pathname = usePathname();
+  const { user, logout } = useAuth();
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [recentCollapsed, setRecentCollapsed] = useState(false);
+  const [recentItems, setRecentItems] = useState<any[]>(MOCK_RECENT);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    fetchHistory(1, 8, { search: '', category: 'all', sortBy: 'most-recent' }).then(res => {
+      if (res && res.items && res.items.length > 0) {
+        const formatted = res.items.map(item => ({
+          id: item.id,
+          prompt: item.prompt,
+          category: item.category || 'general',
+          score: item.score,
+          isFavorite: item.isFavorite,
+          ago: item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'Recent'
+        }));
+        setRecentItems(formatted);
+      }
+    }).catch(err => console.error(err));
+  }, [pathname]);
+
   const toggleGroup = (label: string) =>
     setCollapsedGroups(prev => ({ ...prev, [label]: !prev[label] }));
 
   const navigate = (page: ActivePage) => router.push(`/dashboard/${page}`);
-  const isActive = (page: ActivePage) => {
-    if (!mounted) return false;
-    return pathname === `/dashboard/${page}` || (page === 'optimizer' && pathname === '/dashboard');
-  };
+  const isActive = (page: ActivePage) => pathname === `/dashboard/${page}` || (page === 'optimizer' && pathname === '/dashboard');
 
   const currentChatId = pathname.startsWith('/dashboard/chat/') ? pathname.split('/dashboard/chat/')[1] : null;
 
@@ -87,29 +106,6 @@ export default function Sidebar() {
         boxShadow: '0 2px 24px rgba(109,40,217,0.07), 0 1px 4px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.80)',
       }}
     >
-      <style>{`
-        .sidebar-history-item {
-          transition: background-color 160ms ease !important;
-          outline: none !important;
-          border: none !important;
-        }
-        .sidebar-history-item:focus,
-        .sidebar-history-item:focus-visible,
-        .sidebar-history-item:active {
-          outline: none !important;
-          box-shadow: none !important;
-        }
-        .sidebar-history-item:hover {
-          background-color: rgba(124, 58, 237, 0.07) !important;
-        }
-        .sidebar-history-item.active {
-          background-color: rgba(124, 58, 237, 0.12) !important;
-          outline: none !important;
-        }
-        .sidebar-history-item.active:hover {
-          background-color: rgba(124, 58, 237, 0.18) !important;
-        }
-      `}</style>
       {/* Logo */}
       <div style={{ padding: '20px 20px 16px', flexShrink: 0, borderBottom: '1px solid rgba(124,58,237,0.07)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -145,22 +141,14 @@ export default function Sidebar() {
                 </span>
                 {isCollapsed
                   ? <ChevronRight size={12} style={{ color: 'rgba(109,40,217,0.35)', flexShrink: 0 }} />
-                  : <ChevronDown size={12} style={{ color: 'rgba(109,40,217,0.35)', flexShrink: 0 }} />
+                  : <ChevronDown  size={12} style={{ color: 'rgba(109,40,217,0.35)', flexShrink: 0 }} />
                 }
               </button>
 
-              <AnimatePresence initial={false}>
-                {!isCollapsed && (
-                  <motion.div
-                    key="nav-items"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                    style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: 1 }}
-                  >
+              {!isCollapsed && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 1, animation: 'groupItemsIn 0.18s ease-out' }}>
                   {group.items.map(item => {
-                    const Icon = item.icon;
+                    const Icon   = item.icon;
                     const active = isActive(item.id);
                     return (
                       <button
@@ -198,9 +186,8 @@ export default function Sidebar() {
                       </button>
                     );
                   })}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                </div>
+              )}
             </div>
           );
         })}
@@ -216,7 +203,7 @@ export default function Sidebar() {
           <div
             role="button" tabIndex={0}
             onClick={() => setRecentCollapsed(v => !v)}
-            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setRecentCollapsed(v => !v); } }}
+            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setRecentCollapsed(v => !v); }}}
             aria-expanded={!recentCollapsed}
             style={{
               display: 'flex', alignItems: 'center', gap: 6, padding: '5px 8px',
@@ -238,22 +225,14 @@ export default function Sidebar() {
             >View all</button>
             {recentCollapsed
               ? <ChevronRight size={12} style={{ color: 'rgba(109,40,217,0.35)', flexShrink: 0 }} />
-              : <ChevronDown size={12} style={{ color: 'rgba(109,40,217,0.35)', flexShrink: 0 }} />
+              : <ChevronDown  size={12} style={{ color: 'rgba(109,40,217,0.35)', flexShrink: 0 }} />
             }
           </div>
 
-          <AnimatePresence initial={false}>
-            {!recentCollapsed && (
-              <motion.div
-                key="recent-items"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: 1 }}
-              >
-              {MOCK_RECENT.map(item => {
-                const Icon = SIDEBAR_HISTORY_ICONS[item.category] || Clock;
+          {!recentCollapsed && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 1, animation: 'groupItemsIn 0.18s ease-out' }}>
+              {recentItems.map(item => {
+                const Icon   = SIDEBAR_HISTORY_ICONS[item.category] || Clock;
                 const accent = SIDEBAR_HISTORY_ACCENTS[item.category] || '#7C3AED';
                 const active = pathname === `/dashboard/chat/${item.id}`;
                 return (
@@ -263,11 +242,13 @@ export default function Sidebar() {
                     title={item.prompt}
                     onClick={() => router.push(`/dashboard/chat/${item.id}`)}
                     style={{
-                      display: 'flex', alignItems: 'center', gap: 9, padding: '8px 10px',
-                      borderRadius: 10, border: 'none', cursor: 'pointer', width: '100%',
-                      textAlign: 'left', flexShrink: 0,
+                      display: 'flex', alignItems: 'center', gap: 9, padding: active ? '8px 10px 8px 8px' : '8px 10px',
+                      borderRadius: 10, background: active ? 'rgba(124,58,237,0.12)' : 'transparent',
+                      border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left',
+                      borderLeft: active ? '2px solid #7C3AED' : '2px solid transparent',
+                      transition: 'background 160ms ease', flexShrink: 0,
                     }}
-                    className={`sidebar-history-item ${active ? 'active' : ''}`}
+                    className={!active ? 'hover:bg-[rgba(124,58,237,0.07)]' : ''}
                   >
                     <div style={{
                       width: 26, height: 26, borderRadius: 7, display: 'flex', alignItems: 'center',
@@ -292,48 +273,113 @@ export default function Sidebar() {
                   </button>
                 );
               })}
-              </motion.div>
-            )}
-          </AnimatePresence>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Footer */}
       <div style={{ flexShrink: 0, padding: '0 10px 12px' }}>
         <div style={{ height: 1, background: 'rgba(124,58,237,0.09)', margin: '0 0 10px' }} />
-        <button
-          id="user-profile-btn"
-          onClick={() => router.push('/dashboard/profile')}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
-            borderRadius: 12, width: '100%', cursor: 'pointer',
-            background: mounted && (pathname === '/dashboard/profile' || pathname.includes('view=profile')) ? 'rgba(124,58,237,0.14)' : 'rgba(255,255,255,0.55)',
-            border: mounted && (pathname === '/dashboard/profile' || pathname.includes('view=profile')) ? '1px solid rgba(124,58,237,0.30)' : '1px solid rgba(124,58,237,0.10)',
-            textAlign: 'left', boxShadow: '0 1px 4px rgba(109,40,217,0.06)', transition: 'all 160ms ease',
-          }}
-          className="hover:!bg-[rgba(255,255,255,0.80)] hover:border-[rgba(124,58,237,0.18)]"
-        >
-          <div style={{
-            background: 'linear-gradient(135deg, rgba(124,58,237,0.18), rgba(167,139,250,0.12))',
-            color: '#7C3AED', width: 30, height: 30, borderRadius: '50%',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            border: '1px solid rgba(124,58,237,0.15)', flexShrink: 0,
-          }}>
-            <User size={15} strokeWidth={1.5} />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
-            <span style={{ fontSize: 12.5, fontWeight: 600, color: '#3B1082', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              Alex P.
-            </span>
-            <span style={{
-              fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px',
-              background: 'linear-gradient(135deg, #7C3AED, #A855F7)', color: 'white',
-              padding: '2px 8px', borderRadius: 9999, flexShrink: 0,
-              boxShadow: '0 2px 6px rgba(124,58,237,0.25)',
-            }}>Pro</span>
-          </div>
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button
+            id="user-profile-btn"
+            onClick={() => router.push('/dashboard/profile')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
+              borderRadius: 12, flex: 1,
+              background: 'rgba(255,255,255,0.55)', border: '1px solid rgba(124,58,237,0.10)',
+              textAlign: 'left', boxShadow: '0 1px 4px rgba(109,40,217,0.06)', transition: 'background 160ms ease',
+              minWidth: 0, cursor: 'pointer',
+            }}
+            className="hover:bg-[rgba(124,58,237,0.06)]"
+          >
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(124,58,237,0.18), rgba(167,139,250,0.12))',
+              color: '#7C3AED', width: 30, height: 30, borderRadius: '50%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              border: '1px solid rgba(124,58,237,0.15)', flexShrink: 0,
+            }}>
+              <User size={15} strokeWidth={1.5} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
+              <span style={{ fontSize: 12.5, fontWeight: 600, color: '#3B1082', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {user?.display_name || user?.email || 'Alex P.'}
+              </span>
+              <span style={{
+                fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px',
+                background: 'linear-gradient(135deg, #7C3AED, #A855F7)', color: 'white',
+                padding: '2px 8px', borderRadius: 9999, flexShrink: 0,
+                boxShadow: '0 2px 6px rgba(124,58,237,0.25)',
+              }}>{user?.plan || 'Pro'}</span>
+            </div>
+          </button>
+          <button
+            onClick={() => setShowLogoutConfirm(true)}
+            title="Logout"
+            style={{
+              width: 38, height: 38, borderRadius: 12, display: 'flex', alignItems: 'center',
+              justifyContent: 'center', cursor: 'pointer', background: 'rgba(255,255,255,0.55)',
+              border: '1px solid rgba(124,58,237,0.10)', color: 'rgba(45,27,105,0.60)',
+              boxShadow: '0 1px 4px rgba(109,40,217,0.06)', transition: 'all 160ms ease',
+            }}
+            className="hover:!bg-[rgba(239,68,68,0.08)] hover:!border-[rgba(239,68,68,0.20)] hover:!color-[#dc2626]"
+          >
+            <LogOut size={16} strokeWidth={2} />
+          </button>
+        </div>
       </div>
+
+      {showLogoutConfirm && mounted && createPortal(
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.4)',
+          backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', zIndex: 99999,
+        }}>
+          <div style={{
+            background: '#FFFFFF', borderRadius: 16, padding: '24px 28px',
+            maxWidth: 340, width: '90%', border: '1px solid rgba(124,58,237,0.15)',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 16,
+          }}>
+            <div style={{
+              width: 48, height: 48, borderRadius: '50%', background: 'rgba(239, 68, 68, 0.08)',
+              color: '#EF4444', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto', border: '1px solid rgba(239, 68, 68, 0.15)'
+            }}>
+              <LogOut size={18} strokeWidth={2} />
+            </div>
+            <div>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1E293B', margin: '0 0 6px' }}>Confirm Logout</h3>
+              <p style={{ fontSize: 13, color: '#64748B', margin: 0, lineHeight: 1.5 }}>Are you sure you want to log out of your account?</p>
+            </div>
+            <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                style={{
+                  flex: 1, padding: '10px 0', borderRadius: 10, border: '1px solid #E2E8F0',
+                  background: '#FFFFFF', color: '#64748B', fontWeight: 600, fontSize: 13,
+                  cursor: 'pointer', transition: 'all 160ms ease',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { setShowLogoutConfirm(false); logout(); }}
+                style={{
+                  flex: 1, padding: '10px 0', borderRadius: 10, border: 'none',
+                  background: 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)', color: '#FFFFFF',
+                  fontWeight: 600, fontSize: 13, cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(124,58,237,0.25)',
+                }}
+              >
+                Log Out
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </aside>
   );
 }

@@ -1,9 +1,46 @@
 'use client';
 import { useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
 
 export default function AuthPage() {
   const [tab, setTab] = useState<'signin' | 'signup'>('signin');
   const [showPass, setShowPass] = useState(false);
+
+  const { login, register, loading } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!email.trim() || !password.trim()) {
+      setError('Email and password are required.');
+      return;
+    }
+
+    try {
+      if (tab === 'signin') {
+        await login(email, password);
+      } else {
+        if (password !== confirmPassword) {
+          setError('Passwords do not match.');
+          return;
+        }
+        if (password.length < 8) {
+          setError('Password must be at least 8 characters long.');
+          return;
+        }
+        await register(email, password, fullName);
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Authentication failed. Please try again.');
+    }
+  };
 
   return (
     <div style={{ fontFamily: "'Inter', sans-serif", background: '#FAFAFC', minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
@@ -30,7 +67,8 @@ export default function AuthPage() {
         .card-hover { transition: transform 0.5s; }
         .card-hover:hover { transform: scale(1.02); }
         .btn-main { width:100%; background:#171A2B; color:#fff; border:none; border-radius:9999px; padding:14px 0; font-size:14px; font-weight:600; letter-spacing:0.02em; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:transform 0.3s, box-shadow 0.3s; margin-top:4px; font-family:'Geist',sans-serif; }
-        .btn-main:hover { transform:scale(1.02); box-shadow:0 0 15px rgba(167,139,250,0.4); }
+        .btn-main:hover:not(:disabled) { transform:scale(1.02); box-shadow:0 0 15px rgba(167,139,250,0.4); }
+        .btn-main:disabled { opacity: 0.7; cursor: not-allowed; }
         .arrow-icon { display:inline-block; transition:transform 0.2s; }
         .btn-main:hover .arrow-icon { transform:translateX(4px); }
         .tab-btn { flex:1; padding:14px 0; background:none; border:none; border-bottom:2px solid transparent; cursor:pointer; font-size:14px; font-family:'Geist',sans-serif; letter-spacing:0.02em; transition:all 0.2s; }
@@ -101,17 +139,10 @@ export default function AuthPage() {
         </div>
 
         {/* Main Container */}
-        <div style={{ position: 'relative', zIndex: 20, width: '100%', maxWidth: 1200, display: 'flex', flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 48, flexWrap: 'wrap' }}>
+        <div style={{ position: 'relative', zIndex: 20, width: '100%', maxWidth: 1200, display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 48, flexWrap: 'wrap' }}>
 
           {/* LEFT */}
-          <div style={{ 
-            flex: '1 1 400px', 
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'flex-start',
-            minHeight: 600,
-            justifyContent: 'flex-start'
-          }}>
+          <div style={{ flex: '1 1 400px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
             <div style={{ marginBottom: 24, textAlign: 'left' }}>
               <h1 style={{ fontFamily: "'Geist',sans-serif", fontSize: 'clamp(32px,4vw,48px)', lineHeight: 1.15, fontWeight: 700, letterSpacing: '-0.04em', color: '#111', marginBottom: 8 }}>
                 Architect your <br />
@@ -197,95 +228,59 @@ export default function AuthPage() {
             }} />
 
             {/* Card */}
-            <div className="glass-floating" style={{ position: 'relative', borderRadius: 40, padding: '32px 32px', overflow: 'hidden', zIndex: 1, backdropFilter: 'blur(48px)' }}>
+            <div className="glass-floating" style={{ position: 'relative', borderRadius: 40, padding: '48px 40px', overflow: 'hidden', zIndex: 1, backdropFilter: 'blur(48px)' }}>
               {/* Top gradient bar */}
               <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: 8, background: 'linear-gradient(90deg,#A78BFA,#EC4899,#A78BFA)', opacity: 0.5 }} />
 
-              <div style={{ textAlign: 'center', marginBottom: 20 }}>
+              <div style={{ textAlign: 'center', marginBottom: 28 }}>
                 <h2 style={{ fontFamily: "'Geist',sans-serif", fontSize: 24, fontWeight: 600, letterSpacing: '-0.01em', color: '#111', marginBottom: 6 }}>
-                  {tab === 'signin' ? 'Welcome back' : 'Create account'}
+                  {tab === 'signin' ? 'Welcome back' : 'Create Account'}
                 </h2>
-                <p style={{ fontSize: 16, color: 'rgba(70,70,76,0.6)', transition: 'color 0.3s' }}>
-                  {tab === 'signin' ? 'Sign in to continue to AURE' : 'Get started with AURE today'}
+                <p style={{ fontSize: 16, color: 'rgba(70,70,76,0.6)' }}>
+                  {tab === 'signin' ? 'Sign in to continue to PromptIQ' : 'Register your PromptIQ developer profile'}
                 </p>
               </div>
 
-              {/* Sliding Capsule Tabs */}
-              <div style={{
-                display: 'flex',
-                background: '#F1F0F5',
-                borderRadius: 9999,
-                padding: 4,
-                position: 'relative',
-                marginBottom: 24,
-                userSelect: 'none'
-              }}>
-                <div style={{
-                  position: 'absolute',
-                  top: 4,
-                  bottom: 4,
-                  left: tab === 'signin' ? 4 : 'calc(50% + 2px)',
-                  width: 'calc(50% - 6px)',
-                  background: '#fff',
-                  borderRadius: 9999,
-                  boxShadow: '0 2px 8px rgba(23,26,43,0.08)',
-                  transition: 'all 0.3s cubic-bezier(0.25, 1, 0.5, 1)',
-                  zIndex: 0
-                }} />
-                <button
-                  type="button"
-                  style={{
-                    flex: 1,
-                    padding: '10px 0',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: 14,
-                    fontWeight: tab === 'signin' ? 600 : 500,
-                    color: tab === 'signin' ? '#171A2B' : 'rgba(70,70,76,0.6)',
-                    fontFamily: "'Geist',sans-serif",
-                    letterSpacing: '0.02em',
-                    position: 'relative',
-                    zIndex: 1,
-                    transition: 'color 0.2s'
-                  }}
-                  onClick={() => setTab('signin')}
-                >
-                  Sign In
-                </button>
-                <button
-                  type="button"
-                  style={{
-                    flex: 1,
-                    padding: '10px 0',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: 14,
-                    fontWeight: tab === 'signup' ? 600 : 500,
-                    color: tab === 'signup' ? '#171A2B' : 'rgba(70,70,76,0.6)',
-                    fontFamily: "'Geist',sans-serif",
-                    letterSpacing: '0.02em',
-                    position: 'relative',
-                    zIndex: 1,
-                    transition: 'color 0.2s'
-                  }}
-                  onClick={() => setTab('signup')}
-                >
-                  Create Account
-                </button>
+              {/* Tabs */}
+              <div style={{ display: 'flex', borderBottom: '1px solid #f3f4f6', marginBottom: 28 }}>
+                <button type="button" className={`tab-btn ${tab === 'signin' ? 'tab-active' : 'tab-inactive'}`} onClick={() => { setTab('signin'); setError(null); }}>Sign In</button>
+                <button type="button" className={`tab-btn ${tab === 'signup' ? 'tab-active' : 'tab-inactive'}`} onClick={() => { setTab('signup'); setError(null); }}>Create Account</button>
               </div>
 
-              {/* Form — all fields always rendered, styled dynamically for screen flow */}
-              <form onSubmit={e => e.preventDefault()}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {error && (
+                <div style={{
+                  padding: '12px 16px',
+                  background: 'rgba(239, 68, 68, 0.08)',
+                  border: '1px solid rgba(239, 68, 68, 0.15)',
+                  borderRadius: '12px',
+                  color: '#dc2626',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  marginBottom: '20px',
+                  textAlign: 'left'
+                }}>
+                  {error}
+                </div>
+              )}
+
+              {/* Form */}
+              <form onSubmit={handleSubmit}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
 
                   {/* Full Name — signup only */}
                   <div className={`signup-field ${tab === 'signup' ? 'visible' : 'hidden'}`}>
                     <label style={{ fontFamily: "'Geist',sans-serif", fontSize: 14, fontWeight: 500, letterSpacing: '0.02em', color: '#111', display: 'block', marginBottom: 6, marginLeft: 4 }}>Full Name</label>
                     <div className="input-wrap">
                       <span className="ms field-icon-left">person</span>
-                      <input className="field-input input-glow" type="text" placeholder="John Doe" tabIndex={tab === 'signup' ? 0 : -1} />
+                      <input
+                        className="field-input input-glow"
+                        type="text"
+                        placeholder="John Doe"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        disabled={loading}
+                        tabIndex={tab === 'signup' ? 0 : -1}
+                      />
                     </div>
                   </div>
 
@@ -294,70 +289,75 @@ export default function AuthPage() {
                     <label style={{ fontFamily: "'Geist',sans-serif", fontSize: 14, fontWeight: 500, letterSpacing: '0.02em', color: '#111', display: 'block', marginBottom: 6, marginLeft: 4 }}>Email address</label>
                     <div className="input-wrap">
                       <span className="ms field-icon-left">mail</span>
-                      <input className="field-input input-glow" type="email" placeholder="name@company.com" />
+                      <input
+                        className="field-input input-glow"
+                        type="email"
+                        placeholder="name@company.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        disabled={loading}
+                        required
+                      />
                     </div>
                   </div>
 
-                  {/* Password & Confirm Password Row */}
-                  <div style={{
-                    display: 'flex',
-                    gap: tab === 'signup' ? 12 : 0,
-                    width: '100%',
-                    transition: 'gap 0.4s cubic-bezier(0.25, 1, 0.5, 1)'
-                  }}>
-                    {/* Password */}
-                    <div style={{
-                      flex: 1,
-                      minWidth: 0
-                    }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, marginLeft: 4 }}>
-                        <label style={{ fontFamily: "'Geist',sans-serif", fontSize: 14, fontWeight: 500, letterSpacing: '0.02em', color: '#111' }}>Password</label>
-                        <a href="#" className="forgot-link" style={{ 
-                          opacity: tab === 'signin' ? 1 : 0,
-                          pointerEvents: tab === 'signin' ? 'auto' : 'none',
-                          transition: 'opacity 0.3s ease'
-                        }}>Forgot?</a>
-                      </div>
-                      <div className="input-wrap">
-                        <span className="ms field-icon-left">lock</span>
-                        <input className="field-input input-glow has-right" type={showPass ? 'text' : 'password'} placeholder="••••••••" />
-                        <button type="button" className="field-icon-right ms" onClick={() => setShowPass(p => !p)}>
-                          {showPass ? 'visibility_off' : 'visibility'}
-                        </button>
-                      </div>
+                  {/* Password */}
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, marginLeft: 4 }}>
+                      <label style={{ fontFamily: "'Geist',sans-serif", fontSize: 14, fontWeight: 500, letterSpacing: '0.02em', color: '#111' }}>Password</label>
+                      <a href="#" className="forgot-link" style={{ visibility: tab === 'signin' ? 'visible' : 'hidden' }}>Forgot?</a>
                     </div>
-
-                    {/* Confirm Password — signup only, splits side-by-side */}
-                    <div style={{
-                      flex: tab === 'signup' ? 1 : 0,
-                      opacity: tab === 'signup' ? 1 : 0,
-                      transform: tab === 'signup' ? 'translateX(0)' : 'translateX(20px)',
-                      pointerEvents: tab === 'signup' ? 'auto' : 'none',
-                      minWidth: 0,
-                      overflow: 'hidden',
-                      transition: 'all 0.4s cubic-bezier(0.25, 1, 0.5, 1)'
-                    }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, marginLeft: 4 }}>
-                        <label style={{ fontFamily: "'Geist',sans-serif", fontSize: 14, fontWeight: 500, letterSpacing: '0.02em', color: '#111', whiteSpace: 'nowrap' }}>Confirm</label>
-                      </div>
-                      <div className="input-wrap">
-                        <span className="ms field-icon-left">lock</span>
-                        <input className="field-input input-glow" type="password" placeholder="••••••••" tabIndex={tab === 'signup' ? 0 : -1} />
-                      </div>
+                    <div className="input-wrap">
+                      <span className="ms field-icon-left">lock</span>
+                      <input
+                        className="field-input input-glow has-right"
+                        type={showPass ? 'text' : 'password'}
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        disabled={loading}
+                        required
+                      />
+                      <button type="button" className="field-icon-right ms" onClick={() => setShowPass(p => !p)}>
+                        {showPass ? 'visibility_off' : 'visibility'}
+                      </button>
                     </div>
                   </div>
 
-                  <button type="button" className="btn-main" style={{ marginTop: 4 }}>
-                    {tab === 'signin' ? 'Sign In' : 'Create Account'}
-                    <span className="ms arrow-icon" style={{ fontSize: 18 }}>arrow_forward</span>
+                  {/* Confirm Password — signup only */}
+                  <div className={`signup-field ${tab === 'signup' ? 'visible' : 'hidden'}`}>
+                    <label style={{ fontFamily: "'Geist',sans-serif", fontSize: 14, fontWeight: 500, letterSpacing: '0.02em', color: '#111', display: 'block', marginBottom: 6, marginLeft: 4 }}>Confirm Password</label>
+                    <div className="input-wrap">
+                      <span className="ms field-icon-left">lock</span>
+                      <input
+                        className="field-input input-glow has-right"
+                        type="password"
+                        placeholder="••••••••"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        disabled={loading}
+                        tabIndex={tab === 'signup' ? 0 : -1}
+                      />
+                    </div>
+                  </div>
+
+                  <button type="submit" className="btn-main" style={{ marginTop: 6 }} disabled={loading}>
+                    {loading ? (
+                      tab === 'signin' ? 'Signing In...' : 'Registering...'
+                    ) : (
+                      <>
+                        {tab === 'signin' ? 'Sign In' : 'Create Account'}
+                        <span className="ms arrow-icon" style={{ fontSize: 18 }}>arrow_forward</span>
+                      </>
+                    )}
                   </button>
 
-                  <div style={{ marginTop: 4, paddingTop: 14, borderTop: '1px solid rgba(229,225,227,0.5)', textAlign: 'center' }}>
+                  <div style={{ marginTop: 8, paddingTop: 20, borderTop: '1px solid rgba(229,225,227,0.5)', textAlign: 'center' }}>
                     <p style={{ fontSize: 16, color: 'rgba(70,70,76,0.8)' }}>
                       {tab === 'signin' ? (
-                        <>Don&apos;t have an account? <button type="button" className="link-style" onClick={() => setTab('signup')}>Get Started</button></>
+                        <>Don&apos;t have an account? <button type="button" className="link-style" onClick={() => { setTab('signup'); setError(null); }}>Get Started</button></>
                       ) : (
-                        <>Already have an account? <button type="button" className="link-style" onClick={() => setTab('signin')}>Sign In</button></>
+                        <>Already have an account? <button type="button" className="link-style" onClick={() => { setTab('signin'); setError(null); }}>Sign In</button></>
                       )}
                     </p>
                   </div>
@@ -369,16 +369,14 @@ export default function AuthPage() {
       </main>
 
       {/* Footer */}
-      {/*
       <footer style={{ position: 'relative', zIndex: 20, width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 40px', flexWrap: 'wrap', gap: 16, maxWidth: 1440, margin: '0 auto' }}>
-        <span style={{ fontFamily: "'Geist',sans-serif", fontSize: 14, fontWeight: 900, color: '#1c1b1d', opacity: 0.8 }}>© 2026 AURE Intelligence Systems</span>
+        <span style={{ fontFamily: "'Geist',sans-serif", fontSize: 14, fontWeight: 900, color: '#1c1b1d', opacity: 0.8 }}>© 2024 PromptIQ Intelligence Systems</span>
         <nav style={{ display: 'flex', gap: 24 }}>
           {['Privacy', 'Terms', 'Security', 'Docs'].map(l => (
             <a key={l} href="#" className="footer-link">{l}</a>
           ))}
         </nav>
       </footer>
-      */}
     </div>
   );
 }

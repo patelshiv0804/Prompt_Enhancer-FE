@@ -8,6 +8,7 @@ import {
   CheckCircle2, AlertTriangle, Minus,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import FormattedPromptViewer from './FormattedPromptViewer';
 
 const MODES = [
   { name: 'General', icon: Sparkles },
@@ -21,53 +22,76 @@ const MODES = [
   { name: 'SEO', icon: TrendingUp },
 ];
 
-const DIMENSIONS = [
-  { id: 'clarity', label: 'Clarity', status: 'good', icon: CheckCircle2, desc: 'Instructions are direct and unambiguous.', scoreBefore: 68, scoreAfter: 91 },
-  { id: 'context', label: 'Context', status: 'good', icon: CheckCircle2, desc: 'Sufficient background information provided.', scoreBefore: 72, scoreAfter: 88 },
-  { id: 'role', label: 'Role', status: 'neutral', icon: Minus, desc: 'No specific persona requested.', scoreBefore: 32, scoreAfter: 74 },
-  { id: 'format', label: 'Format', status: 'good', icon: CheckCircle2, desc: 'Output structure clearly defined.', scoreBefore: 55, scoreAfter: 90 },
-  { id: 'constraints', label: 'Constraints', status: 'warning', icon: AlertTriangle, desc: 'Negative constraints could be stricter.', scoreBefore: 40, scoreAfter: 77 },
-  { id: 'examples', label: 'Examples', status: 'neutral', icon: Minus, desc: 'Zero-shot approach used.', scoreBefore: 28, scoreAfter: 65 },
-];
-
-const BEFORE_TOTAL = 49;
-
 function scoreColor(s: number) {
   if (s >= 80) return 'var(--color-success)';
   if (s >= 55) return 'var(--color-primary)';
   return '#F59E0B';
 }
 
+function scoreLabel(s: number) {
+  if (s >= 90) return 'Excellent';
+  if (s >= 75) return 'Good';
+  if (s >= 55) return 'Fair';
+  return 'Needs Work';
+}
+
 function useCountUp(target: number, active: boolean, duration = 1200): number {
   const [value, setValue] = useState(0);
   useEffect(() => {
     if (!active) { setValue(0); return; }
-    let rafId: number;
-    let startTime: number | null = null;
-    const startVal = 0;
-
-    const animate = (timestamp: number) => {
-      if (!startTime) startTime = timestamp;
-      const elapsed = timestamp - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
-      setValue(Math.round(startVal + eased * (target - startVal)));
-      if (progress < 1) rafId = requestAnimationFrame(animate);
-      else setValue(target);
-    };
-
-    rafId = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(rafId);
+    let current = 0;
+    const step = target / (duration / 16);
+    const timer = setInterval(() => {
+      current += step;
+      if (current >= target) { setValue(target); clearInterval(timer); }
+      else setValue(Math.floor(current));
+    }, 16);
+    return () => clearInterval(timer);
   }, [target, active, duration]);
   return value;
 }
 
+function formatPromptText(text?: string): string {
+  if (!text) return '';
+  let cleaned = text.trim();
+
+  const markers = ['ENHANCED PROMPT:', 'ENHANCED PROMPT', 'Enhanced Prompt:'];
+  for (const m of markers) {
+    const idx = cleaned.indexOf(m);
+    if (idx !== -1) {
+      cleaned = cleaned.substring(idx + m.length).trim();
+      break;
+    }
+  }
+
+  // If there's still a DIAGNOSED MODE header before the main content, strip it out
+  if (cleaned.includes('DIAGNOSED MODE:') || cleaned.includes('DIAGNOSIS NOTES:')) {
+    const actIdx = cleaned.search(/(Act as|You are|Your task|System Prompt|# )/i);
+    if (actIdx !== -1) {
+      cleaned = cleaned.substring(actIdx).trim();
+    }
+  }
+
+  return cleaned;
+}
+
 /* ── Inline Score Panel ─────────────────────────────────────────────────── */
-function InlineScorePanel({ active }: { active: boolean }) {
-  const animScore = useCountUp(BEFORE_TOTAL, active);
+function InlineScorePanel({ active, analysisResult }: { active: boolean; analysisResult: any }) {
+  const score = analysisResult?.overall_score || 0;
+  const animScore = useCountUp(score, active);
   const radius = 44;
   const circ = 2 * Math.PI * radius;
   const offset = circ - (animScore / 100) * circ;
+
+  const dims = analysisResult?.dimensions || {};
+  const mappedDimensions = [
+    { id: 'clarity', label: 'Clarity', status: dims.clarity?.score >= 80 ? 'good' : dims.clarity?.score >= 55 ? 'warning' : 'neutral', icon: CheckCircle2, desc: dims.clarity?.explanation || 'Instructions are direct and unambiguous.', score: dims.clarity?.score || 0 },
+    { id: 'context', label: 'Context', status: dims.context?.score >= 80 ? 'good' : dims.context?.score >= 55 ? 'warning' : 'neutral', icon: CheckCircle2, desc: dims.context?.explanation || 'Sufficient background information provided.', score: dims.context?.score || 0 },
+    { id: 'role', label: 'Role', status: dims.role_definition?.score >= 80 ? 'good' : dims.role_definition?.score >= 55 ? 'warning' : 'neutral', icon: Minus, desc: dims.role_definition?.explanation || 'Define AI persona or domain context.', score: dims.role_definition?.score || 0 },
+    { id: 'format', label: 'Format', status: dims.output_format?.score >= 80 ? 'good' : dims.output_format?.score >= 55 ? 'warning' : 'neutral', icon: CheckCircle2, desc: dims.output_format?.explanation || 'Output structure defined.', score: dims.output_format?.score || 0 },
+    { id: 'constraints', label: 'Constraints', status: dims.constraints?.score >= 80 ? 'good' : dims.constraints?.score >= 55 ? 'warning' : 'neutral', icon: AlertTriangle, desc: dims.constraints?.explanation || 'Negative constraints specified.', score: dims.constraints?.score || 0 },
+    { id: 'examples', label: 'Examples', status: dims.examples?.score >= 80 ? 'good' : dims.examples?.score >= 55 ? 'warning' : 'neutral', icon: Minus, desc: dims.examples?.explanation || 'Zero-shot approach used.', score: dims.examples?.score || 0 },
+  ];
 
   const edgeBg = (status: string) => {
     if (status === 'good') return 'linear-gradient(180deg, var(--color-success), rgba(16,185,129,0.3))';
@@ -100,30 +124,20 @@ function InlineScorePanel({ active }: { active: boolean }) {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
-          <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-primary)', letterSpacing: -0.3 }}>Needs Work</div>
-          <p style={{ fontSize: 12, color: 'var(--color-text-secondary)', lineHeight: 1.4, margin: 0 }}>
-            Run Optimize to improve your score
-          </p>
-          <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-            {[['Words', '16'], ['Tokens', '~24']].map(([k, v]) => (
-              <div key={k} style={{
-                display: 'flex', alignItems: 'center', gap: 5,
-                background: 'rgba(124,58,237,0.05)', border: '1px solid rgba(124,58,237,0.10)',
-                borderRadius: 9999, padding: '3px 10px', fontSize: 12,
-              }}>
-                <span style={{ color: 'var(--color-text-secondary)' }}>{k}</span>
-                <span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>{v}</span>
-              </div>
-            ))}
+          <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-primary)', letterSpacing: -0.3 }}>
+            {scoreLabel(score)}
           </div>
+          <p style={{ fontSize: 12, color: 'var(--color-text-secondary)', lineHeight: 1.4, margin: 0 }}>
+            {analysisResult?.summary || 'Run Optimize to improve your score'}
+          </p>
         </div>
       </div>
 
       {/* Dimension grid (2 cols) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, flex: 1 }}>
-        {DIMENSIONS.map((dim, i) => {
+        {mappedDimensions.map((dim, i) => {
           const Icon = dim.icon;
-          const score = dim.scoreBefore;
+          const scoreVal = dim.score;
           return (
             <div
               key={dim.id}
@@ -140,15 +154,15 @@ function InlineScorePanel({ active }: { active: boolean }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <Icon size={14} style={{ color: iconCol(dim.status), flexShrink: 0 }} />
                 <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)', flex: 1 }}>{dim.label}</span>
-                <span style={{ fontSize: 14, fontWeight: 700, flexShrink: 0, color: scoreColor(score) }}>{score}</span>
+                <span style={{ fontSize: 14, fontWeight: 700, flexShrink: 0, color: scoreColor(scoreVal) }}>{scoreVal}</span>
               </div>
               <div style={{ height: 3, background: 'rgba(124,58,237,0.08)', borderRadius: 99, overflow: 'hidden' }}>
                 <div style={{
-                  height: '100%', borderRadius: 99, background: scoreColor(score),
-                  width: active ? `${score}%` : '0%', transition: `width 0.8s ease-out ${i * 60}ms`,
+                  height: '100%', borderRadius: 99, background: scoreColor(scoreVal),
+                  width: active ? `${scoreVal}%` : '0%', transition: `width 0.8s ease-out ${i * 60}ms`,
                 }} />
               </div>
-              <p style={{ fontSize: 11, color: 'var(--color-text-secondary)', lineHeight: 1.4, margin: 0 }}>{dim.desc}</p>
+              <p style={{ fontSize: 11, color: 'var(--color-text-secondary)', lineHeight: 1.4, margin: 0, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={dim.desc}>{dim.desc}</p>
             </div>
           );
         })}
@@ -165,17 +179,41 @@ const cardStyle: React.CSSProperties = {
   minHeight: 400, transition: 'transform 300ms ease-in-out, box-shadow 300ms ease-in-out',
 };
 
+interface ComparisonBlockProps {
+  isAnalyzing: boolean;
+  isAnalyzed: boolean;
+  isOptimizing: boolean;
+  isOptimized: boolean;
+  onAnalyze: (promptText: string) => void;
+  onOptimize: (promptText: string, activeMode: string) => void;
+  analysisResult?: any;
+  optimizationResult?: any;
+  // History fields
+  versions?: any[];
+  activeVersionNumber?: number | null;
+  onRestoreVersion?: (versionNumber: number) => void;
+  initialOriginalPromptText?: string;
+}
+
 /* ── Main component ─────────────────────────────────────────────────────── */
-export default function ComparisonBlock({ isAnalyzing, isAnalyzed, isOptimizing, isOptimized, onAnalyze, onOptimize }: {
-  isAnalyzing: boolean; isAnalyzed: boolean; isOptimizing: boolean; isOptimized: boolean;
-  onAnalyze: () => void; onOptimize: () => void;
-}) {
+export default function ComparisonBlock({
+  isAnalyzing, isAnalyzed, isOptimizing, isOptimized, onAnalyze, onOptimize,
+  analysisResult, optimizationResult, versions = [], activeVersionNumber = null, onRestoreVersion,
+  initialOriginalPromptText = '',
+}: ComparisonBlockProps) {
   const [originalText, setOriginalText] = useState(
     'write a cinematic short about an astronaut who discovers a garden on mars. make it emotional.'
   );
   const [activeTab, setActiveTab] = useState('Optimized');
   const [activeMode, setActiveMode] = useState('General');
   const [scoreReady, setScoreReady] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
+
+  useEffect(() => {
+    if (initialOriginalPromptText) {
+      setOriginalText(initialOriginalPromptText);
+    }
+  }, [initialOriginalPromptText]);
 
   useEffect(() => {
     if (isAnalyzed) {
@@ -184,9 +222,19 @@ export default function ComparisonBlock({ isAnalyzing, isAnalyzed, isOptimizing,
     } else { setScoreReady(false); }
   }, [isAnalyzed]);
 
+  const handleCopy = async () => {
+    if (optimizationResult?.enhanced_prompt) {
+      await navigator.clipboard.writeText(optimizationResult.enhanced_prompt);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    }
+  };
+
   const showScorePanel = isAnalyzing || (isAnalyzed && !isOptimizing && !isOptimized);
   const showOptimizedPanel = isOptimizing || isOptimized;
   const showRightPanel = showScorePanel || showOptimizedPanel;
+
+  const currentAnalysis = optimizationResult?.original_analysis || analysisResult;
 
   return (
     <div style={{ display: 'flex', width: '100%', marginBottom: 32 }}>
@@ -267,7 +315,7 @@ export default function ComparisonBlock({ isAnalyzing, isAnalyzed, isOptimizing,
           <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
             <button
               id="analyze-btn"
-              onClick={onAnalyze}
+              onClick={() => onAnalyze(originalText)}
               disabled={isAnalyzing || isOptimizing}
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 32px',
@@ -284,7 +332,7 @@ export default function ComparisonBlock({ isAnalyzing, isAnalyzed, isOptimizing,
             </button>
             <button
               id="optimize-btn"
-              onClick={onOptimize}
+              onClick={() => onOptimize(originalText, activeMode)}
               disabled={isOptimizing || isAnalyzing}
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 32px',
@@ -346,7 +394,7 @@ export default function ComparisonBlock({ isAnalyzing, isAnalyzed, isOptimizing,
                     </div>
                   </div>
                 ) : (
-                  <InlineScorePanel active={scoreReady} />
+                  <InlineScorePanel active={scoreReady} analysisResult={currentAnalysis} />
                 )}
               </div>
             )}
@@ -386,13 +434,41 @@ export default function ComparisonBlock({ isAnalyzing, isAnalyzed, isOptimizing,
                   )}
 
                   {(isOptimized || isOptimizing) && (
-                    <div style={{ display: 'flex', gap: 8, opacity: isOptimizing ? 0.6 : 1, pointerEvents: isOptimizing ? 'none' : 'auto' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, opacity: isOptimizing ? 0.6 : 1, pointerEvents: isOptimizing ? 'none' : 'auto' }}>
+                      {/* Version selector dropdown */}
+                      {versions && versions.length > 1 && (
+                        <div style={{ position: 'relative', marginRight: 4 }}>
+                          <select
+                            value={activeVersionNumber || undefined}
+                            onChange={(e) => onRestoreVersion?.(Number(e.target.value))}
+                            style={{
+                              padding: '6px 12px',
+                              borderRadius: '8px',
+                              border: '1px solid rgba(124,58,237,0.15)',
+                              fontSize: '13px',
+                              fontWeight: 600,
+                              background: '#FFFFFF',
+                              color: 'var(--color-primary)',
+                              cursor: 'pointer',
+                              outline: 'none',
+                              boxShadow: '0 2px 5px rgba(124,58,237,0.08)',
+                            }}
+                          >
+                            {versions.map((v: any) => (
+                              <option key={v.id} value={v.version_number}>
+                                v{v.version_number} - {v.version_type || 'Enhanced'}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
                       {[
-                        { icon: Copy, title: 'Copy', primary: false },
-                        { icon: RefreshCw, title: 'Regenerate', primary: false },
-                        { icon: Bookmark, title: 'Save to Vault', primary: true },
-                      ].map(({ icon: Icon, title, primary }) => (
-                        <button key={title} title={title} style={{
+                        { icon: Copy, title: 'Copy', primary: false, onClick: handleCopy },
+                        { icon: RefreshCw, title: 'Regenerate', primary: false, onClick: () => onOptimize(originalText, activeMode) },
+                        { icon: Bookmark, title: 'Save to Vault', primary: true, onClick: () => {} },
+                      ].map(({ icon: Icon, title, primary, onClick }) => (
+                        <button key={title} title={copySuccess && title === 'Copy' ? 'Copied!' : title} onClick={onClick} style={{
                           width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
                           borderRadius: '50%', cursor: 'pointer', transition: 'all 250ms ease',
                           background: primary ? 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)' : '#F3F4F6',
@@ -404,7 +480,11 @@ export default function ComparisonBlock({ isAnalyzing, isAnalyzed, isOptimizing,
                             ? 'hover:brightness-110 hover:translate-y-[-2px] hover:scale-[1.08] hover:shadow-[0_8px_24px_rgba(124,58,237,0.45)]'
                             : 'hover:!bg-[rgba(255,255,255,0.70)] hover:!text-[var(--color-primary)] hover:translate-y-[-2px] hover:scale-[1.05] hover:shadow-[0_6px_16px_rgba(124,58,237,0.10)]'}
                         >
-                          <Icon size={16} />
+                          {copySuccess && title === 'Copy' ? (
+                            <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-success)' }}>✓</span>
+                          ) : (
+                            <Icon size={16} />
+                          )}
                         </button>
                       ))}
                     </div>
@@ -428,30 +508,16 @@ export default function ComparisonBlock({ isAnalyzing, isAnalyzed, isOptimizing,
                   ) : isOptimized ? (
                     <div style={{ fontSize: 14, lineHeight: 1.6, animation: 'fadeInRise 400ms ease-out forwards', overflowY: 'auto', paddingRight: 16, color: 'var(--color-text-primary)', letterSpacing: '0.01em' }}>
                       {activeTab === 'Optimized' ? (
-                        <>
-                          <p style={{ marginBottom: 20 }}>
-                            <span style={{ color: 'var(--color-primary)', fontWeight: 600 }}>Subject & Setting:</span>{' '}
-                            A solitary astronaut standing in awe within a lush, bioluminescent garden hidden deep inside a Martian cavern.
-                          </p>
-                          <p style={{ marginBottom: 20 }}>
-                            <span style={{ color: 'var(--color-primary)', fontWeight: 600 }}>Lighting & Atmosphere:</span>{' '}
-                            Cinematic lighting with deep shadows and glowing, otherworldly flora.
-                          </p>
-                          <p style={{ marginBottom: 20 }}>
-                            <span style={{ color: 'var(--color-primary)', fontWeight: 600 }}>Camera Movement:</span>{' '}
-                            Slow, sweeping drone shot starting from the stark Martian landscape, moving seamlessly through a crevice into the hidden oasis.
-                          </p>
-                        </>
+                        <FormattedPromptViewer content={optimizationResult?.enhanced_prompt || ''} />
                       ) : (
-                        <p>
-                          <span style={{ background: 'var(--color-diff-remove)', color: 'var(--color-diff-remove-text)', textDecoration: 'line-through', padding: '2px 6px', borderRadius: 6 }}>
-                            write a cinematic short about an astronaut who discovers a garden on mars. make it emotional.
-                          </span>
-                          {' '}
-                          <span style={{ background: 'var(--color-diff-add)', color: 'var(--color-diff-add-text)', padding: '2px 6px', borderRadius: 6 }}>
-                            A solitary astronaut standing in awe within a lush, bioluminescent garden hidden deep inside a Martian cavern. Cinematic lighting with deep shadows and glowing, otherworldly flora.
-                          </span>
-                        </p>
+                        <div>
+                          <div style={{ background: 'var(--color-diff-remove)', color: 'var(--color-diff-remove-text)', textDecoration: 'line-through', padding: '10px 14px', borderRadius: 10, marginBottom: 16 }}>
+                            {optimizationResult?.original_prompt}
+                          </div>
+                          <div style={{ background: 'var(--color-diff-add)', padding: '10px 14px', borderRadius: 10 }}>
+                            <FormattedPromptViewer content={optimizationResult?.enhanced_prompt || ''} />
+                          </div>
+                        </div>
                       )}
                     </div>
                   ) : (

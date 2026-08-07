@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import {
   Search, Bookmark, BookmarkCheck, Sparkles, Code2, Megaphone, Palette,
   Video, Wand2, BookOpen, Briefcase, TrendingUp, Star, ChevronRight,
-  Zap, Copy, Film,
+  Zap, Film,
 } from 'lucide-react';
 
 interface Template {
@@ -44,7 +44,6 @@ const CATEGORY_ICON_MAP: Record<string, React.ElementType> = {
 /* ── Template Card ── */
 function TemplateCard({ template }: { template: Template }) {
   const [bookmarked, setBookmarked] = useState(false);
-  const [copied, setCopied] = useState(false);
   const Icon = CATEGORY_ICON_MAP[template.category] || Sparkles;
 
   return (
@@ -92,10 +91,6 @@ function TemplateCard({ template }: { template: Template }) {
           <Star size={10} strokeWidth={2} />{template.useCount?.toLocaleString() ?? '0'}
         </span>
         <div style={{ display: 'flex', gap: 6 }}>
-          <button id={`copy-${template.id}`} onClick={e => { e.stopPropagation(); navigator.clipboard.writeText(template.promptPreview); setCopied(true); setTimeout(() => setCopied(false), 1800); }}
-            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 7, fontSize: 12, fontWeight: 500, border: '1px solid rgba(124,58,237,0.14)', cursor: 'pointer', background: 'transparent', color: 'var(--color-text-secondary)', transition: 'all 180ms ease' }}
-            className="hover:!bg-[rgba(124,58,237,0.06)] hover:!text-[var(--color-primary)] hover:!border-[rgba(124,58,237,0.22)]"
-          ><Copy size={12} strokeWidth={2} />{copied ? 'Copied' : 'Copy'}</button>
           <button id={`use-${template.id}`}
             style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 7, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #7C3AED, #A855F7)', color: 'white', boxShadow: '0 3px 10px rgba(124,58,237,0.28)', transition: 'all 180ms ease' }}
             className="hover:translate-y-[-1px] hover:brightness-105"
@@ -108,7 +103,6 @@ function TemplateCard({ template }: { template: Template }) {
 
 /* ── Featured Hero ── */
 function FeaturedHero({ template }: { template: Template }) {
-  const [copied, setCopied] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
   return (
     <div id="featured-template-hero" style={{
@@ -131,10 +125,6 @@ function FeaturedHero({ template }: { template: Template }) {
           <div style={{ display: 'flex', gap: 10 }}>
             <button id="hero-use-optimizer-btn" style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 20px', borderRadius: 10, fontSize: 14, fontWeight: 700, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #7C3AED, #A855F7)', color: 'white', boxShadow: '0 4px 16px rgba(124,58,237,0.45)', transition: 'all 200ms ease' }} className="hover:brightness-110 hover:translate-y-[-1px]">
               <Zap size={15} strokeWidth={2} />Use in Optimizer
-            </button>
-            <button id="hero-copy-btn" onClick={() => { navigator.clipboard.writeText(template.promptPreview); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-              style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.20)', color: '#EDE9FE', transition: 'all 200ms ease' }} className="hover:!bg-[rgba(255,255,255,0.18)]">
-              <Copy size={14} strokeWidth={2} />{copied ? 'Copied!' : 'Copy Prompt'}
             </button>
             <button id="hero-bookmark-btn" onClick={() => setBookmarked(!bookmarked)}
               style={{ width: 42, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 10, cursor: 'pointer', border: '1px solid rgba(255,255,255,0.20)', background: bookmarked ? 'rgba(124,58,237,0.40)' : 'rgba(255,255,255,0.10)', color: '#EDE9FE', transition: 'all 200ms ease' }}>

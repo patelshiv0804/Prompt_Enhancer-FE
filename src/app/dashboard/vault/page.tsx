@@ -11,7 +11,7 @@ import {
 import { fetchHistory, fetchHistoryStats, toggleFavorite, deleteHistoryItem } from '@/features/history/services/historyService';
 import type { HistoryItem, HistoryStats, SortBy } from '@/features/history/types/history.types';
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 10;
 
 const FILTER_CATEGORIES = [
   { id: 'all', label: 'All' }, { id: 'favorites', label: '★ Favorites' }, { id: 'general', label: 'General' },
@@ -55,17 +55,39 @@ function scoreColor(score: number): string {
 
 function useCountUp(target: number, active: boolean, duration = 1200): number {
   const [value, setValue] = useState(0);
+  const prevTargetRef = useRef(0);
+
   useEffect(() => {
-    if (!active || target === 0) return;
-    let current = 0;
-    const step = target / (duration / 16);
+    if (!active) {
+      setValue(target);
+      return;
+    }
+    const start = prevTargetRef.current;
+    prevTargetRef.current = target;
+
+    if (start === target) {
+      setValue(target);
+      return;
+    }
+
+    let current = start;
+    const diff = target - start;
+    const steps = duration / 16;
+    const step = diff / steps;
+
     const timer = setInterval(() => {
       current += step;
-      if (current >= target) { setValue(target); clearInterval(timer); }
-      else setValue(Math.floor(current));
+      if ((diff > 0 && current >= target) || (diff < 0 && current <= target)) {
+        setValue(target);
+        clearInterval(timer);
+      } else {
+        setValue(Math.round(current));
+      }
     }, 16);
+
     return () => clearInterval(timer);
   }, [target, active, duration]);
+
   return value;
 }
 
@@ -105,7 +127,7 @@ function StatCard({ label, value, suffix = '', prefix = '', icon: Icon, accent, 
 }
 
 /* ── VaultRow ── */
-function VaultRow({ item, onToggleFavorite, onDelete }: { item: HistoryItem; onToggleFavorite: (id: string, current: boolean) => void; onDelete: (id: string) => void; }) {
+function VaultRow({ item, onToggleFavorite, onDelete, onOpenInOptimizer }: { item: HistoryItem; onToggleFavorite: (id: string, current: boolean) => void; onDelete: (id: string) => void; onOpenInOptimizer: (id: string) => void; }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const Icon    = CATEGORY_ICONS[item.category] || FileText;
@@ -125,9 +147,10 @@ function VaultRow({ item, onToggleFavorite, onDelete }: { item: HistoryItem; onT
       background: menuOpen ? 'rgba(124,58,237,0.04)' : '#FFFFFF',
       border: '1px solid rgba(124,58,237,0.09)', borderRadius: 14,
       transition: 'background 200ms ease, box-shadow 200ms ease, border-color 200ms ease',
-      position: 'relative',
+      position: 'relative', cursor: 'pointer',
     }}
     className="hover:!bg-[rgba(124,58,237,0.03)] hover:shadow-[0_4px_16px_rgba(109,40,217,0.07)] hover:!border-[rgba(124,58,237,0.15)]"
+    onClick={() => onOpenInOptimizer(item.id)}
     >
       <div style={{ width: 38, height: 38, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accent, background: `${accent}14`, border: `1px solid ${accent}22`, flexShrink: 0 }}>
         <Icon size={16} strokeWidth={1.6} />
@@ -150,14 +173,14 @@ function VaultRow({ item, onToggleFavorite, onDelete }: { item: HistoryItem; onT
         <span style={{ fontSize: 18, fontWeight: 800, lineHeight: 1, color: scoreColor(item.score) }}>{item.score}</span>
       </div>
 
-      <button id={`star-btn-${item.id}`} onClick={() => onToggleFavorite(item.id, item.isFavorite)} title={item.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+      <button id={`star-btn-${item.id}`} onClick={(e) => { e.stopPropagation(); onToggleFavorite(item.id, item.isFavorite); }} title={item.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
         style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', border: 'none', cursor: 'pointer', background: 'transparent', color: item.isFavorite ? '#F59E0B' : 'rgba(107,107,138,0.40)', transition: 'all 200ms ease', flexShrink: 0 }}
         className="hover:!bg-[rgba(245,158,11,0.10)] hover:!text-[#F59E0B] hover:scale-110"
       >
         <Star size={15} strokeWidth={item.isFavorite ? 0 : 1.5} fill={item.isFavorite ? 'currentColor' : 'none'} />
       </button>
 
-      <div style={{ position: 'relative', flexShrink: 0 }} ref={menuRef}>
+      <div style={{ position: 'relative', flexShrink: 0 }} ref={menuRef} onClick={(e) => e.stopPropagation()}>
         <button id={`more-btn-${item.id}`} onClick={() => setMenuOpen(v => !v)}
           style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', border: 'none', cursor: 'pointer', background: 'transparent', color: 'rgba(107,107,138,0.50)', transition: 'all 200ms ease' }}
           className="hover:!bg-[rgba(124,58,237,0.08)] hover:!text-[var(--color-primary)]"
@@ -172,7 +195,7 @@ function VaultRow({ item, onToggleFavorite, onDelete }: { item: HistoryItem; onT
             animation: 'dropdownFadeIn 150ms ease',
           }}>
             {[
-              { icon: ExternalLink, label: 'Open in Optimizer', danger: false, onClick: () => {} },
+              { icon: ExternalLink, label: 'Open in Optimizer', danger: false, onClick: () => { setMenuOpen(false); onOpenInOptimizer(item.id); } },
               { icon: Copy, label: 'Copy Prompt', danger: false, onClick: () => { navigator.clipboard.writeText(item.prompt); setMenuOpen(false); } },
             ].map(({ icon: Icon2, label, onClick }) => (
               <button key={label} onClick={onClick}
@@ -294,13 +317,36 @@ export default function VaultPage() {
   const handleToggleFavorite = useCallback((id: string, current: boolean) => {
     setItems(prev => prev.map(i => i.id === id ? { ...i, isFavorite: !current } : i));
     toggleFavorite(id, !current);
+    setStats(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        favoritesCount: Math.max(0, prev.favoritesCount + (current ? -1 : 1))
+      };
+    });
   }, []);
 
   const handleDelete = useCallback((id: string) => {
+    const itemToDelete = items.find(i => i.id === id);
+    const wasFavorite = itemToDelete?.isFavorite ?? false;
+
     setItems(prev => prev.filter(i => i.id !== id));
     setTotal(prev => prev - 1);
     deleteHistoryItem(id);
-  }, []);
+
+    if (wasFavorite) {
+      toggleFavorite(id, false);
+    }
+
+    setStats(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        totalPrompts: Math.max(0, prev.totalPrompts - 1),
+        favoritesCount: Math.max(0, prev.favoritesCount - (wasFavorite ? 1 : 0))
+      };
+    });
+  }, [items]);
 
   const activeSortLabel = SORT_OPTIONS.find(s => s.id === sortBy)?.label ?? 'Sort';
 
@@ -392,7 +438,7 @@ export default function VaultPage() {
             <p style={{ fontSize: 14, color: 'var(--color-text-secondary)', margin: 0 }}>Save optimized prompts to build your personal library.</p>
           </div>
         ) : items.map(item => (
-          <VaultRow key={item.id} item={item} onToggleFavorite={handleToggleFavorite} onDelete={handleDelete} />
+          <VaultRow key={item.id} item={item} onToggleFavorite={handleToggleFavorite} onDelete={handleDelete} onOpenInOptimizer={(id) => router.push(`/dashboard/chat/${id}`)} />
         ))}
       </div>
 

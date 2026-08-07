@@ -9,8 +9,9 @@ import {
 } from 'lucide-react';
 import { fetchHistory, fetchHistoryStats, toggleFavorite, deleteHistoryItem } from '../services/historyService';
 import type { HistoryItem, HistoryStats, SortBy } from '../types/history.types';
+import { useRouter } from 'next/navigation';
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 10;
 
 const FILTER_CATEGORIES = [
   { id: 'all', label: 'All' }, { id: 'favorites', label: '★ Favorites' }, { id: 'general', label: 'General' },
@@ -54,17 +55,39 @@ function scoreColor(score: number): string {
 
 function useCountUp(target: number, active: boolean, duration = 1200): number {
   const [value, setValue] = useState(0);
+  const prevTargetRef = useRef(0);
+
   useEffect(() => {
-    if (!active || target === 0) return;
-    let current = 0;
-    const step = target / (duration / 16);
+    if (!active) {
+      setValue(target);
+      return;
+    }
+    const start = prevTargetRef.current;
+    prevTargetRef.current = target;
+
+    if (start === target) {
+      setValue(target);
+      return;
+    }
+
+    let current = start;
+    const diff = target - start;
+    const steps = duration / 16;
+    const step = diff / steps;
+
     const timer = setInterval(() => {
       current += step;
-      if (current >= target) { setValue(target); clearInterval(timer); }
-      else setValue(Math.floor(current));
+      if ((diff > 0 && current >= target) || (diff < 0 && current <= target)) {
+        setValue(target);
+        clearInterval(timer);
+      } else {
+        setValue(Math.round(current));
+      }
     }, 16);
+
     return () => clearInterval(timer);
   }, [target, active, duration]);
+
   return value;
 }
 
@@ -109,13 +132,14 @@ function HistoryRow({ item, onToggleFavorite, onDelete }: { item: HistoryItem; o
   const menuRef = useRef<HTMLDivElement>(null);
   const Icon    = CATEGORY_ICONS[item.category] || FileText;
   const accent  = CATEGORY_ACCENTS[item.category] || '#7C3AED';
+  const router  = useRouter();
 
   useEffect(() => {
     function close(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
     }
-    document.addEventListener('mousedown', close);
-    return () => document.removeEventListener('mousedown', close);
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
   }, []);
 
   return (
@@ -171,8 +195,8 @@ function HistoryRow({ item, onToggleFavorite, onDelete }: { item: HistoryItem; o
             animation: 'dropdownFadeIn 150ms ease',
           }}>
             {[
-              { icon: ExternalLink, label: 'Open in Optimizer', danger: false, onClick: () => {} },
-              { icon: Copy, label: 'Copy Prompt', danger: false, onClick: () => { navigator.clipboard.writeText(item.prompt); setMenuOpen(false); } },
+              { icon: ExternalLink, label: 'Open in Optimizer', onClick: () => { alert('Clicked Open in Optimizer for ID: ' + item.id); window.location.href = `/dashboard/optimizer?prompt_id=${item.id}`; } },
+              { icon: Copy, label: 'Copy Prompt', onClick: () => { navigator.clipboard.writeText(item.prompt); setMenuOpen(false); } },
             ].map(({ icon: Icon2, label, onClick }) => (
               <button key={label} onClick={onClick}
                 style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '9px 14px', fontSize: 13, color: 'var(--color-text-primary)', border: 'none', cursor: 'pointer', background: 'transparent', textAlign: 'left' }}
@@ -250,8 +274,8 @@ export default function HistoryPage() {
   }, [currentPage, debSearch, activeCategory, sortBy]);
   useEffect(() => {
     function close(e: MouseEvent) { if (sortRef.current && !sortRef.current.contains(e.target as Node)) setShowSort(false); }
-    document.addEventListener('mousedown', close);
-    return () => document.removeEventListener('mousedown', close);
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
   }, []);
 
   const handleToggleFavorite = useCallback((id: string, current: boolean) => {

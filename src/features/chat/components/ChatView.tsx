@@ -10,6 +10,8 @@ import {
 import VersionHeader from './VersionHeader';
 import VersionHistoryDrawer from './VersionHistoryDrawer';
 import { useEnabledStyleOptions } from '@/features/style-memory/services/styleMemoryService';
+import { apiClient } from '@/utils/apiClient';
+import FormattedPromptViewer from '../../optimizer/components/FormattedPromptViewer';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface Dimension {
@@ -19,6 +21,7 @@ interface Dimension {
   icon: React.ElementType;
   desc: string;
   score: number;
+  beforeScore?: number;
 }
 
 interface PromptVersion {
@@ -36,12 +39,19 @@ interface PromptVersion {
 interface OptimizationSession {
   id: string;
   originalPrompt: string;
+  originalScore?: number;
   mode: string;
   modeIcon: React.ElementType;
   wordsBefore: number;
   tokensBefore: number;
   createdAt: string;
   versions: PromptVersion[];
+  toolRecommendations?: {
+    matched_task: string;
+    match_type?: string;
+    match_confidence?: number;
+    tools: { name: string; rank: number }[];
+  };
 }
 
 // ── Mock Sessions ──────────────────────────────────────────────────────────────
@@ -49,23 +59,33 @@ const MOCK_SESSIONS: Record<string, OptimizationSession> = {
   r1: {
     id: 'r1',
     originalPrompt: 'Write a viral Twitter thread about AI in healthcare',
+    originalScore: 22,
     mode: 'Marketing',
     modeIcon: Megaphone,
     wordsBefore: 10,
     tokensBefore: 14,
     createdAt: '2 min ago',
+    toolRecommendations: {
+      matched_task: 'Marketing Copy',
+      match_confidence: 0.85,
+      tools: [
+        { name: 'Claude', rank: 1 },
+        { name: 'ChatGPT', rank: 2 },
+        { name: 'Jasper', rank: 3 },
+      ],
+    },
     versions: [
       {
         versionNumber: 1,
         optimizedPrompt: 'Role: Social media copywriter.\n\nTask: Write a Twitter thread about AI in healthcare.\n\nFormat: Use numbered tweets. Keep each under 280 characters.',
         overallScore: 62,
         dimensions: [
-          { id: 'clarity', label: 'Clarity', status: 'good', icon: CheckCircle2, desc: 'Task is defined but generic.', score: 70 },
-          { id: 'context', label: 'Context', status: 'warning', icon: AlertTriangle, desc: 'No specific healthcare area.', score: 55 },
-          { id: 'role', label: 'Role', status: 'good', icon: CheckCircle2, desc: 'Basic persona assigned.', score: 68 },
-          { id: 'format', label: 'Format', status: 'neutral', icon: Minus, desc: 'Minimal structure.', score: 58 },
-          { id: 'constraints', label: 'Constraints', status: 'warning', icon: AlertTriangle, desc: 'Only character limit given.', score: 52 },
-          { id: 'examples', label: 'Examples', status: 'neutral', icon: Minus, desc: 'No examples provided.', score: 40 },
+          { id: 'clarity', label: 'Clarity', status: 'good', icon: CheckCircle2, desc: 'Task is defined but generic.', score: 70, beforeScore: 30 },
+          { id: 'context', label: 'Context', status: 'warning', icon: AlertTriangle, desc: 'No specific healthcare area.', score: 55, beforeScore: 15 },
+          { id: 'role', label: 'Role', status: 'good', icon: CheckCircle2, desc: 'Basic persona assigned.', score: 68, beforeScore: 10 },
+          { id: 'format', label: 'Format', status: 'neutral', icon: Minus, desc: 'Minimal structure.', score: 58, beforeScore: 20 },
+          { id: 'constraints', label: 'Constraints', status: 'warning', icon: AlertTriangle, desc: 'Only character limit given.', score: 52, beforeScore: 25 },
+          { id: 'examples', label: 'Examples', status: 'neutral', icon: Minus, desc: 'No examples provided.', score: 40, beforeScore: 10 },
         ],
         wordsAfter: 28,
         tokensAfter: 42,
@@ -76,12 +96,12 @@ const MOCK_SESSIONS: Record<string, OptimizationSession> = {
         optimizedPrompt: 'Role: Viral social media strategist with expertise in healthcare technology.\n\nTask: Write a 10-tweet Twitter thread about how AI is transforming healthcare. Each tweet under 280 characters.\n\nFormat:\n• Start with a provocative hook\n• Use data points and real examples\n• Include relevant emojis\n• End with a call-to-action\n\nTone: Conversational yet authoritative.',
         overallScore: 81,
         dimensions: [
-          { id: 'clarity', label: 'Clarity', status: 'good', icon: CheckCircle2, desc: 'Clear task with tweet count.', score: 85 },
-          { id: 'context', label: 'Context', status: 'good', icon: CheckCircle2, desc: 'Healthcare tech focus specified.', score: 78 },
-          { id: 'role', label: 'Role', status: 'good', icon: CheckCircle2, desc: 'Specific expert persona.', score: 88 },
-          { id: 'format', label: 'Format', status: 'good', icon: CheckCircle2, desc: 'Structure with bullets.', score: 82 },
-          { id: 'constraints', label: 'Constraints', status: 'warning', icon: AlertTriangle, desc: 'Tone defined but no content boundaries.', score: 72 },
-          { id: 'examples', label: 'Examples', status: 'neutral', icon: Minus, desc: 'No example tweets given.', score: 55 },
+          { id: 'clarity', label: 'Clarity', status: 'good', icon: CheckCircle2, desc: 'Clear task with tweet count.', score: 85, beforeScore: 30 },
+          { id: 'context', label: 'Context', status: 'good', icon: CheckCircle2, desc: 'Healthcare tech focus specified.', score: 78, beforeScore: 15 },
+          { id: 'role', label: 'Role', status: 'good', icon: CheckCircle2, desc: 'Specific expert persona.', score: 88, beforeScore: 10 },
+          { id: 'format', label: 'Format', status: 'good', icon: CheckCircle2, desc: 'Structure with bullets.', score: 82, beforeScore: 20 },
+          { id: 'constraints', label: 'Constraints', status: 'warning', icon: AlertTriangle, desc: 'Tone defined but no content boundaries.', score: 72, beforeScore: 25 },
+          { id: 'examples', label: 'Examples', status: 'neutral', icon: Minus, desc: 'No example tweets given.', score: 55, beforeScore: 10 },
         ],
         wordsAfter: 58,
         tokensAfter: 82,
@@ -93,12 +113,12 @@ const MOCK_SESSIONS: Record<string, OptimizationSession> = {
         optimizedPrompt: 'Role: You are a viral social media strategist with expertise in healthcare technology trends.\n\nTask: Write a 10-tweet Twitter thread about how AI is transforming healthcare. Each tweet must be under 280 characters.\n\nFormat:\n• Start with a provocative hook tweet that challenges conventional wisdom\n• Use data points and real examples (cite sources)\n• Include relevant emojis for visual engagement\n• End with a call-to-action for discussion\n\nTone: Conversational yet authoritative. Avoid jargon. Write for a general audience.\n\nConstraints: No medical advice. Focus on trends, not specific products.',
         overallScore: 94,
         dimensions: [
-          { id: 'clarity', label: 'Clarity', status: 'good', icon: CheckCircle2, desc: 'Task is precisely defined with character limits.', score: 95 },
-          { id: 'context', label: 'Context', status: 'good', icon: CheckCircle2, desc: 'Healthcare AI context well established.', score: 92 },
-          { id: 'role', label: 'Role', status: 'good', icon: CheckCircle2, desc: 'Specific expert persona assigned.', score: 96 },
-          { id: 'format', label: 'Format', status: 'good', icon: CheckCircle2, desc: 'Thread structure with bullet requirements.', score: 94 },
-          { id: 'constraints', label: 'Constraints', status: 'good', icon: CheckCircle2, desc: 'Clear boundaries on content scope.', score: 91 },
-          { id: 'examples', label: 'Examples', status: 'neutral', icon: Minus, desc: 'No examples provided, but format is clear.', score: 88 },
+          { id: 'clarity', label: 'Clarity', status: 'good', icon: CheckCircle2, desc: 'Task is precisely defined with character limits.', score: 95, beforeScore: 30 },
+          { id: 'context', label: 'Context', status: 'good', icon: CheckCircle2, desc: 'Healthcare AI context well established.', score: 92, beforeScore: 15 },
+          { id: 'role', label: 'Role', status: 'good', icon: CheckCircle2, desc: 'Specific expert persona assigned.', score: 96, beforeScore: 10 },
+          { id: 'format', label: 'Format', status: 'good', icon: CheckCircle2, desc: 'Thread structure with bullet requirements.', score: 94, beforeScore: 20 },
+          { id: 'constraints', label: 'Constraints', status: 'good', icon: CheckCircle2, desc: 'Clear boundaries on content scope.', score: 91, beforeScore: 25 },
+          { id: 'examples', label: 'Examples', status: 'neutral', icon: Minus, desc: 'No examples provided, but format is clear.', score: 88, beforeScore: 10 },
         ],
         wordsAfter: 89,
         tokensAfter: 124,
@@ -129,23 +149,33 @@ const MOCK_SESSIONS: Record<string, OptimizationSession> = {
   r2: {
     id: 'r2',
     originalPrompt: 'Debug my React useEffect infinite loop issue',
+    originalScore: 18,
     mode: 'Coding',
     modeIcon: Code,
     wordsBefore: 8,
     tokensBefore: 11,
     createdAt: '1 hour ago',
+    toolRecommendations: {
+      matched_task: 'Coding',
+      match_confidence: 0.90,
+      tools: [
+        { name: 'Claude', rank: 1 },
+        { name: 'ChatGPT', rank: 2 },
+        { name: 'Gemini', rank: 3 },
+      ],
+    },
     versions: [
       {
         versionNumber: 1,
         optimizedPrompt: 'Help me fix an infinite loop in my React useEffect hook. The component re-renders endlessly when I update state inside the effect.\n\nProvide common causes and solutions with code examples.',
         overallScore: 58,
         dimensions: [
-          { id: 'clarity', label: 'Clarity', status: 'good', icon: CheckCircle2, desc: 'Problem stated clearly.', score: 65 },
-          { id: 'context', label: 'Context', status: 'warning', icon: AlertTriangle, desc: 'No code context provided.', score: 48 },
-          { id: 'role', label: 'Role', status: 'neutral', icon: Minus, desc: 'No expert persona.', score: 30 },
-          { id: 'format', label: 'Format', status: 'neutral', icon: Minus, desc: 'Basic output request.', score: 52 },
-          { id: 'constraints', label: 'Constraints', status: 'warning', icon: AlertTriangle, desc: 'No tech stack version info.', score: 60 },
-          { id: 'examples', label: 'Examples', status: 'neutral', icon: Minus, desc: 'No code samples.', score: 45 },
+          { id: 'clarity', label: 'Clarity', status: 'good', icon: CheckCircle2, desc: 'Problem stated clearly.', score: 65, beforeScore: 20 },
+          { id: 'context', label: 'Context', status: 'warning', icon: AlertTriangle, desc: 'No code context provided.', score: 48, beforeScore: 10 },
+          { id: 'role', label: 'Role', status: 'neutral', icon: Minus, desc: 'No expert persona.', score: 30, beforeScore: 5 },
+          { id: 'format', label: 'Format', status: 'neutral', icon: Minus, desc: 'Basic output request.', score: 52, beforeScore: 15 },
+          { id: 'constraints', label: 'Constraints', status: 'warning', icon: AlertTriangle, desc: 'No tech stack version info.', score: 60, beforeScore: 20 },
+          { id: 'examples', label: 'Examples', status: 'neutral', icon: Minus, desc: 'No code samples.', score: 45, beforeScore: 10 },
         ],
         wordsAfter: 30,
         tokensAfter: 44,
@@ -156,12 +186,12 @@ const MOCK_SESSIONS: Record<string, OptimizationSession> = {
         optimizedPrompt: 'Role: Senior React developer and debugging expert.\n\nContext: I have a React functional component using useEffect that creates an infinite re-render loop. The component fetches data and updates state.\n\nTask: Diagnose and fix the infinite loop. Provide:\n1. Common root causes (dependency array issues, object references, state updates)\n2. Step-by-step debugging approach\n3. Corrected code pattern with explanation\n4. Best practices to prevent this\n\nFormat: Use TypeScript code blocks. Include before/after comparisons.\n\nConstraints: React 18+, functional components only.',
         overallScore: 88,
         dimensions: [
-          { id: 'clarity', label: 'Clarity', status: 'good', icon: CheckCircle2, desc: 'Debugging steps clearly requested.', score: 90 },
-          { id: 'context', label: 'Context', status: 'good', icon: CheckCircle2, desc: 'React version specified.', score: 88 },
-          { id: 'role', label: 'Role', status: 'good', icon: CheckCircle2, desc: 'Senior developer persona.', score: 92 },
-          { id: 'format', label: 'Format', status: 'good', icon: CheckCircle2, desc: 'Numbered output with code blocks.', score: 86 },
-          { id: 'constraints', label: 'Constraints', status: 'good', icon: CheckCircle2, desc: 'Tech constraints well defined.', score: 85 },
-          { id: 'examples', label: 'Examples', status: 'warning', icon: AlertTriangle, desc: 'Before/after requested but no input.', score: 78 },
+          { id: 'clarity', label: 'Clarity', status: 'good', icon: CheckCircle2, desc: 'Debugging steps clearly requested.', score: 90, beforeScore: 20 },
+          { id: 'context', label: 'Context', status: 'good', icon: CheckCircle2, desc: 'React version specified.', score: 88, beforeScore: 10 },
+          { id: 'role', label: 'Role', status: 'good', icon: CheckCircle2, desc: 'Senior developer persona.', score: 92, beforeScore: 5 },
+          { id: 'format', label: 'Format', status: 'good', icon: CheckCircle2, desc: 'Numbered output with code blocks.', score: 86, beforeScore: 15 },
+          { id: 'constraints', label: 'Constraints', status: 'good', icon: CheckCircle2, desc: 'Tech constraints well defined.', score: 85, beforeScore: 20 },
+          { id: 'examples', label: 'Examples', status: 'warning', icon: AlertTriangle, desc: 'Before/after requested but no input.', score: 78, beforeScore: 10 },
         ],
         wordsAfter: 78,
         tokensAfter: 108,
@@ -173,23 +203,33 @@ const MOCK_SESSIONS: Record<string, OptimizationSession> = {
   r3: {
     id: 'r3',
     originalPrompt: 'Cinematic shot of neon rain on cyberpunk streets',
+    originalScore: 15,
     mode: 'Cinematic Video',
     modeIcon: Film,
     wordsBefore: 9,
     tokensBefore: 12,
     createdAt: '3 hours ago',
+    toolRecommendations: {
+      matched_task: 'Cinematic Video',
+      match_confidence: 0.80,
+      tools: [
+        { name: 'Veo', rank: 1 },
+        { name: 'Kling', rank: 2 },
+        { name: 'Runway', rank: 3 },
+      ],
+    },
     versions: [
       {
         versionNumber: 1,
         optimizedPrompt: 'A cinematic shot of a cyberpunk city street at night with neon rain. Include neon lights, wet streets, and a dark atmosphere. High resolution, photorealistic.',
         overallScore: 52,
         dimensions: [
-          { id: 'clarity', label: 'Clarity', status: 'neutral', icon: Minus, desc: 'Basic scene description.', score: 55 },
-          { id: 'context', label: 'Context', status: 'warning', icon: AlertTriangle, desc: 'No aesthetic references.', score: 42 },
-          { id: 'role', label: 'Role', status: 'neutral', icon: Minus, desc: 'No director or style persona.', score: 20 },
-          { id: 'format', label: 'Format', status: 'warning', icon: AlertTriangle, desc: 'Flat text, no structure.', score: 38 },
-          { id: 'constraints', label: 'Constraints', status: 'warning', icon: AlertTriangle, desc: 'Resolution mentioned, no aspect ratio.', score: 50 },
-          { id: 'examples', label: 'Examples', status: 'neutral', icon: Minus, desc: 'No reference images or films.', score: 48 },
+          { id: 'clarity', label: 'Clarity', status: 'neutral', icon: Minus, desc: 'Basic scene description.', score: 55, beforeScore: 12 },
+          { id: 'context', label: 'Context', status: 'warning', icon: AlertTriangle, desc: 'No aesthetic references.', score: 42, beforeScore: 8 },
+          { id: 'role', label: 'Role', status: 'neutral', icon: Minus, desc: 'No director or style persona.', score: 20, beforeScore: 5 },
+          { id: 'format', label: 'Format', status: 'warning', icon: AlertTriangle, desc: 'Flat text, no structure.', score: 38, beforeScore: 10 },
+          { id: 'constraints', label: 'Constraints', status: 'warning', icon: AlertTriangle, desc: 'Resolution mentioned, no aspect ratio.', score: 50, beforeScore: 15 },
+          { id: 'examples', label: 'Examples', status: 'neutral', icon: Minus, desc: 'No reference images or films.', score: 48, beforeScore: 10 },
         ],
         wordsAfter: 28,
         tokensAfter: 38,
@@ -234,11 +274,21 @@ const MOCK_SESSIONS: Record<string, OptimizationSession> = {
   r4: {
     id: 'r4',
     originalPrompt: 'Explain quantum entanglement to a 10-year-old',
+    originalScore: 12,
     mode: 'Research',
     modeIcon: Search,
     wordsBefore: 8,
     tokensBefore: 11,
     createdAt: '5 hours ago',
+    toolRecommendations: {
+      matched_task: 'Academic Research',
+      match_confidence: 0.82,
+      tools: [
+        { name: 'Consensus', rank: 1 },
+        { name: 'Elicit', rank: 2 },
+        { name: 'ChatGPT', rank: 3 },
+      ],
+    },
     versions: [
       {
         versionNumber: 1,
@@ -278,11 +328,21 @@ const MOCK_SESSIONS: Record<string, OptimizationSession> = {
   r5: {
     id: 'r5',
     originalPrompt: 'Generate a product launch email sequence',
+    originalScore: 14,
     mode: 'Marketing',
     modeIcon: Megaphone,
     wordsBefore: 6,
     tokensBefore: 9,
     createdAt: 'Yesterday',
+    toolRecommendations: {
+      matched_task: 'Marketing Copy',
+      match_confidence: 0.85,
+      tools: [
+        { name: 'Claude', rank: 1 },
+        { name: 'ChatGPT', rank: 2 },
+        { name: 'Jasper', rank: 3 },
+      ],
+    },
     versions: [
       {
         versionNumber: 1,
@@ -322,11 +382,21 @@ const MOCK_SESSIONS: Record<string, OptimizationSession> = {
   r6: {
     id: 'r6',
     originalPrompt: 'YouTube thumbnail prompt for tech review video',
+    originalScore: 16,
     mode: 'YouTube Shorts',
     modeIcon: PlaySquare,
     wordsBefore: 7,
     tokensBefore: 10,
     createdAt: 'Yesterday',
+    toolRecommendations: {
+      matched_task: 'YouTube Thumbnail',
+      match_confidence: 0.88,
+      tools: [
+        { name: 'Midjourney', rank: 1 },
+        { name: 'GPT Image', rank: 2 },
+        { name: 'Flux', rank: 3 },
+      ],
+    },
     versions: [
       {
         versionNumber: 1,
@@ -388,8 +458,8 @@ const DEFAULT_SESSION: OptimizationSession = {
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 function scoreColor(s: number) {
-  if (s >= 80) return 'var(--color-success, #10B981)';
-  if (s >= 55) return 'var(--color-primary, #7C3AED)';
+  if (s >= 80) return '#10B981';
+  if (s >= 55) return '#7C3AED';
   return '#F59E0B';
 }
 
@@ -416,11 +486,162 @@ function useCountUp(target: number, active: boolean, duration = 1200): number {
   return value;
 }
 
+// ── Client-side tool recommendation fallback ──────────────────────────────────
+const TOOL_MAPS: Record<string, { matched_task: string; match_confidence: number; tools: { name: string; rank: number }[] }> = {
+  cinematic: { matched_task: 'Cinematic Video', match_confidence: 0.80, tools: [{ name: 'Veo', rank: 1 }, { name: 'Kling', rank: 2 }, { name: 'Runway', rank: 3 }] },
+  video: { matched_task: 'Video Generation', match_confidence: 0.82, tools: [{ name: 'Veo', rank: 1 }, { name: 'Runway', rank: 2 }, { name: 'Kling', rank: 3 }] },
+  film: { matched_task: 'Cinematic Video', match_confidence: 0.78, tools: [{ name: 'Veo', rank: 1 }, { name: 'Kling', rank: 2 }, { name: 'Runway', rank: 3 }] },
+  shorts: { matched_task: 'Short-Form Video', match_confidence: 0.85, tools: [{ name: 'Kling', rank: 1 }, { name: 'Runway', rank: 2 }, { name: 'Pika', rank: 3 }] },
+  youtube: { matched_task: 'YouTube Content', match_confidence: 0.88, tools: [{ name: 'Midjourney', rank: 1 }, { name: 'GPT Image', rank: 2 }, { name: 'Flux', rank: 3 }] },
+  thumbnail: { matched_task: 'Thumbnail Design', match_confidence: 0.88, tools: [{ name: 'Midjourney', rank: 1 }, { name: 'GPT Image', rank: 2 }, { name: 'Flux', rank: 3 }] },
+  image: { matched_task: 'Image Generation', match_confidence: 0.87, tools: [{ name: 'Midjourney', rank: 1 }, { name: 'Flux', rank: 2 }, { name: 'DALL·E 3', rank: 3 }] },
+  photo: { matched_task: 'Photo Generation', match_confidence: 0.84, tools: [{ name: 'Midjourney', rank: 1 }, { name: 'Flux', rank: 2 }, { name: 'Firefly', rank: 3 }] },
+  code: { matched_task: 'Coding', match_confidence: 0.92, tools: [{ name: 'Claude', rank: 1 }, { name: 'ChatGPT', rank: 2 }, { name: 'Gemini', rank: 3 }] },
+  debug: { matched_task: 'Debugging', match_confidence: 0.90, tools: [{ name: 'Claude', rank: 1 }, { name: 'ChatGPT', rank: 2 }, { name: 'Gemini', rank: 3 }] },
+  react: { matched_task: 'Frontend Dev', match_confidence: 0.91, tools: [{ name: 'Claude', rank: 1 }, { name: 'ChatGPT', rank: 2 }, { name: 'Gemini', rank: 3 }] },
+  marketing: { matched_task: 'Marketing Copy', match_confidence: 0.85, tools: [{ name: 'Claude', rank: 1 }, { name: 'ChatGPT', rank: 2 }, { name: 'Jasper', rank: 3 }] },
+  email: { matched_task: 'Email Marketing', match_confidence: 0.86, tools: [{ name: 'Claude', rank: 1 }, { name: 'ChatGPT', rank: 2 }, { name: 'Jasper', rank: 3 }] },
+  twitter: { matched_task: 'Social Copy', match_confidence: 0.84, tools: [{ name: 'Claude', rank: 1 }, { name: 'ChatGPT', rank: 2 }, { name: 'Jasper', rank: 3 }] },
+  research: { matched_task: 'Research', match_confidence: 0.82, tools: [{ name: 'Consensus', rank: 1 }, { name: 'Elicit', rank: 2 }, { name: 'ChatGPT', rank: 3 }] },
+  explain: { matched_task: 'Education', match_confidence: 0.80, tools: [{ name: 'ChatGPT', rank: 1 }, { name: 'Claude', rank: 2 }, { name: 'Gemini', rank: 3 }] },
+  write: { matched_task: 'Writing', match_confidence: 0.83, tools: [{ name: 'Claude', rank: 1 }, { name: 'ChatGPT', rank: 2 }, { name: 'Gemini', rank: 3 }] },
+  story: { matched_task: 'Creative Writing', match_confidence: 0.85, tools: [{ name: 'Claude', rank: 1 }, { name: 'ChatGPT', rank: 2 }, { name: 'Gemini', rank: 3 }] },
+  music: { matched_task: 'Music Generation', match_confidence: 0.88, tools: [{ name: 'Suno', rank: 1 }, { name: 'Udio', rank: 2 }, { name: 'Mubert', rank: 3 }] },
+  audio: { matched_task: 'Audio Generation', match_confidence: 0.82, tools: [{ name: 'ElevenLabs', rank: 1 }, { name: 'Suno', rank: 2 }, { name: 'Mubert', rank: 3 }] },
+};
+
+function getLocalToolRecommendations(prompt: string, mode?: string): { matched_task: string; match_confidence: number; tools: { name: string; rank: number }[] } {
+  const haystack = ((mode || '') + ' ' + (prompt || '')).toLowerCase();
+  for (const [keyword, rec] of Object.entries(TOOL_MAPS)) {
+    if (haystack.includes(keyword)) return rec;
+  }
+  // Default fallback
+  return { matched_task: 'General AI Task', match_confidence: 0.75, tools: [{ name: 'ChatGPT', rank: 1 }, { name: 'Claude', rank: 2 }, { name: 'Gemini', rank: 3 }] };
+}
+
 // ── Component ──────────────────────────────────────────────────────────────────
 export default function ChatView({ chatId }: { chatId: string | null }) {
-  const session = chatId && MOCK_SESSIONS[chatId] ? MOCK_SESSIONS[chatId] : DEFAULT_SESSION;
+  const [currentSession, setCurrentSession] = useState<OptimizationSession>(() => {
+    return chatId && MOCK_SESSIONS[chatId] ? MOCK_SESSIONS[chatId] : DEFAULT_SESSION;
+  });
+  const [isLoadingSession, setIsLoadingSession] = useState(false);
 
+  useEffect(() => {
+    if (!chatId) return;
+
+    if (MOCK_SESSIONS[chatId]) {
+      setCurrentSession(MOCK_SESSIONS[chatId]);
+      return;
+    }
+
+    setIsLoadingSession(true);
+    apiClient.get(`/api/v1/prompts/${chatId}`)
+      .then(async (res) => {
+        const p = res.data || res;
+        if (!p || !p.original_prompt) return;
+
+        let versionsList: any[] = [];
+        try {
+          const vRes = await apiClient.get(`/api/v1/prompts/${chatId}/versions`);
+          if (vRes && vRes.data) versionsList = vRes.data;
+        } catch (e) {
+          // ignore if error
+        }
+
+        // Estimate original (pre-enhancement) score from the raw prompt
+        const rawPromptWords = (p.original_prompt || '').split(/\s+/).filter(Boolean).length;
+        const originalScore = Math.max(10, Math.min(40, Math.round(rawPromptWords * 1.5 + 8)));
+        const rawScore = p.total_score || 7.5;
+        const overallScore = rawScore <= 10 ? Math.round(rawScore * 10) : Math.round(rawScore);
+
+        // Helper to compute before scores for dimensions (lower than after scores)
+        const makeDimensions = (os: number, after: number): Dimension[] => {
+          const scale = (pct: number) => Math.round(os * pct);
+          return [
+            { id: 'clarity', label: 'Clarity', status: 'good' as const, icon: CheckCircle2, desc: 'Task is clearly defined.', score: Math.min(100, after + 5), beforeScore: scale(1.0) },
+            { id: 'context', label: 'Context', status: 'good' as const, icon: CheckCircle2, desc: 'Context and domain specified.', score: after, beforeScore: scale(0.7) },
+            { id: 'role', label: 'Role', status: 'good' as const, icon: CheckCircle2, desc: 'Persona role provided.', score: Math.max(40, after - 10), beforeScore: scale(0.4) },
+            { id: 'format', label: 'Format', status: 'good' as const, icon: CheckCircle2, desc: 'Output structure provided.', score: after, beforeScore: scale(0.8) },
+            { id: 'constraints', label: 'Constraints', status: 'warning' as const, icon: AlertTriangle, desc: 'Scope constraints defined.', score: Math.max(30, after - 15), beforeScore: scale(0.6) },
+            { id: 'examples', label: 'Examples', status: 'neutral' as const, icon: Minus, desc: 'Reference structure.', score: Math.max(20, after - 20), beforeScore: scale(0.5) },
+          ];
+        };
+
+        const mappedVersions: PromptVersion[] = versionsList.length > 0
+          ? versionsList.map((v: any) => {
+            const optText = v.content || v.optimizedPrompt || p.current_version?.content || p.original_prompt || '';
+            return {
+              versionNumber: v.version_number,
+              optimizedPrompt: optText,
+              overallScore: overallScore,
+              dimensions: makeDimensions(originalScore, overallScore),
+              wordsAfter: optText.split(/\s+/).filter(Boolean).length,
+              tokensAfter: Math.round(optText.length / 4),
+              timestamp: v.created_at ? new Date(v.created_at).toLocaleDateString() : 'Just now',
+              tweakNote: v.change_summary || undefined,
+            };
+          })
+          : [
+            {
+              versionNumber: 1,
+              optimizedPrompt: p.current_version?.content || p.original_prompt || '',
+              overallScore: overallScore,
+              dimensions: makeDimensions(originalScore, overallScore),
+              wordsAfter: ((p.current_version?.content || p.original_prompt) || '').split(/\s+/).filter(Boolean).length,
+              tokensAfter: Math.round(((p.current_version?.content || p.original_prompt) || '').length / 4),
+              timestamp: 'Just now',
+            }
+          ];
+
+        let toolRecs = p.tool_recommendations || null;
+        if (!toolRecs && p.original_prompt) {
+          try {
+            const recRes = await apiClient.post<any>('/api/v1/tools/recommend', {
+              prompt: p.original_prompt,
+              mode: p.template?.mode || p.title,
+            });
+            if (recRes) toolRecs = recRes;
+          } catch (e) {
+            // API not available yet – use client-side fallback
+          }
+        }
+        // Always ensure we have tool recommendations (client-side fallback)
+        if (!toolRecs) {
+          toolRecs = getLocalToolRecommendations(
+            p.original_prompt || '',
+            p.template?.mode || p.title || ''
+          );
+        }
+
+        const sessionObj: OptimizationSession = {
+          id: p.id,
+          originalPrompt: p.original_prompt,
+          originalScore: originalScore,
+          mode: p.template?.mode || p.title?.split(' - ')[1] || 'General',
+          modeIcon: Sparkles,
+          wordsBefore: (p.original_prompt || '').split(/\s+/).length,
+          tokensBefore: Math.round((p.original_prompt || '').length / 4),
+          createdAt: p.created_at ? new Date(p.created_at).toLocaleDateString() : 'Just now',
+          versions: mappedVersions,
+          toolRecommendations: toolRecs,
+        };
+
+        setCurrentSession(sessionObj);
+      })
+      .catch((err) => {
+        console.error('Failed to load chat details:', err);
+      })
+      .finally(() => {
+        setIsLoadingSession(false);
+      });
+  }, [chatId]);
+
+  const session = currentSession;
   const [activeVersionIndex, setActiveVersionIndex] = useState(session.versions.length - 1);
+
+  useEffect(() => {
+    setActiveVersionIndex(session.versions.length - 1);
+  }, [session]);
   const [compareMode, setCompareMode] = useState(false);
   const [compareIndex, setCompareIndex] = useState(0);
 
@@ -473,22 +694,21 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [hoveredVersionIndex, setHoveredVersionIndex] = useState<number | null>(null);
 
-  const [sessionVersions, setSessionVersions] = useState(session.versions);
+  const [sessionVersions, setSessionVersions] = useState(currentSession.versions);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    const s = chatId && MOCK_SESSIONS[chatId] ? MOCK_SESSIONS[chatId] : DEFAULT_SESSION;
-    setSessionVersions(s.versions);
-    setActiveVersionIndex(s.versions.length - 1);
+    setSessionVersions(currentSession.versions);
+    setActiveVersionIndex(currentSession.versions.length - 1);
     setCompareMode(false);
     setCompareIndex(0);
     setReady(false);
     setIsHistoryOpen(false);
     const t = setTimeout(() => setReady(true), 120);
     return () => clearTimeout(t);
-  }, [chatId]);
+  }, [currentSession]);
 
-  const version = sessionVersions[activeVersionIndex];
+  const version = sessionVersions[activeVersionIndex] || sessionVersions[0] || currentSession.versions[0];
   const activeVersion = version;
   const bestIndex = sessionVersions.reduce((best, v, i) => v.overallScore > sessionVersions[best].overallScore ? i : best, 0);
 
@@ -530,24 +750,8 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
         </span>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', maxHeight: 380, paddingRight: 6, display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {v.optimizedPrompt.split('\n').map((line, i) => {
-          const isHeader = /^(Role|Task|Context|Format|Tone|Constraints|Requirements|Subject|Lighting|Camera|Technical|Composition|Style|Text|Sequence|For Each|Avoid)[\s&:]/i.test(line.trim());
-          const isBullet = line.trim().startsWith('•') || line.trim().startsWith('-') || /^\d+[.)]/.test(line.trim());
-          return (
-            <React.Fragment key={i}>
-              {line.trim() === '' ? (
-                <div style={{ height: 6 }} />
-              ) : isHeader ? (
-                <p style={{ fontSize: 13, fontWeight: 700, color: '#3B1082', marginTop: 4, marginBottom: 2 }}>{line}</p>
-              ) : isBullet ? (
-                <p style={{ fontSize: 13.5, lineHeight: 1.6, color: '#334155', paddingLeft: 12 }}>{line}</p>
-              ) : (
-                <p style={{ fontSize: 13.5, lineHeight: 1.6, color: '#334155', margin: 0 }}>{line}</p>
-              )}
-            </React.Fragment>
-          );
-        })}
+      <div style={{ flex: 1, overflowY: 'auto', maxHeight: 380, paddingRight: 6 }}>
+        <FormattedPromptViewer content={v.optimizedPrompt} />
       </div>
 
       {v.tweakNote && (
@@ -571,255 +775,341 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
         maxWidth: 1100, margin: '0 auto', width: '100%', padding: '20px 48px',
         display: 'flex', flexDirection: 'column', gap: 28, flex: 1,
       }}>
-      {/* Header Bar */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '12px 20px', background: 'rgba(255,255,255,0.85)', borderRadius: 16,
-        border: '1px solid rgba(124,58,237,0.10)', boxShadow: '0 2px 12px rgba(109,40,217,0.04)',
-        backdropFilter: 'blur(12px)',
-        width: '100%', boxSizing: 'border-box',
-        position: 'relative', zIndex: 10,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 7, padding: '6px 14px', borderRadius: 9999,
-            fontSize: 12.5, fontWeight: 700, background: 'rgba(124,58,237,0.11)', color: '#6D28D9',
-          }}>
-            <ModeIcon size={14} />
-            <span>{session.mode}</span>
+        {/* Header Bar */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '12px 20px', background: 'rgba(255,255,255,0.85)', borderRadius: 16,
+          border: '1px solid rgba(124,58,237,0.10)', boxShadow: '0 2px 12px rgba(109,40,217,0.04)',
+          backdropFilter: 'blur(12px)',
+          width: '100%', boxSizing: 'border-box',
+          position: 'relative', zIndex: 10,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 7, padding: '6px 14px', borderRadius: 9999,
+              fontSize: 12.5, fontWeight: 700, background: 'rgba(124,58,237,0.11)', color: '#6D28D9',
+            }}>
+              <ModeIcon size={14} />
+              <span>{session.mode}</span>
+            </div>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#64748B', fontWeight: 500 }}>
+              <Clock size={13} />
+              {session.createdAt}
+            </span>
           </div>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#64748B', fontWeight: 500 }}>
-            <Clock size={13} />
-            {session.createdAt}
-          </span>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {sessionVersions.length > 1 && (
+              <button
+                onClick={() => { setCompareMode(!compareMode); if (!compareMode) setCompareIndex(0); }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 10,
+                  fontSize: 12.5, fontWeight: 600, cursor: 'pointer', transition: 'all 160ms ease',
+                  background: compareMode ? 'linear-gradient(135deg, #6D28D9, #7C3AED)' : 'rgba(124,58,237,0.07)',
+                  color: compareMode ? 'white' : '#6D28D9', border: '1px solid rgba(124,58,237,0.15)',
+                }}
+              >
+                <GitCompareArrows size={14} />
+                <span>{compareMode ? 'Exit Compare' : 'Compare'}</span>
+              </button>
+            )}
+
+            {/* Style dropdown and Target dropdown removed from top */}
+          </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {sessionVersions.length > 1 && (
-            <button
-              onClick={() => { setCompareMode(!compareMode); if (!compareMode) setCompareIndex(0); }}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 10,
-                fontSize: 12.5, fontWeight: 600, cursor: 'pointer', transition: 'all 160ms ease',
-                background: compareMode ? 'linear-gradient(135deg, #6D28D9, #7C3AED)' : 'rgba(124,58,237,0.07)',
-                color: compareMode ? 'white' : '#6D28D9', border: '1px solid rgba(124,58,237,0.15)',
-              }}
-            >
-              <GitCompareArrows size={14} />
-              <span>{compareMode ? 'Exit Compare' : 'Compare'}</span>
-            </button>
+        {/* Main Content */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 28, width: '100%' }}>
+          {/* Version Header Timeline */}
+          {!compareMode && (
+            <VersionHeader
+              versions={sessionVersions.map((v, idx) => ({
+                versionNumber: v.versionNumber,
+                overallScore: v.overallScore,
+                timestamp: v.timestamp,
+                originalIndex: idx
+              }))}
+              activeIndex={activeVersionIndex}
+              bestIndex={bestIndex}
+              hoveredIndex={hoveredVersionIndex}
+              onOpenHistory={() => setIsHistoryOpen(true)}
+              onSelectVersion={handleVersionSelect}
+              onHoverVersion={setHoveredVersionIndex}
+            />
           )}
 
-          {/* Style dropdown and Target dropdown removed from top */}
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 28, width: '100%' }}>
-        {/* Version Header Timeline */}
-        {!compareMode && (
-          <VersionHeader
-            versions={sessionVersions.map((v, idx) => ({
-              versionNumber: v.versionNumber,
-              overallScore: v.overallScore,
-              timestamp: v.timestamp,
-              originalIndex: idx
-            }))}
-            activeIndex={activeVersionIndex}
-            bestIndex={bestIndex}
-            hoveredIndex={hoveredVersionIndex}
-            onOpenHistory={() => setIsHistoryOpen(true)}
-            onSelectVersion={handleVersionSelect}
-            onHoverVersion={setHoveredVersionIndex}
-          />
-        )}
-
-        {/* Compare vs Normal */}
-        {compareMode ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14 }}>
-              <select
-                value={compareIndex} onChange={e => setCompareIndex(Number(e.target.value))}
-                style={{ padding: '8px 16px', borderRadius: 10, border: '1px solid rgba(124,58,237,0.25)', background: '#FFFFFF', fontWeight: 600 }}
-              >
-                {sessionVersions.map((v, i) => (
-                  <option key={i} value={i}>v{v.versionNumber} — Score {v.overallScore}</option>
-                ))}
-              </select>
-              <span style={{ fontWeight: 700, color: '#94A3B8', fontSize: 13 }}>vs</span>
-              <select
-                value={activeVersionIndex} onChange={e => handleVersionSelect(Number(e.target.value))}
-                style={{ padding: '8px 16px', borderRadius: 10, border: '1px solid rgba(124,58,237,0.25)', background: '#FFFFFF', fontWeight: 600 }}
-              >
-                {sessionVersions.map((v, i) => (
-                  <option key={i} value={i}>v{v.versionNumber} — Score {v.overallScore}</option>
-                ))}
-              </select>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-              {renderOptimizedPanel(sessionVersions[compareIndex], `v${sessionVersions[compareIndex].versionNumber}`)}
-              {renderOptimizedPanel(sessionVersions[activeVersionIndex], `v${sessionVersions[activeVersionIndex].versionNumber}`)}
-            </div>
-          </div>
-        ) : (
-          <>
-            {/* Score Overview Strip */}
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              background: '#FFFFFF', borderRadius: 20, padding: '24px 28px',
-              border: '1px solid rgba(124,58,237,0.12)', boxShadow: '0 4px 20px rgba(109,40,217,0.06)',
-              flexWrap: 'wrap', gap: 20,
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-                {/* Score Ring */}
-                <div style={{ position: 'relative', width: 100, height: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg width="100" height="100" style={{ transform: 'rotate(-90deg)' }}>
-                    <defs>
-                      <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stopColor="#7C3AED" />
-                        <stop offset="100%" stopColor="#A855F7" />
-                      </linearGradient>
-                      <filter id="ringGlow" x="-30%" y="-30%" width="160%" height="160%">
-                        <feGaussianBlur stdDeviation="3" result="blur" />
-                        <feMerge>
-                          <feMergeNode in="blur" />
-                          <feMergeNode in="SourceGraphic" />
-                        </feMerge>
-                      </filter>
-                    </defs>
-                    <circle cx="50" cy="50" r={radius} fill="none" stroke="rgba(124,58,237,0.06)" strokeWidth="7" />
-                    <circle
-                      cx="50" cy="50" r={radius} fill="none" stroke="url(#ringGrad)" strokeWidth="7"
-                      strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={offset}
-                      filter="url(#ringGlow)" style={{ transition: 'stroke-dashoffset 1.4s ease-out' }}
-                    />
-                  </svg>
-                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <span style={{ fontSize: 26, fontWeight: 800, color: scoreColor(version.overallScore) }}>{animatedScore}</span>
-                  </div>
-                </div>
-
-                {/* Score Info */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <span style={{ fontSize: 22, fontWeight: 800, color: '#1E293B' }}>{scoreLabel(version.overallScore)}</span>
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', background: 'rgba(16,185,129,0.10)', color: '#10B981', borderRadius: 9999, fontSize: 12, fontWeight: 700, width: 'fit-content' }}>
-                    <TrendingUp size={13} />
-                    <span>+{version.overallScore - sessionVersions[0].overallScore} pts from v1</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#64748B', fontWeight: 600, marginTop: 2 }}>
-                    <span>Original <strong style={{ color: '#1E293B' }}>{sessionVersions[0].overallScore}</strong></span>
-                    <ArrowRight size={14} style={{ color: '#94A3B8' }} />
-                    <span>v{version.versionNumber} <strong style={{ color: scoreColor(version.overallScore) }}>{version.overallScore}</strong></span>
-                  </div>
-                </div>
+          {/* Compare vs Normal */}
+          {compareMode ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14 }}>
+                <select
+                  value={compareIndex} onChange={e => setCompareIndex(Number(e.target.value))}
+                  style={{ padding: '8px 16px', borderRadius: 10, border: '1px solid rgba(124,58,237,0.25)', background: '#FFFFFF', fontWeight: 600 }}
+                >
+                  {sessionVersions.map((v, i) => (
+                    <option key={i} value={i}>v{v.versionNumber} — Score {v.overallScore}</option>
+                  ))}
+                </select>
+                <span style={{ fontWeight: 700, color: '#94A3B8', fontSize: 13 }}>vs</span>
+                <select
+                  value={activeVersionIndex} onChange={e => handleVersionSelect(Number(e.target.value))}
+                  style={{ padding: '8px 16px', borderRadius: 10, border: '1px solid rgba(124,58,237,0.25)', background: '#FFFFFF', fontWeight: 600 }}
+                >
+                  {sessionVersions.map((v, i) => (
+                    <option key={i} value={i}>v{v.versionNumber} — Score {v.overallScore}</option>
+                  ))}
+                </select>
               </div>
 
-              {/* Word/Token Stats */}
-              <div style={{ display: 'flex', gap: 20 }}>
-                <div style={{ padding: '12px 20px', background: 'rgba(124,58,237,0.04)', borderRadius: 14, border: '1px solid rgba(124,58,237,0.10)', display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: '#64748B' }}>Words</span>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: '#94A3B8' }}>{session.wordsBefore}</span>
-                  <ArrowRight size={12} style={{ color: '#94A3B8' }} />
-                  <span style={{ fontSize: 15, fontWeight: 800, color: '#6D28D9' }}>{version.wordsAfter}</span>
-                </div>
-                <div style={{ padding: '12px 20px', background: 'rgba(124,58,237,0.04)', borderRadius: 14, border: '1px solid rgba(124,58,237,0.10)', display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: '#64748B' }}>Tokens</span>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: '#94A3B8' }}>~{session.tokensBefore}</span>
-                  <ArrowRight size={12} style={{ color: '#94A3B8' }} />
-                  <span style={{ fontSize: 15, fontWeight: 800, color: '#6D28D9' }}>~{version.tokensAfter}</span>
-                </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                {renderOptimizedPanel(sessionVersions[compareIndex], `v${sessionVersions[compareIndex].versionNumber}`)}
+                {renderOptimizedPanel(sessionVersions[activeVersionIndex], `v${sessionVersions[activeVersionIndex].versionNumber}`)}
               </div>
             </div>
-
-            {/* Side-by-side prompt comparison */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-              {/* Original panel */}
-              <div style={{
-                background: '#FFFFFF', borderRadius: 20, padding: 24,
-                boxShadow: '0 4px 20px rgba(109,40,217,0.04)', border: '1px solid rgba(124,58,237,0.10)',
-                display: 'flex', flexDirection: 'column',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', marginBottom: 18 }}>
-                  <div style={{
-                    display: 'inline-flex', alignItems: 'center', padding: '6px 14px', borderRadius: 9999,
-                    fontSize: 12, fontWeight: 700, background: '#F1F5F9', color: '#64748B',
-                  }}>
-                    <span>Original</span>
-                  </div>
-                </div>
-                <div style={{ flex: 1, fontSize: 13.5, lineHeight: 1.6, color: '#475569' }}>
-                  {session.originalPrompt}
-                </div>
-              </div>
-
-              {renderOptimizedPanel(version, `Optimized · v${version.versionNumber}`)}
-            </div>
-
-            {/* Score Breakdown Dimensions Grid */}
-            <div>
-              <h3 style={{ fontSize: 16, fontWeight: 800, color: '#1E293B', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-                Score Breakdown
-                <span style={{ fontSize: 12, fontWeight: 700, background: 'rgba(124,58,237,0.10)', color: '#7C3AED', padding: '2px 8px', borderRadius: 9999 }}>v{version.versionNumber}</span>
-              </h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-                {version.dimensions.map((dim, i) => {
-                  const Icon = dim.icon;
-                  const score = dim.score;
-                  return (
-                    <div
-                      key={dim.id}
-                      style={{
-                        background: '#FFFFFF', borderRadius: 16, padding: 18,
-                        border: '1px solid rgba(124,58,237,0.10)', boxShadow: '0 2px 10px rgba(109,40,217,0.03)',
-                        display: 'flex', flexDirection: 'column', gap: 10, position: 'relative', overflow: 'hidden',
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <div style={{
-                            width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            background: dim.status === 'good' ? 'rgba(16,185,129,0.12)' : dim.status === 'warning' ? 'rgba(245,158,11,0.12)' : 'rgba(148,163,184,0.12)',
-                            color: dim.status === 'good' ? '#10B981' : dim.status === 'warning' ? '#F59E0B' : '#64748B',
-                          }}>
-                            <Icon size={15} strokeWidth={2.2} />
-                          </div>
-                          <span style={{ fontSize: 14, fontWeight: 700, color: '#1E293B' }}>{dim.label}</span>
-                        </div>
-                        <span style={{ fontSize: 16, fontWeight: 800, color: scoreColor(score) }}>{score}</span>
-                      </div>
-
-                      <div style={{ height: 6, background: '#F1F5F9', borderRadius: 99, overflow: 'hidden' }}>
-                        <div style={{
-                          height: '100%', width: `${score}%`, background: scoreColor(score),
-                          borderRadius: 99, transition: 'width 0.8s ease-out',
-                        }} />
-                      </div>
-                      <p style={{ fontSize: 12.5, color: '#64748B', margin: 0, lineHeight: 1.4 }}>{dim.desc}</p>
+          ) : (
+            <>
+              {/* ── Side-by-side prompt comparison ── */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                {/* Original panel */}
+                <div style={{
+                  background: '#FFFFFF', borderRadius: 20, padding: 24,
+                  boxShadow: '0 4px 20px rgba(109,40,217,0.04)', border: '1px solid rgba(124,58,237,0.10)',
+                  display: 'flex', flexDirection: 'column',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: 18 }}>
+                    <div style={{
+                      display: 'inline-flex', alignItems: 'center', padding: '6px 14px', borderRadius: 9999,
+                      fontSize: 12, fontWeight: 700, background: '#F1F5F9', color: '#64748B',
+                    }}>
+                      <span>Original</span>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-          </>
-        )}
-      </div>
+                  </div>
+                  <div style={{ flex: 1, fontSize: 13.5, lineHeight: 1.7, color: '#475569' }}>
+                    {session.originalPrompt}
+                  </div>
+                </div>
 
-      <VersionHistoryDrawer
-        isOpen={isHistoryOpen}
-        onClose={() => setIsHistoryOpen(false)}
-        versions={sessionVersions.map((v) => ({
-          versionNumber: v.versionNumber,
-          overallScore: v.overallScore,
-          timestamp: v.timestamp,
-          isStarred: v.isStarred,
-          tweakNote: v.tweakNote,
-        }))}
-        activeIndex={activeVersionIndex}
-        onSelect={handleVersionSelect}
-        onToggleStar={handleToggleStar}
-        onHoverVersion={setHoveredVersionIndex}
-      />
+                {renderOptimizedPanel(version, `Optimized · v${version.versionNumber}`)}
+              </div>
+
+              {/* ── MERGED: Score Overview + Score Breakdown (Image 2 layout) ── */}
+              <div style={{
+                background: '#FFFFFF', borderRadius: 20,
+                border: '1px solid rgba(124,58,237,0.10)',
+                boxShadow: '0 4px 20px rgba(109,40,217,0.05)',
+                overflow: 'hidden',
+                display: 'flex',
+              }}>
+                {/* LEFT COLUMN — ring + label + pts + before/after */}
+                <div style={{
+                  width: 190, flexShrink: 0,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  padding: '28px 20px', gap: 12,
+                  borderRight: '1px solid rgba(124,58,237,0.08)',
+                  background: '#FDFCFF',
+                }}>
+                  {/* Ring */}
+                  <div style={{ position: 'relative', width: 110, height: 110 }}>
+                    <svg width="110" height="110" viewBox="0 0 110 110" style={{ transform: 'rotate(-90deg)' }}>
+                      <defs>
+                        <linearGradient id="scoreRingGrad" x1="0" y1="0" x2="1" y2="1">
+                          <stop offset="0%" stopColor="#7C3AED" />
+                          <stop offset="100%" stopColor="#A855F7" />
+                        </linearGradient>
+                      </defs>
+                      <circle cx="55" cy="55" r="46" fill="none" stroke="rgba(124,58,237,0.10)" strokeWidth="7" />
+                      <circle
+                        cx="55" cy="55" r="46" fill="none" stroke="url(#scoreRingGrad)" strokeWidth="7"
+                        strokeLinecap="round"
+                        strokeDasharray={String(2 * Math.PI * 46)}
+                        strokeDashoffset={String(2 * Math.PI * 46 - (animatedScore / 100) * 2 * Math.PI * 46)}
+                        style={{ transition: 'stroke-dashoffset 1.4s ease-out' }}
+                      />
+                    </svg>
+                    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ fontSize: 30, fontWeight: 900, color: '#1E293B' }}>{animatedScore}</span>
+                    </div>
+                  </div>
+
+                  {/* Label */}
+                  <span style={{ fontSize: 16, fontWeight: 800, color: '#7C3AED', letterSpacing: '-0.01em' }}>
+                    {scoreLabel(version.overallScore)}
+                  </span>
+
+                  {/* Pts badge */}
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 12px', background: 'rgba(16,185,129,0.10)', color: '#059669', borderRadius: 9999, fontSize: 12, fontWeight: 700 }}>
+                    <TrendingUp size={12} />
+                    <span>+{version.overallScore - (session.originalScore ?? sessionVersions[0].overallScore)} pts</span>
+                  </div>
+
+                  {/* Before / After */}
+                  <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 5, marginTop: 4 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#64748B', fontWeight: 600 }}>
+                      <span>Before</span>
+                      <span style={{ fontWeight: 700, color: '#94A3B8' }}>{session.originalScore ?? sessionVersions[0].overallScore}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#64748B', fontWeight: 600 }}>
+                      <span>After</span>
+                      <span style={{ fontWeight: 900, color: scoreColor(version.overallScore), fontSize: 14 }}>{version.overallScore}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* RIGHT COLUMN — 3×2 dimension cards with spacing and left border indicators */}
+                <div style={{
+                  flex: 1,
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, 1fr)',
+                  gap: 16,
+                  padding: 20,
+                  background: '#F8FAFC',
+                }}>
+                  {version.dimensions.map((dim) => {
+                    const Icon = dim.icon;
+                    const score = dim.score;
+                    const barColor = score >= 80 ? '#10B981' : score >= 55 ? '#7C3AED' : '#F59E0B';
+                    return (
+                      <div
+                        key={dim.id}
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 12,
+                          padding: 16,
+                          background: '#FFFFFF',
+                          borderRadius: 12,
+                          border: '1px solid #E2E8F0',
+                          borderLeft: `4px solid ${barColor}`,
+                          boxShadow: '0 4px 12px rgba(15, 23, 42, 0.03)',
+                          transition: 'transform 180ms ease, box-shadow 180ms ease',
+                        }}
+                        onMouseEnter={e => {
+                          e.currentTarget.style.transform = 'translateY(-2px)';
+                          e.currentTarget.style.boxShadow = '0 6px 18px rgba(15, 23, 42, 0.05)';
+                        }}
+                        onMouseLeave={e => {
+                          e.currentTarget.style.transform = 'none';
+                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(15, 23, 42, 0.03)';
+                        }}
+                      >
+                        {/* Top row: icon + name + score */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{
+                              width: 24, height: 24, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              background: dim.status === 'good' ? 'rgba(16,185,129,0.10)' : dim.status === 'warning' ? 'rgba(245,158,11,0.10)' : 'rgba(148,163,184,0.10)',
+                              color: dim.status === 'good' ? '#10B981' : dim.status === 'warning' ? '#F59E0B' : '#94A3B8',
+                            }}>
+                              <Icon size={13} strokeWidth={2.3} />
+                            </div>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: '#1E293B' }}>{dim.label}</span>
+                          </div>
+                          {/* Score: show beforeScore → score if beforeScore exists */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700 }}>
+                            {dim.beforeScore !== undefined && (
+                              <>
+                                <span style={{ color: '#94A3B8' }}>{dim.beforeScore}</span>
+                                <span style={{ color: '#CBD5E1', fontSize: 10 }}>→</span>
+                              </>
+                            )}
+                            <span style={{ fontSize: 15, fontWeight: 900, color: barColor }}>{score}</span>
+                          </div>
+                        </div>
+
+                        {/* Progress bar */}
+                        <div style={{ height: 4, background: '#F1F5F9', borderRadius: 99, overflow: 'hidden' }}>
+                          <div style={{
+                            height: '100%', width: `${score}%`, background: barColor,
+                            borderRadius: 99, transition: 'width 0.9s ease-out',
+                          }} />
+                        </div>
+
+                        {/* Description */}
+                        <p style={{ fontSize: 11.5, color: '#64748B', margin: 0, lineHeight: 1.45, fontWeight: 500 }}>{dim.desc}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Recommended AI Tools */}
+              {session.toolRecommendations && session.toolRecommendations.tools && session.toolRecommendations.tools.length > 0 && (
+                <div style={{
+                  background: '#FFFFFF', borderRadius: 20, padding: '24px 28px',
+                  border: '1px solid rgba(124,58,237,0.12)', boxShadow: '0 4px 20px rgba(109,40,217,0.06)',
+                  display: 'flex', flexDirection: 'column', gap: 16, marginTop: 8
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Sparkles size={18} style={{ color: '#7C3AED' }} />
+                      <h3 style={{ fontSize: 16, fontWeight: 800, color: '#1E293B', margin: 0 }}>
+                        Recommended AI Tools for Best Execution
+                      </h3>
+                      {session.toolRecommendations.matched_task && (
+                        <span style={{ fontSize: 11, fontWeight: 700, color: '#6D28D9', background: 'rgba(124,58,237,0.08)', padding: '3px 10px', borderRadius: 9999 }}>
+                          Task: {session.toolRecommendations.matched_task}
+                        </span>
+                      )}
+                    </div>
+                    {typeof session.toolRecommendations.match_confidence === 'number' && (
+                      <span style={{ fontSize: 13, fontWeight: 700, color: '#7C3AED' }}>
+                        {Math.round(session.toolRecommendations.match_confidence * 100)}% Match
+                      </span>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+                    {session.toolRecommendations.tools.map((t) => (
+                      <div
+                        key={t.name}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 12, padding: '14px 20px',
+                          background: t.rank === 1 ? 'linear-gradient(135deg, rgba(124,58,237,0.09) 0%, rgba(167,139,250,0.04) 100%)' : 'rgba(124,58,237,0.03)',
+                          border: t.rank === 1 ? '1px solid rgba(124,58,237,0.22)' : '1px solid rgba(124,58,237,0.08)',
+                          borderRadius: 14, flex: '1 1 200px', minWidth: 180,
+                          boxShadow: t.rank === 1 ? '0 4px 14px rgba(124,58,237,0.08)' : 'none',
+                        }}
+                      >
+                        <span
+                          style={{
+                            width: 26, height: 26, borderRadius: '50%',
+                            background: t.rank === 1 ? '#7C3AED' : t.rank === 2 ? '#9333EA' : '#C084FC',
+                            color: '#FFFFFF', fontSize: 11, fontWeight: 800,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                          }}
+                        >
+                          #{t.rank}
+                        </span>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ fontSize: 14, fontWeight: 700, color: '#1E293B' }}>{t.name}</span>
+                          <span style={{ fontSize: 11, color: '#64748B', fontWeight: 500 }}>
+                            {t.rank === 1 ? 'Primary Recommendation' : `Alternative #${t.rank}`}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        <VersionHistoryDrawer
+          isOpen={isHistoryOpen}
+          onClose={() => setIsHistoryOpen(false)}
+          versions={sessionVersions.map((v) => ({
+            versionNumber: v.versionNumber,
+            overallScore: v.overallScore,
+            timestamp: v.timestamp,
+            isStarred: v.isStarred,
+            tweakNote: v.tweakNote,
+          }))}
+          activeIndex={activeVersionIndex}
+          onSelect={handleVersionSelect}
+          onToggleStar={handleToggleStar}
+          onHoverVersion={setHoveredVersionIndex}
+        />
       </div>
     </div>
   );
