@@ -148,19 +148,20 @@ function OptimizerPageContent() {
     }
   };
 
-  const handleOptimize = async (promptText: string, activeMode: string) => {
+  const handleOptimize = async (promptText: string, activeRole: string, activeMode?: string) => {
     if (!promptText.trim()) return;
     setIsOptimizing(true);
     setError(null);
 
     try {
-      const mapping = MODE_MAPPING[activeMode] || { role: 'student', mode: 'study' };
+      const selectedRole = activeRole.toLowerCase();
+      const selectedMode = activeMode && activeMode.trim() ? activeMode : selectedRole;
       const applyStyle = activeStyle.id !== null;
 
       const payload = {
         prompt: promptText,
-        role: mapping.role,
-        mode: mapping.mode,
+        role: selectedRole,
+        mode: selectedMode,
         apply_style: applyStyle,
         style_profile_id: activeStyle.id || undefined,
       };

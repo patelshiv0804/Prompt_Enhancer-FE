@@ -3,24 +3,134 @@
 import React, { useState, useEffect } from 'react';
 import {
   Copy, RefreshCw, Bookmark, ArrowRightToLine,
-  Sparkles, Code, Search, Megaphone, BookOpen, Image as ImageIcon,
-  Film, PlaySquare, TrendingUp, Wand2,
-  CheckCircle2, AlertTriangle, Minus,
+  Sparkles, Code2, Search, Megaphone, GraduationCap, Briefcase,
+  School, Rocket, PenTool, BarChart3, Palette, Video, Wand2,
+  CheckCircle2, AlertTriangle, Minus, FileText, Layers, Monitor,
+  Smartphone, Server, Database, ShieldCheck, Globe, Cpu, Terminal,
+  Lightbulb, DollarSign, Scale, ShoppingCart, Users, Mail, Radio,
+  Activity, PieChart, TrendingUp, BookOpen, Building2, Layout, Figma, Award, Zap,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import FormattedPromptViewer from './FormattedPromptViewer';
 
-const MODES = [
-  { name: 'General', icon: Sparkles },
-  { name: 'Coding', icon: Code },
-  { name: 'Research', icon: Search },
-  { name: 'Marketing', icon: Megaphone },
-  { name: 'Storytelling', icon: BookOpen },
-  { name: 'Image Gen', icon: ImageIcon },
-  { name: 'Cinematic Video', icon: Film },
-  { name: 'YouTube Shorts', icon: PlaySquare },
-  { name: 'SEO', icon: TrendingUp },
+const ROLES = [
+  { id: 'general',      label: 'General',      icon: Sparkles },
+  { id: 'student',      label: 'Student',      icon: GraduationCap },
+  { id: 'marketer',     label: 'Marketer',     icon: Megaphone },
+  { id: 'consultant',   label: 'Consultant',   icon: Briefcase },
+  { id: 'researcher',   label: 'Researcher',   icon: Search },
+  { id: 'developer',    label: 'Developer',    icon: Code2 },
+  { id: 'educator',     label: 'Educator',     icon: School },
+  { id: 'entrepreneur', label: 'Entrepreneur', icon: Rocket },
+  { id: 'writer',       label: 'Writer',       icon: PenTool },
+  { id: 'analyst',      label: 'Analyst',      icon: BarChart3 },
+  { id: 'designer',     label: 'Designer',     icon: Palette },
+  { id: 'creator',      label: 'Creator',      icon: Video },
 ];
+
+const ROLE_MODES: Record<string, string[]> = {
+  creator: [
+    'YouTube', 'Instagram', 'TikTok', 'X/Twitter', 'LinkedIn', 'Facebook',
+    'Blogging', 'Podcast', 'Streaming', 'Email Content', 'Community Building',
+    'Branding', 'Monetization', 'Analytics', 'Content Strategy',
+  ],
+  analyst: [
+    'Data Analysis', 'Business Analysis', 'Financial Analysis', 'Market Analysis',
+    'Competitor Analysis', 'SWOT Analysis', 'Risk Analysis', 'Root Cause Analysis',
+    'Decision Support', 'Scenario Analysis', 'KPI & Metrics Analysis', 'Product Analysis',
+    'Operations Analysis', 'Visualization & Reporting', 'Strategy',
+  ],
+  marketer: [
+    'Market Research', 'Positioning', 'Branding', 'Content Marketing', 'SEO',
+    'Social Media Marketing', 'Email Marketing', 'Paid Advertising', 'Lead Generation',
+    'Funnels', 'Conversion Optimization', 'Growth Marketing', 'Product Marketing',
+    'Analytics', 'Retention', 'E-commerce Marketing', 'B2B Marketing', 'Local Marketing',
+    'Marketing Strategy',
+  ],
+  educator: [
+    'Lesson Planning', 'Teaching Materials', 'Assessments', 'Quiz & Test Creation',
+    'Course Design', 'Teaching Strategies', 'Explanation & Simplification',
+    'Classroom Management', 'Educational Technology', 'Online Education',
+    'Special Education', 'Educational Research', 'Content Creation',
+    'Feedback & Evaluation', 'Professional Development',
+  ],
+  consultant: [
+    'Strategy Consulting', 'Business Consulting', 'Startup Consulting', 'Product Consulting',
+    'Marketing Consulting', 'Operations Consulting', 'Technology Consulting',
+    'Financial Consulting', 'HR Consulting', 'Career Consulting', 'Management Consulting',
+    'Audit & Review', 'Recommendations', 'Implementation Support',
+  ],
+  entrepreneur: [
+    'Idea & Validation', 'Market Research', 'Business Planning', 'Product',
+    'Branding', 'Marketing', 'Sales', 'Pricing', 'Finance', 'Fundraising',
+    'Operations', 'Legal', 'E-Commerce', 'SaaS', 'AI Startups', 'Growth',
+    'Founder Career',
+  ],
+  researcher: [
+    'Deep Research', 'Literature Research', 'Source Analysis', 'Fact Checking',
+    'Comparison', 'Reports', 'Market Research', 'Data Research', 'Historical Research',
+    'Scientific Research', 'Academic Research', 'Competitive Intelligence',
+    'Forecasting', 'Investigative Research', 'Synthesis',
+  ],
+  writer: [
+    'Creative Writing', 'Content Writing', 'Marketing Copywriting', 'Social Media Writing',
+    'Business Writing', 'Academic Writing', 'Technical Writing', 'Career Writing',
+    'Editing & Rewriting', 'Specialized Writing',
+  ],
+  designer: [
+    'UI Design', 'UX Design', 'Figma', 'Design Systems', 'Branding', 'Graphics',
+    'Landing Pages', 'Motion Design', 'Product Design', 'Presentation Design',
+    'E-commerce Design', 'Email Design', '3D Design', 'Game Design',
+    'AI-Assisted Design',
+  ],
+  developer: [
+    'Frontend', 'Backend', 'Full Stack', 'Mobile', 'Desktop', 'Database', 'APIs',
+    'DSA', 'Competitive Programming', 'Debugging', 'Testing', 'System Design',
+    'DevOps', 'Cloud', 'Cybersecurity', 'Operating Systems', 'Networking',
+    'AI/ML', 'Agentic AI', 'Blockchain', 'Game Development', 'Embedded Systems',
+    'Open Source', 'Developer Career',
+  ],
+  student: [
+    'Study', 'Exams', 'Learnings', 'Projects', 'Research',
+    'Competitive Programming', 'Productivity', 'Certifications',
+    'Interview Preparation', 'Career',
+  ],
+};
+
+function getModeIcon(mode: string): React.ElementType {
+  const m = mode.toLowerCase();
+  if (m.includes('study')) return BookOpen;
+  if (m.includes('exam')) return GraduationCap;
+  if (m.includes('learn')) return School;
+  if (m.includes('project')) return Layers;
+  if (m.includes('productiv')) return Zap;
+  if (m.includes('certif')) return Award;
+  if (m.includes('interview')) return Users;
+  if (m.includes('youtube') || m.includes('video') || m.includes('tiktok') || m.includes('motion') || m.includes('streaming') || m.includes('podcast')) return Video;
+  if (m.includes('social') || m.includes('instagram') || m.includes('twitter') || m.includes('facebook') || m.includes('linkedin') || m.includes('community')) return Users;
+  if (m.includes('email')) return Mail;
+  if (m.includes('blog') || m.includes('writing') || m.includes('essay') || m.includes('copywriting') || m.includes('story')) return PenTool;
+  if (m.includes('code') || m.includes('frontend') || m.includes('backend') || m.includes('full stack') || m.includes('dev') || m.includes('open source') || m.includes('dsa') || m.includes('programming')) return Code2;
+  if (m.includes('data') || m.includes('analyt') || m.includes('kpi') || m.includes('metric') || m.includes('chart') || m.includes('swot') || m.includes('financial') || m.includes('reporting')) return BarChart3;
+  if (m.includes('market') || m.includes('seo') || m.includes('growth') || m.includes('funnel') || m.includes('lead') || m.includes('ads') || m.includes('positioning')) return TrendingUp;
+  if (m.includes('design') || m.includes('ui') || m.includes('ux') || m.includes('figma') || m.includes('brand') || m.includes('graphics') || m.includes('3d') || m.includes('presentation')) return Palette;
+  if (m.includes('teaching') || m.includes('lesson') || m.includes('educat') || m.includes('course') || m.includes('quiz') || m.includes('test') || m.includes('assessment')) return School;
+  if (m.includes('consulting') || m.includes('business') || m.includes('strategy') || m.includes('hr') || m.includes('management') || m.includes('career')) return Briefcase;
+  if (m.includes('idea') || m.includes('concept') || m.includes('simplification') || m.includes('insight')) return Lightbulb;
+  if (m.includes('finance') || m.includes('pricing') || m.includes('monetiz') || m.includes('fundraising')) return DollarSign;
+  if (m.includes('legal') || m.includes('risk') || m.includes('audit')) return Scale;
+  if (m.includes('e-commerce') || m.includes('sales')) return ShoppingCart;
+  if (m.includes('ai') || m.includes('ml') || m.includes('agentic') || m.includes('saas') || m.includes('blockchain')) return Cpu;
+  if (m.includes('cloud') || m.includes('devops') || m.includes('server') || m.includes('api') || m.includes('network') || m.includes('operating')) return Server;
+  if (m.includes('database')) return Database;
+  if (m.includes('security') || m.includes('cyber')) return ShieldCheck;
+  if (m.includes('mobile')) return Smartphone;
+  if (m.includes('desktop') || m.includes('web') || m.includes('landing')) return Monitor;
+  if (m.includes('research') || m.includes('investigative') || m.includes('fact') || m.includes('deep') || m.includes('literature') || m.includes('source') || m.includes('comparison')) return Search;
+  if (m.includes('plan') || m.includes('report') || m.includes('document') || m.includes('materials') || m.includes('synthesis')) return FileText;
+  if (m.includes('startup') || m.includes('founder') || m.includes('product')) return Rocket;
+  return Sparkles;
+}
 
 function scoreColor(s: number) {
   if (s >= 80) return 'var(--color-success)';
@@ -185,7 +295,7 @@ interface ComparisonBlockProps {
   isOptimizing: boolean;
   isOptimized: boolean;
   onAnalyze: (promptText: string) => void;
-  onOptimize: (promptText: string, activeMode: string) => void;
+  onOptimize: (promptText: string, activeRole: string, activeMode?: string) => void;
   analysisResult?: any;
   optimizationResult?: any;
   // History fields
@@ -205,7 +315,8 @@ export default function ComparisonBlock({
     'write a cinematic short about an astronaut who discovers a garden on mars. make it emotional.'
   );
   const [activeTab, setActiveTab] = useState('Optimized');
-  const [activeMode, setActiveMode] = useState('General');
+  const [activeRole, setActiveRole] = useState('general');
+  const [activeMode, setActiveMode] = useState('');
   const [scoreReady, setScoreReady] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
 
@@ -214,6 +325,17 @@ export default function ComparisonBlock({
       setOriginalText(initialOriginalPromptText);
     }
   }, [initialOriginalPromptText]);
+
+  useEffect(() => {
+    if (activeRole && activeRole !== 'general') {
+      const modes = ROLE_MODES[activeRole] || [];
+      if (modes.length > 0 && !modes.includes(activeMode)) {
+        setActiveMode(modes[0]);
+      }
+    } else {
+      setActiveMode('');
+    }
+  }, [activeRole]);
 
   useEffect(() => {
     if (isAnalyzed) {
@@ -279,16 +401,21 @@ export default function ComparisonBlock({
 
         {/* Controls */}
         <div style={{ marginTop: 32, display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '1.2px' }}>Mode</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '1.2px' }}>Role</div>
           <div style={{ paddingBottom: 4 }}>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-              {MODES.map(mode => {
-                const Icon = mode.icon;
-                const active = activeMode === mode.name;
+              {ROLES.map(role => {
+                const Icon = role.icon;
+                const active = activeRole === role.id;
                 return (
                   <button
-                    key={mode.name}
-                    onClick={() => setActiveMode(mode.name)}
+                    key={role.id}
+                    onClick={() => {
+                      setActiveRole(role.id);
+                      const modes = ROLE_MODES[role.id] || [];
+                      if (modes.length > 0) setActiveMode(modes[0]);
+                      else setActiveMode('');
+                    }}
                     style={{
                       padding: '8px 16px', borderRadius: 9999, fontSize: 13, fontWeight: active ? 600 : 500,
                       cursor: 'pointer', transition: 'all 250ms ease', display: 'flex', alignItems: 'center', gap: 6,
@@ -304,12 +431,58 @@ export default function ComparisonBlock({
                     }}
                   >
                     <Icon size={14} style={{ opacity: active ? 1 : 0.75 }} />
-                    {mode.name}
+                    {role.label}
                   </button>
                 );
               })}
             </div>
           </div>
+
+          {/* Mode Selector for non-general roles */}
+          <AnimatePresence>
+            {activeRole !== 'general' && ROLE_MODES[activeRole] && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+                style={{ display: 'flex', flexDirection: 'column', gap: 10, overflow: 'hidden', marginTop: 4 }}
+              >
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#7C3AED', textTransform: 'uppercase', letterSpacing: '1.2px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span>Select Mode</span>
+                  <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--color-text-secondary)', textTransform: 'none' }}>
+                    for {ROLES.find(r => r.id === activeRole)?.label}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, maxHeight: 180, overflowY: 'auto', paddingRight: 4 }}>
+                  {ROLE_MODES[activeRole].map(m => {
+                    const active = activeMode === m;
+                    const ModeIcon = getModeIcon(m);
+                    return (
+                      <button
+                        key={m}
+                        onClick={() => setActiveMode(m)}
+                        style={{
+                          padding: '6px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: active ? 600 : 500,
+                          cursor: 'pointer', transition: 'all 180ms ease', display: 'flex', alignItems: 'center', gap: 6,
+                          color: active ? '#FFFFFF' : 'var(--color-text-primary)',
+                          background: active
+                            ? 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)'
+                            : 'rgba(124,58,237,0.05)',
+                          border: active ? 'none' : '1px solid rgba(124,58,237,0.10)',
+                          boxShadow: active ? '0 3px 10px rgba(124,58,237,0.25)' : 'none',
+                        }}
+                        className={!active ? 'hover:!bg-[rgba(124,58,237,0.10)]' : ''}
+                      >
+                        <ModeIcon size={13} style={{ opacity: active ? 1 : 0.75 }} />
+                        {m}
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Action buttons */}
           <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
@@ -332,7 +505,7 @@ export default function ComparisonBlock({
             </button>
             <button
               id="optimize-btn"
-              onClick={() => onOptimize(originalText, activeMode)}
+              onClick={() => onOptimize(originalText, activeRole, activeMode)}
               disabled={isOptimizing || isAnalyzing}
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 32px',
@@ -465,7 +638,7 @@ export default function ComparisonBlock({
 
                       {[
                         { icon: Copy, title: 'Copy', primary: false, onClick: handleCopy },
-                        { icon: RefreshCw, title: 'Regenerate', primary: false, onClick: () => onOptimize(originalText, activeMode) },
+                        { icon: RefreshCw, title: 'Regenerate', primary: false, onClick: () => onOptimize(originalText, activeRole, activeMode) },
                         { icon: Bookmark, title: 'Save to Vault', primary: true, onClick: () => {} },
                       ].map(({ icon: Icon, title, primary, onClick }) => (
                         <button key={title} title={copySuccess && title === 'Copy' ? 'Copied!' : title} onClick={onClick} style={{
