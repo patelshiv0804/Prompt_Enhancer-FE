@@ -276,6 +276,7 @@ export default function VaultPage() {
 
   const [stats,          setStats]          = useState<HistoryStats | null>(null);
   const [statsAnimate,   setStatsAnimate]   = useState(false);
+  const [statsLoading,   setStatsLoading]   = useState(true);
 
   const sortRef = useRef<HTMLDivElement>(null);
 
@@ -302,10 +303,19 @@ export default function VaultPage() {
   useEffect(() => { load(); }, [load]);
 
   useEffect(() => {
-    fetchHistoryStats().then(res => {
-      setStats(res);
-      setStatsAnimate(true);
-    });
+    const handleHistoryUpdate = () => load();
+    window.addEventListener('promptiq:history-updated', handleHistoryUpdate);
+    return () => window.removeEventListener('promptiq:history-updated', handleHistoryUpdate);
+  }, [load]);
+
+  useEffect(() => {
+    fetchHistoryStats()
+      .then(res => {
+        setStats(res);
+        setStatsAnimate(true);
+      })
+      .catch(e => console.error(e))
+      .finally(() => setStatsLoading(false));
   }, []);
 
   useEffect(() => {
@@ -349,6 +359,39 @@ export default function VaultPage() {
   }, [items]);
 
   const activeSortLabel = SORT_OPTIONS.find(s => s.id === sortBy)?.label ?? 'Sort';
+  const pageLoading = loading || statsLoading;
+
+  if (pageLoading) {
+    return (
+      <div id="vault-page-loading" style={{ maxWidth: 1100, margin: '0 auto', padding: '0 48px', paddingTop: 8, width: '100%', display: 'flex', flexDirection: 'column', paddingBottom: 64 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '32px 0 28px' }}>
+          <div>
+            <div className="skeleton" style={{ height: 24, width: 240, borderRadius: 8, marginBottom: 10 }} />
+            <div className="skeleton" style={{ height: 14, width: 360, borderRadius: 8 }} />
+          </div>
+          <div className="skeleton" style={{ height: 40, width: 130, borderRadius: 10 }} />
+        </div>
+
+        <div style={{ display: 'flex', gap: 16, marginBottom: 28 }}>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="skeleton" style={{ flex: '1 1 0', height: 116, borderRadius: 16 }} />
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+          <div className="skeleton" style={{ height: 40, width: 260, borderRadius: 10 }} />
+          <div className="skeleton" style={{ height: 34, width: 560, borderRadius: 9999 }} />
+          <div className="skeleton" style={{ height: 38, width: 90, borderRadius: 10 }} />
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="skeleton" style={{ height: 72, borderRadius: 14 }} />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div id="vault-page" style={{ maxWidth: 1100, margin: '0 auto', padding: '0 48px', paddingTop: 8, width: '100%', display: 'flex', flexDirection: 'column', paddingBottom: 64 }}>

@@ -185,6 +185,7 @@ function OptimizerPageContent() {
         }
         setOptimizationResult(optData);
         setIsOptimized(true);
+        window.dispatchEvent(new Event('promptiq:history-updated'));
 
         if (response.data.version && response.data.version.prompt_id) {
           setLoadedPromptId(response.data.version.prompt_id);

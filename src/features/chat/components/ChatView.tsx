@@ -519,12 +519,82 @@ function getLocalToolRecommendations(prompt: string, mode?: string): { matched_t
   return { matched_task: 'General AI Task', match_confidence: 0.75, tools: [{ name: 'ChatGPT', rank: 1 }, { name: 'Claude', rank: 2 }, { name: 'Gemini', rank: 3 }] };
 }
 
+function ChatDetailSkeleton() {
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', height: '100%', flex: 1, overflowY: 'auto',
+      background: 'transparent',
+    }}>
+      <div style={{
+        maxWidth: 1100, margin: '0 auto', width: '100%', padding: '20px 48px',
+        display: 'flex', flexDirection: 'column', gap: 28, flex: 1,
+      }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '12px 20px', background: 'rgba(255,255,255,0.85)', borderRadius: 16,
+          border: '1px solid rgba(124,58,237,0.10)', boxShadow: '0 2px 12px rgba(109,40,217,0.04)',
+          width: '100%', boxSizing: 'border-box',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div className="skeleton" style={{ width: 118, height: 28, borderRadius: 9999 }} />
+            <div className="skeleton" style={{ width: 92, height: 18, borderRadius: 9999 }} />
+          </div>
+          <div className="skeleton" style={{ width: 96, height: 32, borderRadius: 10 }} />
+        </div>
+
+        <div className="skeleton" style={{ height: 96, borderRadius: 18 }} />
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+          {Array.from({ length: 2 }).map((_, panelIndex) => (
+            <div key={panelIndex} style={{
+              background: '#FFFFFF', borderRadius: 20, padding: 24,
+              boxShadow: '0 4px 20px rgba(109,40,217,0.04)', border: '1px solid rgba(124,58,237,0.10)',
+              display: 'flex', flexDirection: 'column', gap: 18, minHeight: 300,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div className="skeleton" style={{ width: 128, height: 28, borderRadius: 9999 }} />
+                {panelIndex === 1 && <div className="skeleton" style={{ width: 42, height: 24, borderRadius: 8 }} />}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div className="skeleton" style={{ height: 16, width: '92%', borderRadius: 8 }} />
+                <div className="skeleton" style={{ height: 16, width: '84%', borderRadius: 8 }} />
+                <div className="skeleton" style={{ height: 16, width: '96%', borderRadius: 8 }} />
+                <div className="skeleton" style={{ height: 16, width: '70%', borderRadius: 8 }} />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{
+          background: '#FFFFFF', borderRadius: 20, border: '1px solid rgba(124,58,237,0.10)',
+          boxShadow: '0 4px 20px rgba(109,40,217,0.05)', overflow: 'hidden', display: 'flex',
+        }}>
+          <div style={{
+            width: 190, flexShrink: 0, display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center', padding: '28px 20px', gap: 12,
+            borderRight: '1px solid rgba(124,58,237,0.08)', background: '#FDFCFF',
+          }}>
+            <div className="skeleton" style={{ width: 110, height: 110, borderRadius: '50%' }} />
+            <div className="skeleton" style={{ width: 96, height: 20, borderRadius: 8 }} />
+            <div className="skeleton" style={{ width: 76, height: 24, borderRadius: 9999 }} />
+          </div>
+          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, padding: 20, background: '#F8FAFC' }}>
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div key={index} className="skeleton" style={{ height: 112, borderRadius: 12 }} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Component ──────────────────────────────────────────────────────────────────
 export default function ChatView({ chatId }: { chatId: string | null }) {
   const [currentSession, setCurrentSession] = useState<OptimizationSession>(() => {
     return chatId && MOCK_SESSIONS[chatId] ? MOCK_SESSIONS[chatId] : DEFAULT_SESSION;
   });
-  const [isLoadingSession, setIsLoadingSession] = useState(false);
+  const [isLoadingSession, setIsLoadingSession] = useState(() => Boolean(chatId && !MOCK_SESSIONS[chatId]));
 
   useEffect(() => {
     if (!chatId) return;
@@ -726,6 +796,10 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
   const handleToggleStar = (index: number) => {
     setSessionVersions(prev => prev.map((v, i) => i === index ? { ...v, isStarred: !v.isStarred } : v));
   };
+
+  if (isLoadingSession) {
+    return <ChatDetailSkeleton />;
+  }
 
   // Render a prompt panel
   const renderOptimizedPanel = (v: PromptVersion, label: string) => (
@@ -1051,11 +1125,6 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                         </span>
                       )}
                     </div>
-                    {typeof session.toolRecommendations.match_confidence === 'number' && (
-                      <span style={{ fontSize: 13, fontWeight: 700, color: '#7C3AED' }}>
-                        {Math.round(session.toolRecommendations.match_confidence * 100)}% Match
-                      </span>
-                    )}
                   </div>
 
                   <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>

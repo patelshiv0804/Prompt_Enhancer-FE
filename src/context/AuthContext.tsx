@@ -27,6 +27,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, fullName: string) => Promise<void>;
+  loginWithGoogle: (idToken: string) => Promise<void>;
   logout: () => void;
   styleProfiles: StyleProfile[];
   activeStyle: { id: string | null; name: string };
@@ -52,6 +53,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [activeEngine, setActiveEngine] = useState('Claude Sonnet 4.5');
 
   const router = useRouter();
+
+  const finalizeAuthentication = async (accessToken: string) => {
+    localStorage.setItem('promptiq_token', accessToken);
+    setToken(accessToken);
+
+    const profile = await apiClient.get<UserProfile>('/api/v1/profile/me');
+    setUser(profile);
+
+    await refreshStyleProfiles();
+    router.push('/dashboard/optimizer');
+  };
 
   const refreshStyleProfiles = async () => {
     try {
@@ -96,18 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       formData.append('password', password);
 
       const response = await apiClient.post<{ access_token: string }>('/api/v1/auth/login', formData);
-      const accessToken = response.access_token;
-
-      localStorage.setItem('promptiq_token', accessToken);
-      setToken(accessToken);
-
-      const profile = await apiClient.get<UserProfile>('/api/v1/profile/me');
-      setUser(profile);
-
-      // Fetch styles list
-      await refreshStyleProfiles();
-
-      router.push('/dashboard/optimizer');
+      await finalizeAuthentication(response.access_token);
     } catch (err) {
       setLoading(false);
       throw err;
@@ -133,6 +134,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const loginWithGoogle = async (idToken: string) => {
+    setLoading(true);
+    try {
+      const response = await apiClient.post<{ access_token: string }>('/api/v1/auth/google', {
+        id_token: idToken,
+      });
+      await finalizeAuthentication(response.access_token);
+    } catch (err) {
+      setLoading(false);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const logout = () => {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('promptiq_token');
@@ -153,6 +169,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loading,
         login,
         register,
+        loginWithGoogle,
         logout,
         styleProfiles,
         activeStyle,

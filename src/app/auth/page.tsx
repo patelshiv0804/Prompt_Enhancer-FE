@@ -1,17 +1,106 @@
 'use client';
-import { useState } from 'react';
+import Script from 'next/script';
+import { useEffect, useRef, useState } from 'react';
+import { ArrowRight, Eye, EyeOff, Lock, Mail, Sparkles, User, Zap } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (options: {
+            client_id: string;
+            callback: (response: { credential?: string }) => void | Promise<void>;
+          }) => void;
+          renderButton: (
+            parent: HTMLElement,
+            options: {
+              theme?: 'outline' | 'filled_blue' | 'filled_black';
+              size?: 'large' | 'medium' | 'small';
+              text?: 'signin_with' | 'signup_with' | 'continue_with' | 'signin';
+              shape?: 'pill' | 'rectangular' | 'square' | 'circle';
+              width?: number;
+              logo_alignment?: 'left' | 'center';
+            }
+          ) => void;
+        };
+      };
+    };
+  }
+}
 
 export default function AuthPage() {
   const [tab, setTab] = useState<'signin' | 'signup'>('signin');
   const [showPass, setShowPass] = useState(false);
+  const [googleReady, setGoogleReady] = useState(false);
+  const [googleButtonVisible, setGoogleButtonVisible] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const googleInitRef = useRef(false);
+  const googleButtonRef = useRef<HTMLDivElement | null>(null);
 
-  const { login, register, loading } = useAuth();
+  const { login, register, loginWithGoogle, loading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+  const isBusy = loading || isSubmitting;
+  const showSubmitOverlay = isSubmitting;
+  const showInitialSkeleton = loading && !isSubmitting;
+  const showGoogleSkeleton =
+    !isSubmitting &&
+    (showInitialSkeleton || (Boolean(googleClientId) && (!googleReady || !googleButtonVisible)));
+
+  const getErrorMessage = (value: unknown) =>
+    value instanceof Error ? value.message : 'Authentication failed. Please try again.';
+
+  useEffect(() => {
+    if (!googleReady || !window.google || !googleClientId || googleInitRef.current) {
+      return;
+    }
+
+    window.google.accounts.id.initialize({
+      client_id: googleClientId,
+      callback: async ({ credential }) => {
+        if (!credential) {
+          setError('Google sign-in did not return a credential.');
+          return;
+        }
+
+        setError(null);
+        setIsSubmitting(true);
+        try {
+          await loginWithGoogle(credential);
+        } catch (err: unknown) {
+          console.error(err);
+          setError(getErrorMessage(err));
+          setIsSubmitting(false);
+        }
+      },
+    });
+
+    googleInitRef.current = true;
+  }, [googleClientId, googleReady, loginWithGoogle]);
+
+  useEffect(() => {
+    if (!googleReady || !window.google || !googleButtonRef.current || !googleClientId) {
+      return;
+    }
+
+    setGoogleButtonVisible(false);
+    googleButtonRef.current.innerHTML = '';
+    window.google.accounts.id.renderButton(googleButtonRef.current, {
+      theme: 'outline',
+      size: 'large',
+      text: tab === 'signin' ? 'signin_with' : 'signup_with',
+      shape: 'pill',
+      width: Math.max(280, Math.floor(googleButtonRef.current.offsetWidth)),
+      logo_alignment: 'left',
+    });
+    setGoogleButtonVisible(true);
+  }, [googleClientId, googleReady, tab]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,32 +111,39 @@ export default function AuthPage() {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       if (tab === 'signin') {
         await login(email, password);
       } else {
         if (password !== confirmPassword) {
           setError('Passwords do not match.');
+          setIsSubmitting(false);
           return;
         }
         if (password.length < 8) {
           setError('Password must be at least 8 characters long.');
+          setIsSubmitting(false);
           return;
         }
         await register(email, password, fullName);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err.message || 'Authentication failed. Please try again.');
+      setError(getErrorMessage(err));
+      setIsSubmitting(false);
     }
   };
 
   return (
     <div style={{ fontFamily: "'Inter', sans-serif", background: '#FAFAFC', minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+      <Script
+        src="https://accounts.google.com/gsi/client"
+        strategy="afterInteractive"
+        onLoad={() => setGoogleReady(true)}
+      />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600&display=swap');
-        @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
-        .ms { font-family: 'Material Symbols Outlined'; font-weight: normal; font-style: normal; font-size: inherit; line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap; word-wrap: normal; direction: ltr; -webkit-font-smoothing: antialiased; }
         .glass-floating { background: rgba(255,255,255,0.9); backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px); box-shadow: 0 10px 20px rgba(23,26,43,0.04); border: 1px solid rgba(236,234,245,0.5); }
         .glass-panel { background: rgba(255,255,255,0.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid #ECEAF5; }
         .fluid-shape { animation: morph 8s ease-in-out infinite; background: rgba(255,255,255,0.6); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 20px 60px rgba(23,26,43,0.08); border: 1px solid rgba(255,255,255,0.5); }
@@ -92,6 +188,22 @@ export default function AuthPage() {
         .footer-link { font-size:12px; font-weight:600; color:rgba(70,70,76,0.6); text-decoration:none; letter-spacing:0.05em; transition:color 0.2s; }
         .footer-link:hover { color:#6b38d4; }
         .green-dot { width:8px; height:8px; border-radius:50%; background:#22c55e; }
+        .oauth-divider { display:flex; align-items:center; gap:12px; margin-top:12px; color:rgba(70,70,76,0.45); font-size:12px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; }
+        .oauth-divider::before, .oauth-divider::after { content:''; flex:1; height:1px; background:rgba(229,225,227,0.8); }
+        .google-fallback { width:100%; min-height:50px; border-radius:9999px; border:1px solid #E5E7EB; background:#fff; color:#171A2B; font-family:'Geist',sans-serif; font-size:14px; font-weight:600; letter-spacing:0.02em; display:flex; align-items:center; justify-content:center; gap:10px; padding:14px 0; box-sizing:border-box; box-shadow:0 1px 2px rgba(17,24,39,0.04); }
+        .google-hint { margin-top:10px; font-size:12px; line-height:1.5; color:rgba(70,70,76,0.62); text-align:center; }
+        .inline-skeleton { width:100%; border-radius:9999px; background:linear-gradient(90deg, rgba(167,139,250,0.12), rgba(236,72,153,0.14), rgba(167,139,250,0.12)); background-size:200% 100%; animation:shimmer 1.4s linear infinite; }
+        .inline-skeleton.btn { height:50px; margin-top:6px; }
+        .inline-skeleton.google { height:50px; margin-top:2px; }
+        .google-button-shell { position:relative; min-height:50px; }
+        .google-button-host { width:100%; min-height:50px; display:flex; justify-content:center; }
+        .google-button-skeleton { position:absolute; inset:0; }
+        .auth-loading-overlay { position:absolute; inset:0; z-index:80; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; background:rgba(250,250,252,0.42); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border-radius:40px; }
+        .auth-loading-spinner { width:42px; height:42px; border-radius:50%; border:3px solid rgba(167,139,250,0.18); border-top-color:#171A2B; animation:spin 0.8s linear infinite; }
+        .auth-loading-title { font-family:'Geist',sans-serif; font-size:15px; font-weight:600; letter-spacing:0.02em; color:#171A2B; text-align:center; }
+        .auth-loading-copy { font-size:13px; color:rgba(70,70,76,0.68); text-align:center; }
+        @keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+        @keyframes shimmer { 0% { background-position:200% 0; } 100% { background-position:-200% 0; } }
       `}</style>
 
       {/* Top Left Badge */}
@@ -102,7 +214,7 @@ export default function AuthPage() {
 
       {/* Top Right Badge */}
       <div className="glass-floating" style={{ position: 'absolute', top: 24, right: 24, zIndex: 50, padding: '8px 16px', borderRadius: 9999, display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span className="ms" style={{ color: '#A78BFA', fontSize: 18 }}>bolt</span>
+        <Zap size={16} color="#A78BFA" />
         <span style={{ fontFamily: "'Geist',sans-serif", fontSize: 12, fontWeight: 600, letterSpacing: '0.05em', color: '#171A2B' }}>Token Efficiency: 94%</span>
       </div>
 
@@ -205,7 +317,7 @@ export default function AuthPage() {
               {/* Model Badge */}
               <div className="badge-b-wrap glass-floating badge-b" style={{ position: 'absolute', bottom: -24, left: -48, zIndex: 40, padding: '10px 14px', borderRadius: 12, alignItems: 'center', gap: 10, border: '1px solid rgba(255,255,255,0.5)', backdropFilter: 'blur(48px)' }}>
                 <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,#A78BFA,#EC4899)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span className="ms" style={{ color: '#fff', fontSize: 16 }}>auto_awesome</span>
+                  <Sparkles size={16} color="#fff" />
                 </div>
                 <div>
                   <p style={{ fontFamily: "'Geist',sans-serif", fontSize: 10, fontWeight: 600, letterSpacing: '0.05em', color: 'rgba(70,70,76,0.7)', textTransform: 'uppercase' }}>Target Model</p>
@@ -229,6 +341,18 @@ export default function AuthPage() {
 
             {/* Card */}
             <div className="glass-floating" style={{ position: 'relative', borderRadius: 40, padding: '48px 40px', overflow: 'hidden', zIndex: 1, backdropFilter: 'blur(48px)' }}>
+              {showSubmitOverlay && (
+                <div className="auth-loading-overlay">
+                  <div className="auth-loading-spinner" />
+                  <div>
+                    <div className="auth-loading-title">
+                      {tab === 'signin' ? 'Signing you in' : 'Creating your account'}
+                    </div>
+                    <div className="auth-loading-copy">Redirecting to your dashboard...</div>
+                  </div>
+                </div>
+              )}
+
               {/* Top gradient bar */}
               <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: 8, background: 'linear-gradient(90deg,#A78BFA,#EC4899,#A78BFA)', opacity: 0.5 }} />
 
@@ -271,14 +395,14 @@ export default function AuthPage() {
                   <div className={`signup-field ${tab === 'signup' ? 'visible' : 'hidden'}`}>
                     <label style={{ fontFamily: "'Geist',sans-serif", fontSize: 14, fontWeight: 500, letterSpacing: '0.02em', color: '#111', display: 'block', marginBottom: 6, marginLeft: 4 }}>Full Name</label>
                     <div className="input-wrap">
-                      <span className="ms field-icon-left">person</span>
+                      <User size={18} className="field-icon-left" />
                       <input
                         className="field-input input-glow"
                         type="text"
                         placeholder="John Doe"
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
-                        disabled={loading}
+                        disabled={isBusy}
                         tabIndex={tab === 'signup' ? 0 : -1}
                       />
                     </div>
@@ -288,14 +412,14 @@ export default function AuthPage() {
                   <div>
                     <label style={{ fontFamily: "'Geist',sans-serif", fontSize: 14, fontWeight: 500, letterSpacing: '0.02em', color: '#111', display: 'block', marginBottom: 6, marginLeft: 4 }}>Email address</label>
                     <div className="input-wrap">
-                      <span className="ms field-icon-left">mail</span>
+                      <Mail size={18} className="field-icon-left" />
                       <input
                         className="field-input input-glow"
                         type="email"
                         placeholder="name@company.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        disabled={loading}
+                        disabled={isBusy}
                         required
                       />
                     </div>
@@ -308,18 +432,18 @@ export default function AuthPage() {
                       <a href="#" className="forgot-link" style={{ visibility: tab === 'signin' ? 'visible' : 'hidden' }}>Forgot?</a>
                     </div>
                     <div className="input-wrap">
-                      <span className="ms field-icon-left">lock</span>
+                      <Lock size={18} className="field-icon-left" />
                       <input
                         className="field-input input-glow has-right"
                         type={showPass ? 'text' : 'password'}
                         placeholder="••••••••"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        disabled={loading}
+                        disabled={isBusy}
                         required
                       />
-                      <button type="button" className="field-icon-right ms" onClick={() => setShowPass(p => !p)}>
-                        {showPass ? 'visibility_off' : 'visibility'}
+                      <button type="button" className="field-icon-right" onClick={() => setShowPass(p => !p)}>
+                        {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
                       </button>
                     </div>
                   </div>
@@ -328,29 +452,63 @@ export default function AuthPage() {
                   <div className={`signup-field ${tab === 'signup' ? 'visible' : 'hidden'}`}>
                     <label style={{ fontFamily: "'Geist',sans-serif", fontSize: 14, fontWeight: 500, letterSpacing: '0.02em', color: '#111', display: 'block', marginBottom: 6, marginLeft: 4 }}>Confirm Password</label>
                     <div className="input-wrap">
-                      <span className="ms field-icon-left">lock</span>
+                      <Lock size={18} className="field-icon-left" />
                       <input
                         className="field-input input-glow has-right"
                         type="password"
                         placeholder="••••••••"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        disabled={loading}
+                        disabled={isBusy}
                         tabIndex={tab === 'signup' ? 0 : -1}
                       />
                     </div>
                   </div>
 
-                  <button type="submit" className="btn-main" style={{ marginTop: 6 }} disabled={loading}>
-                    {loading ? (
+                  {showInitialSkeleton ? (
+                    <div className="inline-skeleton btn" aria-hidden="true" />
+                  ) : (
+                  <button type="submit" className="btn-main" style={{ marginTop: 6 }} disabled={isBusy}>
+                    {isSubmitting ? (
                       tab === 'signin' ? 'Signing In...' : 'Registering...'
                     ) : (
                       <>
                         {tab === 'signin' ? 'Sign In' : 'Create Account'}
-                        <span className="ms arrow-icon" style={{ fontSize: 18 }}>arrow_forward</span>
+                        <ArrowRight size={18} className="arrow-icon" />
                       </>
                     )}
                   </button>
+                  )}
+
+                  <div className="oauth-divider">or continue with</div>
+
+                  {googleClientId ? (
+                    <div className="google-button-shell">
+                      <div
+                        ref={googleButtonRef}
+                        className="google-button-host"
+                        style={{ visibility: showGoogleSkeleton ? 'hidden' : 'visible' }}
+                      />
+                      {showGoogleSkeleton && (
+                        <div className="inline-skeleton google google-button-skeleton" aria-hidden="true" />
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="google-fallback">
+                        <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+                          <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.654 32.657 29.221 36 24 36c-6.627 0-12-5.373-12-12S17.373 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.278 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917Z"/>
+                          <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.278 4 24 4c-7.682 0-14.346 4.337-17.694 10.691Z"/>
+                          <path fill="#4CAF50" d="M24 44c5.18 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.143 35.091 26.715 36 24 36c-5.2 0-9.62-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44Z"/>
+                          <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.05 12.05 0 0 1-4.084 5.571h.003l6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917Z"/>
+                        </svg>
+                        {tab === 'signin' ? 'Continue with Google' : 'Sign up with Google'}
+                      </div>
+                      <p className="google-hint">
+                        Add <code>NEXT_PUBLIC_GOOGLE_CLIENT_ID</code> in <code>.env.local</code> to activate Google auth.
+                      </p>
+                    </div>
+                  )}
 
                   <div style={{ marginTop: 8, paddingTop: 20, borderTop: '1px solid rgba(229,225,227,0.5)', textAlign: 'center' }}>
                     <p style={{ fontSize: 16, color: 'rgba(70,70,76,0.8)' }}>

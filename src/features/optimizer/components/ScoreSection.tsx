@@ -263,11 +263,6 @@ export default function ScoreSection({ isAnalyzed, isOptimized, originalAnalysis
                   </span>
                 )}
               </div>
-              {typeof toolRecommendations.match_confidence === 'number' && (
-                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-primary)' }}>
-                  {Math.round(toolRecommendations.match_confidence * 100)}% Match
-                </span>
-              )}
             </div>
 
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>

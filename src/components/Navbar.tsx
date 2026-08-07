@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { LogOut, Menu, X } from "lucide-react";
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
 
 interface NavItem {
   id: string;
@@ -24,6 +25,7 @@ export default function Navbar() {
   const [activeId, setActiveId] = useState<string>("extension");
   const isClickScrolling = useRef(false);
   const clickScrollTimer = useRef<NodeJS.Timeout | null>(null);
+  const { isAuthenticated, loading, logout } = useAuth();
 
   useEffect(() => {
     // Check initial hash on load if present
@@ -99,6 +101,111 @@ export default function Navbar() {
     }, 850);
   };
 
+  const renderDesktopAuth = () => {
+    if (loading) {
+      return (
+        <>
+          <div className="h-5 w-16 animate-pulse rounded-full bg-gray-200/80" aria-hidden="true" />
+          <div className="h-10 w-28 animate-pulse rounded-full bg-gray-200/80" aria-hidden="true" />
+        </>
+      );
+    }
+
+    if (isAuthenticated) {
+      return (
+        <>
+          <button
+            type="button"
+            onClick={logout}
+            className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 transition-colors duration-200 hover:text-gray-900"
+          >
+            <LogOut size={16} />
+            Log out
+          </button>
+          <Link
+            href="/dashboard"
+            id="navbar-cta"
+            className="inline-flex items-center gap-2 rounded-full bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-gray-800 hover:shadow-md active:scale-[0.98]"
+          >
+            Open dashboard
+          </Link>
+        </>
+      );
+    }
+
+    return (
+      <>
+        <Link
+          href="/auth"
+          className="text-sm font-medium text-gray-500 transition-colors duration-200 hover:text-gray-900"
+        >
+          Log in
+        </Link>
+        <Link
+          href="/auth"
+          id="navbar-cta"
+          className="inline-flex items-center gap-2 rounded-full bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-gray-800 hover:shadow-md active:scale-[0.98]"
+        >
+          Get started
+        </Link>
+      </>
+    );
+  };
+
+  const renderMobileAuth = () => {
+    if (loading) {
+      return (
+        <>
+          <div className="h-10 w-full animate-pulse rounded-lg bg-gray-100" aria-hidden="true" />
+          <div className="h-11 w-full animate-pulse rounded-full bg-gray-200/90" aria-hidden="true" />
+        </>
+      );
+    }
+
+    if (isAuthenticated) {
+      return (
+        <>
+          <button
+            type="button"
+            className="rounded-lg px-4 py-2.5 text-center text-sm font-medium text-gray-700 hover:bg-gray-50"
+            onClick={() => {
+              setMobileOpen(false);
+              logout();
+            }}
+          >
+            Log out
+          </button>
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center justify-center rounded-full bg-gray-900 px-5 py-3 text-sm font-semibold text-white"
+            onClick={() => setMobileOpen(false)}
+          >
+            Open dashboard
+          </Link>
+        </>
+      );
+    }
+
+    return (
+      <>
+        <Link
+          href="/auth"
+          className="rounded-lg px-4 py-2.5 text-center text-sm font-medium text-gray-700 hover:bg-gray-50"
+          onClick={() => setMobileOpen(false)}
+        >
+          Log in
+        </Link>
+        <Link
+          href="/auth"
+          className="inline-flex items-center justify-center rounded-full bg-gray-900 px-5 py-3 text-sm font-semibold text-white"
+          onClick={() => setMobileOpen(false)}
+        >
+          Get started
+        </Link>
+      </>
+    );
+  };
+
   return (
     <motion.nav
       initial={{ y: -20, opacity: 0 }}
@@ -141,19 +248,7 @@ export default function Navbar() {
 
         {/* Right side — Desktop */}
         <div className="hidden items-center gap-4 md:flex">
-          <Link
-            href="/auth"
-            className="text-sm font-medium text-gray-500 transition-colors duration-200 hover:text-gray-900"
-          >
-            Log in
-          </Link>
-          <Link
-            href="/dashboard"
-            id="navbar-cta"
-            className="inline-flex items-center gap-2 rounded-full bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-gray-800 hover:shadow-md active:scale-[0.98]"
-          >
-            Get started
-          </Link>
+          {renderDesktopAuth()}
         </div>
 
         {/* Mobile Hamburger */}
@@ -196,20 +291,7 @@ export default function Navbar() {
                 );
               })}
               <div className="mt-2 flex flex-col gap-2 pt-2 border-t border-gray-100">
-                <Link
-                  href="/auth"
-                  className="rounded-lg px-4 py-2.5 text-center text-sm font-medium text-gray-700 hover:bg-gray-50"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  Log in
-                </Link>
-                <Link
-                  href="/dashboard"
-                  className="inline-flex items-center justify-center rounded-full bg-gray-900 px-5 py-3 text-sm font-semibold text-white"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  Get started
-                </Link>
+                {renderMobileAuth()}
               </div>
             </div>
           </motion.div>

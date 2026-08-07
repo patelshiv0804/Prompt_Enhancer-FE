@@ -1,19 +1,19 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import {
   Sparkles, LayoutTemplate, Library, Fingerprint,
-  Settings, User, History as HistoryIcon, Clock,
+  Settings, User, Clock,
   Code2, Search, Film, PlaySquare, Image as ImageIcon,
   Megaphone, BookOpen, Mail, Star, ChevronDown, ChevronRight,
   LogOut,
 } from 'lucide-react';
 import { fetchHistory } from '@/features/history/services/historyService';
 
-export type ActivePage = 'optimizer' | 'history' | 'templates' | 'vault' | 'style-memory' | 'chaining' | 'settings' | 'chat';
+export type ActivePage = 'optimizer' | 'templates' | 'vault' | 'style-memory' | 'chaining' | 'settings' | 'chat';
 
 interface NavItem { id: ActivePage; icon: React.ElementType; label: string; shortcut?: string; }
 interface NavGroup { label: string; items: NavItem[]; }
@@ -46,16 +46,6 @@ const SIDEBAR_HISTORY_ACCENTS: Record<string, string> = {
   storytelling: '#F59E0B', 'image-gen': '#EC4899', cinematic: '#8B5CF6',
   youtube: '#EF4444', general: '#7C3AED', email: '#0EA5E9',
 };
-const MOCK_RECENT = [
-  { id: 'r1', prompt: 'Write a viral Twitter thread about AI in healthcare',  category: 'marketing',    score: 94, isFavorite: true,  ago: '2m' },
-  { id: 'r2', prompt: 'Debug my React useEffect infinite loop issue',         category: 'coding',       score: 88, isFavorite: false, ago: '1h' },
-  { id: 'r3', prompt: 'Cinematic shot of neon rain on cyberpunk streets',     category: 'cinematic',    score: 91, isFavorite: false, ago: '3h' },
-  { id: 'r4', prompt: 'Explain quantum entanglement to a 10-year-old',        category: 'research',     score: 76, isFavorite: false, ago: '5h' },
-  { id: 'r5', prompt: 'Generate a product launch email sequence',             category: 'email',        score: 83, isFavorite: true,  ago: 'Yesterday' },
-  { id: 'r6', prompt: 'YouTube thumbnail prompt for tech review video',       category: 'youtube',      score: 79, isFavorite: false, ago: 'Yesterday' },
-  { id: 'r7', prompt: 'Anime-style landscape with cherry blossoms',           category: 'image-gen',    score: 95, isFavorite: true,  ago: '2d' },
-  { id: 'r8', prompt: 'Write a compelling SaaS landing page headline',        category: 'marketing',    score: 87, isFavorite: false, ago: '3d' },
-];
 
 export default function Sidebar() {
   const router   = useRouter();
@@ -63,7 +53,7 @@ export default function Sidebar() {
   const { user, logout } = useAuth();
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [recentCollapsed, setRecentCollapsed] = useState(false);
-  const [recentItems, setRecentItems] = useState<any[]>(MOCK_RECENT);
+  const [recentItems, setRecentItems] = useState<any[]>([]);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -71,21 +61,30 @@ export default function Sidebar() {
     setMounted(true);
   }, []);
 
-  useEffect(() => {
+  const loadRecentItems = useCallback(() => {
     fetchHistory(1, 8, { search: '', category: 'all', sortBy: 'most-recent' }).then(res => {
-      if (res && res.items && res.items.length > 0) {
-        const formatted = res.items.map(item => ({
-          id: item.id,
-          prompt: item.prompt,
-          category: item.category || 'general',
-          score: item.score,
-          isFavorite: item.isFavorite,
-          ago: item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'Recent'
-        }));
-        setRecentItems(formatted);
-      }
+      const formatted = (res?.items || []).map(item => ({
+        id: item.id,
+        prompt: item.prompt,
+        category: item.category || 'general',
+        score: item.score,
+        isFavorite: item.isFavorite,
+        ago: item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'Recent'
+      }));
+      setRecentItems(formatted);
     }).catch(err => console.error(err));
-  }, [pathname]);
+  }, []);
+
+  useEffect(() => {
+    loadRecentItems();
+
+    const handleHistoryUpdate = () => {
+      loadRecentItems();
+    };
+
+    window.addEventListener('promptiq:history-updated', handleHistoryUpdate);
+    return () => window.removeEventListener('promptiq:history-updated', handleHistoryUpdate);
+  }, [pathname, loadRecentItems]);
 
   const toggleGroup = (label: string) =>
     setCollapsedGroups(prev => ({ ...prev, [label]: !prev[label] }));
@@ -212,7 +211,6 @@ export default function Sidebar() {
             }}
             className="hover:bg-[rgba(124,58,237,0.06)] transition-colors duration-150"
           >
-            <HistoryIcon size={12} style={{ color: 'rgba(109,40,217,0.45)', flexShrink: 0 }} />
             <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'rgba(45,27,105,0.45)', flex: 1 }}>Recent</span>
             <button
               id="sidebar-history-view-all"
@@ -231,7 +229,30 @@ export default function Sidebar() {
 
           {!recentCollapsed && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 1, animation: 'groupItemsIn 0.18s ease-out' }}>
-              {recentItems.map(item => {
+              {recentItems.length === 0 ? (
+                <div
+                  style={{
+                    minHeight: 180,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    textAlign: 'center',
+                    padding: '20px 12px',
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 12.5,
+                      lineHeight: 1.6,
+                      color: 'rgba(45,27,105,0.55)',
+                      maxWidth: 170,
+                    }}
+                  >
+                    No prompt history yet.
+                  </div>
+                </div>
+              ) : (
+                recentItems.map(item => {
                 const Icon   = SIDEBAR_HISTORY_ICONS[item.category] || Clock;
                 const accent = SIDEBAR_HISTORY_ACCENTS[item.category] || '#7C3AED';
                 const active = pathname === `/dashboard/chat/${item.id}`;
@@ -272,7 +293,8 @@ export default function Sidebar() {
                     </span>
                   </button>
                 );
-              })}
+                })
+              )}
             </div>
           )}
         </div>
@@ -299,8 +321,17 @@ export default function Sidebar() {
               color: '#7C3AED', width: 30, height: 30, borderRadius: '50%',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               border: '1px solid rgba(124,58,237,0.15)', flexShrink: 0,
+              overflow: 'hidden',
             }}>
-              <User size={15} strokeWidth={1.5} />
+              {user?.avatar_url ? (
+                <img
+                  src={user.avatar_url}
+                  alt={user.display_name || user.email || 'User avatar'}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                <User size={15} strokeWidth={1.5} />
+              )}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
               <span style={{ fontSize: 12.5, fontWeight: 600, color: '#3B1082', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>

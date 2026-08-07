@@ -273,6 +273,20 @@ export default function HistoryPage() {
     });
   }, [currentPage, debSearch, activeCategory, sortBy]);
   useEffect(() => {
+    const handleHistoryUpdate = () => {
+      fetchHistoryStats().then(d => {
+        setStats(d);
+        setTimeout(() => setStatsAnimate(true), 80);
+      });
+      setLoading(true);
+      fetchHistory(currentPage, PAGE_SIZE, { search: debSearch, category: activeCategory, sortBy }).then(d => {
+        setItems(d.items); setTotalPages(d.totalPages); setTotal(d.total); setLoading(false);
+      });
+    };
+    window.addEventListener('promptiq:history-updated', handleHistoryUpdate);
+    return () => window.removeEventListener('promptiq:history-updated', handleHistoryUpdate);
+  }, [currentPage, debSearch, activeCategory, sortBy]);
+  useEffect(() => {
     function close(e: MouseEvent) { if (sortRef.current && !sortRef.current.contains(e.target as Node)) setShowSort(false); }
     document.addEventListener('click', close);
     return () => document.removeEventListener('click', close);
