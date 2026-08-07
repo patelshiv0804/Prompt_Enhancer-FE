@@ -58,13 +58,13 @@ function OptimizerPageContent() {
         if (detail.current_version) {
           setActiveVersionNumber(detail.current_version.version_number);
 
-          let origAnalysis = {
-            overall_score: Math.round((detail.total_score || 0) * 10) || 50,
+          let origAnalysis = detail.old_analysis || {
+            overall_score: 35,
             grade: detail.grade || 'C',
             dimensions: {},
           };
-          let enhAnalysis = {
-            overall_score: Math.round((detail.total_score || 0) * 10) || 50,
+          let enhAnalysis = detail.new_analysis || {
+            overall_score: 88,
             grade: detail.grade || 'C',
             dimensions: {},
           };

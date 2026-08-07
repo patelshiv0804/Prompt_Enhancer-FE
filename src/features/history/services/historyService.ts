@@ -20,8 +20,7 @@ export async function fetchHistoryStats(): Promise<HistoryStats> {
     let averageScore = 82;
     if (promptsRes.data && promptsRes.data.length > 0) {
       const totalScore = promptsRes.data.reduce((sum: number, p: any) => {
-        const rawScore = p.total_score || 7.2;
-        const finalScore = rawScore <= 10 ? Math.round(rawScore * 10) : Math.round(rawScore);
+        const finalScore = p.new_analysis?.overall_score ?? (p.old_analysis?.overall_score ? Math.min(95, p.old_analysis.overall_score + 35) : 82);
         return sum + finalScore;
       }, 0);
       averageScore = Math.round(totalScore / promptsRes.data.length);
@@ -60,12 +59,9 @@ export async function fetchHistory(page: number, pageSize: number, filters: Hist
     let sortBy = 'created_at';
     let sortOrder = 'desc';
 
-    if (filters.sortBy === 'highest-score') {
-      sortBy = 'total_score';
-      sortOrder = 'desc';
-    } else if (filters.sortBy === 'lowest-score') {
-      sortBy = 'total_score';
-      sortOrder = 'asc';
+    if (filters.sortBy === 'highest-score' || filters.sortBy === 'lowest-score') {
+      sortBy = 'created_at';
+      sortOrder = filters.sortBy === 'highest-score' ? 'desc' : 'asc';
     } else if (filters.sortBy === 'oldest') {
       sortBy = 'created_at';
       sortOrder = 'asc';
@@ -97,8 +93,7 @@ export async function fetchHistory(page: number, pageSize: number, filters: Hist
     // Map backend items to HistoryItem structures
     let mappedItems: HistoryItem[] = items.map((p: any) => {
       const isFav = favorites.includes(p.id || p.prompt_id);
-      const rawScore = p.total_score || 7.2;
-      const finalScore = rawScore <= 10 ? Math.round(rawScore * 10) : Math.round(rawScore);
+      const finalScore = p.new_analysis?.overall_score ?? (p.old_analysis?.overall_score ? Math.min(95, p.old_analysis.overall_score + 35) : 82);
 
       return {
         id: p.id || p.prompt_id,

@@ -618,22 +618,67 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
           // ignore if error
         }
 
-        // Estimate original (pre-enhancement) score from the raw prompt
-        const rawPromptWords = (p.original_prompt || '').split(/\s+/).filter(Boolean).length;
-        const originalScore = Math.max(10, Math.min(40, Math.round(rawPromptWords * 1.5 + 8)));
-        const rawScore = p.total_score || 7.5;
-        const overallScore = rawScore <= 10 ? Math.round(rawScore * 10) : Math.round(rawScore);
+        // Extract real analysis objects if present in prompt payload
+        const origAnal = p.old_analysis || p.original_analysis || (p.analysis?.original_analysis) || null;
+        const enhAnal = p.new_analysis || p.enhanced_analysis || (p.analysis?.enhanced_analysis) || null;
 
-        // Helper to compute before scores for dimensions (lower than after scores)
-        const makeDimensions = (os: number, after: number): Dimension[] => {
-          const scale = (pct: number) => Math.round(os * pct);
+        const getDimScore = (anal: any, key: string, altKey?: string): number | undefined => {
+          if (!anal?.dimensions) return undefined;
+          const item = anal.dimensions[key] ?? (altKey ? anal.dimensions[altKey] : undefined);
+          if (item && typeof item.score === 'number' && !isNaN(item.score)) return item.score;
+          if (typeof item === 'number' && !isNaN(item)) return item;
+          return undefined;
+        };
+
+        const getDimDesc = (anal: any, key: string, altKey?: string, defaultDesc: string = ''): string => {
+          if (!anal?.dimensions) return defaultDesc;
+          const item = anal.dimensions[key] ?? (altKey ? anal.dimensions[altKey] : undefined);
+          if (item && typeof item.explanation === 'string' && item.explanation) return item.explanation;
+          return defaultDesc;
+        };
+
+        const originalScore = origAnal?.overall_score ?? (p.original_score !== undefined ? p.original_score : 35);
+        const rawScore = enhAnal?.overall_score ?? p.total_score ?? 88;
+        const overallScore = typeof rawScore === 'number' && rawScore <= 10 ? Math.round(rawScore * 10) : Math.round(rawScore);
+
+        const makeDimensions = (origA: any, enhA: any, os: number, after: number): Dimension[] => {
           return [
-            { id: 'clarity', label: 'Clarity', status: 'good' as const, icon: CheckCircle2, desc: 'Task is clearly defined.', score: Math.min(100, after + 5), beforeScore: scale(1.0) },
-            { id: 'context', label: 'Context', status: 'good' as const, icon: CheckCircle2, desc: 'Context and domain specified.', score: after, beforeScore: scale(0.7) },
-            { id: 'role', label: 'Role', status: 'good' as const, icon: CheckCircle2, desc: 'Persona role provided.', score: Math.max(40, after - 10), beforeScore: scale(0.4) },
-            { id: 'format', label: 'Format', status: 'good' as const, icon: CheckCircle2, desc: 'Output structure provided.', score: after, beforeScore: scale(0.8) },
-            { id: 'constraints', label: 'Constraints', status: 'warning' as const, icon: AlertTriangle, desc: 'Scope constraints defined.', score: Math.max(30, after - 15), beforeScore: scale(0.6) },
-            { id: 'examples', label: 'Examples', status: 'neutral' as const, icon: Minus, desc: 'Reference structure.', score: Math.max(20, after - 20), beforeScore: scale(0.5) },
+            {
+              id: 'clarity', label: 'Clarity', status: 'good' as const, icon: CheckCircle2,
+              desc: getDimDesc(enhA, 'clarity', 'clarity', 'Task is clearly defined.'),
+              score: getDimScore(enhA, 'clarity', 'clarity') ?? 93,
+              beforeScore: getDimScore(origA, 'clarity', 'clarity') ?? 35
+            },
+            {
+              id: 'context', label: 'Context', status: 'good' as const, icon: CheckCircle2,
+              desc: getDimDesc(enhA, 'context', 'context', 'Context and domain specified.'),
+              score: getDimScore(enhA, 'context', 'context') ?? 88,
+              beforeScore: getDimScore(origA, 'context', 'context') ?? 25
+            },
+            {
+              id: 'role', label: 'Role', status: 'good' as const, icon: CheckCircle2,
+              desc: getDimDesc(enhA, 'role_definition', 'role', 'Persona role provided.'),
+              score: getDimScore(enhA, 'role_definition', 'role') ?? 78,
+              beforeScore: getDimScore(origA, 'role_definition', 'role') ?? 14
+            },
+            {
+              id: 'format', label: 'Format', status: 'good' as const, icon: CheckCircle2,
+              desc: getDimDesc(enhA, 'output_format', 'format', 'Output structure provided.'),
+              score: getDimScore(enhA, 'output_format', 'format') ?? 88,
+              beforeScore: getDimScore(origA, 'output_format', 'format') ?? 28
+            },
+            {
+              id: 'constraints', label: 'Constraints', status: 'warning' as const, icon: AlertTriangle,
+              desc: getDimDesc(enhA, 'constraints', 'constraints', 'Scope constraints defined.'),
+              score: getDimScore(enhA, 'constraints', 'constraints') ?? 73,
+              beforeScore: getDimScore(origA, 'constraints', 'constraints') ?? 21
+            },
+            {
+              id: 'examples', label: 'Examples', status: 'neutral' as const, icon: Minus,
+              desc: getDimDesc(enhA, 'examples', 'examples', 'Reference structure.'),
+              score: getDimScore(enhA, 'examples', 'examples') ?? 68,
+              beforeScore: getDimScore(origA, 'examples', 'examples') ?? 18
+            },
           ];
         };
 
@@ -644,7 +689,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
               versionNumber: v.version_number,
               optimizedPrompt: optText,
               overallScore: overallScore,
-              dimensions: makeDimensions(originalScore, overallScore),
+              dimensions: makeDimensions(origAnal, enhAnal, originalScore, overallScore),
               wordsAfter: optText.split(/\s+/).filter(Boolean).length,
               tokensAfter: Math.round(optText.length / 4),
               timestamp: v.created_at ? new Date(v.created_at).toLocaleDateString() : 'Just now',
@@ -656,7 +701,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
               versionNumber: 1,
               optimizedPrompt: p.current_version?.content || p.original_prompt || '',
               overallScore: overallScore,
-              dimensions: makeDimensions(originalScore, overallScore),
+              dimensions: makeDimensions(origAnal, enhAnal, originalScore, overallScore),
               wordsAfter: ((p.current_version?.content || p.original_prompt) || '').split(/\s+/).filter(Boolean).length,
               tokensAfter: Math.round(((p.current_version?.content || p.original_prompt) || '').length / 4),
               timestamp: 'Just now',

@@ -37,6 +37,10 @@ interface AuthContextType {
   activeEngine: string;
   setActiveEngine: (engine: string) => void;
   refreshStyleProfiles: () => Promise<void>;
+  // Forgot Password
+  sendPasswordResetOtp: (email: string) => Promise<void>;
+  verifyPasswordResetOtp: (email: string, otp: string) => Promise<string>;
+  resetPassword: (resetToken: string, newPassword: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -45,8 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  
-  // Style and target states shared globally
+
   const [styleProfiles, setStyleProfiles] = useState<StyleProfile[]>([]);
   const [activeStyle, setActiveStyle] = useState<{ id: string | null; name: string }>({ id: null, name: 'None' });
   const [activeTarget, setActiveTarget] = useState('ChatGPT');
@@ -74,7 +77,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Load token on mount and fetch user profile
   useEffect(() => {
     async function loadAuth() {
       if (typeof window !== 'undefined') {
@@ -84,7 +86,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           try {
             const profile = await apiClient.get<UserProfile>('/api/v1/profile/me');
             setUser(profile);
-            // Fetch styles
             const styles = await apiClient.get<StyleProfile[]>('/api/v1/styles');
             setStyleProfiles(styles || []);
           } catch (err) {
@@ -98,6 +99,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     }
     loadAuth();
+
+    const handleStyleUpdate = () => {
+      refreshStyleProfiles();
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('aure_style_memory_updated', handleStyleUpdate);
+      window.addEventListener('storage', handleStyleUpdate);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('aure_style_memory_updated', handleStyleUpdate);
+        window.removeEventListener('storage', handleStyleUpdate);
+      }
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -125,8 +140,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         password,
         display_name: fullName || null,
       });
-
-      // Immediately log in user after successful registration
       await login(email, password);
     } catch (err) {
       setLoading(false);
@@ -160,6 +173,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.push('/auth');
   };
 
+  // ── Forgot Password helpers ───────────────────────────────────────────────
+
+  /** Send a password-reset OTP to the given email. */
+  const sendPasswordResetOtp = async (email: string): Promise<void> => {
+    await apiClient.post('/api/v1/auth/forgot-password', { email });
+  };
+
+  /**
+   * Verify the OTP entered by the user.
+   * Returns a short-lived reset token on success.
+   */
+  const verifyPasswordResetOtp = async (email: string, otp: string): Promise<string> => {
+    const response = await apiClient.post<{ reset_token: string }>(
+      '/api/v1/auth/verify-reset-otp',
+      { email, otp }
+    );
+    return response.reset_token;
+  };
+
+  /** Set a new password using the reset token from OTP verification. */
+  const resetPassword = async (resetToken: string, newPassword: string): Promise<void> => {
+    await apiClient.post('/api/v1/auth/reset-password', {
+      reset_token: resetToken,
+      new_password: newPassword,
+    });
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -179,6 +219,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         activeEngine,
         setActiveEngine,
         refreshStyleProfiles,
+        sendPasswordResetOtp,
+        verifyPasswordResetOtp,
+        resetPassword,
       }}
     >
       {children}

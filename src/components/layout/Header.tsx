@@ -38,15 +38,19 @@ export default function Header({ activeTab = 'Draft', onTabChange }: HeaderProps
   }, []);
 
   const getStyleColor = (type: string) => {
-    if (type === 'cinematic') return '#f59e0b';
-    if (type === 'editorial') return '#ea580c';
-    if (type === 'marketing') return '#0ea5e9';
-    return '#8B5CF6';
+    if (type === 'cinematic' || type === 'cinematic-style') return '#f59e0b';
+    if (type === 'art_style' || type === 'art-style') return '#ec4899';
+    if (type === 'environment') return '#10b981';
+    if (type === 'brand_voice' || type === 'brand-voice') return '#3b82f6';
+    return '#7C3AED';
   };
+
+  // Only active styles (is_active === true or enabled === true) should appear in the dropdown
+  const activeProfiles = styleProfiles.filter(p => (p as any).is_active ?? (p as any).enabled ?? true);
 
   const styles = [
     { id: null, name: 'None', color: '#9ca3af' },
-    ...styleProfiles.map(p => ({
+    ...activeProfiles.map(p => ({
       id: p.id,
       name: p.name,
       color: getStyleColor(p.type),

@@ -50,8 +50,8 @@ export default function ScoreSection({ isAnalyzed, isOptimized, originalAnalysis
     } else { setReady(false); }
   }, [isAnalyzed, isOptimized]);
 
-  const origScore = originalAnalysis?.overall_score || originalAnalysis?.score || 55;
-  const enhScore = enhancedAnalysis?.overall_score || enhancedAnalysis?.score || Math.min(96, origScore + 25);
+  const origScore = originalAnalysis?.overall_score ?? originalAnalysis?.score ?? 35;
+  const enhScore = enhancedAnalysis?.overall_score ?? enhancedAnalysis?.score ?? Math.min(96, origScore + 25);
   const displayScore = isOptimized ? (enhScore || 90) : (origScore || 55);
   const animatedScore = useCountUp(displayScore, ready);
 
@@ -64,57 +64,62 @@ export default function ScoreSection({ isAnalyzed, isOptimized, originalAnalysis
   const origDims = originalAnalysis?.dimensions || {};
   const enhDims = enhancedAnalysis?.dimensions || {};
 
-  const getScore = (dims: any, key: string, fallback: number) => {
-    const val = dims?.[key]?.score;
-    if (typeof val === 'number' && val > 0) return val;
+  const getScore = (dims: any, key: string, altKey?: string, fallback: number = 0) => {
+    if (!dims) return fallback;
+    const item = dims[key] ?? (altKey ? dims[altKey] : undefined);
+    if (item && typeof item.score === 'number' && !isNaN(item.score)) return item.score;
+    if (typeof item === 'number' && !isNaN(item)) return item;
     return fallback;
   };
 
-  const getExp = (dims: any, key: string, defaultExp: string) => {
-    return dims?.[key]?.explanation || defaultExp;
+  const getExp = (dims: any, key: string, altKey?: string, defaultExp: string = '') => {
+    if (!dims) return defaultExp;
+    const item = dims[key] ?? (altKey ? dims[altKey] : undefined);
+    if (item && typeof item.explanation === 'string' && item.explanation) return item.explanation;
+    return defaultExp;
   };
 
   const dimensions = [
     {
       id: 'clarity', label: 'Clarity',
-      scoreBefore: getScore(origDims, 'clarity', Math.max(40, origScore - 5)),
-      scoreAfter: getScore(enhDims, 'clarity', Math.min(96, origScore + 22)),
-      desc: isOptimized ? getExp(enhDims, 'clarity', 'Task objectives and instructions are clear and direct.') : getExp(origDims, 'clarity', 'Clear action verbs and unambiguous intent.'),
+      scoreBefore: getScore(origDims, 'clarity', 'clarity', Math.max(40, origScore - 5)),
+      scoreAfter: getScore(enhDims, 'clarity', 'clarity', Math.min(96, origScore + 22)),
+      desc: isOptimized ? getExp(enhDims, 'clarity', 'clarity', 'Task objectives and instructions are clear and direct.') : getExp(origDims, 'clarity', 'clarity', 'Clear action verbs and unambiguous intent.'),
       icon: CheckCircle2
     },
     {
       id: 'context', label: 'Context',
-      scoreBefore: getScore(origDims, 'context', Math.max(35, origScore - 10)),
-      scoreAfter: getScore(enhDims, 'context', Math.min(94, origScore + 25)),
-      desc: isOptimized ? getExp(enhDims, 'context', 'Comprehensive background and domain details provided.') : getExp(origDims, 'context', 'Provides domain background information.'),
+      scoreBefore: getScore(origDims, 'context', 'context', Math.max(35, origScore - 10)),
+      scoreAfter: getScore(enhDims, 'context', 'context', Math.min(94, origScore + 25)),
+      desc: isOptimized ? getExp(enhDims, 'context', 'context', 'Comprehensive background and domain details provided.') : getExp(origDims, 'context', 'context', 'Provides domain background information.'),
       icon: CheckCircle2
     },
     {
       id: 'role', label: 'Role',
-      scoreBefore: getScore(origDims, 'role_definition', Math.max(30, origScore - 15)),
-      scoreAfter: getScore(enhDims, 'role_definition', Math.min(98, origScore + 30)),
-      desc: isOptimized ? getExp(enhDims, 'role_definition', 'Explicit persona and domain expertise assigned.') : getExp(origDims, 'role_definition', 'Defines specific AI role or expert persona.'),
+      scoreBefore: getScore(origDims, 'role_definition', 'role', Math.max(30, origScore - 15)),
+      scoreAfter: getScore(enhDims, 'role_definition', 'role', Math.min(98, origScore + 30)),
+      desc: isOptimized ? getExp(enhDims, 'role_definition', 'role', 'Explicit persona and domain expertise assigned.') : getExp(origDims, 'role_definition', 'role', 'Defines specific AI role or expert persona.'),
       icon: Minus
     },
     {
       id: 'format', label: 'Format',
-      scoreBefore: getScore(origDims, 'output_format', Math.max(40, origScore - 5)),
-      scoreAfter: getScore(enhDims, 'output_format', Math.min(95, origScore + 20)),
-      desc: isOptimized ? getExp(enhDims, 'output_format', 'Structured layout, sections, and output format defined.') : getExp(origDims, 'output_format', 'Output structure and format specified.'),
+      scoreBefore: getScore(origDims, 'output_format', 'format', Math.max(40, origScore - 5)),
+      scoreAfter: getScore(enhDims, 'output_format', 'format', Math.min(95, origScore + 20)),
+      desc: isOptimized ? getExp(enhDims, 'output_format', 'format', 'Structured layout, sections, and output format defined.') : getExp(origDims, 'output_format', 'format', 'Output structure and format specified.'),
       icon: CheckCircle2
     },
     {
       id: 'constraints', label: 'Constraints',
-      scoreBefore: getScore(origDims, 'constraints', Math.max(35, origScore - 10)),
-      scoreAfter: getScore(enhDims, 'constraints', Math.min(92, origScore + 18)),
-      desc: isOptimized ? getExp(enhDims, 'constraints', 'Strict tone, word count, and scope limits included.') : getExp(origDims, 'constraints', 'Negative constraints and style limits.'),
+      scoreBefore: getScore(origDims, 'constraints', 'constraints', Math.max(35, origScore - 10)),
+      scoreAfter: getScore(enhDims, 'constraints', 'constraints', Math.min(92, origScore + 18)),
+      desc: isOptimized ? getExp(enhDims, 'constraints', 'constraints', 'Strict tone, word count, and scope limits included.') : getExp(origDims, 'constraints', 'constraints', 'Negative constraints and style limits.'),
       icon: AlertTriangle
     },
     {
       id: 'examples', label: 'Examples',
-      scoreBefore: getScore(origDims, 'examples', Math.max(25, origScore - 20)),
-      scoreAfter: getScore(enhDims, 'examples', Math.min(90, origScore + 24)),
-      desc: isOptimized ? getExp(enhDims, 'examples', 'Few-shot patterns and reference standards provided.') : getExp(origDims, 'examples', 'Sample references and zero-shot guidance.'),
+      scoreBefore: getScore(origDims, 'examples', 'examples', Math.max(25, origScore - 20)),
+      scoreAfter: getScore(enhDims, 'examples', 'examples', Math.min(90, origScore + 24)),
+      desc: isOptimized ? getExp(enhDims, 'examples', 'examples', 'Few-shot patterns and reference standards provided.') : getExp(origDims, 'examples', 'examples', 'Sample references and zero-shot guidance.'),
       icon: Minus
     },
   ].map(dim => {

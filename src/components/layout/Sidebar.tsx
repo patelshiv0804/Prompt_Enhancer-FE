@@ -22,16 +22,16 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Workspace',
     items: [
-      { id: 'optimizer',  icon: Sparkles,        label: 'Optimizer',  shortcut: '⌘1' },
-      { id: 'templates',  icon: LayoutTemplate,  label: 'Templates',  shortcut: '⌘2' },
-      { id: 'vault',      icon: Library,         label: 'Vault',      shortcut: '⌘3' },
+      { id: 'optimizer', icon: Sparkles, label: 'Optimizer', shortcut: '⌘1' },
+      { id: 'templates', icon: LayoutTemplate, label: 'Templates', shortcut: '⌘2' },
+      { id: 'vault', icon: Library, label: 'Vault', shortcut: '⌘3' },
     ],
   },
   {
     label: 'Personalize',
     items: [
       { id: 'style-memory', icon: Fingerprint, label: 'Style Memory' },
-      { id: 'settings',     icon: Settings,    label: 'Settings' },
+      { id: 'settings', icon: Settings, label: 'Settings' },
     ],
   },
 ];
@@ -48,7 +48,7 @@ const SIDEBAR_HISTORY_ACCENTS: Record<string, string> = {
 };
 
 export default function Sidebar() {
-  const router   = useRouter();
+  const router = useRouter();
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
@@ -84,7 +84,7 @@ export default function Sidebar() {
 
     window.addEventListener('promptiq:history-updated', handleHistoryUpdate);
     return () => window.removeEventListener('promptiq:history-updated', handleHistoryUpdate);
-  }, [pathname, loadRecentItems]);
+  }, [loadRecentItems]);
 
   const toggleGroup = (label: string) =>
     setCollapsedGroups(prev => ({ ...prev, [label]: !prev[label] }));
@@ -140,14 +140,14 @@ export default function Sidebar() {
                 </span>
                 {isCollapsed
                   ? <ChevronRight size={12} style={{ color: 'rgba(109,40,217,0.35)', flexShrink: 0 }} />
-                  : <ChevronDown  size={12} style={{ color: 'rgba(109,40,217,0.35)', flexShrink: 0 }} />
+                  : <ChevronDown size={12} style={{ color: 'rgba(109,40,217,0.35)', flexShrink: 0 }} />
                 }
               </button>
 
               {!isCollapsed && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 1, animation: 'groupItemsIn 0.18s ease-out' }}>
                   {group.items.map(item => {
-                    const Icon   = item.icon;
+                    const Icon = item.icon;
                     const active = isActive(item.id);
                     return (
                       <button
@@ -202,7 +202,7 @@ export default function Sidebar() {
           <div
             role="button" tabIndex={0}
             onClick={() => setRecentCollapsed(v => !v)}
-            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setRecentCollapsed(v => !v); }}}
+            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setRecentCollapsed(v => !v); } }}
             aria-expanded={!recentCollapsed}
             style={{
               display: 'flex', alignItems: 'center', gap: 6, padding: '5px 8px',
@@ -223,7 +223,7 @@ export default function Sidebar() {
             >View all</button>
             {recentCollapsed
               ? <ChevronRight size={12} style={{ color: 'rgba(109,40,217,0.35)', flexShrink: 0 }} />
-              : <ChevronDown  size={12} style={{ color: 'rgba(109,40,217,0.35)', flexShrink: 0 }} />
+              : <ChevronDown size={12} style={{ color: 'rgba(109,40,217,0.35)', flexShrink: 0 }} />
             }
           </div>
 
@@ -253,46 +253,46 @@ export default function Sidebar() {
                 </div>
               ) : (
                 recentItems.map(item => {
-                const Icon   = SIDEBAR_HISTORY_ICONS[item.category] || Clock;
-                const accent = SIDEBAR_HISTORY_ACCENTS[item.category] || '#7C3AED';
-                const active = pathname === `/dashboard/chat/${item.id}`;
-                return (
-                  <button
-                    key={item.id}
-                    id={`sidebar-history-item-${item.id}`}
-                    title={item.prompt}
-                    onClick={() => router.push(`/dashboard/chat/${item.id}`)}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 9, padding: active ? '8px 10px 8px 8px' : '8px 10px',
-                      borderRadius: 10, background: active ? 'rgba(124,58,237,0.12)' : 'transparent',
-                      border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left',
-                      borderLeft: active ? '2px solid #7C3AED' : '2px solid transparent',
-                      transition: 'background 160ms ease', flexShrink: 0,
-                    }}
-                    className={!active ? 'hover:bg-[rgba(124,58,237,0.07)]' : ''}
-                  >
-                    <div style={{
-                      width: 26, height: 26, borderRadius: 7, display: 'flex', alignItems: 'center',
-                      justifyContent: 'center', flexShrink: 0, color: accent, background: `${accent}18`,
-                    }}>
-                      <Icon size={11} strokeWidth={2} />
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0, flex: 1 }}>
-                      <p style={{
-                        fontSize: 12, fontWeight: active ? 600 : 500,
-                        color: active ? '#4C1D95' : 'rgba(45,27,105,0.80)',
-                        margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3,
-                      }}>{item.prompt}</p>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                        <span style={{ fontSize: 10, color: 'rgba(45,27,105,0.40)', fontWeight: 400, whiteSpace: 'nowrap' }}>{item.ago}</span>
-                        {item.isFavorite && <Star size={9} fill="#F59E0B" color="#F59E0B" style={{ flexShrink: 0 }} />}
+                  const Icon = SIDEBAR_HISTORY_ICONS[item.category] || Clock;
+                  const accent = SIDEBAR_HISTORY_ACCENTS[item.category] || '#7C3AED';
+                  const active = pathname === `/dashboard/chat/${item.id}`;
+                  return (
+                    <button
+                      key={item.id}
+                      id={`sidebar-history-item-${item.id}`}
+                      title={item.prompt}
+                      onClick={() => router.push(`/dashboard/chat/${item.id}`)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 9, padding: active ? '8px 10px 8px 8px' : '8px 10px',
+                        borderRadius: 10, background: active ? 'rgba(124,58,237,0.12)' : 'transparent',
+                        border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left',
+                        borderLeft: active ? '2px solid #7C3AED' : '2px solid transparent',
+                        transition: 'background 160ms ease', flexShrink: 0,
+                      }}
+                      className={!active ? 'hover:bg-[rgba(124,58,237,0.07)]' : ''}
+                    >
+                      <div style={{
+                        width: 26, height: 26, borderRadius: 7, display: 'flex', alignItems: 'center',
+                        justifyContent: 'center', flexShrink: 0, color: accent, background: `${accent}18`,
+                      }}>
+                        <Icon size={11} strokeWidth={2} />
                       </div>
-                    </div>
-                    <span style={{ fontSize: 10.5, fontWeight: 700, lineHeight: 1, flexShrink: 0, color: accent, opacity: 0.75 }}>
-                      {item.score}
-                    </span>
-                  </button>
-                );
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0, flex: 1 }}>
+                        <p style={{
+                          fontSize: 12, fontWeight: active ? 600 : 500,
+                          color: active ? '#4C1D95' : 'rgba(45,27,105,0.80)',
+                          margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3,
+                        }}>{item.prompt}</p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <span style={{ fontSize: 10, color: 'rgba(45,27,105,0.40)', fontWeight: 400, whiteSpace: 'nowrap' }}>{item.ago}</span>
+                          {item.isFavorite && <Star size={9} fill="#F59E0B" color="#F59E0B" style={{ flexShrink: 0 }} />}
+                        </div>
+                      </div>
+                      <span style={{ fontSize: 10.5, fontWeight: 700, lineHeight: 1, flexShrink: 0, color: accent, opacity: 0.75 }}>
+                        {item.score}
+                      </span>
+                    </button>
+                  );
                 })
               )}
             </div>
