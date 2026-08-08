@@ -171,10 +171,36 @@ export async function toggleFavorite(id: string, isFavorite: boolean): Promise<v
   }
 }
 
+export interface DeleteHistoryResult {
+  deletedIds: string[];
+  failedIds: string[];
+}
+
+export async function deleteHistoryItems(ids: string[]): Promise<DeleteHistoryResult> {
+  const uniqueIds = [...new Set(ids.map(String))];
+  const results = await Promise.allSettled(
+    uniqueIds.map(id => apiClient.delete(`/api/v1/prompts/${id}`))
+  );
+  const deletedIds = uniqueIds.filter((_, index) => results[index].status === 'fulfilled');
+  const failedIds = uniqueIds.filter((_, index) => results[index].status === 'rejected');
+
+  if (typeof window !== 'undefined' && deletedIds.length > 0) {
+    const deleted = new Set(deletedIds);
+    const favorites = JSON.parse(localStorage.getItem('promptiq_favorites') || '[]');
+    localStorage.setItem(
+      'promptiq_favorites',
+      JSON.stringify(favorites.filter((id: unknown) => !deleted.has(String(id))))
+    );
+    // Keeps the sidebar's Recent History and any other history view in sync.
+    window.dispatchEvent(new Event('promptiq:history-updated'));
+  }
+
+  return { deletedIds, failedIds };
+}
+
 export async function deleteHistoryItem(id: string): Promise<void> {
-  try {
-    await apiClient.delete(`/api/v1/prompts/${id}`);
-  } catch (err) {
-    console.error('Failed to delete prompt:', err);
+  const { failedIds } = await deleteHistoryItems([id]);
+  if (failedIds.length > 0 && typeof window !== 'undefined') {
+    console.error('Failed to delete prompt.');
   }
 }

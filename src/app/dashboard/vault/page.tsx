@@ -8,7 +8,7 @@ import {
   Sparkles, TrendingUp, SlidersHorizontal, ChevronDown, Zap, Clock,
   Trash2, ExternalLink, Copy, Library,
 } from 'lucide-react';
-import { fetchHistory, fetchHistoryStats, toggleFavorite, deleteHistoryItem } from '@/features/history/services/historyService';
+import { fetchHistory, fetchHistoryStats, toggleFavorite, deleteHistoryItems } from '@/features/history/services/historyService';
 import type { HistoryItem, HistoryStats, SortBy } from '@/features/history/types/history.types';
 
 const PAGE_SIZE = 10;
@@ -52,6 +52,17 @@ function scoreColor(score: number): string {
   if (score >= 65) return '#F59E0B';
   return '#EF4444';
 }
+
+type DeleteDialogState =
+  | { open: false }
+  | {
+      open: true;
+      mode: 'confirm' | 'error';
+      ids?: string[];
+      title: string;
+      message: string;
+      confirmLabel?: string;
+    };
 
 function useCountUp(target: number, active: boolean, duration = 1200): number {
   const [value, setValue] = useState(0);
@@ -127,7 +138,7 @@ function StatCard({ label, value, suffix = '', prefix = '', icon: Icon, accent, 
 }
 
 /* ── VaultRow ── */
-function VaultRow({ item, onToggleFavorite, onDelete, onOpenInOptimizer }: { item: HistoryItem; onToggleFavorite: (id: string, current: boolean) => void; onDelete: (id: string) => void; onOpenInOptimizer: (id: string) => void; }) {
+function VaultRow({ item, selected, onSelect, onToggleFavorite, onDelete, onOpenInOptimizer }: { item: HistoryItem; selected: boolean; onSelect: (id: string) => void; onToggleFavorite: (id: string, current: boolean) => void; onDelete: (id: string) => void; onOpenInOptimizer: (id: string) => void; }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const Icon    = CATEGORY_ICONS[item.category] || FileText;
@@ -152,6 +163,15 @@ function VaultRow({ item, onToggleFavorite, onDelete, onOpenInOptimizer }: { ite
     className="hover:!bg-[rgba(124,58,237,0.03)] hover:shadow-[0_4px_16px_rgba(109,40,217,0.07)] hover:!border-[rgba(124,58,237,0.15)]"
     onClick={() => onOpenInOptimizer(item.id)}
     >
+      <input
+        id={`vault-select-${item.id}`}
+        type="checkbox"
+        checked={selected}
+        aria-label={`Select ${item.prompt}`}
+        onClick={event => event.stopPropagation()}
+        onChange={() => onSelect(item.id)}
+        style={{ width: 16, height: 16, accentColor: '#7C3AED', cursor: 'pointer', flexShrink: 0 }}
+      />
       <div style={{ width: 38, height: 38, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accent, background: `${accent}14`, border: `1px solid ${accent}22`, flexShrink: 0 }}>
         <Icon size={16} strokeWidth={1.6} />
       </div>
@@ -273,6 +293,9 @@ export default function VaultPage() {
   const [sortBy,         setSortBy]         = useState<SortBy>('most-recent');
   const [showSort,       setShowSort]       = useState(false);
   const [loading,        setLoading]        = useState(true);
+  const [selectedIds,    setSelectedIds]    = useState<Set<string>>(new Set());
+  const [deleting,       setDeleting]       = useState(false);
+  const [deleteDialog,   setDeleteDialog]   = useState<DeleteDialogState>({ open: false });
 
   const [stats,          setStats]          = useState<HistoryStats | null>(null);
   const [statsAnimate,   setStatsAnimate]   = useState(false);
@@ -298,6 +321,7 @@ export default function VaultPage() {
       setItems(res.items);
       setTotal(res.total);
       setTotalPages(res.totalPages);
+      setSelectedIds(new Set());
     } catch (e) {
       console.error(e);
     } finally {
@@ -341,27 +365,80 @@ export default function VaultPage() {
     });
   }, []);
 
-  const handleDelete = useCallback((id: string) => {
-    const itemToDelete = items.find(i => i.id === id);
-    const wasFavorite = itemToDelete?.isFavorite ?? false;
-
-    setItems(prev => prev.filter(i => i.id !== id));
-    setTotal(prev => prev - 1);
-    deleteHistoryItem(id);
-
-    if (wasFavorite) {
-      toggleFavorite(id, false);
-    }
-
-    setStats(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        totalPrompts: Math.max(0, prev.totalPrompts - 1),
-        favoritesCount: Math.max(0, prev.favoritesCount - (wasFavorite ? 1 : 0))
-      };
+  const toggleSelected = useCallback((id: string) => {
+    setSelectedIds(previous => {
+      const next = new Set(previous);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
     });
-  }, [items]);
+  }, []);
+
+  const executeDelete = useCallback(async (ids: string[]) => {
+    const uniqueIds = [...new Set(ids)];
+    if (uniqueIds.length === 0 || deleting) return;
+
+    setDeleting(true);
+    try {
+      const { deletedIds, failedIds } = await deleteHistoryItems(uniqueIds);
+      const deleted = new Set(deletedIds);
+      const deletedItems = items.filter(item => deleted.has(item.id));
+      const deletedFavorites = deletedItems.filter(item => item.isFavorite).length;
+
+      if (deletedIds.length > 0) {
+        setItems(previous => previous.filter(item => !deleted.has(item.id)));
+        setSelectedIds(previous => new Set([...previous].filter(id => !deleted.has(id))));
+        setTotal(previous => Math.max(0, previous - deletedIds.length));
+        setStats(previous => previous ? {
+          ...previous,
+          totalPrompts: Math.max(0, previous.totalPrompts - deletedIds.length),
+          favoritesCount: Math.max(0, previous.favoritesCount - deletedFavorites),
+        } : previous);
+      }
+
+      if (failedIds.length > 0) {
+        setDeleteDialog({
+          open: true,
+          mode: 'error',
+          title: 'Delete incomplete',
+          message: `${failedIds.length} prompt${failedIds.length === 1 ? '' : 's'} could not be deleted. Please try again.`,
+        });
+      }
+    } finally {
+      setDeleting(false);
+    }
+  }, [deleting, items]);
+
+  const requestDelete = useCallback((ids: string[]) => {
+    const uniqueIds = [...new Set(ids)];
+    if (uniqueIds.length === 0 || deleting) return;
+
+    setDeleteDialog({
+      open: true,
+      mode: 'confirm',
+      ids: uniqueIds,
+      title: uniqueIds.length === 1 ? 'Delete prompt?' : `Delete ${uniqueIds.length} prompts?`,
+      message: uniqueIds.length === 1
+        ? 'Do you want to permanently remove this prompt? This cannot be undone.'
+        : `Do you want to permanently remove these ${uniqueIds.length} prompts? This cannot be undone.`,
+      confirmLabel: uniqueIds.length === 1 ? 'Delete prompt' : `Delete ${uniqueIds.length} prompts`,
+    });
+  }, [deleting]);
+
+  const closeDeleteDialog = useCallback(() => {
+    if (deleting) return;
+    setDeleteDialog({ open: false });
+  }, [deleting]);
+
+  const confirmDeleteDialog = useCallback(async () => {
+    if (!deleteDialog.open || deleteDialog.mode !== 'confirm' || !deleteDialog.ids?.length) return;
+    const ids = deleteDialog.ids;
+    setDeleteDialog({ open: false });
+    await executeDelete(ids);
+  }, [deleteDialog, executeDelete]);
 
   const activeSortLabel = SORT_OPTIONS.find(s => s.id === sortBy)?.label ?? 'Sort';
   const initialLoading  = statsLoading && stats === null;
@@ -466,6 +543,28 @@ export default function VaultPage() {
         </div>
       </div>
 
+      {items.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: 'var(--color-text-secondary)', cursor: 'pointer' }}>
+            <input
+              id="vault-select-all"
+              type="checkbox"
+              checked={items.length > 0 && items.every(item => selectedIds.has(item.id))}
+              onChange={() => setSelectedIds(previous => items.every(item => previous.has(item.id)) ? new Set() : new Set(items.map(item => item.id)))}
+              style={{ width: 16, height: 16, accentColor: '#7C3AED', cursor: 'pointer' }}
+            />
+            Select all on this page
+          </label>
+          {selectedIds.size > 0 && (
+            <button id="vault-delete-selected" onClick={() => requestDelete([...selectedIds])} disabled={deleting}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 8, border: 'none', background: '#EF4444', color: '#FFFFFF', cursor: deleting ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 600, opacity: deleting ? 0.65 : 1 }}
+            >
+              <Trash2 size={13} />Delete selected ({selectedIds.size})
+            </button>
+          )}
+        </div>
+      )}
+
       {/* List */}
       <div id="vault-list" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {loading ? (
@@ -486,12 +585,132 @@ export default function VaultPage() {
             <p style={{ fontSize: 14, color: 'var(--color-text-secondary)', margin: 0 }}>Save optimized prompts to build your personal library.</p>
           </div>
         ) : items.map(item => (
-          <VaultRow key={item.id} item={item} onToggleFavorite={handleToggleFavorite} onDelete={handleDelete} onOpenInOptimizer={(id) => router.push(`/dashboard/chat/${id}`)} />
+          <VaultRow key={item.id} item={item} selected={selectedIds.has(item.id)} onSelect={toggleSelected} onToggleFavorite={handleToggleFavorite} onDelete={(id) => requestDelete([id])} onOpenInOptimizer={(id) => router.push(`/dashboard/chat/${id}`)} />
         ))}
       </div>
 
       {!loading && totalPages > 1 && (
         <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+      )}
+
+      {deleteDialog.open && (
+        <div
+          role="presentation"
+          onClick={closeDeleteDialog}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 100,
+            background: 'rgba(15, 23, 42, 0.45)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 24,
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="vault-delete-dialog-title"
+            aria-describedby="vault-delete-dialog-message"
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: 'min(100%, 440px)',
+              borderRadius: 20,
+              border: '1px solid rgba(124,58,237,0.12)',
+              background: '#FFFFFF',
+              boxShadow: '0 24px 80px rgba(15, 23, 42, 0.25)',
+              padding: 24,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 18,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+              <div style={{
+                width: 44,
+                height: 44,
+                borderRadius: 14,
+                flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: deleteDialog.mode === 'error' ? 'rgba(239,68,68,0.10)' : 'rgba(124,58,237,0.10)',
+                color: deleteDialog.mode === 'error' ? '#EF4444' : '#7C3AED',
+              }}>
+                <Trash2 size={18} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h3 id="vault-delete-dialog-title" style={{ margin: '0 0 6px', fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)' }}>
+                  {deleteDialog.title}
+                </h3>
+                <p id="vault-delete-dialog-message" style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: 'var(--color-text-secondary)' }}>
+                  {deleteDialog.message}
+                </p>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, flexWrap: 'wrap' }}>
+              {deleteDialog.mode === 'confirm' ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={closeDeleteDialog}
+                    disabled={deleting}
+                    style={{
+                      padding: '10px 16px',
+                      borderRadius: 10,
+                      border: '1px solid rgba(124,58,237,0.14)',
+                      background: '#FFFFFF',
+                      color: 'var(--color-text-primary)',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: deleting ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={confirmDeleteDialog}
+                    disabled={deleting}
+                    style={{
+                      padding: '10px 16px',
+                      borderRadius: 10,
+                      border: 'none',
+                      background: 'linear-gradient(135deg, #EF4444, #DC2626)',
+                      color: '#FFFFFF',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      cursor: deleting ? 'not-allowed' : 'pointer',
+                      opacity: deleting ? 0.7 : 1,
+                    }}
+                  >
+                    {deleting ? 'Deleting...' : (deleteDialog.confirmLabel || 'Delete')}
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={closeDeleteDialog}
+                  style={{
+                    padding: '10px 16px',
+                    borderRadius: 10,
+                    border: 'none',
+                    background: 'linear-gradient(135deg, #7C3AED, #A855F7)',
+                    color: '#FFFFFF',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  OK
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
