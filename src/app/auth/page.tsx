@@ -716,7 +716,7 @@ export default function AuthPage() {
                   <div style={{ display: 'flex', justifyContent: 'center', margin: '-8px 0' }}>
                     <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,#A78BFA,#EC4899)', padding: 1, zIndex: 10 }}>
                       <div style={{ width: '100%', height: '100%', background: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <span className="ms pulse" style={{ color: '#A78BFA', fontSize: 16 }}>magic_button</span>
+                        <Sparkles size={16} strokeWidth={2.2} color="#A78BFA" className="pulse" />
                       </div>
                     </div>
                   </div>

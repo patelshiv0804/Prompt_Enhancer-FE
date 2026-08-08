@@ -17,7 +17,7 @@ export async function fetchHistoryStats(): Promise<HistoryStats> {
       localStorage.setItem('promptiq_favorites', JSON.stringify(cleanedFavs));
     }
 
-    let averageScore = 82;
+    let averageScore = 0;
     if (promptsRes.data && promptsRes.data.length > 0) {
       const totalScore = promptsRes.data.reduce((sum: number, p: any) => {
         const finalScore = p.new_analysis?.overall_score ?? (p.old_analysis?.overall_score ? Math.min(95, p.old_analysis.overall_score + 35) : 82);
