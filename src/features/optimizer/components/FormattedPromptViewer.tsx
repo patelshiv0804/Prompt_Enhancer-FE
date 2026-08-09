@@ -23,6 +23,17 @@ export default function FormattedPromptViewer({ content }: FormattedPromptViewer
     }
   }
 
+  // Historical versions may have been saved before the backend began
+  // normalising LLM Markdown. Remove emphasis delimiters here as a final UI
+  // safeguard, including escaped markers returned by some providers.
+  text = text
+    .replace(/\\([*_`])/g, '$1')
+    .replace(/\\?\*{2,}/g, '')
+    .replace(/\\?_{2,}/g, '')
+    .replace(/\\?`/g, '')
+    .replace(/(?<!\*)\*([^*\n]+?)\*(?!\*)/g, '$1')
+    .replace(/(?<!_)_([^_\n]+?)_(?!_)/g, '$1');
+
   if (text.includes('DIAGNOSED MODE:') || text.includes('DIAGNOSIS NOTES:')) {
     const actIdx = text.search(/(Act as|You are|Your task|System Prompt|# |\*\*Persona|\*\*Task)/i);
     if (actIdx !== -1) {
@@ -193,6 +204,26 @@ export default function FormattedPromptViewer({ content }: FormattedPromptViewer
             {paragraphLines.map((line, lIdx) => {
               const trimmed = line.trim();
               if (!trimmed) return null;
+
+              // Horizontal separators are Markdown decoration, not prompt
+              // content. Hide them rather than showing raw --- rows.
+              if (/^(---+|___+|\*\*\*+)$/.test(trimmed)) return null;
+
+              // Support every Markdown heading level so legacy `#### Title`
+              // content renders as a heading without exposing # characters.
+              const headingMatch = trimmed.match(/^(#{1,6})\s+(.*)$/);
+              if (headingMatch) {
+                const headingLevel = headingMatch[1].length;
+                const headingStyle = {
+                  fontSize: headingLevel <= 2 ? 20 : headingLevel <= 4 ? 17 : 15,
+                  fontWeight: 700,
+                  color: headingLevel <= 2 ? '#1E1B4B' : headingLevel <= 4 ? '#4C1D95' : '#6D28D9',
+                  margin: '10px 0 4px',
+                  letterSpacing: headingLevel <= 2 ? '-0.02em' : '-0.01em',
+                  fontFamily: "'Geist', sans-serif",
+                };
+                return <div key={lIdx} style={headingStyle}>{renderInline(headingMatch[2])}</div>;
+              }
 
               // Check for Headings (#, ##, ### or **Header:**)
               if (trimmed.startsWith('# ')) {

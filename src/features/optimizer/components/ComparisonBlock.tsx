@@ -8,24 +8,24 @@ import {
   CheckCircle2, AlertTriangle, Minus, FileText, Layers, Monitor,
   Smartphone, Server, Database, ShieldCheck, Globe, Cpu, Terminal,
   Lightbulb, DollarSign, Scale, ShoppingCart, Users, Mail, Radio,
-  Activity, PieChart, TrendingUp, BookOpen, Building2, Layout, Award, Zap, GitBranch,
+  Activity, PieChart, TrendingUp, BookOpen, Building2, Layout, Award, Zap, GitBranch, ChevronDown,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import FormattedPromptViewer from './FormattedPromptViewer';
 
 const ROLES = [
-  { id: 'general',      label: 'General',      icon: Sparkles },
-  { id: 'student',      label: 'Student',      icon: GraduationCap },
-  { id: 'marketer',     label: 'Marketer',     icon: Megaphone },
-  { id: 'consultant',   label: 'Consultant',   icon: Briefcase },
-  { id: 'researcher',   label: 'Researcher',   icon: Search },
-  { id: 'developer',    label: 'Developer',    icon: Code2 },
-  { id: 'educator',     label: 'Educator',     icon: School },
+  { id: 'general', label: 'General', icon: Sparkles },
+  { id: 'student', label: 'Student', icon: GraduationCap },
+  { id: 'marketer', label: 'Marketer', icon: Megaphone },
+  { id: 'consultant', label: 'Consultant', icon: Briefcase },
+  { id: 'researcher', label: 'Researcher', icon: Search },
+  { id: 'developer', label: 'Developer', icon: Code2 },
+  { id: 'educator', label: 'Educator', icon: School },
   { id: 'entrepreneur', label: 'Entrepreneur', icon: Rocket },
-  { id: 'writer',       label: 'Writer',       icon: PenTool },
-  { id: 'analyst',      label: 'Analyst',      icon: BarChart3 },
-  { id: 'designer',     label: 'Designer',     icon: Palette },
-  { id: 'creator',      label: 'Creator',      icon: Video },
+  { id: 'writer', label: 'Writer', icon: PenTool },
+  { id: 'analyst', label: 'Analyst', icon: BarChart3 },
+  { id: 'designer', label: 'Designer', icon: Palette },
+  { id: 'creator', label: 'Creator', icon: Video },
 ];
 
 const ROLE_MODES: Record<string, string[]> = {
@@ -321,6 +321,7 @@ export default function ComparisonBlock({
   const [scoreReady, setScoreReady] = useState(false);
   const [isReenhancing, setIsReenhancing] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [isVersionMenuOpen, setIsVersionMenuOpen] = useState(false);
 
   useEffect(() => {
     if (initialOriginalPromptText) {
@@ -599,21 +600,21 @@ export default function ComparisonBlock({
             {/* Optimized panel */}
             {showOptimizedPanel && (
               <div style={{ ...cardStyle, width: '100%', flex: 'none' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, height: 36 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 24, height: 36 }}>
                   {(isOptimized || isOptimizing) ? (
                     <div style={{
                       display: 'flex', position: 'relative',
                       background: 'linear-gradient(160deg, rgba(109,40,217,0.09) 0%, rgba(124,58,237,0.04) 100%)',
                       border: '1px solid rgba(124,58,237,0.13)', borderRadius: 9999, padding: 4,
                       boxShadow: 'inset 0 2px 5px rgba(80,20,180,0.13), inset 0 1px 2px rgba(0,0,0,0.07), 0 1px 0 rgba(255,255,255,0.80)',
-                      opacity: isOptimizing ? 0.6 : 1, pointerEvents: isOptimizing ? 'none' : 'auto',
+                      opacity: isOptimizing ? 0.6 : 1, pointerEvents: isOptimizing ? 'none' : 'auto', flexShrink: 0,
                     }}>
                       {['Optimized', 'Diff View'].map(tab => (
                         <button key={tab} onClick={() => setActiveTab(tab)} style={{
-                          padding: '4px 16px', fontSize: 13, fontWeight: tab === activeTab ? 600 : 500,
+                          padding: '4px 12px', fontSize: 13, fontWeight: tab === activeTab ? 600 : 500,
                           color: tab === activeTab ? 'var(--color-primary)' : 'var(--color-text-secondary)',
                           position: 'relative', zIndex: 2, transition: 'color 250ms ease',
-                          background: 'transparent', border: 'none', cursor: 'pointer', borderRadius: 9999,
+                          background: 'transparent', border: 'none', cursor: 'pointer', borderRadius: 9999, whiteSpace: 'nowrap',
                         }}>{tab}</button>
                       ))}
                       <div style={{
@@ -631,83 +632,154 @@ export default function ComparisonBlock({
                   )}
 
                   {(isOptimized || isOptimizing) && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, opacity: isOptimizing ? 0.6 : 1, pointerEvents: isOptimizing ? 'none' : 'auto' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, opacity: isOptimizing ? 0.6 : 1, pointerEvents: isOptimizing ? 'none' : 'auto', flexShrink: 0 }}>
                       {/* Version selector dropdown */}
                       {versions && versions.length > 1 && (
                         <div style={{ position: 'relative', marginRight: 4 }}>
-                          <select
-                            value={activeVersionNumber || undefined}
-                            onChange={(e) => onRestoreVersion?.(Number(e.target.value))}
+                          <button
+                            type="button"
+                            aria-haspopup="menu"
+                            aria-expanded={isVersionMenuOpen}
+                            onClick={() => setIsVersionMenuOpen((open) => !open)}
                             style={{
-                              padding: '6px 12px',
-                              borderRadius: '8px',
-                              border: '1px solid rgba(124,58,237,0.15)',
+                              minWidth: 68,
+                              height: 36,
+                              padding: '6px 10px',
+                              borderRadius: 9999,
+                              border: '1px solid rgba(124,58,237,0.20)',
                               fontSize: '13px',
                               fontWeight: 600,
-                              background: '#FFFFFF',
+                              background: 'linear-gradient(160deg, rgba(255,255,255,1) 0%, rgba(248,245,255,1) 100%)',
                               color: 'var(--color-primary)',
                               cursor: 'pointer',
                               outline: 'none',
-                              boxShadow: '0 2px 5px rgba(124,58,237,0.08)',
+                              boxShadow: '0 2px 6px rgba(124,58,237,0.12), inset 0 1px 0 rgba(255,255,255,0.9)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: 5,
                             }}
                           >
-                            {versions.map((v: any) => (
-                              <option key={v.id} value={v.version_number}>
-                                v{v.version_number} - {v.version_type || 'Enhanced'}
-                              </option>
-                            ))}
-                          </select>
+                            <span>v{activeVersionNumber ?? versions[versions.length - 1]?.version_number}</span>
+                            <ChevronDown size={15} strokeWidth={2.5} style={{ transform: isVersionMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 180ms ease' }} />
+                          </button>
+                          <AnimatePresence>
+                            {isVersionMenuOpen && (
+                              <motion.div
+                                initial={{ opacity: 0, y: -5, scale: 0.97 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: -5, scale: 0.97 }}
+                                transition={{ duration: 0.16 }}
+                                role="menu"
+                                style={{
+                                  position: 'absolute', top: 'calc(100% + 8px)', right: 0, minWidth: '100%',
+                                  padding: 5, borderRadius: 14, zIndex: 20, overflow: 'hidden',
+                                  background: 'linear-gradient(160deg, #FFFFFF 0%, #F8F5FF 100%)',
+                                  border: '1px solid rgba(124,58,237,0.18)',
+                                  boxShadow: '0 12px 28px rgba(91,33,182,0.18), 0 2px 8px rgba(0,0,0,0.07)',
+                                }}
+                              >
+                                {versions.map((version: any) => {
+                                  const isActive = version.version_number === activeVersionNumber;
+                                  return (
+                                    <button
+                                      key={version.id}
+                                      type="button"
+                                      role="menuitem"
+                                      onClick={() => {
+                                        setIsVersionMenuOpen(false);
+                                        onRestoreVersion?.(version.version_number);
+                                      }}
+                                      style={{
+                                        width: '100%', padding: '7px 12px', border: 'none', borderRadius: 9,
+                                        background: isActive ? 'linear-gradient(135deg, #7C3AED, #A855F7)' : 'transparent',
+                                        color: isActive ? '#FFFFFF' : 'var(--color-primary)',
+                                        fontSize: 13, fontWeight: isActive ? 700 : 600, textAlign: 'left', cursor: 'pointer',
+                                      }}
+                                    >
+                                      v{version.version_number}
+                                    </button>
+                                  );
+                                })}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
                         </div>
                       )}
 
-                      {/* Re-enhance button */}
-                      {onReenhance && (
-                        <button
-                          id="reenhance-btn"
-                          title="Re-enhance"
-                          disabled={isReenhancing || isOptimizing}
-                          onClick={async () => {
-                            setIsReenhancing(true);
-                            try { await onReenhance(); } finally { setIsReenhancing(false); }
-                          }}
-                          style={{
-                            display: 'flex', alignItems: 'center', gap: 6,
-                            padding: '6px 14px', borderRadius: 9, fontSize: 12.5, fontWeight: 600,
-                            cursor: isReenhancing ? 'not-allowed' : 'pointer',
-                            background: isReenhancing ? 'rgba(124,58,237,0.10)' : 'linear-gradient(135deg,rgba(124,58,237,0.12),rgba(168,85,247,0.10))',
-                            color: 'var(--color-primary)',
-                            border: '1px solid rgba(124,58,237,0.22)',
-                            opacity: isReenhancing ? 0.7 : 1,
-                            transition: 'all 200ms ease',
-                          }}
-                          className={!isReenhancing ? 'hover:!bg-[rgba(124,58,237,0.18)] hover:translate-y-[-1px] hover:shadow-[0_4px_12px_rgba(124,58,237,0.18)]' : ''}
-                        >
-                          <GitBranch size={13} style={{ animation: isReenhancing ? 'spin 1s linear infinite' : 'none' }} />
-                          {isReenhancing ? 'Re-enhancing...' : 'Re-enhance'}
-                        </button>
-                      )}
-
                       {[
-                        { icon: Copy, title: 'Copy', primary: false, onClick: handleCopy },
-                        { icon: RefreshCw, title: 'Regenerate', primary: false, onClick: () => onOptimize(originalText, activeRole, activeMode) },
-                        { icon: Bookmark, title: 'Save to Vault', primary: true, onClick: () => {} },
-                      ].map(({ icon: Icon, title, primary, onClick }) => (
-                        <button key={title} title={copySuccess && title === 'Copy' ? 'Copied!' : title} onClick={onClick} style={{
-                          width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          borderRadius: '50%', cursor: 'pointer', transition: 'all 250ms ease',
-                          background: primary ? 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)' : '#F3F4F6',
-                          border: primary ? 'none' : '1px solid rgba(0,0,0,0.07)',
-                          color: primary ? 'white' : '#6B7280',
-                          boxShadow: primary ? '0 4px 16px rgba(124,58,237,0.35)' : 'none',
-                        }}
-                          className={primary
+                        {
+                          id: 'copy',
+                          icon: Copy,
+                          title: copySuccess ? 'Copied!' : 'Copy',
+                          primary: false,
+                          onClick: handleCopy,
+                          disabled: false,
+                          spinning: false,
+                        },
+                        // Regenerate starts a new normal enhancement. Once this
+                        // prompt has a re-enhanced version, retain only the
+                        // version-aware Re-enhance action.
+                        ...(versions.some((version: any) =>
+                          version.version_type?.toLowerCase() === 'reenhancement'
+                        ) ? [] : [{
+                          id: 'regenerate',
+                          icon: RefreshCw,
+                          title: 'Regenerate',
+                          primary: false,
+                          onClick: () => onOptimize(originalText, activeRole, activeMode),
+                          disabled: isOptimizing || isReenhancing,
+                          spinning: false,
+                        }]),
+                        {
+                          id: 'reenhance',
+                          icon: GitBranch,
+                          title: isReenhancing
+                            ? 'Re-enhancing...'
+                            : onReenhance
+                              ? activeVersionNumber
+                                ? `Re-enhance v${activeVersionNumber}`
+                                : 'Re-enhance'
+                              : 'Re-enhance is available after the prompt is saved',
+                          primary: true,
+                          onClick: async () => {
+                            // Re-enhance must never fall back to /enhance: it needs
+                            // the persisted prompt id supplied by the page handler.
+                            if (!onReenhance || isReenhancing || isOptimizing) return;
+                            setIsReenhancing(true);
+                            try {
+                              await onReenhance();
+                            } finally {
+                              setIsReenhancing(false);
+                            }
+                          },
+                          disabled: !onReenhance || isReenhancing || isOptimizing,
+                          spinning: isReenhancing,
+                        },
+                      ].map(({ id, icon: Icon, title, primary, onClick, disabled, spinning }) => (
+                        <button
+                          key={id}
+                          id={`${id}-btn`}
+                          title={title}
+                          disabled={disabled}
+                          onClick={onClick}
+                          style={{
+                            width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            borderRadius: '50%', cursor: disabled ? 'not-allowed' : 'pointer', transition: 'all 250ms ease',
+                            background: primary ? 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)' : '#F3F4F6',
+                            border: primary ? 'none' : '1px solid rgba(0,0,0,0.07)',
+                            color: primary ? 'white' : '#6B7280',
+                            boxShadow: primary ? '0 4px 16px rgba(124,58,237,0.35)' : 'none',
+                            opacity: disabled ? 0.7 : 1,
+                          }}
+                          className={disabled ? '' : (primary
                             ? 'hover:brightness-110 hover:translate-y-[-2px] hover:scale-[1.08] hover:shadow-[0_8px_24px_rgba(124,58,237,0.45)]'
-                            : 'hover:!bg-[rgba(255,255,255,0.70)] hover:!text-[var(--color-primary)] hover:translate-y-[-2px] hover:scale-[1.05] hover:shadow-[0_6px_16px_rgba(124,58,237,0.10)]'}
+                            : 'hover:!bg-[rgba(255,255,255,0.70)] hover:!text-[var(--color-primary)] hover:translate-y-[-2px] hover:scale-[1.05] hover:shadow-[0_6px_16px_rgba(124,58,237,0.10)]')}
                         >
-                          {copySuccess && title === 'Copy' ? (
+                          {copySuccess && id === 'copy' ? (
                             <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-success)' }}>✓</span>
                           ) : (
-                            <Icon size={16} />
+                            <Icon size={16} style={{ animation: spinning ? 'spin 1s linear infinite' : 'none' }} />
                           )}
                         </button>
                       ))}

@@ -777,6 +777,8 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
   }, [session]);
   const [compareMode, setCompareMode] = useState(false);
   const [compareIndex, setCompareIndex] = useState(0);
+  const [isLeftCompareMenuOpen, setIsLeftCompareMenuOpen] = useState(false);
+  const [isRightCompareMenuOpen, setIsRightCompareMenuOpen] = useState(false);
 
   // Selector state
   const [selectedStyle, setSelectedStyle] = useState('None');
@@ -919,6 +921,54 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
     setSessionVersions(prev => prev.map((v, i) => i === index ? { ...v, isStarred: !v.isStarred } : v));
   };
 
+  const inputPromptContent = activeVersionIndex > 0 && version.versionType?.toLowerCase() === 'reenhancement'
+    ? (sessionVersions[activeVersionIndex - 1]?.optimizedPrompt || session.originalPrompt)
+    : session.originalPrompt;
+
+  const renderComparisonSelector = (
+    selectedIndex: number,
+    isOpen: boolean,
+    setIsOpen: (open: boolean) => void,
+    onSelect: (index: number) => void,
+  ) => {
+    const selected = sessionVersions[selectedIndex];
+    if (!selected) return null;
+
+    return (
+      <div style={{ position: 'relative' }}>
+        <button type="button" aria-haspopup="menu" aria-expanded={isOpen} onClick={() => setIsOpen(!isOpen)} style={{
+          minWidth: 214, height: 46, padding: '0 14px 0 18px', borderRadius: 999,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+          background: 'linear-gradient(180deg, #FFFFFF 0%, #FAF7FF 100%)', border: '1px solid rgba(124,58,237,0.22)',
+          color: '#241144', fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 14px rgba(124,58,237,0.10), inset 0 1px 0 rgba(255,255,255,0.9)',
+        }}>
+          <span>v{selected.versionNumber} — Score {selected.overallScore}</span>
+          <ChevronDown size={17} color="#6D28D9" style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 160ms ease' }} />
+        </button>
+        {isOpen && (
+          <div role="menu" style={{
+            position: 'absolute', top: 'calc(100% + 8px)', left: 0, minWidth: '100%', zIndex: 30, padding: 6,
+            borderRadius: 18, background: 'linear-gradient(180deg, #FFFFFF 0%, #FAF7FF 100%)',
+            border: '1px solid rgba(124,58,237,0.18)', boxShadow: '0 16px 34px rgba(91,33,182,0.16)',
+          }}>
+            {sessionVersions.map((item, index) => {
+              const isSelected = index === selectedIndex;
+              return (
+                <button key={`${item.versionNumber}-${index}`} type="button" role="menuitem" onClick={() => { onSelect(index); setIsOpen(false); }} style={{
+                  width: '100%', padding: '10px 12px', border: 'none', borderRadius: 11, textAlign: 'left',
+                  background: isSelected ? 'linear-gradient(135deg, #7C3AED, #A855F7)' : 'transparent',
+                  color: isSelected ? '#FFFFFF' : '#5B21B6', fontSize: 13, fontWeight: isSelected ? 700 : 600, cursor: 'pointer',
+                }}>
+                  v{item.versionNumber} — Score {item.overallScore}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   if (isLoadingSession) {
     return <ChatDetailSkeleton />;
   }
@@ -1058,18 +1108,20 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
           {compareMode ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14 }}>
+                {renderComparisonSelector(compareIndex, isLeftCompareMenuOpen, setIsLeftCompareMenuOpen, setCompareIndex)}
                 <select
                   value={compareIndex} onChange={e => setCompareIndex(Number(e.target.value))}
-                  style={{ padding: '8px 16px', borderRadius: 10, border: '1px solid rgba(124,58,237,0.25)', background: '#FFFFFF', fontWeight: 600 }}
+                  style={{ display: 'none' }}
                 >
                   {sessionVersions.map((v, i) => (
                     <option key={i} value={i}>v{v.versionNumber} — Score {v.overallScore}</option>
                   ))}
                 </select>
                 <span style={{ fontWeight: 700, color: '#94A3B8', fontSize: 13 }}>vs</span>
+                {renderComparisonSelector(activeVersionIndex, isRightCompareMenuOpen, setIsRightCompareMenuOpen, handleVersionSelect)}
                 <select
                   value={activeVersionIndex} onChange={e => handleVersionSelect(Number(e.target.value))}
-                  style={{ padding: '8px 16px', borderRadius: 10, border: '1px solid rgba(124,58,237,0.25)', background: '#FFFFFF', fontWeight: 600 }}
+                  style={{ display: 'none' }}
                 >
                   {sessionVersions.map((v, i) => (
                     <option key={i} value={i}>v{v.versionNumber} — Score {v.overallScore}</option>
@@ -1104,10 +1156,8 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                       </span>
                     </div>
                   </div>
-                  <div style={{ flex: 1, fontSize: 13.5, lineHeight: 1.7, color: '#475569', whiteSpace: 'pre-wrap' }}>
-                    {activeVersionIndex > 0 && version.versionType?.toLowerCase() === 'reenhancement'
-                      ? (sessionVersions[activeVersionIndex - 1]?.optimizedPrompt || session.originalPrompt)
-                      : session.originalPrompt}
+                  <div style={{ flex: 1, overflowY: 'auto', maxHeight: 380, paddingRight: 6 }}>
+                    <FormattedPromptViewer content={inputPromptContent} />
                   </div>
                 </div>
 
