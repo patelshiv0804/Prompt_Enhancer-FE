@@ -5,7 +5,7 @@ import {
   Copy, Wand2, Bookmark, TrendingUp, Clock, ArrowRight,
   CheckCircle2, AlertTriangle, Minus, GitCompareArrows,
   Sparkles, Code, Search, Megaphone, BookOpen, Image as ImageIcon,
-  Film, PlaySquare, ChevronDown
+  Film, PlaySquare, ChevronDown, GitBranch,
 } from 'lucide-react';
 import VersionHeader from './VersionHeader';
 import VersionHistoryDrawer from './VersionHistoryDrawer';
@@ -34,6 +34,8 @@ interface PromptVersion {
   timestamp: string;
   tweakNote?: string;
   isStarred?: boolean;
+  versionType?: string;
+  toolRecommendations?: any;
 }
 
 interface OptimizationSession {
@@ -685,20 +687,30 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
         const mappedVersions: PromptVersion[] = versionsList.length > 0
           ? versionsList.map((v: any) => {
             const optText = v.content || v.optimizedPrompt || p.current_version?.content || p.original_prompt || '';
+            // Use per-version scores if they exist (reenhanced versions); fall back to parent prompt scores
+            const vOldAnal = v.old_analysis || null;
+            const vNewAnal = v.new_analysis || enhAnal;
+            const vScore = vNewAnal?.overall_score ?? overallScore;
+            const vScoreScaled = typeof vScore === 'number' && vScore <= 10 ? Math.round(vScore * 10) : Math.round(vScore ?? overallScore);
+            const vToolRecs = v.tool_recommendations || null;
             return {
               versionNumber: v.version_number,
+              versionType: v.version_type,
               optimizedPrompt: optText,
-              overallScore: overallScore,
-              dimensions: makeDimensions(origAnal, enhAnal, originalScore, overallScore),
+              overallScore: vScoreScaled,
+              dimensions: makeDimensions(vOldAnal || origAnal, vNewAnal || enhAnal, originalScore, vScoreScaled),
               wordsAfter: optText.split(/\s+/).filter(Boolean).length,
               tokensAfter: Math.round(optText.length / 4),
               timestamp: v.created_at ? new Date(v.created_at).toLocaleDateString() : 'Just now',
               tweakNote: v.change_summary || undefined,
+              // Store version-level tool recs so the UI can show them per-version
+              ...(vToolRecs && { toolRecommendations: vToolRecs }),
             };
           })
           : [
             {
               versionNumber: 1,
+              versionType: 'original',
               optimizedPrompt: p.current_version?.content || p.original_prompt || '',
               overallScore: overallScore,
               dimensions: makeDimensions(origAnal, enhAnal, originalScore, overallScore),
@@ -811,6 +823,64 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
 
   const [sessionVersions, setSessionVersions] = useState(currentSession.versions);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [isReenhancing, setIsReenhancing] = useState(false);
+
+  // ── Re-enhance handler ───────────────────────────────────────────────────────
+  const handleReenhance = async () => {
+    if (!chatId || MOCK_SESSIONS[chatId]) return; // skip for mock sessions
+    setIsReenhancing(true);
+    try {
+      const res = await apiClient.post<any>(`/api/v1/prompts/${chatId}/reenhance`);
+      if (!res?.data) return;
+      const d = res.data;
+      const vNewAnal = d.new_analysis || null;
+      const vOldAnal = d.old_analysis || null;
+      const vScore = vNewAnal?.overall_score ?? 0;
+      const vScoreScaled = typeof vScore === 'number' && vScore <= 10 ? Math.round(vScore * 10) : Math.round(vScore);
+
+      // Build dimension array from new_analysis
+      const getDimScore = (anal: any, key: string, altKey?: string): number | undefined => {
+        if (!anal?.dimensions) return undefined;
+        const item = anal.dimensions[key] ?? (altKey ? anal.dimensions[altKey] : undefined);
+        if (item && typeof item.score === 'number') return item.score;
+        if (typeof item === 'number') return item;
+        return undefined;
+      };
+      const getDimDesc = (anal: any, key: string, altKey?: string, def = ''): string => {
+        if (!anal?.dimensions) return def;
+        const item = anal.dimensions[key] ?? (altKey ? anal.dimensions[altKey] : undefined);
+        if (item && typeof item.explanation === 'string') return item.explanation;
+        return def;
+      };
+      const makeDimsLocal = (oldA: any, newA: any): any[] => [
+        { id: 'clarity', label: 'Clarity', status: 'good' as const, icon: CheckCircle2, desc: getDimDesc(newA, 'clarity'), score: getDimScore(newA, 'clarity') ?? 80, beforeScore: getDimScore(oldA, 'clarity') },
+        { id: 'context', label: 'Context', status: 'good' as const, icon: CheckCircle2, desc: getDimDesc(newA, 'context'), score: getDimScore(newA, 'context') ?? 75, beforeScore: getDimScore(oldA, 'context') },
+        { id: 'role', label: 'Role', status: 'good' as const, icon: CheckCircle2, desc: getDimDesc(newA, 'role_definition', 'role'), score: getDimScore(newA, 'role_definition', 'role') ?? 70, beforeScore: getDimScore(oldA, 'role_definition', 'role') },
+        { id: 'format', label: 'Format', status: 'good' as const, icon: CheckCircle2, desc: getDimDesc(newA, 'output_format', 'format'), score: getDimScore(newA, 'output_format', 'format') ?? 75, beforeScore: getDimScore(oldA, 'output_format', 'format') },
+        { id: 'constraints', label: 'Constraints', status: 'warning' as const, icon: AlertTriangle, desc: getDimDesc(newA, 'constraints'), score: getDimScore(newA, 'constraints') ?? 65, beforeScore: getDimScore(oldA, 'constraints') },
+        { id: 'examples', label: 'Examples', status: 'neutral' as const, icon: Minus, desc: getDimDesc(newA, 'examples'), score: getDimScore(newA, 'examples') ?? 60, beforeScore: getDimScore(oldA, 'examples') },
+      ];
+
+      const newVer: PromptVersion = {
+        versionNumber: d.version_number,
+        optimizedPrompt: d.enhanced_prompt,
+        overallScore: vScoreScaled,
+        dimensions: makeDimsLocal(vOldAnal, vNewAnal),
+        wordsAfter: d.enhanced_prompt.split(/\s+/).filter(Boolean).length,
+        tokensAfter: Math.round(d.enhanced_prompt.length / 4),
+        timestamp: 'Just now',
+        tweakNote: `Re-enhanced v${sessionVersions.length}`,
+        versionType: 'reenhancement',
+      };
+
+      setSessionVersions(prev => [...prev, newVer]);
+      setActiveVersionIndex(sessionVersions.length); // switch to new version
+    } catch (err) {
+      console.error('Re-enhance failed:', err);
+    } finally {
+      setIsReenhancing(false);
+    }
+  };
 
   useEffect(() => {
     setSessionVersions(currentSession.versions);
@@ -933,6 +1003,26 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
               </button>
             )}
 
+            {/* Re-enhance button — only shows for real (non-mock) sessions */}
+            {chatId && !MOCK_SESSIONS[chatId] && (
+              <button
+                id="chat-reenhance-btn"
+                disabled={isReenhancing}
+                onClick={handleReenhance}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 10,
+                  fontSize: 12.5, fontWeight: 700, cursor: isReenhancing ? 'not-allowed' : 'pointer',
+                  transition: 'all 160ms ease', opacity: isReenhancing ? 0.7 : 1,
+                  background: 'linear-gradient(135deg, rgba(124,58,237,0.14), rgba(168,85,247,0.10))',
+                  color: '#6D28D9', border: '1px solid rgba(124,58,237,0.22)',
+                  boxShadow: isReenhancing ? 'none' : '0 2px 8px rgba(124,58,237,0.12)',
+                }}
+              >
+                <GitBranch size={14} style={{ animation: isReenhancing ? 'spin 1s linear infinite' : 'none' }} />
+                <span>{isReenhancing ? 'Re-enhancing…' : 'Re-enhance'}</span>
+              </button>
+            )}
+
             {/* Style dropdown and Target dropdown removed from top */}
           </div>
         </div>
@@ -989,7 +1079,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
             <>
               {/* ── Side-by-side prompt comparison ── */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                {/* Original panel */}
+                {/* Input / Original panel */}
                 <div style={{
                   background: '#FFFFFF', borderRadius: 20, padding: 24,
                   boxShadow: '0 4px 20px rgba(109,40,217,0.04)', border: '1px solid rgba(124,58,237,0.10)',
@@ -1000,11 +1090,17 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                       display: 'inline-flex', alignItems: 'center', padding: '6px 14px', borderRadius: 9999,
                       fontSize: 12, fontWeight: 700, background: '#F1F5F9', color: '#64748B',
                     }}>
-                      <span>Original</span>
+                      <span>
+                        {activeVersionIndex > 0 && version.versionType?.toLowerCase() === 'reenhancement'
+                          ? `Input (v${sessionVersions[activeVersionIndex - 1]?.versionNumber || 1})`
+                          : 'Original'}
+                      </span>
                     </div>
                   </div>
-                  <div style={{ flex: 1, fontSize: 13.5, lineHeight: 1.7, color: '#475569' }}>
-                    {session.originalPrompt}
+                  <div style={{ flex: 1, fontSize: 13.5, lineHeight: 1.7, color: '#475569', whiteSpace: 'pre-wrap' }}>
+                    {activeVersionIndex > 0 && version.versionType?.toLowerCase() === 'reenhancement'
+                      ? (sessionVersions[activeVersionIndex - 1]?.optimizedPrompt || session.originalPrompt)
+                      : session.originalPrompt}
                   </div>
                 </div>
 
@@ -1061,11 +1157,15 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                     <span>+{version.overallScore - (session.originalScore ?? sessionVersions[0].overallScore)} pts</span>
                   </div>
 
-                  {/* Before / After */}
+                  {/* Before / After — use per-version old_analysis when available */}
                   <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 5, marginTop: 4 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#64748B', fontWeight: 600 }}>
                       <span>Before</span>
-                      <span style={{ fontWeight: 700, color: '#94A3B8' }}>{session.originalScore ?? sessionVersions[0].overallScore}</span>
+                      <span style={{ fontWeight: 700, color: '#94A3B8' }}>
+                        {version.dimensions[0]?.beforeScore !== undefined
+                          ? Math.round(version.dimensions.reduce((sum, d) => sum + (d.beforeScore ?? 0), 0) / version.dimensions.length)
+                          : (session.originalScore ?? sessionVersions[0].overallScore)}
+                      </span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#64748B', fontWeight: 600 }}>
                       <span>After</span>

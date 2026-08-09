@@ -8,7 +8,7 @@ import {
   CheckCircle2, AlertTriangle, Minus, FileText, Layers, Monitor,
   Smartphone, Server, Database, ShieldCheck, Globe, Cpu, Terminal,
   Lightbulb, DollarSign, Scale, ShoppingCart, Users, Mail, Radio,
-  Activity, PieChart, TrendingUp, BookOpen, Building2, Layout, Figma, Award, Zap,
+  Activity, PieChart, TrendingUp, BookOpen, Building2, Layout, Award, Zap, GitBranch,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import FormattedPromptViewer from './FormattedPromptViewer';
@@ -296,6 +296,7 @@ interface ComparisonBlockProps {
   isOptimized: boolean;
   onAnalyze: (promptText: string) => void;
   onOptimize: (promptText: string, activeRole: string, activeMode?: string) => void;
+  onReenhance?: () => Promise<void>;
   analysisResult?: any;
   optimizationResult?: any;
   // History fields
@@ -307,7 +308,7 @@ interface ComparisonBlockProps {
 
 /* ── Main component ─────────────────────────────────────────────────────── */
 export default function ComparisonBlock({
-  isAnalyzing, isAnalyzed, isOptimizing, isOptimized, onAnalyze, onOptimize,
+  isAnalyzing, isAnalyzed, isOptimizing, isOptimized, onAnalyze, onOptimize, onReenhance,
   analysisResult, optimizationResult, versions = [], activeVersionNumber = null, onRestoreVersion,
   initialOriginalPromptText = '',
 }: ComparisonBlockProps) {
@@ -318,6 +319,7 @@ export default function ComparisonBlock({
   const [activeRole, setActiveRole] = useState('general');
   const [activeMode, setActiveMode] = useState('');
   const [scoreReady, setScoreReady] = useState(false);
+  const [isReenhancing, setIsReenhancing] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
 
   useEffect(() => {
@@ -634,6 +636,33 @@ export default function ComparisonBlock({
                             ))}
                           </select>
                         </div>
+                      )}
+
+                      {/* Re-enhance button */}
+                      {onReenhance && (
+                        <button
+                          id="reenhance-btn"
+                          title="Re-enhance"
+                          disabled={isReenhancing || isOptimizing}
+                          onClick={async () => {
+                            setIsReenhancing(true);
+                            try { await onReenhance(); } finally { setIsReenhancing(false); }
+                          }}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 6,
+                            padding: '6px 14px', borderRadius: 9, fontSize: 12.5, fontWeight: 600,
+                            cursor: isReenhancing ? 'not-allowed' : 'pointer',
+                            background: isReenhancing ? 'rgba(124,58,237,0.10)' : 'linear-gradient(135deg,rgba(124,58,237,0.12),rgba(168,85,247,0.10))',
+                            color: 'var(--color-primary)',
+                            border: '1px solid rgba(124,58,237,0.22)',
+                            opacity: isReenhancing ? 0.7 : 1,
+                            transition: 'all 200ms ease',
+                          }}
+                          className={!isReenhancing ? 'hover:!bg-[rgba(124,58,237,0.18)] hover:translate-y-[-1px] hover:shadow-[0_4px_12px_rgba(124,58,237,0.18)]' : ''}
+                        >
+                          <GitBranch size={13} style={{ animation: isReenhancing ? 'spin 1s linear infinite' : 'none' }} />
+                          {isReenhancing ? 'Re-enhancing...' : 'Re-enhance'}
+                        </button>
                       )}
 
                       {[
