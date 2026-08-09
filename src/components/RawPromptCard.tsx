@@ -39,13 +39,13 @@ const RawPromptCard = React.memo(function RawPromptCard({
           onChange={(e) => onChange(e.target.value)}
           placeholder="Type your prompt here..."
           disabled={isEnhancing}
-          maxLength={1000}
+          maxLength={12000}
         />
 
         {/* Footer */}
         <div className="flex items-center justify-between">
           <span className="font-mono text-[12px] text-gray-300">
-            {value.length}/1000
+            {value.length.toLocaleString()}/12,000
           </span>
           <button
             onClick={onSubmit}

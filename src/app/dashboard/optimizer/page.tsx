@@ -131,6 +131,10 @@ function OptimizerPageContent() {
 
   const handleAnalyze = async (promptText: string) => {
     if (!promptText.trim()) return;
+    if (promptText.length > 12000) {
+      setError('Maximum character limit of 12,000 reached. Please shorten your prompt.');
+      return;
+    }
     setIsAnalyzing(true);
     setIsAnalyzed(false);
     setIsOptimized(false);
@@ -150,6 +154,10 @@ function OptimizerPageContent() {
 
   const handleOptimize = async (promptText: string, activeRole: string, activeMode?: string) => {
     if (!promptText.trim()) return;
+    if (promptText.length > 12000) {
+      setError('Maximum character limit of 12,000 reached. Please shorten your prompt.');
+      return;
+    }
     setIsOptimizing(true);
     setError(null);
 

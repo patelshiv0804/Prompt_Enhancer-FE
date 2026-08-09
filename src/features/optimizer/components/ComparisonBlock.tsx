@@ -379,9 +379,16 @@ export default function ComparisonBlock({
         {/* Textarea */}
         <div
           style={{
-            flex: 1, border: '1px solid rgba(124,58,237,0.10)', borderRadius: 18,
-            background: '#FDFCFF', padding: 24, display: 'flex', flexDirection: 'column',
-            minHeight: 200, boxShadow: 'inset 0 1px 3px rgba(109,40,217,0.03)', transition: 'all 300ms ease-in-out',
+            flex: 1,
+            border: originalText.length > 12000 ? '1px solid #EF4444' : '1px solid rgba(124,58,237,0.10)',
+            borderRadius: 18,
+            background: originalText.length > 12000 ? '#FFF5F5' : '#FDFCFF',
+            padding: 24,
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: 200,
+            boxShadow: originalText.length > 12000 ? '0 0 0 3px rgba(239,68,68,0.12)' : 'inset 0 1px 3px rgba(109,40,217,0.03)',
+            transition: 'all 300ms ease-in-out',
           }}
           className="focus-within:!bg-[#FAFAFE] focus-within:!border-[rgba(124,58,237,0.35)] focus-within:shadow-[inset_0_1px_3px_rgba(0,0,0,0.02),0_0_0_3px_rgba(124,58,237,0.08),0_0_20px_rgba(124,58,237,0.05)]"
         >
@@ -394,9 +401,16 @@ export default function ComparisonBlock({
               background: 'transparent', border: 'none', resize: 'none', outline: 'none', letterSpacing: '0.01em',
             }}
           />
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
-            <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>
-              {originalText.split(' ').filter(Boolean).length} words &middot; {originalText.length} chars
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 }}>
+            {originalText.length > 12000 ? (
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#DC2626', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <AlertTriangle size={14} /> Maximum character limit reached (12,000 max)
+              </span>
+            ) : (
+              <span />
+            )}
+            <span style={{ fontSize: 12, fontWeight: originalText.length > 12000 ? 700 : 400, color: originalText.length > 12000 ? '#DC2626' : 'var(--color-text-secondary)' }}>
+              {originalText.split(' ').filter(Boolean).length} words &middot; {originalText.length.toLocaleString()} / 12,000 chars
             </span>
           </div>
         </div>
@@ -490,39 +504,47 @@ export default function ComparisonBlock({
           <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
             <button
               id="analyze-btn"
-              onClick={() => onAnalyze(originalText)}
-              disabled={isAnalyzing || isOptimizing}
+              onClick={() => {
+                if (originalText.length > 12000) return;
+                onAnalyze(originalText);
+              }}
+              disabled={isAnalyzing || isOptimizing || originalText.length > 12000}
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 32px',
-                borderRadius: 11, fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer',
-                background: 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)', color: 'white',
-                boxShadow: '0 4px 16px rgba(124,58,237,0.30)',
-                opacity: (isAnalyzing || isOptimizing) ? 0.75 : 1,
+                borderRadius: 11, fontSize: 14, fontWeight: 600, border: 'none',
+                cursor: (isAnalyzing || isOptimizing || originalText.length > 12000) ? 'not-allowed' : 'pointer',
+                background: originalText.length > 12000 ? 'rgba(107,107,138,0.20)' : 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)',
+                color: originalText.length > 12000 ? 'rgba(107,107,138,0.60)' : 'white',
+                boxShadow: originalText.length > 12000 ? 'none' : '0 4px 16px rgba(124,58,237,0.30)',
+                opacity: (isAnalyzing || isOptimizing || originalText.length > 12000) ? 0.75 : 1,
                 transition: 'all 220ms ease',
               }}
-              className={!(isAnalyzing || isOptimizing) ? 'hover:translate-y-[-1px] hover:shadow-[0_8px_24px_rgba(124,58,237,0.40)] hover:brightness-105' : ''}
+              className={!(isAnalyzing || isOptimizing || originalText.length > 12000) ? 'hover:translate-y-[-1px] hover:shadow-[0_8px_24px_rgba(124,58,237,0.40)] hover:brightness-105' : ''}
             >
               <Sparkles size={13} style={{ animation: 'pulseGlow 2s infinite' }} />
               <span>{isAnalyzing ? 'Analyzing...' : 'Analyze'}</span>
             </button>
             <button
               id="optimize-btn"
-              onClick={() => onOptimize(originalText, activeRole, activeMode)}
-              disabled={isOptimizing || isAnalyzing}
+              onClick={() => {
+                if (originalText.length > 12000) return;
+                onOptimize(originalText, activeRole, activeMode);
+              }}
+              disabled={isOptimizing || isAnalyzing || originalText.length > 12000}
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 32px',
                 borderRadius: 11, fontSize: 14, fontWeight: 600,
-                cursor: (isOptimizing || isAnalyzing) ? 'not-allowed' : 'pointer',
-                background: (!isOptimizing && !isAnalyzing)
+                cursor: (isOptimizing || isAnalyzing || originalText.length > 12000) ? 'not-allowed' : 'pointer',
+                background: (!isOptimizing && !isAnalyzing && originalText.length <= 12000)
                   ? 'linear-gradient(135deg, #6D28D9 0%, #7C3AED 100%)'
-                  : 'rgba(124,58,237,0.06)',
-                color: (!isOptimizing && !isAnalyzing) ? 'white' : 'rgba(107,107,138,0.50)',
-                border: (!isOptimizing && !isAnalyzing) ? 'none' : '1px solid rgba(124,58,237,0.10)',
-                boxShadow: (!isOptimizing && !isAnalyzing) ? '0 4px 16px rgba(109,40,217,0.30)' : 'none',
-                opacity: isOptimizing ? 0.75 : 1,
+                  : 'rgba(107,107,138,0.20)',
+                color: (!isOptimizing && !isAnalyzing && originalText.length <= 12000) ? 'white' : 'rgba(107,107,138,0.60)',
+                border: (!isOptimizing && !isAnalyzing && originalText.length <= 12000) ? 'none' : '1px solid rgba(124,58,237,0.10)',
+                boxShadow: (!isOptimizing && !isAnalyzing && originalText.length <= 12000) ? '0 4px 16px rgba(109,40,217,0.30)' : 'none',
+                opacity: (isOptimizing || originalText.length > 12000) ? 0.75 : 1,
                 transition: 'all 220ms ease',
               }}
-              className={(!isOptimizing && !isAnalyzing) ? 'hover:translate-y-[-1px] hover:shadow-[0_8px_24px_rgba(109,40,217,0.42)] hover:brightness-105' : ''}
+              className={(!isOptimizing && !isAnalyzing && originalText.length <= 12000) ? 'hover:translate-y-[-1px] hover:shadow-[0_8px_24px_rgba(109,40,217,0.42)] hover:brightness-105' : ''}
             >
               <Wand2 size={13} />
               <span>{isOptimizing ? 'Optimizing...' : 'Optimize'}</span>
