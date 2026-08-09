@@ -6,7 +6,7 @@ import {
   Search, Star, MoreHorizontal, FileText, Code2, PlaySquare, Mail, Film,
   Image as ImageIcon, ChevronLeft, ChevronRight, Megaphone, BookOpen,
   Sparkles, TrendingUp, SlidersHorizontal, ChevronDown, Zap, Clock,
-  Trash2, ExternalLink, Copy, Library,
+  Trash2, ExternalLink, Copy, Library, CheckSquare,
 } from 'lucide-react';
 import { fetchHistory, fetchHistoryStats, toggleFavorite, deleteHistoryItems } from '@/features/history/services/historyService';
 import type { HistoryItem, HistoryStats, SortBy } from '@/features/history/types/history.types';
@@ -138,7 +138,7 @@ function StatCard({ label, value, suffix = '', prefix = '', icon: Icon, accent, 
 }
 
 /* ── VaultRow ── */
-function VaultRow({ item, selected, onSelect, onToggleFavorite, onDelete, onOpenInOptimizer }: { item: HistoryItem; selected: boolean; onSelect: (id: string) => void; onToggleFavorite: (id: string, current: boolean) => void; onDelete: (id: string) => void; onOpenInOptimizer: (id: string) => void; }) {
+function VaultRow({ item, isSelectionMode, selected, onSelect, onToggleFavorite, onDelete, onOpenInOptimizer }: { item: HistoryItem; isSelectionMode: boolean; selected: boolean; onSelect: (id: string) => void; onToggleFavorite: (id: string, current: boolean) => void; onDelete: (id: string) => void; onOpenInOptimizer: (id: string) => void; }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const Icon    = CATEGORY_ICONS[item.category] || FileText;
@@ -155,23 +155,31 @@ function VaultRow({ item, selected, onSelect, onToggleFavorite, onDelete, onOpen
   return (
     <div id={`vault-row-${item.id}`} style={{
       display: 'flex', alignItems: 'center', gap: 16, padding: '14px 20px',
-      background: menuOpen ? 'rgba(124,58,237,0.04)' : '#FFFFFF',
-      border: '1px solid rgba(124,58,237,0.09)', borderRadius: 14,
+      background: menuOpen ? 'rgba(124,58,237,0.04)' : selected ? 'rgba(124,58,237,0.03)' : '#FFFFFF',
+      border: selected ? '1px solid rgba(124,58,237,0.25)' : '1px solid rgba(124,58,237,0.09)', borderRadius: 14,
       transition: 'background 200ms ease, box-shadow 200ms ease, border-color 200ms ease',
       position: 'relative', cursor: 'pointer',
     }}
     className="hover:!bg-[rgba(124,58,237,0.03)] hover:shadow-[0_4px_16px_rgba(109,40,217,0.07)] hover:!border-[rgba(124,58,237,0.15)]"
-    onClick={() => onOpenInOptimizer(item.id)}
+    onClick={() => {
+      if (isSelectionMode) {
+        onSelect(item.id);
+      } else {
+        onOpenInOptimizer(item.id);
+      }
+    }}
     >
-      <input
-        id={`vault-select-${item.id}`}
-        type="checkbox"
-        checked={selected}
-        aria-label={`Select ${item.prompt}`}
-        onClick={event => event.stopPropagation()}
-        onChange={() => onSelect(item.id)}
-        style={{ width: 16, height: 16, accentColor: '#7C3AED', cursor: 'pointer', flexShrink: 0 }}
-      />
+      {isSelectionMode && (
+        <input
+          id={`vault-select-${item.id}`}
+          type="checkbox"
+          checked={selected}
+          aria-label={`Select ${item.prompt}`}
+          onClick={event => event.stopPropagation()}
+          onChange={() => onSelect(item.id)}
+          style={{ width: 16, height: 16, accentColor: '#7C3AED', cursor: 'pointer', flexShrink: 0 }}
+        />
+      )}
       <div style={{ width: 38, height: 38, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accent, background: `${accent}14`, border: `1px solid ${accent}22`, flexShrink: 0 }}>
         <Icon size={16} strokeWidth={1.6} />
       </div>
@@ -200,37 +208,12 @@ function VaultRow({ item, selected, onSelect, onToggleFavorite, onDelete, onOpen
         <Star size={15} strokeWidth={item.isFavorite ? 0 : 1.5} fill={item.isFavorite ? 'currentColor' : 'none'} />
       </button>
 
-      <div style={{ position: 'relative', flexShrink: 0 }} ref={menuRef} onClick={(e) => e.stopPropagation()}>
-        <button id={`more-btn-${item.id}`} onClick={() => setMenuOpen(v => !v)}
-          style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', border: 'none', cursor: 'pointer', background: 'transparent', color: 'rgba(107,107,138,0.50)', transition: 'all 200ms ease' }}
-          className="hover:!bg-[rgba(124,58,237,0.08)] hover:!text-[var(--color-primary)]"
-        >
-          <MoreHorizontal size={16} strokeWidth={1.5} />
-        </button>
-        {menuOpen && (
-          <div id={`row-dropdown-${item.id}`} style={{
-            position: 'absolute', top: 'calc(100% + 4px)', right: 0, background: '#FFFFFF',
-            border: '1px solid rgba(124,58,237,0.10)', borderRadius: 10, minWidth: 170,
-            overflow: 'hidden', zIndex: 50, boxShadow: '0 8px 24px rgba(109,40,217,0.10), 0 2px 8px rgba(0,0,0,0.06)',
-            animation: 'dropdownFadeIn 150ms ease',
-          }}>
-            {[
-              { icon: ExternalLink, label: 'Open in Optimizer', danger: false, onClick: () => { setMenuOpen(false); onOpenInOptimizer(item.id); } },
-              { icon: Copy, label: 'Copy Prompt', danger: false, onClick: () => { navigator.clipboard.writeText(item.prompt); setMenuOpen(false); } },
-            ].map(({ icon: Icon2, label, onClick }) => (
-              <button key={label} onClick={onClick}
-                style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '9px 14px', fontSize: 13, color: 'var(--color-text-primary)', border: 'none', cursor: 'pointer', background: 'transparent', textAlign: 'left' }}
-                className="hover:bg-[rgba(124,58,237,0.05)]"
-              ><Icon2 size={13} strokeWidth={1.8} />{label}</button>
-            ))}
-            <div style={{ height: 1, background: 'rgba(124,58,237,0.08)', margin: '4px 0' }} />
-            <button onClick={() => { setMenuOpen(false); onDelete(item.id); }}
-              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '9px 14px', fontSize: 13, color: '#EF4444', border: 'none', cursor: 'pointer', background: 'transparent', textAlign: 'left' }}
-              className="hover:bg-[rgba(239,68,68,0.06)]"
-            ><Trash2 size={13} strokeWidth={1.8} />Delete</button>
-          </div>
-        )}
-      </div>
+      <button id={`delete-btn-${item.id}`} onClick={(e) => { e.stopPropagation(); onDelete(item.id); }} title="Delete prompt"
+        style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', border: 'none', cursor: 'pointer', background: 'transparent', color: 'rgba(239,68,68,0.60)', transition: 'all 200ms ease', flexShrink: 0 }}
+        className="hover:!bg-[rgba(239,68,68,0.10)] hover:!text-[#EF4444] hover:scale-110"
+      >
+        <Trash2 size={16} strokeWidth={1.5} />
+      </button>
     </div>
   );
 }
@@ -293,6 +276,7 @@ export default function VaultPage() {
   const [sortBy,         setSortBy]         = useState<SortBy>('most-recent');
   const [showSort,       setShowSort]       = useState(false);
   const [loading,        setLoading]        = useState(true);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds,    setSelectedIds]    = useState<Set<string>>(new Set());
   const [deleting,       setDeleting]       = useState(false);
   const [deleteDialog,   setDeleteDialog]   = useState<DeleteDialogState>({ open: false });
@@ -541,11 +525,25 @@ export default function VaultPage() {
             </div>
           )}
         </div>
+
+        {/* Select / Multiple Delete Mode Toggle Button */}
+        <button id="vault-toggle-select-btn" onClick={() => { setIsSelectionMode(v => !v); setSelectedIds(new Set()); }}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, fontSize: 13, fontWeight: 500,
+            border: isSelectionMode ? '1px solid rgba(124,58,237,0.30)' : '1px solid rgba(124,58,237,0.12)', cursor: 'pointer',
+            background: isSelectionMode ? 'rgba(124,58,237,0.08)' : '#FFFFFF',
+            color: isSelectionMode ? 'var(--color-primary)' : 'var(--color-text-secondary)', transition: 'all 200ms ease', flexShrink: 0,
+          }}
+          className="hover:!border-[rgba(124,58,237,0.22)] hover:!text-[var(--color-text-primary)]"
+        >
+          <CheckSquare size={13} strokeWidth={2} />{isSelectionMode ? 'Cancel Select' : 'Select'}
+        </button>
       </div>
 
-      {items.length > 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: 'var(--color-text-secondary)', cursor: 'pointer' }}>
+      {/* Selection action bar (rendered ONLY in selection mode) */}
+      {isSelectionMode && items.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, padding: '10px 16px', background: 'rgba(124,58,237,0.04)', borderRadius: 12, border: '1px solid rgba(124,58,237,0.10)' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--color-text-primary)', fontWeight: 600, cursor: 'pointer' }}>
             <input
               id="vault-select-all"
               type="checkbox"
@@ -555,13 +553,22 @@ export default function VaultPage() {
             />
             Select all on this page
           </label>
-          {selectedIds.size > 0 && (
-            <button id="vault-delete-selected" onClick={() => requestDelete([...selectedIds])} disabled={deleting}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 8, border: 'none', background: '#EF4444', color: '#FFFFFF', cursor: deleting ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 600, opacity: deleting ? 0.65 : 1 }}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {selectedIds.size > 0 && (
+              <button id="vault-delete-selected" onClick={() => requestDelete([...selectedIds])} disabled={deleting}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, border: 'none', background: '#EF4444', color: '#FFFFFF', cursor: deleting ? 'not-allowed' : 'pointer', fontSize: 12.5, fontWeight: 600, opacity: deleting ? 0.65 : 1, transition: 'all 180ms ease' }}
+              >
+                <Trash2 size={13} />Delete selected ({selectedIds.size})
+              </button>
+            )}
+            <button
+              onClick={() => { setIsSelectionMode(false); setSelectedIds(new Set()); }}
+              style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid rgba(124,58,237,0.15)', background: '#FFFFFF', color: 'var(--color-text-secondary)', fontSize: 12.5, fontWeight: 500, cursor: 'pointer' }}
+              className="hover:!text-[var(--color-text-primary)]"
             >
-              <Trash2 size={13} />Delete selected ({selectedIds.size})
+              Done
             </button>
-          )}
+          </div>
         </div>
       )}
 
@@ -585,7 +592,7 @@ export default function VaultPage() {
             <p style={{ fontSize: 14, color: 'var(--color-text-secondary)', margin: 0 }}>Save optimized prompts to build your personal library.</p>
           </div>
         ) : items.map(item => (
-          <VaultRow key={item.id} item={item} selected={selectedIds.has(item.id)} onSelect={toggleSelected} onToggleFavorite={handleToggleFavorite} onDelete={(id) => requestDelete([id])} onOpenInOptimizer={(id) => router.push(`/dashboard/chat/${id}`)} />
+          <VaultRow key={item.id} item={item} isSelectionMode={isSelectionMode} selected={selectedIds.has(item.id)} onSelect={toggleSelected} onToggleFavorite={handleToggleFavorite} onDelete={(id) => requestDelete([id])} onOpenInOptimizer={(id) => router.push(`/dashboard/chat/${id}`)} />
         ))}
       </div>
 

@@ -78,7 +78,7 @@ export default function Header({ activeTab = 'Draft', onTabChange }: HeaderProps
       {/* Left: Title + Tabs */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: '-0.02em' }}>
-          Optimizer
+          {activeTab === 'Vault' ? 'Vault' : 'Optimizer'}
         </h1>
 
         {/* Recessed tab trough */}
@@ -108,8 +108,9 @@ export default function Header({ activeTab = 'Draft', onTabChange }: HeaderProps
         </div>
       </div>
 
-      {/* Right: Style + Target pills */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      {/* Right: Style + Target pills (only shown when not in Vault) */}
+      {activeTab !== 'Vault' && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
 
         {/* Style dropdown */}
         <div style={{ position: 'relative' }} ref={styleDropdownRef}>
@@ -226,6 +227,7 @@ export default function Header({ activeTab = 'Draft', onTabChange }: HeaderProps
           )}
         </div>
       </div>
+      )}
     </header>
   );
 }

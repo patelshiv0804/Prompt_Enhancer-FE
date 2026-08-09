@@ -592,6 +592,44 @@ function ChatDetailSkeleton() {
   );
 }
 
+// ── CopyPromptButton Component ────────────────────────────────────────────────
+function CopyPromptButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      title="Copy prompt"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 5,
+        padding: '5px 12px',
+        borderRadius: 8,
+        fontSize: 12,
+        fontWeight: 600,
+        border: '1px solid rgba(124,58,237,0.15)',
+        background: copied ? 'rgba(16,185,129,0.10)' : 'rgba(124,58,237,0.06)',
+        color: copied ? '#059669' : '#6D28D9',
+        cursor: 'pointer',
+        transition: 'all 180ms ease',
+      }}
+      className="hover:bg-[rgba(124,58,237,0.12)] hover:scale-105"
+    >
+      {copied ? <CheckCircle2 size={13} /> : <Copy size={13} />}
+      <span>{copied ? 'Copied' : 'Copy'}</span>
+    </button>
+  );
+}
+
 // ── Component ──────────────────────────────────────────────────────────────────
 export default function ChatView({ chatId }: { chatId: string | null }) {
   const [currentSession, setCurrentSession] = useState<OptimizationSession>(() => {
@@ -991,9 +1029,12 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
           <Wand2 size={13} />
           <span>{label}</span>
         </div>
-        <span style={{ fontSize: 20, fontWeight: 800, color: scoreColor(v.overallScore) }}>
-          {v.overallScore}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <CopyPromptButton text={v.optimizedPrompt} />
+          <span style={{ fontSize: 20, fontWeight: 800, color: scoreColor(v.overallScore) }}>
+            {v.overallScore}
+          </span>
+        </div>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', maxHeight: 380, paddingRight: 6 }}>
@@ -1144,7 +1185,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                   boxShadow: '0 4px 20px rgba(109,40,217,0.04)', border: '1px solid rgba(124,58,237,0.10)',
                   display: 'flex', flexDirection: 'column',
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: 18 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
                     <div style={{
                       display: 'inline-flex', alignItems: 'center', padding: '6px 14px', borderRadius: 9999,
                       fontSize: 12, fontWeight: 700, background: '#F1F5F9', color: '#64748B',
@@ -1155,6 +1196,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                           : 'Original'}
                       </span>
                     </div>
+                    <CopyPromptButton text={inputPromptContent} />
                   </div>
                   <div style={{ flex: 1, overflowY: 'auto', maxHeight: 380, paddingRight: 6 }}>
                     <FormattedPromptViewer content={inputPromptContent} />
