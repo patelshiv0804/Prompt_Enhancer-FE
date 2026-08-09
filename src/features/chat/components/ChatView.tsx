@@ -685,8 +685,9 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
           ];
         };
 
-        const mappedVersions: PromptVersion[] = versionsList.length > 0
-          ? versionsList.map((v: any) => {
+        const sortedVersionsList = [...versionsList].sort((a, b) => a.version_number - b.version_number);
+        const mappedVersions: PromptVersion[] = sortedVersionsList.length > 0
+          ? sortedVersionsList.map((v: any) => {
             const optText = v.content || v.optimizedPrompt || p.current_version?.content || p.original_prompt || '';
             // Use per-version scores if they exist (reenhanced versions); fall back to parent prompt scores
             const vOldAnal = v.old_analysis || null;
