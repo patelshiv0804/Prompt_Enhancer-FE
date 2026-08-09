@@ -28,6 +28,7 @@ interface PromptVersion {
   versionNumber: number;
   optimizedPrompt: string;
   overallScore: number;
+  beforeOverallScore?: number;
   dimensions: Dimension[];
   wordsAfter: number;
   tokensAfter: number;
@@ -692,12 +693,15 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
             const vNewAnal = v.new_analysis || enhAnal;
             const vScore = vNewAnal?.overall_score ?? overallScore;
             const vScoreScaled = typeof vScore === 'number' && vScore <= 10 ? Math.round(vScore * 10) : Math.round(vScore ?? overallScore);
+            const vOldScore = vOldAnal?.overall_score ?? originalScore;
+            const vOldScoreScaled = typeof vOldScore === 'number' && vOldScore <= 10 ? Math.round(vOldScore * 10) : Math.round(vOldScore ?? originalScore);
             const vToolRecs = v.tool_recommendations || null;
             return {
               versionNumber: v.version_number,
               versionType: v.version_type,
               optimizedPrompt: optText,
               overallScore: vScoreScaled,
+              beforeOverallScore: vOldScoreScaled,
               dimensions: makeDimensions(vOldAnal || origAnal, vNewAnal || enhAnal, originalScore, vScoreScaled),
               wordsAfter: optText.split(/\s+/).filter(Boolean).length,
               tokensAfter: Math.round(optText.length / 4),
@@ -713,6 +717,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
               versionType: 'original',
               optimizedPrompt: p.current_version?.content || p.original_prompt || '',
               overallScore: overallScore,
+              beforeOverallScore: originalScore,
               dimensions: makeDimensions(origAnal, enhAnal, originalScore, overallScore),
               wordsAfter: ((p.current_version?.content || p.original_prompt) || '').split(/\s+/).filter(Boolean).length,
               tokensAfter: Math.round(((p.current_version?.content || p.original_prompt) || '').length / 4),
@@ -865,6 +870,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
         versionNumber: d.version_number,
         optimizedPrompt: d.enhanced_prompt,
         overallScore: vScoreScaled,
+        beforeOverallScore: vOldAnal?.overall_score ?? sessionVersions[sessionVersions.length - 1]?.overallScore,
         dimensions: makeDimsLocal(vOldAnal, vNewAnal),
         wordsAfter: d.enhanced_prompt.split(/\s+/).filter(Boolean).length,
         tokensAfter: Math.round(d.enhanced_prompt.length / 4),
@@ -1154,7 +1160,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                   {/* Pts badge */}
                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 12px', background: 'rgba(16,185,129,0.10)', color: '#059669', borderRadius: 9999, fontSize: 12, fontWeight: 700 }}>
                     <TrendingUp size={12} />
-                    <span>+{version.overallScore - (session.originalScore ?? sessionVersions[0].overallScore)} pts</span>
+                    <span>{version.overallScore - (version.beforeOverallScore ?? session.originalScore ?? sessionVersions[0].overallScore) >= 0 ? '+' : ''}{version.overallScore - (version.beforeOverallScore ?? session.originalScore ?? sessionVersions[0].overallScore)} pts</span>
                   </div>
 
                   {/* Before / After — use per-version old_analysis when available */}
@@ -1162,9 +1168,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#64748B', fontWeight: 600 }}>
                       <span>Before</span>
                       <span style={{ fontWeight: 700, color: '#94A3B8' }}>
-                        {version.dimensions[0]?.beforeScore !== undefined
-                          ? Math.round(version.dimensions.reduce((sum, d) => sum + (d.beforeScore ?? 0), 0) / version.dimensions.length)
-                          : (session.originalScore ?? sessionVersions[0].overallScore)}
+                        {version.beforeOverallScore ?? session.originalScore ?? sessionVersions[0].overallScore}
                       </span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#64748B', fontWeight: 600 }}>
