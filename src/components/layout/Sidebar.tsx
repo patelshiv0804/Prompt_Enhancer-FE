@@ -9,9 +9,9 @@ import {
   Settings, User, Clock,
   Code2, Search, Film, PlaySquare, Image as ImageIcon,
   Megaphone, BookOpen, Mail, Star, ChevronDown, ChevronRight,
-  LogOut,
+  LogOut, Trash2,
 } from 'lucide-react';
-import { fetchHistory } from '@/features/history/services/historyService';
+import { fetchHistory, deleteHistoryItem } from '@/features/history/services/historyService';
 
 export type ActivePage = 'optimizer' | 'templates' | 'vault' | 'style-memory' | 'chaining' | 'settings' | 'chat';
 
@@ -55,6 +55,7 @@ export default function Sidebar() {
   const [recentCollapsed, setRecentCollapsed] = useState(false);
   const [recentItems, setRecentItems] = useState<any[]>([]);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [chatToDelete, setChatToDelete] = useState<{ id: string; prompt: string } | null>(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -263,34 +264,75 @@ export default function Sidebar() {
                       title={item.prompt}
                       onClick={() => router.push(`/dashboard/chat/${item.id}`)}
                       style={{
-                        display: 'flex', alignItems: 'center', gap: 9, padding: active ? '8px 10px 8px 8px' : '8px 10px',
-                        borderRadius: 10, background: active ? 'rgba(124,58,237,0.12)' : 'transparent',
-                        border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left',
-                        borderLeft: active ? '2px solid #7C3AED' : '2px solid transparent',
-                        transition: 'background 160ms ease', flexShrink: 0,
+                        display: 'flex', alignItems: 'center', gap: 9, padding: '8px 10px',
+                        borderRadius: 10,
+                        background: active
+                          ? 'linear-gradient(135deg, rgba(124,58,237,0.14) 0%, rgba(168,85,247,0.08) 100%)'
+                          : 'transparent',
+                        border: '1px solid',
+                        borderColor: active ? 'rgba(124,58,237,0.20)' : 'transparent',
+                        borderLeft: active ? '3px solid #7C3AED' : '3px solid transparent',
+                        boxShadow: active ? '0 2px 8px rgba(124,58,237,0.10)' : 'none',
+                        cursor: 'pointer', width: '100%', textAlign: 'left',
+                        transition: 'all 200ms cubic-bezier(0.22, 1, 0.36, 1)', flexShrink: 0,
                       }}
-                      className={!active ? 'hover:bg-[rgba(124,58,237,0.07)]' : ''}
+                      className={`group/chatitem ${!active ? 'hover:!bg-[rgba(124,58,237,0.09)] hover:!border-[rgba(124,58,237,0.12)] hover:shadow-[0_3px_12px_rgba(109,40,217,0.08)] hover:translate-x-[2px]' : ''}`}
                     >
-                      <div style={{
-                        width: 26, height: 26, borderRadius: 7, display: 'flex', alignItems: 'center',
-                        justifyContent: 'center', flexShrink: 0, color: accent, background: `${accent}18`,
-                      }}>
+                      <div
+                        style={{
+                          width: 26, height: 26, borderRadius: 7, display: 'flex', alignItems: 'center',
+                          justifyContent: 'center', flexShrink: 0, color: accent, background: `${accent}18`,
+                          transition: 'transform 180ms ease, background 180ms ease',
+                        }}
+                        className="group-hover/chatitem:scale-105"
+                      >
                         <Icon size={11} strokeWidth={2} />
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0, flex: 1 }}>
-                        <p style={{
-                          fontSize: 12, fontWeight: active ? 600 : 500,
-                          color: active ? '#4C1D95' : 'rgba(45,27,105,0.80)',
-                          margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3,
-                        }}>{item.prompt}</p>
+                        <p
+                          style={{
+                            fontSize: 12, fontWeight: active ? 600 : 500,
+                            color: active ? '#4C1D95' : 'rgba(45,27,105,0.80)',
+                            margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3,
+                            transition: 'color 180ms ease',
+                          }}
+                          className={!active ? 'group-hover/chatitem:!text-[#4C1D95] group-hover/chatitem:!font-semibold' : ''}
+                        >
+                          {item.prompt}
+                        </p>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                           <span style={{ fontSize: 10, color: 'rgba(45,27,105,0.40)', fontWeight: 400, whiteSpace: 'nowrap' }}>{item.ago}</span>
                           {item.isFavorite && <Star size={9} fill="#F59E0B" color="#F59E0B" style={{ flexShrink: 0 }} />}
                         </div>
                       </div>
-                      <span style={{ fontSize: 10.5, fontWeight: 700, lineHeight: 1, flexShrink: 0, color: accent, opacity: 0.75 }}>
-                        {item.score}
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <span
+                          style={{
+                            fontSize: 10.5, fontWeight: 700, lineHeight: 1, flexShrink: 0, color: accent, opacity: 0.85,
+                            padding: '2px 5px', borderRadius: 5, transition: 'all 180ms ease',
+                          }}
+                          className="group-hover/chatitem:hidden"
+                        >
+                          {item.score}
+                        </span>
+                        <button
+                          id={`sidebar-delete-btn-${item.id}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setChatToDelete({ id: item.id, prompt: item.prompt });
+                          }}
+                          title="Delete chat"
+                          style={{
+                            display: 'none', alignItems: 'center', justifyContent: 'center',
+                            width: 22, height: 22, borderRadius: 6, border: 'none',
+                            cursor: 'pointer', background: 'rgba(239,68,68,0.12)', color: '#EF4444',
+                            transition: 'all 180ms ease', flexShrink: 0,
+                          }}
+                          className="group-hover/chatitem:!flex hover:!bg-[#EF4444] hover:!text-white hover:scale-110"
+                        >
+                          <Trash2 size={12} strokeWidth={2} />
+                        </button>
+                      </div>
                     </button>
                   );
                 })
@@ -405,6 +447,112 @@ export default function Sidebar() {
                 }}
               >
                 Log Out
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {chatToDelete && mounted && createPortal(
+        <div
+          role="presentation"
+          onClick={() => setChatToDelete(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            background: 'rgba(15, 23, 42, 0.45)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 24,
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: 'min(100%, 440px)',
+              borderRadius: 20,
+              border: '1px solid rgba(124,58,237,0.12)',
+              background: '#FFFFFF',
+              boxShadow: '0 24px 80px rgba(15, 23, 42, 0.25)',
+              padding: 24,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 18,
+              animation: 'dropdownFadeIn 180ms ease-out',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+              <div style={{
+                width: 44,
+                height: 44,
+                borderRadius: 14,
+                flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'rgba(124,58,237,0.10)',
+                color: '#7C3AED',
+              }}>
+                <Trash2 size={18} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                <h3 style={{ margin: '0 0 6px', fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary, #1A1033)' }}>
+                  Delete prompt?
+                </h3>
+                <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: 'var(--color-text-secondary, #6B6B8A)' }}>
+                  Do you want to permanently remove this prompt? This cannot be undone.
+                </p>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => setChatToDelete(null)}
+                style={{
+                  padding: '10px 16px',
+                  borderRadius: 10,
+                  border: '1px solid rgba(124,58,237,0.14)',
+                  background: '#FFFFFF',
+                  color: 'var(--color-text-primary, #1A1033)',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+                className="hover:bg-[rgba(124,58,237,0.04)]"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const targetId = chatToDelete.id;
+                  setChatToDelete(null);
+                  await deleteHistoryItem(targetId);
+                  if (pathname === `/dashboard/chat/${targetId}`) {
+                    router.push('/dashboard/vault');
+                  }
+                }}
+                style={{
+                  padding: '10px 16px',
+                  borderRadius: 10,
+                  border: 'none',
+                  background: 'linear-gradient(135deg, #EF4444, #DC2626)',
+                  color: '#FFFFFF',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(239,68,68,0.28)',
+                }}
+                className="hover:brightness-105"
+              >
+                Delete prompt
               </button>
             </div>
           </div>

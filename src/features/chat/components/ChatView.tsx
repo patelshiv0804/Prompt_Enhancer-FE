@@ -1116,7 +1116,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                   boxShadow: isReenhancing ? 'none' : '0 2px 8px rgba(124,58,237,0.12)',
                 }}
               >
-                <GitBranch size={14} style={{ animation: isReenhancing ? 'spin 1s linear infinite' : 'none' }} />
+                <Wand2 size={14} style={{ animation: isReenhancing ? 'spin 1s linear infinite' : 'none' }} />
                 <span>{isReenhancing ? 'Re-enhancing…' : 'Re-enhance'}</span>
               </button>
             )}

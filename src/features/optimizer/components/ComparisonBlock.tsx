@@ -733,7 +733,7 @@ export default function ComparisonBlock({
                         }]),
                         {
                           id: 'reenhance',
-                          icon: GitBranch,
+                          icon: Wand2,
                           title: isReenhancing
                             ? 'Re-enhancing...'
                             : onReenhance
