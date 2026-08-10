@@ -6,9 +6,15 @@ import {
   User, Check, Settings, AlertTriangle, Trash2, Camera,
   Save, Sparkles, Code, Palette, Fingerprint, Zap,
   ChevronDown, CheckCircle2, X, ShieldAlert, AlertCircle, RefreshCw,
-  Target, Flame
+  Target, Flame, GraduationCap, Megaphone, Briefcase, Search, Code2,
+  School, Rocket, PenTool, BarChart3, Video, BookOpen, Layers, Award,
+  Users, Mail, TrendingUp, Lightbulb, DollarSign, Scale, ShoppingCart,
+  Cpu, Server, Database, ShieldCheck, Smartphone, Monitor, FileText,
+  Pencil
 } from 'lucide-react';
 import { apiClient } from '@/utils/apiClient';
+import { ROLES, ROLE_MODES, getModeIcon } from '@/constants/roles';
+import { presetAvatarGradients, presetIcons, getInitials, renderPresetAvatar } from '@/constants/avatars';
 
 /* ── Custom Switch Component ── */
 interface ToggleSwitchProps {
@@ -87,23 +93,70 @@ function SettingsContent({ initialTab = 'settings' }: SettingsPageProps) {
   const [defaultModel, setDefaultModel] = useState<string>('Claude');
   const [showDiffByDefault, setShowDiffByDefault] = useState<boolean>(true);
   const [autoDetectIntent, setAutoDetectIntent] = useState<boolean>(true);
+  const [modeSearchQuery, setModeSearchQuery] = useState<string>('');
 
   // Active / Dark calculations
   const [isDark, setIsDark] = useState<boolean>(false);
 
-  // UI Interactive States
-  const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
+  // Inline editing states
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [isEditingName, setIsEditingName] = useState<boolean>(false);
+  const [editingNameValue, setEditingNameValue] = useState<string>('');
+  const [showAvatarPicker, setShowAvatarPicker] = useState<boolean>(false);
   const [showOnboardingDetail, setShowOnboardingDetail] = useState<boolean>(false);
 
-  // Dropdown states
-  const [isModeDropdownOpen, setIsModeDropdownOpen] = useState<boolean>(false);
-  const modeDropdownRef = useRef<HTMLDivElement>(null);
+  const handleDirectAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarUrl(reader.result as string);
+        setAvatarPreset(0);
+      };
+      reader.readAsDataURL(file);
 
-  // Temp editing fields
-  const [tempName, setTempName] = useState<string>('Alex P.');
-  const [tempAvatarUrl, setTempAvatarUrl] = useState<string>('');
-  const [tempPreset, setTempPreset] = useState<number>(4);
-  const [tempRole, setTempRole] = useState<string>('Creator');
+      try {
+        const formData = new FormData();
+        formData.append('avatar', file);
+        const updated = await apiClient.patch('/api/v1/profile/me', formData);
+        if (updated?.avatar_url) {
+          setAvatarUrl(updated.avatar_url);
+        }
+        triggerSavedFeedback('profile_card');
+        triggerToast('Avatar photo updated!');
+      } catch {
+        triggerSavedFeedback('profile_card');
+        triggerToast('Avatar preview updated!');
+      }
+    }
+  };
+
+  const handleSelectPresetAvatar = async (presetIdx: number) => {
+    setAvatarPreset(presetIdx);
+    setAvatarUrl(null);
+    setShowAvatarPicker(false);
+    triggerSavedFeedback('profile_card');
+    triggerToast('Avatar preset updated!');
+  };
+
+  const handleSaveDisplayName = async () => {
+    const trimmed = editingNameValue.trim();
+    if (!trimmed) return;
+    setDisplayName(trimmed);
+    setIsEditingName(false);
+    triggerSavedFeedback('profile_card');
+    try {
+      const formData = new FormData();
+      formData.append('display_name', trimmed);
+      const updated = await apiClient.patch('/api/v1/profile/me', formData);
+      if (updated?.display_name) {
+        setDisplayName(updated.display_name);
+      }
+      triggerToast('Display name updated!');
+    } catch {
+      triggerToast('Display name updated!');
+    }
+  };
 
   // Toast System
   const [toast, setToast] = useState<{ message: string; visible: boolean; type?: 'success' | 'warning' }>({
@@ -117,16 +170,7 @@ function SettingsContent({ initialTab = 'settings' }: SettingsPageProps) {
      Effects & Event Listeners
      ═══════════════════════════════════════════════════ */
 
-  // Handle click outside dropdown
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (modeDropdownRef.current && !modeDropdownRef.current.contains(event.target as Node)) {
-        setIsModeDropdownOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+
 
   // Fetch live backend user profile, stats & settings
   useEffect(() => {
@@ -260,6 +304,10 @@ function SettingsContent({ initialTab = 'settings' }: SettingsPageProps) {
         show_diff_by_default: showDiffByDefault,
         auto_detect_intent: autoDetectIntent,
       });
+
+      const formData = new FormData();
+      formData.append('role', userRole.toLowerCase());
+      await apiClient.patch('/api/v1/profile/me', formData);
     } catch (err) {
       console.error('Save preferences notice:', err);
     }
@@ -270,6 +318,18 @@ function SettingsContent({ initialTab = 'settings' }: SettingsPageProps) {
 
     triggerSavedFeedback('preferences_card');
     triggerToast('AI preferences saved successfully!');
+  };
+
+  const handleRoleChange = async (newRole: string) => {
+    setUserRole(newRole);
+    triggerSavedFeedback('user_role');
+    try {
+      const formData = new FormData();
+      formData.append('role', newRole.toLowerCase());
+      await apiClient.patch('/api/v1/profile/me', formData);
+    } catch (err) {
+      console.error('Failed to update role in backend:', err);
+    }
   };
 
   const handleThemeChange = async (newTheme: 'light' | 'dark' | 'system') => {
@@ -284,7 +344,6 @@ function SettingsContent({ initialTab = 'settings' }: SettingsPageProps) {
 
   const handleModeChange = async (newMode: string) => {
     setDefaultMode(newMode);
-    setIsModeDropdownOpen(false);
     triggerSavedFeedback('default_mode');
     try {
       await apiClient.patch('/api/v1/settings/default-mode', { default_mode: newMode.toLowerCase() });
@@ -323,113 +382,9 @@ function SettingsContent({ initialTab = 'settings' }: SettingsPageProps) {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setAvatarFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setTempAvatarUrl(reader.result as string);
-        setTempPreset(0); // clear preset selection on upload
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // Open Edit Profile modal & populate temp states
-  const openEditModal = () => {
-    setTempName(displayName);
-    setTempAvatarUrl(avatarUrl || '');
-    setTempPreset(avatarPreset);
-    setTempRole(userRole);
-    setAvatarFile(null);
-    setIsEditModalOpen(true);
-  };
-
-  const saveProfileData = async () => {
-    try {
-      const formData = new FormData();
-      if (tempName.trim()) {
-        formData.append('display_name', tempName.trim());
-      }
-      // Save role to backend
-      formData.append('role', tempRole.toLowerCase());
-      if (avatarFile) {
-        formData.append('avatar', avatarFile);
-      }
-
-      const updatedProfile = await apiClient.patch('/api/v1/profile/me', formData);
-      if (updatedProfile) {
-        if (updatedProfile.display_name) setDisplayName(updatedProfile.display_name);
-        if (updatedProfile.avatar_url) setAvatarUrl(updatedProfile.avatar_url);
-        if (updatedProfile.role) {
-          setUserRole(updatedProfile.role.charAt(0).toUpperCase() + updatedProfile.role.slice(1));
-        }
-      } else {
-        setDisplayName(tempName);
-        setAvatarPreset(tempPreset);
-        setAvatarUrl(tempAvatarUrl.trim() === '' ? null : tempAvatarUrl.trim());
-      }
-    } catch {
-      setDisplayName(tempName);
-      setAvatarPreset(tempPreset);
-      setAvatarUrl(tempAvatarUrl.trim() === '' ? null : tempAvatarUrl.trim());
-    }
-
-    setUserRole(tempRole);
-    setIsEditModalOpen(false);
-
-    const d = new Date();
-    const formatted = d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-    setUpdatedAt(formatted);
-
-    triggerSavedFeedback('profile_card');
-    triggerToast('Profile information updated!');
-  };
 
 
 
-  // Get Initials Helper
-  const getInitials = (name: string) => {
-    if (!name) return 'AP';
-    const parts = name.trim().split(/\s+/);
-    if (parts.length === 1) {
-      return parts[0].substring(0, Math.min(2, parts[0].length)).toUpperCase();
-    }
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  };
-
-  /* ── Presets styling ── */
-  const presetAvatarGradients = [
-    'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)', // Default Violet (Pro)
-    'linear-gradient(135deg, #3B82F6 0%, #06B6D4 100%)', // Tech Blue/Teal
-    'linear-gradient(135deg, #EC4899 0%, #F43F5E 100%)', // Creative Pink/Rose
-    'linear-gradient(135deg, #10B981 0%, #059669 100%)', // Organic Emerald
-    'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)', // Amber Gold
-  ];
-
-  const presetIcons = [
-    User,
-    Code,
-    Palette,
-    Sparkles,
-    Fingerprint
-  ];
-
-  const renderPresetAvatar = (idx: number, size: number = 64, iconSize: number = 28) => {
-    const Gradient = presetAvatarGradients[idx % presetAvatarGradients.length];
-    const IconComponent = presetIcons[idx % presetIcons.length];
-    return (
-      <div style={{
-        width: size, height: size, borderRadius: '50%',
-        background: Gradient, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: '#FFFFFF', border: '1px solid rgba(255, 255, 255, 0.15)',
-        boxShadow: '0 4px 10px rgba(124, 58, 237, 0.25)', flexShrink: 0,
-      }}>
-        <IconComponent size={iconSize} strokeWidth={1.8} />
-      </div>
-    );
-  };
 
   /* ═══════════════════════════════════════════════════
      Dynamic Design Theme Mapping
@@ -687,8 +642,12 @@ function SettingsContent({ initialTab = 'settings' }: SettingsPageProps) {
                     background: colors.cardBg,
                     zIndex: 1,
                   }} />
-                  {/* Avatar */}
-                  <div style={{ position: 'relative', zIndex: 2 }}>
+                  {/* Avatar Image with overlay camera icon on hover */}
+                  <div
+                    style={{ position: 'relative', zIndex: 2, cursor: 'pointer' }}
+                    onClick={() => setShowAvatarPicker(!showAvatarPicker)}
+                    title="Click to edit avatar"
+                  >
                     {avatarUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={avatarUrl} alt="User Profile" onError={() => setAvatarUrl(null)}
@@ -701,24 +660,162 @@ function SettingsContent({ initialTab = 'settings' }: SettingsPageProps) {
                         fontSize: 22, fontWeight: 700, color: '#7C3AED',
                       }}>{getInitials(displayName)}</div>
                     ) : renderPresetAvatar(avatarPreset, 72, 28)}
+
+                    {/* Camera overlay indicator badge */}
+                    <div
+                      style={{
+                        position: 'absolute', bottom: -2, right: -2, zIndex: 4,
+                        width: 24, height: 24, borderRadius: '50%',
+                        background: '#7C3AED', color: '#FFFFFF',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        border: `2px solid ${colors.cardBg}`,
+                        boxShadow: '0 2px 6px rgba(124,58,237,0.4)',
+                      }}
+                      title="Edit avatar"
+                    >
+                      <Camera size={12} strokeWidth={2.2} />
+                    </div>
                   </div>
                   {/* Online dot */}
-                  <div style={{ position: 'absolute', bottom: 3, right: 3, zIndex: 3, width: 12, height: 12, borderRadius: '50%', background: '#10B981', border: `2px solid ${colors.cardBg}`, boxShadow: '0 0 0 2px rgba(16,185,129,0.25)' }} />
+                  <div style={{ position: 'absolute', bottom: 3, left: 3, zIndex: 3, width: 10, height: 10, borderRadius: '50%', background: '#10B981', border: `2px solid ${colors.cardBg}` }} />
+
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleDirectAvatarUpload}
+                    style={{ display: 'none' }}
+                  />
                 </div>
 
-                {/* Name + badges */}
-                <div style={{ marginTop: 10, marginBottom: 16 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
-                    <h3 style={{ fontSize: 17, fontWeight: 800, color: colors.textPrimary, margin: 0, letterSpacing: '-0.3px' }}>
-                      {displayName || 'Anonymous User'}
-                    </h3>
-                    <span style={{
-                      fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px',
-                      background: isDark ? 'rgba(167,139,250,0.18)' : 'rgba(124,58,237,0.10)',
-                      color: '#7C3AED', border: isDark ? '1px solid rgba(167,139,250,0.25)' : '1px solid rgba(124,58,237,0.18)',
-                      padding: '2.5px 9px', borderRadius: 6,
-                    }}>{userRole}</span>
+                {/* Inline Avatar Selection Tray */}
+                {showAvatarPicker && (
+                  <div style={{
+                    marginTop: 8, padding: '10px 14px', borderRadius: 14,
+                    background: isDark ? 'rgba(30, 21, 53, 0.9)' : 'rgba(124, 58, 237, 0.05)',
+                    border: `1px solid ${colors.cardBorder}`,
+                    display: 'flex', flexDirection: 'column', gap: 8,
+                    boxShadow: colors.cardShadow,
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: 11.5, fontWeight: 700, color: colors.textPrimary }}>Choose Avatar</span>
+                      <button onClick={() => setShowAvatarPicker(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: colors.textSecondary, padding: 0 }}>
+                        <X size={13} />
+                      </button>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <button
+                        onClick={() => avatarInputRef.current?.click()}
+                        style={{
+                          padding: '5px 10px', borderRadius: 8, fontSize: 11.5, fontWeight: 600,
+                          background: '#7C3AED', color: '#FFFFFF', border: 'none',
+                          cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4
+                        }}
+                      >
+                        <Camera size={12} /> Upload Photo
+                      </button>
+                      <button
+                        onClick={() => handleSelectPresetAvatar(0)}
+                        style={{
+                          width: 32, height: 32, borderRadius: '50%',
+                          background: 'rgba(124, 58, 237, 0.1)', display: 'flex', alignItems: 'center',
+                          justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#7C3AED',
+                          border: avatarPreset === 0 && !avatarUrl ? '2px solid #7C3AED' : '1px solid rgba(124,58,237,0.2)',
+                          cursor: 'pointer'
+                        }}
+                        title="Initials avatar"
+                      >
+                        AP
+                      </button>
+                      {presetAvatarGradients.map((_: string, i: number) => {
+                        const presetIdx = i + 1;
+                        const isActive = avatarPreset === presetIdx && !avatarUrl;
+                        return (
+                          <button
+                            key={presetIdx}
+                            onClick={() => handleSelectPresetAvatar(presetIdx)}
+                            style={{
+                              background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                              outline: isActive ? '2px solid #7C3AED' : 'none', borderRadius: '50%', outlineOffset: 2
+                            }}
+                          >
+                            {renderPresetAvatar(presetIdx, 32, 14)}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
+                )}
+
+                {/* Name + inline editing */}
+                <div style={{ marginTop: 10, marginBottom: 16 }}>
+                  {isEditingName ? (
+                    <form
+                      onSubmit={(e) => { e.preventDefault(); handleSaveDisplayName(); }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}
+                    >
+                      <input
+                        type="text"
+                        value={editingNameValue}
+                        onChange={e => setEditingNameValue(e.target.value)}
+                        autoFocus
+                        style={{
+                          padding: '5px 10px', fontSize: 14, fontWeight: 700,
+                          borderRadius: 8, border: '1.5px solid #7C3AED',
+                          background: colors.inputBg, color: colors.textPrimary,
+                          outline: 'none', width: 200,
+                        }}
+                      />
+                      <button
+                        type="submit"
+                        disabled={!editingNameValue.trim()}
+                        style={{
+                          background: '#7C3AED', color: '#FFF', border: 'none',
+                          borderRadius: 6, padding: '6px 9px', cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center'
+                        }}
+                        title="Save name"
+                      >
+                        <Check size={13} strokeWidth={3} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingName(false)}
+                        style={{
+                          background: colors.surfaceBg, color: colors.textSecondary, border: `1px solid ${colors.cardBorder}`,
+                          borderRadius: 6, padding: '6px 9px', cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center'
+                        }}
+                        title="Cancel"
+                      >
+                        <X size={13} />
+                      </button>
+                    </form>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
+                      <h3 style={{ fontSize: 17, fontWeight: 800, color: colors.textPrimary, margin: 0, letterSpacing: '-0.3px' }}>
+                        {displayName || 'Anonymous User'}
+                      </h3>
+                      <button
+                        onClick={() => { setEditingNameValue(displayName); setIsEditingName(true); }}
+                        style={{
+                          background: 'none', border: 'none', cursor: 'pointer', padding: 2,
+                          color: colors.textSecondary, display: 'inline-flex', alignItems: 'center',
+                        }}
+                        className="hover:!text-[#7C3AED]"
+                        title="Click to edit name"
+                      >
+                        <Pencil size={13} />
+                      </button>
+                      <span style={{
+                        fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px',
+                        background: isDark ? 'rgba(167,139,250,0.18)' : 'rgba(124,58,237,0.10)',
+                        color: '#7C3AED', border: isDark ? '1px solid rgba(167,139,250,0.25)' : '1px solid rgba(124,58,237,0.18)',
+                        padding: '2.5px 9px', borderRadius: 6,
+                      }}>{userRole}</span>
+                    </div>
+                  )}
+
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ fontSize: 12.5, color: colors.textSecondary }}>{email}</span>
                     <span style={{
@@ -852,31 +949,7 @@ function SettingsContent({ initialTab = 'settings' }: SettingsPageProps) {
                 </p>
               </div>
 
-              {/* ── Edit Profile CTA ── */}
-              <div style={{ padding: '0 22px 22px', marginTop: 'auto' }}>
-                <button id="edit-profile-btn" onClick={openEditModal}
-                  style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                    padding: '11px 18px', borderRadius: 12, fontSize: 13, fontWeight: 700,
-                    cursor: 'pointer', width: '100%', border: 'none',
-                    background: isDark
-                      ? 'linear-gradient(135deg, rgba(124,58,237,0.25) 0%, rgba(168,85,247,0.18) 100%)'
-                      : 'linear-gradient(135deg, rgba(124,58,237,0.08) 0%, rgba(168,85,247,0.05) 100%)',
-                    color: '#7C3AED',
-                    boxShadow: isDark
-                      ? 'inset 0 1px 0 rgba(167,139,250,0.15), 0 2px 8px rgba(0,0,0,0.25)'
-                      : 'inset 0 1px 0 rgba(255,255,255,0.9), 0 2px 8px rgba(124,58,237,0.10)',
-                    outline: `1.5px solid ${isDark ? 'rgba(167,139,250,0.20)' : 'rgba(124,58,237,0.15)'}`,
-                    transition: 'all 220ms cubic-bezier(0.22,1,0.36,1)',
-                  }}
-                  className="btn-edit-profile"
-                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 8px 24px rgba(124,58,237,0.25)'; (e.currentTarget as HTMLButtonElement).style.outlineColor = 'rgba(124,58,237,0.35)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = ''; (e.currentTarget as HTMLButtonElement).style.boxShadow = isDark ? 'inset 0 1px 0 rgba(167,139,250,0.15), 0 2px 8px rgba(0,0,0,0.25)' : 'inset 0 1px 0 rgba(255,255,255,0.9), 0 2px 8px rgba(124,58,237,0.10)'; (e.currentTarget as HTMLButtonElement).style.outlineColor = isDark ? 'rgba(167,139,250,0.20)' : 'rgba(124,58,237,0.15)'; }}
-                >
-                  <Camera size={15} strokeWidth={2} />
-                  Edit Profile
-                </button>
-              </div>
+
             </div>
           )}
 
@@ -948,62 +1021,226 @@ function SettingsContent({ initialTab = 'settings' }: SettingsPageProps) {
                 </div>
               </div>
 
-              {/* Default Mode (Dropdown Selector) */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }} ref={modeDropdownRef}>
+              {/* ── Interactive Role Selection ── */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: colors.textPrimary }}>Default Mode</span>
-                  {savedFeedback['default_mode'] && <span style={{ fontSize: 11, color: '#10B981' }}>Updated ✓</span>}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: colors.textPrimary, letterSpacing: '-0.1px' }}>
+                      Default Role
+                    </span>
+                    <span style={{
+                      fontSize: 10.5, fontWeight: 700, color: '#7C3AED',
+                      background: isDark ? 'rgba(167,139,250,0.15)' : 'rgba(124,58,237,0.08)',
+                      padding: '2px 8px', borderRadius: 99,
+                      border: '1px solid rgba(124,58,237,0.15)'
+                    }}>
+                      12 Roles
+                    </span>
+                  </div>
+                  {savedFeedback['user_role'] && (
+                    <span style={{ fontSize: 11.5, fontWeight: 600, color: '#10B981', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <Check size={12} strokeWidth={2.5} /> Updated
+                    </span>
+                  )}
                 </div>
 
-                <div style={{ position: 'relative' }}>
-                  <button
-                    onClick={() => setIsModeDropdownOpen(!isModeDropdownOpen)}
-                    style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      width: '100%', padding: '10px 14px', borderRadius: 10,
-                      fontSize: 13.5, fontWeight: 500, cursor: 'pointer',
-                      background: colors.inputBg, border: `1px solid ${colors.inputBorder}`,
-                      color: colors.textPrimary,
-                      textAlign: 'left', outline: 'none', transition: 'all 200ms ease',
-                    }}
-                    className="hover:border-[rgba(124,58,237,0.3)] focus:border-[#7C3AED]"
-                  >
-                    <span>{defaultMode}</span>
-                    <ChevronDown size={14} style={{
-                      transform: isModeDropdownOpen ? 'rotate(180deg)' : 'none',
-                      transition: 'transform 200ms ease',
-                      opacity: 0.7,
-                    }} />
-                  </button>
+                {/* Role Card Grid with Hover Elevation & Micro-Animations */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(135px, 1fr))',
+                  gap: 8,
+                }}>
+                  {ROLES.map(role => {
+                    const RoleIcon = role.icon;
+                    const isSelected = userRole.toLowerCase() === role.id.toLowerCase() || userRole.toLowerCase() === role.label.toLowerCase();
+                    const modeCount = (ROLE_MODES[role.id] || []).length;
 
-                  {isModeDropdownOpen && (
+                    return (
+                      <button
+                        key={role.id}
+                        onClick={() => {
+                          handleRoleChange(role.label);
+                          setModeSearchQuery('');
+                          const roleModes = ROLE_MODES[role.id] || ROLE_MODES['general'];
+                          if (!roleModes.map(m => m.toLowerCase()).includes(defaultMode.toLowerCase())) {
+                            handleModeChange(roleModes[0]);
+                          }
+                        }}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 8,
+                          padding: '8px 12px', borderRadius: 12, fontSize: 12.5, fontWeight: isSelected ? 700 : 500,
+                          cursor: 'pointer', outline: 'none',
+                          border: isSelected
+                            ? '1px solid transparent'
+                            : `1px solid ${colors.cardBorder}`,
+                          transition: 'all 200ms cubic-bezier(0.2, 0.8, 0.2, 1)',
+                          background: isSelected
+                            ? 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)'
+                            : colors.surfaceBg,
+                          color: isSelected ? '#FFFFFF' : colors.textPrimary,
+                          boxShadow: isSelected
+                            ? '0 4px 14px rgba(124, 58, 237, 0.32), inset 0 1px 0 rgba(255,255,255,0.2)'
+                            : 'none',
+                          position: 'relative',
+                        }}
+                        className="interactive-pill hover:scale-[1.02] active:scale-[0.98]"
+                      >
+                        <div style={{
+                          width: 26, height: 26, borderRadius: 8,
+                          background: isSelected ? 'rgba(255,255,255,0.20)' : (isDark ? 'rgba(167,139,250,0.12)' : 'rgba(124,58,237,0.08)'),
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          flexShrink: 0,
+                          color: isSelected ? '#FFFFFF' : '#7C3AED',
+                        }}>
+                          <RoleIcon size={14} strokeWidth={2} />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', overflow: 'hidden', width: '100%' }}>
+                          <span style={{
+                            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%',
+                            textAlign: 'left', fontSize: 12, lineHeight: 1.2
+                          }}>
+                            {role.label}
+                          </span>
+                          <span style={{
+                            fontSize: 9.5, opacity: isSelected ? 0.85 : 0.6,
+                            color: isSelected ? '#FFFFFF' : colors.textSecondary,
+                            fontWeight: 400
+                          }}>
+                            {modeCount} modes
+                          </span>
+                        </div>
+                        {isSelected && (
+                          <div style={{
+                            width: 14, height: 14, borderRadius: '50%', background: '#FFFFFF',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            color: '#7C3AED', flexShrink: 0,
+                          }}>
+                            <Check size={9} strokeWidth={3} />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* ── Dynamic Mode Selection Panel ── */}
+              <div style={{
+                display: 'flex', flexDirection: 'column', gap: 12,
+                background: isDark ? 'rgba(30, 21, 53, 0.45)' : 'rgba(124, 58, 237, 0.03)',
+                border: `1px solid ${isDark ? 'rgba(167, 139, 250, 0.15)' : 'rgba(124, 58, 237, 0.10)'}`,
+                borderRadius: 16, padding: '16px 20px',
+                transition: 'all 250ms ease',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: colors.textPrimary }}>
+                      Default Mode
+                    </span>
+                    {(() => {
+                      const activeRoleObj = ROLES.find(r => r.label.toLowerCase() === userRole.toLowerCase() || r.id.toLowerCase() === userRole.toLowerCase()) || ROLES[0];
+                      const ActiveRoleIcon = activeRoleObj.icon;
+                      return (
+                        <div style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 5,
+                          fontSize: 11, fontWeight: 700, color: '#7C3AED',
+                          background: isDark ? 'rgba(167,139,250,0.18)' : 'rgba(124,58,237,0.10)',
+                          padding: '3px 10px', borderRadius: 99,
+                          border: '1px solid rgba(124,58,237,0.18)'
+                        }}>
+                          <ActiveRoleIcon size={12} />
+                          <span>{activeRoleObj.label}</span>
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Search / Filter input for modes */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', maxWidth: 220 }}>
                     <div style={{
-                      position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0,
-                      background: colors.cardBg, border: `1px solid ${colors.cardBorder}`,
-                      borderRadius: 10, overflow: 'hidden', zIndex: 100,
-                      boxShadow: colors.cardShadow,
-                      animation: 'dropdownFadeIn 150ms ease',
+                      position: 'relative', width: '100%', display: 'flex', alignItems: 'center'
                     }}>
-                      {['General', 'Creative', 'Technical', 'Marketing', 'Coding'].map(modeOpt => (
+                      <Search size={12} style={{ position: 'absolute', left: 10, color: colors.textSecondary, pointerEvents: 'none' }} />
+                      <input
+                        type="text"
+                        value={modeSearchQuery}
+                        onChange={e => setModeSearchQuery(e.target.value)}
+                        placeholder="Search modes..."
+                        style={{
+                          width: '100%', padding: '5px 10px 5px 28px', fontSize: 11.5,
+                          borderRadius: 8, border: `1px solid ${colors.inputBorder}`,
+                          background: colors.inputBg, color: colors.textPrimary,
+                          outline: 'none', transition: 'all 150ms ease',
+                        }}
+                      />
+                      {modeSearchQuery && (
+                        <button
+                          onClick={() => setModeSearchQuery('')}
+                          style={{ position: 'absolute', right: 8, background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: colors.textSecondary }}
+                        >
+                          <X size={12} />
+                        </button>
+                      )}
+                    </div>
+                    {savedFeedback['default_mode'] && (
+                      <span style={{ fontSize: 11.5, fontWeight: 600, color: '#10B981', flexShrink: 0 }}>✓</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Animated Modes Grid Container */}
+                <div style={{
+                  display: 'flex', gap: 6, flexWrap: 'wrap',
+                  maxHeight: 180, overflowY: 'auto', paddingRight: 4,
+                  scrollbarWidth: 'thin',
+                }}>
+                  {(() => {
+                    const currentRoleId = ROLES.find(
+                      r => r.label.toLowerCase() === userRole.toLowerCase() || r.id.toLowerCase() === userRole.toLowerCase()
+                    )?.id || 'general';
+                    const availableModes = ROLE_MODES[currentRoleId] || ROLE_MODES['general'];
+                    const filteredModes = availableModes.filter(m => m.toLowerCase().includes(modeSearchQuery.toLowerCase().trim()));
+
+                    if (filteredModes.length === 0) {
+                      return (
+                        <div style={{ padding: '12px 0', fontSize: 12, color: colors.textSecondary, fontStyle: 'italic', width: '100%', textAlign: 'center' }}>
+                          No modes matching &quot;{modeSearchQuery}&quot;
+                        </div>
+                      );
+                    }
+
+                    return filteredModes.map(modeOpt => {
+                      const ModeIcon = getModeIcon(modeOpt);
+                      const isSelected = defaultMode.toLowerCase() === modeOpt.toLowerCase();
+                      return (
                         <button
                           key={modeOpt}
                           onClick={() => handleModeChange(modeOpt)}
                           style={{
-                            width: '100%', padding: '9px 12px', fontSize: 13,
-                            fontWeight: defaultMode === modeOpt ? 600 : 500,
-                            color: defaultMode === modeOpt ? '#7C3AED' : colors.textSecondary,
-                            textAlign: 'left', border: 'none', cursor: 'pointer',
-                            background: 'transparent', display: 'flex', alignItems: 'center',
-                            justifyContent: 'space-between',
+                            display: 'inline-flex', alignItems: 'center', gap: 6,
+                            padding: '6px 12px', borderRadius: 10, fontSize: 12, fontWeight: isSelected ? 700 : 500,
+                            cursor: 'pointer', border: 'none', whiteSpace: 'nowrap',
+                            transition: 'all 180ms cubic-bezier(0.2, 0.8, 0.2, 1)', flexShrink: 0,
+                            background: isSelected
+                              ? 'linear-gradient(135deg, #7C3AED, #A855F7)'
+                              : (isDark ? 'rgba(255,255,255,0.06)' : '#FFFFFF'),
+                            color: isSelected ? '#FFFFFF' : colors.textPrimary,
+                            boxShadow: isSelected
+                              ? '0 3px 10px rgba(124,58,237,0.30)'
+                              : '0 1px 3px rgba(0,0,0,0.04)',
+                            outline: isSelected
+                              ? 'none'
+                              : `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(124,58,237,0.12)'}`,
                           }}
-                          className="custom-select-option"
+                          className="interactive-pill hover:scale-[1.03] active:scale-[0.97]"
                         >
+                          <ModeIcon size={13} style={{ color: isSelected ? '#FFFFFF' : '#7C3AED', flexShrink: 0 }} />
                           <span>{modeOpt}</span>
-                          {defaultMode === modeOpt && <Check size={12} strokeWidth={2.5} />}
+                          {isSelected && <Check size={11} strokeWidth={3} style={{ marginLeft: 2 }} />}
                         </button>
-                      ))}
-                    </div>
-                  )}
+                      );
+                    });
+                  })()}
                 </div>
               </div>
 
@@ -1076,230 +1313,10 @@ function SettingsContent({ initialTab = 'settings' }: SettingsPageProps) {
                   />
                 </div>
               </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
-                <button
-                  id="save-preferences-btn"
-                  onClick={handleSavePreferences}
-                  className="btn-primary"
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 6,
-                    padding: '9px 18px', borderRadius: 10, fontSize: 13, fontWeight: 600,
-                    border: 'none', cursor: 'pointer',
-                  }}
-                >
-                  <Save size={14} />
-                  Save Preferences
-                </button>
-              </div>
             </div>
           )}
         </div>
       </div>
-
-      {/* ═══════════════════════════════════════════════════
-         Modal Dialog: Edit Profile Modal
-         ═══════════════════════════════════════════════════ */}
-      {isEditModalOpen && (
-        <>
-          {/* Overlay background */}
-          <div
-            onClick={() => setIsEditModalOpen(false)}
-            style={{
-              position: 'fixed', inset: 0, background: 'rgba(15,5,40,0.50)',
-              backdropFilter: 'blur(3px)', zIndex: 1000,
-              animation: 'fadeIn 200ms ease-out',
-            }}
-          />
-          {/* Centered Modal */}
-          <div style={{
-            position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-            width: '90%', maxWidth: 440, zIndex: 1001,
-            background: colors.cardBg, border: `1px solid ${colors.cardBorder}`,
-            borderRadius: 20, boxShadow: '0 20px 50px rgba(0,0,0,0.30)',
-            display: 'flex', flexDirection: 'column', overflow: 'hidden',
-            animation: 'dropdownFadeIn 220ms ease-out',
-          }}>
-            {/* Modal Header */}
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '18px 24px', borderBottom: `1px solid ${colors.divider}`,
-            }}>
-              <span style={{ fontSize: 15, fontWeight: 700, color: colors.textPrimary }}>Edit Profile</span>
-              <button
-                onClick={() => setIsEditModalOpen(false)}
-                style={{
-                  background: 'none', border: 'none', cursor: 'pointer', padding: 4,
-                  color: colors.textSecondary
-                }}
-                className="hover:opacity-70"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 18 }}>
-              {/* Preset avatar row selector */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: colors.textSecondary }}>Choose Avatar Preset</span>
-                <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', padding: '4px 0' }}>
-                  <button
-                    onClick={() => { setTempPreset(0); setTempAvatarUrl(''); }}
-                    className={`avatar-preset-btn ${tempPreset === 0 && tempAvatarUrl === '' ? 'active' : ''}`}
-                    style={{ background: 'none' }}
-                  >
-                    <div style={{
-                      width: 44, height: 44, borderRadius: '50%',
-                      background: 'rgba(124, 58, 237, 0.08)', display: 'flex', alignItems: 'center',
-                      justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#7C3AED',
-                      border: '1px solid rgba(124, 58, 237, 0.15)',
-                    }}>
-                      Initials
-                    </div>
-                  </button>
-
-                  {presetAvatarGradients.map((_, i) => {
-                    const presetIdx = i + 1;
-                    const isActive = tempPreset === presetIdx && tempAvatarUrl === '';
-                    return (
-                      <button
-                        key={presetIdx}
-                        onClick={() => { setTempPreset(presetIdx); setTempAvatarUrl(''); }}
-                        className={`avatar-preset-btn ${isActive ? 'active' : ''}`}
-                        style={{ background: 'none' }}
-                      >
-                        {renderPresetAvatar(presetIdx, 44, 18)}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Custom Image Upload Selector */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: colors.textSecondary }}>Or Upload Custom Avatar</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <label
-                    style={{
-                      padding: '8px 16px', borderRadius: 8, fontSize: 12.5, fontWeight: 600,
-                      background: 'rgba(124, 58, 237, 0.08)', color: '#7C3AED',
-                      border: '1px dashed rgba(124, 58, 237, 0.35)',
-                      cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
-                      transition: 'all 180ms ease'
-                    }}
-                    className="hover:!bg-[rgba(124,58,237,0.14)] hover:!border-[rgba(124,58,237,0.50)]"
-                  >
-                    <Camera size={14} />
-                    <span>Choose File</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      style={{ display: 'none' }}
-                    />
-                  </label>
-
-                  {tempAvatarUrl ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={tempAvatarUrl}
-                        alt="Uploaded preview"
-                        style={{ width: 34, height: 34, borderRadius: '50%', objectFit: 'cover', border: `1px solid ${colors.cardBorder}` }}
-                      />
-                      <button
-                        onClick={() => setTempAvatarUrl('')}
-                        style={{
-                          background: 'none', border: 'none', cursor: 'pointer', padding: 2,
-                          color: '#EF4444', fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 2
-                        }}
-                        className="hover:opacity-80"
-                      >
-                        <X size={12} /> Remove
-                      </button>
-                    </div>
-                  ) : (
-                    <span style={{ fontSize: 12, color: colors.textSecondary }}>No file selected</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Display Name Input */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: colors.textSecondary }}>Display Name</span>
-                <input
-                  type="text"
-                  value={tempName}
-                  onChange={(e) => setTempName(e.target.value)}
-                  placeholder="Add your name"
-                  style={{
-                    width: '100%', padding: '9px 12px', fontSize: 13,
-                    border: `1px solid ${colors.inputBorder}`, borderRadius: 8,
-                    background: colors.inputBg, color: colors.textPrimary,
-                    boxSizing: 'border-box', outline: 'none',
-                  }}
-                />
-              </div>
-
-              {/* Default Role Selection Dropdown/Pills */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: colors.textSecondary }}>Default Role</span>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 2 }}>
-                  {['Student', 'Creator', 'Entrepreneur', 'Researcher', 'Developer', 'Marketer', 'Designer', 'Writer', 'Educator'].map(roleOpt => {
-                    const isSelected = tempRole === roleOpt;
-                    return (
-                      <button
-                        key={roleOpt}
-                        onClick={() => setTempRole(roleOpt)}
-                        style={{
-                          padding: '5px 10px', borderRadius: 8, fontSize: 11.5, fontWeight: 600,
-                          cursor: 'pointer', border: '1px solid',
-                          transition: 'all 150ms ease',
-                          background: isSelected
-                            ? 'linear-gradient(135deg, #7C3AED, #A855F7)'
-                            : colors.surfaceBg,
-                          borderColor: isSelected ? '#7C3AED' : colors.cardBorder,
-                          color: isSelected ? '#FFFFFF' : colors.textSecondary,
-                        }}
-                      >
-                        {roleOpt}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div style={{
-              display: 'flex', justifyContent: 'flex-end', gap: 10,
-              padding: '16px 24px', borderTop: `1px solid ${colors.divider}`,
-              background: colors.surfaceBg,
-            }}>
-              <button
-                onClick={() => setIsEditModalOpen(false)}
-                className="btn-secondary"
-                style={{ padding: '8px 16px', borderRadius: 8, fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={saveProfileData}
-                disabled={!tempName.trim()}
-                className="btn-primary"
-                style={{
-                  padding: '8px 18px', borderRadius: 8, fontSize: 12.5, fontWeight: 600,
-                  cursor: tempName.trim() ? 'pointer' : 'not-allowed', border: 'none',
-                  opacity: tempName.trim() ? 1 : 0.6
-                }}
-              >
-                Save Changes
-              </button>
-            </div>
-          </div>
-        </>
-      )}
 
 
 

@@ -258,11 +258,19 @@ export default function Sidebar() {
                   const accent = SIDEBAR_HISTORY_ACCENTS[item.category] || '#7C3AED';
                   const active = pathname === `/dashboard/chat/${item.id}`;
                   return (
-                    <button
+                    <div
                       key={item.id}
                       id={`sidebar-history-item-${item.id}`}
+                      role="button"
+                      tabIndex={0}
                       title={item.prompt}
                       onClick={() => router.push(`/dashboard/chat/${item.id}`)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          router.push(`/dashboard/chat/${item.id}`);
+                        }
+                      }}
                       style={{
                         display: 'flex', alignItems: 'center', gap: 9, padding: '8px 10px',
                         borderRadius: 10,
@@ -333,7 +341,7 @@ export default function Sidebar() {
                           <Trash2 size={12} strokeWidth={2} />
                         </button>
                       </div>
-                    </button>
+                    </div>
                   );
                 })
               )}

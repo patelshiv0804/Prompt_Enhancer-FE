@@ -10,6 +10,8 @@ interface UserProfile {
   display_name: string | null;
   plan: string;
   avatar_url: string | null;
+  role?: string | null;
+  onboarding_completed?: boolean;
 }
 
 interface StyleProfile {
@@ -29,6 +31,7 @@ interface AuthContextType {
   register: (email: string, password: string, fullName: string) => Promise<void>;
   loginWithGoogle: (idToken: string) => Promise<void>;
   logout: () => void;
+  refreshUserProfile: () => Promise<void>;
   styleProfiles: StyleProfile[];
   activeStyle: { id: string | null; name: string };
   setActiveStyle: (style: { id: string | null; name: string }) => void;
@@ -66,6 +69,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     await refreshStyleProfiles();
     router.push('/dashboard/optimizer');
+  };
+
+  const refreshUserProfile = async () => {
+    try {
+      const profile = await apiClient.get<UserProfile>('/api/v1/profile/me');
+      setUser(profile);
+    } catch (err) {
+      console.error('Failed to refresh user profile:', err);
+    }
   };
 
   const refreshStyleProfiles = async () => {
@@ -211,6 +223,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         register,
         loginWithGoogle,
         logout,
+        refreshUserProfile,
         styleProfiles,
         activeStyle,
         setActiveStyle,
