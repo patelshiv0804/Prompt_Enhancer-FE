@@ -19,46 +19,8 @@ export default function Home() {
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [enhancedData, setEnhancedData] = useState<any>(null);
 
-  const handleEnhance = async () => {
-    if (!prompt.trim()) return;
-    setIsEnhancing(true);
-
-    try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
-      const devEmail = process.env.NEXT_PUBLIC_DEV_USER_EMAIL || "kartikjaju0@gmail.com";
-
-      const response = await fetch(`${apiUrl}/api/v1/enhance`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Current-User": devEmail,
-        },
-        body: JSON.stringify({
-          prompt: prompt,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to enhance prompt: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      if (result.success && result.data) {
-        setEnhancedData(result.data);
-        
-        // Smoothly scroll down to the showcase section
-        const showcase = document.getElementById("transformation-showcase");
-        if (showcase) {
-          setTimeout(() => {
-            showcase.scrollIntoView({ behavior: "smooth" });
-          }, 150);
-        }
-      }
-    } catch (error) {
-      console.error("Enhancement error:", error);
-    } finally {
-      setIsEnhancing(false);
-    }
+  const handleEnhance = () => {
+    // Static UI button - no redirects, API calls, or scrolling
   };
 
   return (
