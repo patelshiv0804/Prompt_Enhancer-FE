@@ -20,7 +20,9 @@ export async function fetchHistoryStats(): Promise<HistoryStats> {
     let averageScore = 0;
     if (promptsRes.data && promptsRes.data.length > 0) {
       const totalScore = promptsRes.data.reduce((sum: number, p: any) => {
-        const finalScore = p.new_analysis?.overall_score ?? (p.old_analysis?.overall_score ? Math.min(95, p.old_analysis.overall_score + 35) : 82);
+        const newAna = p.new_analysis || p.current_version?.new_analysis;
+        const oldAna = p.old_analysis || p.current_version?.old_analysis;
+        const finalScore = newAna?.overall_score ?? (oldAna?.overall_score ? Math.min(95, oldAna.overall_score + 35) : 82);
         return sum + finalScore;
       }, 0);
       averageScore = Math.round(totalScore / promptsRes.data.length);
@@ -106,7 +108,9 @@ export async function fetchHistory(page: number, pageSize: number, filters: Hist
     let mappedItems: HistoryItem[] = items.map((p: any) => {
       const itemId = String(p.id || p.prompt_id);
       const isFav = favSet.has(itemId);
-      const finalScore = p.new_analysis?.overall_score ?? (p.old_analysis?.overall_score ? Math.min(95, p.old_analysis.overall_score + 35) : 82);
+      const newAna = p.new_analysis || p.current_version?.new_analysis;
+      const oldAna = p.old_analysis || p.current_version?.old_analysis;
+      const finalScore = newAna?.overall_score ?? (oldAna?.overall_score ? Math.min(95, oldAna.overall_score + 35) : 82);
 
       return {
         id: itemId,

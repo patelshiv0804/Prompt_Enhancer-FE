@@ -236,6 +236,8 @@ function OptimizerPageContent() {
                       enhanced_analysis: newAna,
                       tool_recommendations: toolRecs || prev?.tool_recommendations,
                     }));
+                    // ⚡ Refresh Sidebar and Vault history list with updated scores!
+                    window.dispatchEvent(new Event('promptiq:history-updated'));
                   }
                 }
               } catch (pollErr) {
