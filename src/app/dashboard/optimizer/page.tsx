@@ -198,33 +198,53 @@ function OptimizerPageContent() {
 
       const response = await apiClient.post('/api/v1/enhance', payload);
       if (response.success && response.data) {
-        let optData = response.data;
-        if (!optData.original_analysis || !optData.enhanced_analysis) {
-          try {
-            const [origRes, enhRes] = await Promise.all([
-              apiClient.post<any>('/api/v1/analyze', { prompt: promptText }),
-              apiClient.post<any>('/api/v1/analyze', { prompt: optData.enhanced_prompt })
-            ]);
-            optData = {
-              ...optData,
-              original_analysis: origRes,
-              enhanced_analysis: enhRes,
-            };
-          } catch (analysisErr) {
-            console.error('Failed to run fallback analysis:', analysisErr);
-          }
-        }
+        const optData = response.data;
         setOptimizationResult(optData);
         setIsOptimized(true);
+        // ⚡ Unlock the UI immediately — show enhanced prompt right away
+        setIsOptimizing(false);
         window.dispatchEvent(new Event('promptiq:history-updated'));
 
         if (response.data.version && response.data.version.prompt_id) {
-          setLoadedPromptId(response.data.version.prompt_id);
-          // Load version list without overwriting current optimization result
-          try {
-            await loadVersionHistory(response.data.version.prompt_id);
-          } catch (vErr) {
+          const pId = response.data.version.prompt_id;
+          setLoadedPromptId(pId);
+
+          // Fire-and-forget: load version history without blocking UI
+          loadVersionHistory(pId).catch((vErr) => {
             console.error('Failed to fetch versions list:', vErr);
+          });
+
+          // If analysis is processing in background, poll for completion
+          if (!optData.original_analysis || !optData.enhanced_analysis) {
+            let attempts = 0;
+            const pollTimer = setInterval(async () => {
+              attempts++;
+              try {
+                const detailRes = await apiClient.get<any>(`/api/v1/prompts/${pId}`);
+                if (detailRes?.data) {
+                  const detail = detailRes.data;
+                  const currentVer = detail.current_version;
+                  const oldAna = currentVer?.old_analysis || detail.old_analysis;
+                  const newAna = currentVer?.new_analysis || detail.new_analysis;
+                  const toolRecs = currentVer?.tool_recommendations || detail.tool_recommendations;
+
+                  if (oldAna && newAna) {
+                    clearInterval(pollTimer);
+                    setOptimizationResult((prev: any) => ({
+                      ...prev,
+                      original_analysis: oldAna,
+                      enhanced_analysis: newAna,
+                      tool_recommendations: toolRecs || prev?.tool_recommendations,
+                    }));
+                  }
+                }
+              } catch (pollErr) {
+                console.error('Polling background analysis failed:', pollErr);
+              }
+              if (attempts >= 10) {
+                clearInterval(pollTimer);
+              }
+            }, 2500);
           }
         }
       } else {
@@ -233,7 +253,6 @@ function OptimizerPageContent() {
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'Failed to optimize prompt. Please try again.');
-    } finally {
       setIsOptimizing(false);
     }
   };

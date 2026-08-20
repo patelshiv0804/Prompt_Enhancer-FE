@@ -57,6 +57,23 @@ export default function ScoreSection({ isAnalyzed, isOptimized, originalAnalysis
 
   if (!isAnalyzed && !isOptimized) return null;
 
+  if (isOptimized && !enhancedAnalysis) {
+    return (
+      <div style={{ width: '100%', marginTop: 32, animation: 'fadeInRise 400ms ease-out forwards' }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14,
+          padding: '28px 36px', background: '#FFFFFF', border: '1px solid rgba(124,58,237,0.14)',
+          borderRadius: 24, boxShadow: '0 4px 24px rgba(109,40,217,0.06)',
+        }}>
+          <Sparkles size={20} style={{ color: 'var(--color-primary)', animation: 'spin 2s linear infinite' }} />
+          <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text-secondary)', fontFamily: "'Geist', sans-serif" }}>
+            Calculating deep quality scores & multi-dimensional analysis...
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   const radius = 48;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (animatedScore / 100) * circumference;
