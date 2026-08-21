@@ -30,7 +30,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, fullName: string) => Promise<void>;
   loginWithGoogle: (idToken: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   refreshUserProfile: () => Promise<void>;
   styleProfiles: StyleProfile[];
   activeStyle: { id: string | null; name: string };
@@ -61,7 +61,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   const finalizeAuthentication = async (accessToken: string) => {
-    localStorage.setItem('promptiq_token', accessToken);
+    // The backend has already set the JWT in an httpOnly cookie on the login
+    // response (VULN-017); we no longer persist it in localStorage. Keep the
+    // token in memory only for backwards compatibility of the context field.
     setToken(accessToken);
 
     const profile = await apiClient.get<UserProfile>('/api/v1/profile/me');
@@ -91,22 +93,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     async function loadAuth() {
-      if (typeof window !== 'undefined') {
-        const storedToken = localStorage.getItem('promptiq_token');
-        if (storedToken) {
-          setToken(storedToken);
-          try {
-            const profile = await apiClient.get<UserProfile>('/api/v1/profile/me');
-            setUser(profile);
-            const styles = await apiClient.get<StyleProfile[]>('/api/v1/styles');
-            setStyleProfiles(styles || []);
-          } catch (err) {
-            console.error('Failed to load user profile, logging out:', err);
-            localStorage.removeItem('promptiq_token');
-            setToken(null);
-            setUser(null);
-          }
-        }
+      // Auth now rides on an httpOnly cookie the browser sends automatically.
+      // Probe /profile/me: success means we have a valid session, a 401 means
+      // we're logged out. No token is read from localStorage anymore (VULN-017/019).
+      try {
+        const profile = await apiClient.get<UserProfile>('/api/v1/profile/me');
+        setUser(profile);
+        const styles = await apiClient.get<StyleProfile[]>('/api/v1/styles');
+        setStyleProfiles(styles || []);
+      } catch {
+        setUser(null);
+        setToken(null);
       }
       setLoading(false);
     }
@@ -174,9 +171,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const logout = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('promptiq_token');
+  const logout = async () => {
+    // Ask the backend to clear the httpOnly cookie; it isn't reachable from JS.
+    try {
+      await apiClient.post('/api/v1/auth/logout');
+    } catch {
+      // Even if the call fails, drop local state so the UI logs out.
     }
     setToken(null);
     setUser(null);
@@ -217,7 +217,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         user,
         token,
-        isAuthenticated: !!token,
+        isAuthenticated: !!user,
         loading,
         login,
         register,

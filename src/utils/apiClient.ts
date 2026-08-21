@@ -26,14 +26,6 @@ export async function apiRequest<T = any>(
     defaultHeaders['Content-Type'] = 'application/json';
   }
 
-  // Attach token if present
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('promptiq_token');
-    if (token) {
-      defaultHeaders['Authorization'] = `Bearer ${token}`;
-    }
-  }
-
   const mergedHeaders = {
     ...defaultHeaders,
     ...headers,
@@ -42,6 +34,9 @@ export async function apiRequest<T = any>(
   const response = await fetch(url, {
     ...restOptions,
     headers: mergedHeaders,
+    // Send/receive the httpOnly auth cookie set by the backend (VULN-017).
+    // Auth is no longer carried in a JS-readable Authorization header.
+    credentials: 'include',
   });
 
   if (!response.ok) {
