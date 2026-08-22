@@ -678,46 +678,65 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
           return defaultDesc;
         };
 
-        const originalScore = origAnal?.overall_score ?? (p.original_score !== undefined ? p.original_score : 35);
+        const normalizeScore = (val: any, fallback: number = 0): number => {
+          if (typeof val !== 'number' || isNaN(val)) return fallback;
+          return Math.max(0, Math.min(100, Math.round(val)));
+        };
+
+        const originalScore = normalizeScore(origAnal?.overall_score ?? p.original_score, 35);
         const rawScore = enhAnal?.overall_score ?? p.total_score ?? 88;
-        const overallScore = typeof rawScore === 'number' && rawScore <= 10 ? Math.round(rawScore * 10) : Math.round(rawScore);
+        const overallScore = normalizeScore(rawScore, 88);
+
+        const getDimStatus = (s: number | undefined): 'good' | 'warning' | 'neutral' => {
+          if (s === undefined) return 'neutral';
+          if (s >= 80) return 'good';
+          if (s >= 55) return 'warning';
+          return 'neutral';
+        };
 
         const makeDimensions = (origA: any, enhA: any, os: number, after: number): Dimension[] => {
+          const clarityScore = getDimScore(enhA, 'clarity', 'clarity') ?? 93;
+          const contextScore = getDimScore(enhA, 'context', 'context') ?? 88;
+          const roleScore = getDimScore(enhA, 'role_definition', 'role') ?? 78;
+          const formatScore = getDimScore(enhA, 'output_format', 'format') ?? 88;
+          const constraintsScore = getDimScore(enhA, 'constraints', 'constraints') ?? 73;
+          const examplesScore = getDimScore(enhA, 'examples', 'examples') ?? 68;
+
           return [
             {
-              id: 'clarity', label: 'Clarity', status: 'good' as const, icon: CheckCircle2,
+              id: 'clarity', label: 'Clarity', status: getDimStatus(clarityScore), icon: CheckCircle2,
               desc: getDimDesc(enhA, 'clarity', 'clarity', 'Task is clearly defined.'),
-              score: getDimScore(enhA, 'clarity', 'clarity') ?? 93,
+              score: clarityScore,
               beforeScore: getDimScore(origA, 'clarity', 'clarity') ?? 35
             },
             {
-              id: 'context', label: 'Context', status: 'good' as const, icon: CheckCircle2,
+              id: 'context', label: 'Context', status: getDimStatus(contextScore), icon: CheckCircle2,
               desc: getDimDesc(enhA, 'context', 'context', 'Context and domain specified.'),
-              score: getDimScore(enhA, 'context', 'context') ?? 88,
+              score: contextScore,
               beforeScore: getDimScore(origA, 'context', 'context') ?? 25
             },
             {
-              id: 'role', label: 'Role', status: 'good' as const, icon: CheckCircle2,
+              id: 'role', label: 'Role', status: getDimStatus(roleScore), icon: CheckCircle2,
               desc: getDimDesc(enhA, 'role_definition', 'role', 'Persona role provided.'),
-              score: getDimScore(enhA, 'role_definition', 'role') ?? 78,
+              score: roleScore,
               beforeScore: getDimScore(origA, 'role_definition', 'role') ?? 14
             },
             {
-              id: 'format', label: 'Format', status: 'good' as const, icon: CheckCircle2,
+              id: 'format', label: 'Format', status: getDimStatus(formatScore), icon: CheckCircle2,
               desc: getDimDesc(enhA, 'output_format', 'format', 'Output structure provided.'),
-              score: getDimScore(enhA, 'output_format', 'format') ?? 88,
+              score: formatScore,
               beforeScore: getDimScore(origA, 'output_format', 'format') ?? 28
             },
             {
-              id: 'constraints', label: 'Constraints', status: 'warning' as const, icon: AlertTriangle,
+              id: 'constraints', label: 'Constraints', status: getDimStatus(constraintsScore), icon: AlertTriangle,
               desc: getDimDesc(enhA, 'constraints', 'constraints', 'Scope constraints defined.'),
-              score: getDimScore(enhA, 'constraints', 'constraints') ?? 73,
+              score: constraintsScore,
               beforeScore: getDimScore(origA, 'constraints', 'constraints') ?? 21
             },
             {
-              id: 'examples', label: 'Examples', status: 'neutral' as const, icon: Minus,
+              id: 'examples', label: 'Examples', status: getDimStatus(examplesScore), icon: Minus,
               desc: getDimDesc(enhA, 'examples', 'examples', 'Reference structure.'),
-              score: getDimScore(enhA, 'examples', 'examples') ?? 68,
+              score: examplesScore,
               beforeScore: getDimScore(origA, 'examples', 'examples') ?? 18
             },
           ];
@@ -731,9 +750,9 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
             const vOldAnal = v.old_analysis || null;
             const vNewAnal = v.new_analysis || enhAnal;
             const vScore = vNewAnal?.overall_score ?? overallScore;
-            const vScoreScaled = typeof vScore === 'number' && vScore <= 10 ? Math.round(vScore * 10) : Math.round(vScore ?? overallScore);
+            const vScoreScaled = normalizeScore(vScore, overallScore);
             const vOldScore = vOldAnal?.overall_score ?? originalScore;
-            const vOldScoreScaled = typeof vOldScore === 'number' && vOldScore <= 10 ? Math.round(vOldScore * 10) : Math.round(vOldScore ?? originalScore);
+            const vOldScoreScaled = normalizeScore(vOldScore, originalScore);
             const vToolRecs = v.tool_recommendations || null;
             return {
               versionNumber: v.version_number,
@@ -881,8 +900,12 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
       const d = res.data;
       const vNewAnal = d.new_analysis || null;
       const vOldAnal = d.old_analysis || null;
+      const normalizeScoreLocal = (val: any, fallback: number = 0): number => {
+        if (typeof val !== 'number' || isNaN(val)) return fallback;
+        return Math.max(0, Math.min(100, Math.round(val)));
+      };
       const vScore = vNewAnal?.overall_score ?? 0;
-      const vScoreScaled = typeof vScore === 'number' && vScore <= 10 ? Math.round(vScore * 10) : Math.round(vScore);
+      const vScoreScaled = normalizeScoreLocal(vScore, 0);
 
       // Build dimension array from new_analysis
       const getDimScore = (anal: any, key: string, altKey?: string): number | undefined => {
@@ -898,20 +921,34 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
         if (item && typeof item.explanation === 'string') return item.explanation;
         return def;
       };
-      const makeDimsLocal = (oldA: any, newA: any): any[] => [
-        { id: 'clarity', label: 'Clarity', status: 'good' as const, icon: CheckCircle2, desc: getDimDesc(newA, 'clarity'), score: getDimScore(newA, 'clarity') ?? 80, beforeScore: getDimScore(oldA, 'clarity') },
-        { id: 'context', label: 'Context', status: 'good' as const, icon: CheckCircle2, desc: getDimDesc(newA, 'context'), score: getDimScore(newA, 'context') ?? 75, beforeScore: getDimScore(oldA, 'context') },
-        { id: 'role', label: 'Role', status: 'good' as const, icon: CheckCircle2, desc: getDimDesc(newA, 'role_definition', 'role'), score: getDimScore(newA, 'role_definition', 'role') ?? 70, beforeScore: getDimScore(oldA, 'role_definition', 'role') },
-        { id: 'format', label: 'Format', status: 'good' as const, icon: CheckCircle2, desc: getDimDesc(newA, 'output_format', 'format'), score: getDimScore(newA, 'output_format', 'format') ?? 75, beforeScore: getDimScore(oldA, 'output_format', 'format') },
-        { id: 'constraints', label: 'Constraints', status: 'warning' as const, icon: AlertTriangle, desc: getDimDesc(newA, 'constraints'), score: getDimScore(newA, 'constraints') ?? 65, beforeScore: getDimScore(oldA, 'constraints') },
-        { id: 'examples', label: 'Examples', status: 'neutral' as const, icon: Minus, desc: getDimDesc(newA, 'examples'), score: getDimScore(newA, 'examples') ?? 60, beforeScore: getDimScore(oldA, 'examples') },
-      ];
+      const getDimStatusLocal = (s: number | undefined): 'good' | 'warning' | 'neutral' => {
+        if (s === undefined) return 'neutral';
+        if (s >= 80) return 'good';
+        if (s >= 55) return 'warning';
+        return 'neutral';
+      };
+      const makeDimsLocal = (oldA: any, newA: any): any[] => {
+        const scClarity = getDimScore(newA, 'clarity') ?? 80;
+        const scContext = getDimScore(newA, 'context') ?? 75;
+        const scRole = getDimScore(newA, 'role_definition', 'role') ?? 70;
+        const scFormat = getDimScore(newA, 'output_format', 'format') ?? 75;
+        const scConstraints = getDimScore(newA, 'constraints') ?? 65;
+        const scExamples = getDimScore(newA, 'examples') ?? 60;
+        return [
+          { id: 'clarity', label: 'Clarity', status: getDimStatusLocal(scClarity), icon: CheckCircle2, desc: getDimDesc(newA, 'clarity'), score: scClarity, beforeScore: getDimScore(oldA, 'clarity') },
+          { id: 'context', label: 'Context', status: getDimStatusLocal(scContext), icon: CheckCircle2, desc: getDimDesc(newA, 'context'), score: scContext, beforeScore: getDimScore(oldA, 'context') },
+          { id: 'role', label: 'Role', status: getDimStatusLocal(scRole), icon: CheckCircle2, desc: getDimDesc(newA, 'role_definition', 'role'), score: scRole, beforeScore: getDimScore(oldA, 'role_definition', 'role') },
+          { id: 'format', label: 'Format', status: getDimStatusLocal(scFormat), icon: CheckCircle2, desc: getDimDesc(newA, 'output_format', 'format'), score: scFormat, beforeScore: getDimScore(oldA, 'output_format', 'format') },
+          { id: 'constraints', label: 'Constraints', status: getDimStatusLocal(scConstraints), icon: AlertTriangle, desc: getDimDesc(newA, 'constraints'), score: scConstraints, beforeScore: getDimScore(oldA, 'constraints') },
+          { id: 'examples', label: 'Examples', status: getDimStatusLocal(scExamples), icon: Minus, desc: getDimDesc(newA, 'examples'), score: scExamples, beforeScore: getDimScore(oldA, 'examples') },
+        ];
+      };
 
       const newVer: PromptVersion = {
         versionNumber: d.version_number,
         optimizedPrompt: d.enhanced_prompt,
         overallScore: vScoreScaled,
-        beforeOverallScore: vOldAnal?.overall_score ?? sessionVersions[sessionVersions.length - 1]?.overallScore,
+        beforeOverallScore: normalizeScoreLocal(vOldAnal?.overall_score ?? sessionVersions[sessionVersions.length - 1]?.overallScore, 0),
         dimensions: makeDimsLocal(vOldAnal, vNewAnal),
         wordsAfter: d.enhanced_prompt.split(/\s+/).filter(Boolean).length,
         tokensAfter: Math.round(d.enhanced_prompt.length / 4),

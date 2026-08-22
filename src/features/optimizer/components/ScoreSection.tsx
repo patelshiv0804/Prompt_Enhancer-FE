@@ -52,7 +52,7 @@ export default function ScoreSection({ isAnalyzed, isOptimized, originalAnalysis
 
   const origScore = originalAnalysis?.overall_score ?? originalAnalysis?.score ?? 35;
   const enhScore = enhancedAnalysis?.overall_score ?? enhancedAnalysis?.score ?? Math.min(96, origScore + 25);
-  const displayScore = isOptimized ? (enhScore || 90) : (origScore || 55);
+  const displayScore = isOptimized ? (enhScore ?? 90) : (origScore ?? 55);
   const animatedScore = useCountUp(displayScore, ready);
 
   if (!isAnalyzed && !isOptimized) return null;
