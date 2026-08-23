@@ -178,7 +178,21 @@ function HistoryRow({ item, onToggleFavorite, onDelete }: { item: HistoryItem; o
 
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, flexShrink: 0 }}>
         <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', color: 'var(--color-text-secondary)', opacity: 0.6 }}>Score</span>
-        <span style={{ fontSize: 18, fontWeight: 800, lineHeight: 1, color: scoreColor(item.score) }}>{item.score}</span>
+        {item.score == null ? (
+          // Quality analysis still processing in the background — show a spinner
+          // until the real score is persisted to and fetched from the DB.
+          <span
+            role="status"
+            aria-label="Calculating score"
+            style={{
+              display: 'inline-block', width: 16, height: 16, borderRadius: '50%',
+              border: '2px solid rgba(124,58,237,0.25)', borderTopColor: '#7C3AED',
+              animation: 'scoreSpin 0.7s linear infinite',
+            }}
+          />
+        ) : (
+          <span style={{ fontSize: 18, fontWeight: 800, lineHeight: 1, color: scoreColor(item.score) }}>{item.score}</span>
+        )}
       </div>
 
       <button id={`copy-btn-${item.id}`} onClick={handleCopy} title="Copy Prompt"

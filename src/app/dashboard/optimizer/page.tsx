@@ -174,7 +174,7 @@ function OptimizerPageContent() {
     }
   };
 
-  const handleOptimize = async (promptText: string, activeRole: string, activeMode?: string) => {
+  const handleOptimize = async (promptText: string, activeRole: string, activeMode?: string, enhancementLevel?: string) => {
     if (!promptText.trim()) return;
     if (promptText.length > 12000) {
       setError('Maximum character limit of 12,000 reached. Please shorten your prompt.');
@@ -187,6 +187,10 @@ function OptimizerPageContent() {
       const selectedRole = activeRole.toLowerCase();
       const selectedMode = activeMode && activeMode.trim() ? activeMode : selectedRole;
       const applyStyle = activeStyle.id !== null;
+      // Send enhancement_level only when the user explicitly forced a level.
+      // Omitting it (or sending undefined) tells the backend to auto-detect.
+      const forcedLevel =
+        enhancementLevel && enhancementLevel !== 'auto' ? enhancementLevel : undefined;
 
       const payload = {
         prompt: promptText,
@@ -194,12 +198,17 @@ function OptimizerPageContent() {
         mode: selectedMode,
         apply_style: applyStyle,
         style_profile_id: activeStyle.id || undefined,
+        ...(forcedLevel ? { enhancement_level: forcedLevel } : {}),
       };
 
       const response = await apiClient.post('/api/v1/enhance', payload);
       if (response.success && response.data) {
         const optData = response.data;
-        setOptimizationResult(optData);
+        setOptimizationResult({
+          ...optData,
+          detected_level: optData.detected_level,
+          level_reason: optData.level_reason,
+        });
         setIsOptimized(true);
         // ⚡ Unlock the UI immediately — show enhanced prompt right away
         setIsOptimizing(false);

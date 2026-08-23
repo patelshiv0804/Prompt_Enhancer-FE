@@ -178,7 +178,7 @@ interface ComparisonBlockProps {
   isOptimizing: boolean;
   isOptimized: boolean;
   onAnalyze: (promptText: string) => void;
-  onOptimize: (promptText: string, activeRole: string, activeMode?: string) => void;
+  onOptimize: (promptText: string, activeRole: string, activeMode?: string, enhancementLevel?: string) => void;
   onReenhance?: () => Promise<void>;
   analysisResult?: any;
   optimizationResult?: any;
@@ -198,9 +198,9 @@ export default function ComparisonBlock({
   const [originalText, setOriginalText] = useState(
     'write a cinematic short about an astronaut who discovers a garden on mars. make it emotional.'
   );
-  const [activeTab, setActiveTab] = useState('Optimized');
   const [activeRole, setActiveRole] = useState('general');
   const [activeMode, setActiveMode] = useState('');
+  const [enhancementLevel, setEnhancementLevel] = useState<'auto' | 'minimal' | 'standard' | 'deep'>('auto');
   const [scoreReady, setScoreReady] = useState(false);
   const [isReenhancing, setIsReenhancing] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
@@ -384,6 +384,50 @@ export default function ComparisonBlock({
             )}
           </AnimatePresence>
 
+          {/* Enhancement Level Segmented Control */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '1.2px' }}>Enhancement Depth</div>
+            <div style={{
+              display: 'inline-flex', position: 'relative',
+              background: 'linear-gradient(160deg, rgba(109,40,217,0.09) 0%, rgba(124,58,237,0.04) 100%)',
+              border: '1px solid rgba(124,58,237,0.13)', borderRadius: 9999, padding: 4,
+              boxShadow: 'inset 0 2px 5px rgba(80,20,180,0.13), inset 0 1px 2px rgba(0,0,0,0.07), 0 1px 0 rgba(255,255,255,0.80)',
+              alignSelf: 'flex-start',
+            }}>
+              {(['auto', 'minimal', 'standard', 'deep'] as const).map((lvl) => (
+                <button
+                  key={lvl}
+                  id={`enhancement-level-${lvl}`}
+                  onClick={() => setEnhancementLevel(lvl)}
+                  style={{
+                    padding: '5px 14px', fontSize: 13,
+                    fontWeight: lvl === enhancementLevel ? 600 : 500,
+                    color: lvl === enhancementLevel ? 'var(--color-primary)' : 'var(--color-text-secondary)',
+                    position: 'relative', zIndex: 2, transition: 'color 250ms ease',
+                    background: 'transparent', border: 'none', cursor: 'pointer', borderRadius: 9999, whiteSpace: 'nowrap',
+                    textTransform: 'capitalize',
+                  }}
+                >
+                  {lvl === 'auto' ? '⚡ Auto' : lvl.charAt(0).toUpperCase() + lvl.slice(1)}
+                </button>
+              ))}
+              {/* Sliding pill indicator */}
+              <div style={{
+                position: 'absolute', top: 4, bottom: 4,
+                width: 'calc(25% - 4px)',
+                left: `calc(${['auto','minimal','standard','deep'].indexOf(enhancementLevel)} * 25% + 4px)`,
+                background: '#FFFFFF', borderRadius: 9999, zIndex: 1,
+                transition: 'left 300ms cubic-bezier(0.4,0,0.2,1)',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.95), 0 3px 8px rgba(80,20,180,0.12), 0 1px 3px rgba(0,0,0,0.10), 0 0 0 1px rgba(124,58,237,0.07)',
+              }} />
+            </div>
+            {enhancementLevel === 'auto' && (
+              <p style={{ fontSize: 11, color: 'var(--color-text-secondary)', margin: 0, lineHeight: 1.4 }}>
+                AI will detect the right depth automatically.
+              </p>
+            )}
+          </div>
+
           {/* Action buttons */}
           <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
             <button
@@ -412,7 +456,7 @@ export default function ComparisonBlock({
               id="optimize-btn"
               onClick={() => {
                 if (originalText.length > 12000) return;
-                onOptimize(originalText, activeRole, activeMode);
+                onOptimize(originalText, activeRole, activeMode, enhancementLevel);
               }}
               disabled={isOptimizing || isAnalyzing || originalText.length > 12000}
               style={{
@@ -484,38 +528,28 @@ export default function ComparisonBlock({
             {showOptimizedPanel && (
               <div style={{ ...cardStyle, width: '100%', flex: 'none' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 24, height: 36 }}>
-                  {(isOptimized || isOptimizing) ? (
-                    <div style={{
-                      display: 'flex', position: 'relative',
-                      background: 'linear-gradient(160deg, rgba(109,40,217,0.09) 0%, rgba(124,58,237,0.04) 100%)',
-                      border: '1px solid rgba(124,58,237,0.13)', borderRadius: 9999, padding: 4,
-                      boxShadow: 'inset 0 2px 5px rgba(80,20,180,0.13), inset 0 1px 2px rgba(0,0,0,0.07), 0 1px 0 rgba(255,255,255,0.80)',
-                      opacity: isOptimizing ? 0.6 : 1, pointerEvents: isOptimizing ? 'none' : 'auto', flexShrink: 0,
-                    }}>
-                      {['Optimized', 'Diff View'].map(tab => (
-                        <button key={tab} onClick={() => setActiveTab(tab)} style={{
-                          padding: '4px 12px', fontSize: 13, fontWeight: tab === activeTab ? 600 : 500,
-                          color: tab === activeTab ? 'var(--color-primary)' : 'var(--color-text-secondary)',
-                          position: 'relative', zIndex: 2, transition: 'color 250ms ease',
-                          background: 'transparent', border: 'none', cursor: 'pointer', borderRadius: 9999, whiteSpace: 'nowrap',
-                        }}>{tab}</button>
-                      ))}
-                      <div style={{
-                        position: 'absolute', top: 4, left: 4, bottom: 4, width: 'calc(50% - 4px)',
-                        background: '#FFFFFF', borderRadius: 9999, zIndex: 1,
-                        transform: activeTab === 'Optimized' ? 'translateX(0)' : 'translateX(100%)',
-                        transition: 'transform 300ms cubic-bezier(0.4,0,0.2,1)',
-                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.95), 0 3px 8px rgba(80,20,180,0.12), 0 1px 3px rgba(0,0,0,0.10), 0 0 0 1px rgba(124,58,237,0.07)',
-                      }} />
-                    </div>
-                  ) : (
-                    <h2 style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                      Optimized Prompt
-                    </h2>
-                  )}
+                  <h2 style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', opacity: isOptimizing ? 0.6 : 1 }}>
+                    Optimized Prompt
+                  </h2>
 
                   {(isOptimized || isOptimizing) && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, opacity: isOptimizing ? 0.6 : 1, pointerEvents: isOptimizing ? 'none' : 'auto', flexShrink: 0 }}>
+                      {/* Detected enhancement level badge */}
+                      {isOptimized && optimizationResult?.detected_level && (
+                        <div
+                          title={optimizationResult.level_reason || ''}
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 5,
+                            padding: '3px 10px', borderRadius: 9999, fontSize: 11, fontWeight: 600,
+                            background: 'linear-gradient(135deg, rgba(124,58,237,0.10) 0%, rgba(168,85,247,0.07) 100%)',
+                            border: '1px solid rgba(124,58,237,0.18)',
+                            color: 'var(--color-primary)', cursor: 'default', flexShrink: 0,
+                          }}
+                        >
+                          <Zap size={10} />
+                          <span style={{ textTransform: 'capitalize' }}>{optimizationResult.detected_level}</span>
+                        </div>
+                      )}
                       {/* Version selector dropdown */}
                       {versions && versions.length > 1 && (
                         <div style={{ position: 'relative', marginRight: 4 }}>
@@ -610,7 +644,7 @@ export default function ComparisonBlock({
                           icon: RefreshCw,
                           title: 'Regenerate',
                           primary: false,
-                          onClick: () => onOptimize(originalText, activeRole, activeMode),
+                          onClick: () => onOptimize(originalText, activeRole, activeMode, enhancementLevel),
                           disabled: isOptimizing || isReenhancing,
                           spinning: false,
                         }]),
@@ -686,18 +720,7 @@ export default function ComparisonBlock({
                     </div>
                   ) : isOptimized ? (
                     <div style={{ fontSize: 14, lineHeight: 1.6, animation: 'fadeInRise 400ms ease-out forwards', overflowY: 'auto', paddingRight: 16, color: 'var(--color-text-primary)', letterSpacing: '0.01em' }}>
-                      {activeTab === 'Optimized' ? (
-                        <FormattedPromptViewer content={optimizationResult?.enhanced_prompt || ''} />
-                      ) : (
-                        <div>
-                          <div style={{ background: 'var(--color-diff-remove)', color: 'var(--color-diff-remove-text)', textDecoration: 'line-through', padding: '10px 14px', borderRadius: 10, marginBottom: 16 }}>
-                            {optimizationResult?.original_prompt}
-                          </div>
-                          <div style={{ background: 'var(--color-diff-add)', padding: '10px 14px', borderRadius: 10 }}>
-                            <FormattedPromptViewer content={optimizationResult?.enhanced_prompt || ''} />
-                          </div>
-                        </div>
-                      )}
+                      <FormattedPromptViewer content={optimizationResult?.enhanced_prompt || ''} />
                     </div>
                   ) : (
                     <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(17,24,39,0.18)' }}>

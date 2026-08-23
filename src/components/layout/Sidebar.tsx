@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
@@ -86,6 +86,28 @@ export default function Sidebar() {
     window.addEventListener('promptiq:history-updated', handleHistoryUpdate);
     return () => window.removeEventListener('promptiq:history-updated', handleHistoryUpdate);
   }, [loadRecentItems]);
+
+  // A freshly optimized prompt lands in the list with score === null while its
+  // quality analysis is still being computed in the background. Poll until every
+  // score has been persisted so the loader resolves on its own — even after a
+  // hard reload, when the optimizer page isn't around to drive the refresh.
+  const pollAttemptsRef = useRef(0);
+  const hasPendingScores = recentItems.some(item => item.score == null);
+  useEffect(() => {
+    if (!hasPendingScores) {
+      pollAttemptsRef.current = 0;
+      return;
+    }
+    const timer = setInterval(() => {
+      pollAttemptsRef.current += 1;
+      loadRecentItems();
+      // Cap the wall-clock at ~36s (12 × 3s); background scoring normally
+      // finishes well within that. If it never lands, stop hammering the API —
+      // the next history-updated event or navigation will retry.
+      if (pollAttemptsRef.current >= 12) clearInterval(timer);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [hasPendingScores, loadRecentItems]);
 
   const toggleGroup = (label: string) =>
     setCollapsedGroups(prev => ({ ...prev, [label]: !prev[label] }));
@@ -321,7 +343,23 @@ export default function Sidebar() {
                           }}
                           className="group-hover/chatitem:hidden"
                         >
-                          {item.score}
+                          {item.score == null ? (
+                            // Score not yet available — background analysis still running
+                            <span
+                              role="status"
+                              aria-label="Calculating score"
+                              style={{
+                                display: 'inline-block',
+                                width: 12,
+                                height: 12,
+                                borderRadius: '50%',
+                                border: `2px solid ${accent}33`,
+                                borderTopColor: accent,
+                                animation: 'scoreSpin 0.7s linear infinite',
+                                verticalAlign: 'middle',
+                              }}
+                            />
+                          ) : item.score}
                         </span>
                         <button
                           id={`sidebar-delete-btn-${item.id}`}

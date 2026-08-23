@@ -198,7 +198,21 @@ function VaultRow({ item, isSelectionMode, selected, onSelect, onToggleFavorite,
 
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, flexShrink: 0 }}>
         <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', color: 'var(--color-text-secondary)', opacity: 0.6 }}>Score</span>
-        <span style={{ fontSize: 18, fontWeight: 800, lineHeight: 1, color: scoreColor(item.score) }}>{item.score}</span>
+        {item.score == null ? (
+          // Quality analysis still processing in the background — show a spinner
+          // until the real score is persisted to and fetched from the DB.
+          <span
+            role="status"
+            aria-label="Calculating score"
+            style={{
+              display: 'inline-block', width: 16, height: 16, borderRadius: '50%',
+              border: '2px solid rgba(124,58,237,0.25)', borderTopColor: '#7C3AED',
+              animation: 'scoreSpin 0.7s linear infinite',
+            }}
+          />
+        ) : (
+          <span style={{ fontSize: 18, fontWeight: 800, lineHeight: 1, color: scoreColor(item.score) }}>{item.score}</span>
+        )}
       </div>
 
       <button id={`star-btn-${item.id}`} onClick={(e) => { e.stopPropagation(); onToggleFavorite(item.id, item.isFavorite); }} title={item.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
@@ -298,18 +312,20 @@ export default function VaultPage() {
     setCurrentPage(1);
   }, [debSearch, activeCategory, sortBy]);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (silent = false) => {
+    // Silent refreshes (the pending-score poll) must not toggle the full-list
+    // skeleton or clear the user's selection — they update rows in place.
+    if (!silent) setLoading(true);
     try {
       const res = await fetchHistory(currentPage, PAGE_SIZE, { search: debSearch, category: activeCategory, sortBy });
       setItems(res.items);
       setTotal(res.total);
       setTotalPages(res.totalPages);
-      setSelectedIds(new Set());
+      if (!silent) setSelectedIds(new Set());
     } catch (e) {
       console.error(e);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [currentPage, debSearch, activeCategory, sortBy]);
 
@@ -320,6 +336,24 @@ export default function VaultPage() {
     window.addEventListener('promptiq:history-updated', handleHistoryUpdate);
     return () => window.removeEventListener('promptiq:history-updated', handleHistoryUpdate);
   }, [load]);
+
+  // Rows whose background analysis is still running arrive with score === null.
+  // Poll until every score has been persisted so the loader resolves on its own
+  // even when the user lands here directly (no optimizer poll driving refresh).
+  const vaultPollAttemptsRef = useRef(0);
+  const hasPendingScores = items.some(i => i.score == null);
+  useEffect(() => {
+    if (!hasPendingScores) {
+      vaultPollAttemptsRef.current = 0;
+      return;
+    }
+    const timer = setInterval(() => {
+      vaultPollAttemptsRef.current += 1;
+      load(true);
+      if (vaultPollAttemptsRef.current >= 12) clearInterval(timer);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [hasPendingScores, load]);
 
   useEffect(() => {
     fetchHistoryStats()

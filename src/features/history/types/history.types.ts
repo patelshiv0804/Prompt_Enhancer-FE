@@ -5,7 +5,9 @@ export interface HistoryItem {
   prompt: string;
   optimizedPrompt: string;
   category: string;
-  score: number;
+  // null while the prompt's quality analysis is still being computed in the
+  // background (not yet persisted to the DB) — consumers show a loader for null.
+  score: number | null;
   isFavorite: boolean;
   targetModel: string;
   mode: string;

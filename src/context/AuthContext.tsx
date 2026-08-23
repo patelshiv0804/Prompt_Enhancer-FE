@@ -112,17 +112,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const handleStyleUpdate = () => {
       refreshStyleProfiles();
     };
+
+    const handleUnauthorized = () => {
+      setUser(null);
+      setToken(null);
+      setStyleProfiles([]);
+      setActiveStyle({ id: null, name: 'None' });
+      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth')) {
+        router.push('/auth');
+      }
+    };
+
     if (typeof window !== 'undefined') {
       window.addEventListener('aure_style_memory_updated', handleStyleUpdate);
       window.addEventListener('storage', handleStyleUpdate);
+      window.addEventListener('aure_unauthorized', handleUnauthorized);
+      window.addEventListener('promptiq:unauthorized', handleUnauthorized);
     }
     return () => {
       if (typeof window !== 'undefined') {
         window.removeEventListener('aure_style_memory_updated', handleStyleUpdate);
         window.removeEventListener('storage', handleStyleUpdate);
+        window.removeEventListener('aure_unauthorized', handleUnauthorized);
+        window.removeEventListener('promptiq:unauthorized', handleUnauthorized);
       }
     };
-  }, []);
+  }, [router]);
 
   const login = async (email: string, password: string) => {
     setLoading(true);

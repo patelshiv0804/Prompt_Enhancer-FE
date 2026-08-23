@@ -48,6 +48,24 @@ export async function apiRequest<T = any>(
     } catch {
       // Ignore if not JSON
     }
+    if (response.status === 401 && typeof window !== 'undefined') {
+      const isAuthEndpoint =
+        path.startsWith('/api/v1/auth/login') ||
+        path.startsWith('/api/v1/auth/register') ||
+        path.startsWith('/api/v1/auth/google') ||
+        path.startsWith('/api/v1/auth/verify-reset-otp') ||
+        path.startsWith('/api/v1/auth/reset-password') ||
+        path.startsWith('/api/v1/auth/forgot-password');
+
+      if (!isAuthEndpoint) {
+        window.dispatchEvent(new CustomEvent('aure_unauthorized', { detail: { path } }));
+        window.dispatchEvent(new CustomEvent('promptiq:unauthorized', { detail: { path } }));
+        if (!window.location.pathname.startsWith('/auth')) {
+          window.location.href = '/auth';
+        }
+      }
+    }
+
     const error = new Error(errorDetail);
     (error as any).status = response.status;
     throw error;

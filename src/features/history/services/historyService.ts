@@ -19,13 +19,21 @@ export async function fetchHistoryStats(): Promise<HistoryStats> {
 
     let averageScore = 0;
     if (promptsRes.data && promptsRes.data.length > 0) {
-      const totalScore = promptsRes.data.reduce((sum: number, p: any) => {
-        const newAna = p.new_analysis || p.current_version?.new_analysis;
-        const oldAna = p.old_analysis || p.current_version?.old_analysis;
-        const finalScore = newAna?.overall_score ?? (oldAna?.overall_score ? Math.min(95, oldAna.overall_score + 35) : 82);
-        return sum + finalScore;
-      }, 0);
-      averageScore = Math.round(totalScore / promptsRes.data.length);
+      // Only average prompts that already have a persisted score. Prompts whose
+      // background analysis is still running are excluded so the average is not
+      // skewed by placeholders and doesn't jump once scoring completes.
+      const scored = promptsRes.data
+        .map((p: any) => {
+          const newAna = p.new_analysis || p.current_version?.new_analysis;
+          const oldAna = p.old_analysis || p.current_version?.old_analysis;
+          return newAna?.overall_score
+            ?? (oldAna?.overall_score ? Math.min(95, oldAna.overall_score + 35) : null);
+        })
+        .filter((s: number | null): s is number => s != null);
+      if (scored.length > 0) {
+        const totalScore = scored.reduce((sum: number, s: number) => sum + s, 0);
+        averageScore = Math.round(totalScore / scored.length);
+      }
     }
 
     // Prompts created in the last 7 days
@@ -110,7 +118,11 @@ export async function fetchHistory(page: number, pageSize: number, filters: Hist
       const isFav = favSet.has(itemId);
       const newAna = p.new_analysis || p.current_version?.new_analysis;
       const oldAna = p.old_analysis || p.current_version?.old_analysis;
-      const finalScore = newAna?.overall_score ?? (oldAna?.overall_score ? Math.min(95, oldAna.overall_score + 35) : 82);
+      // No persisted analysis yet => the background scoring task is still
+      // running. Return null (not a placeholder number) so the UI can render a
+      // loader on the score until the real value lands in the DB.
+      const finalScore = newAna?.overall_score
+        ?? (oldAna?.overall_score ? Math.min(95, oldAna.overall_score + 35) : null);
 
       return {
         id: itemId,

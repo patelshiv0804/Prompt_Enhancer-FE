@@ -360,6 +360,14 @@ button:focus-visible {
   }
 }
 
+/* Spinner shown on a prompt's score while its quality analysis is still being
+   computed in the background (score not yet persisted to the DB). */
+@keyframes scoreSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @keyframes groupItemsIn {
   from {
     opacity: 0;
