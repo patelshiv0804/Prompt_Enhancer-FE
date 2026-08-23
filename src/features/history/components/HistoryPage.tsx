@@ -5,12 +5,14 @@ import {
   Search, Star, MoreHorizontal, FileText, Code2, PlaySquare, Mail, Film,
   Image as ImageIcon, ChevronLeft, ChevronRight, Megaphone, BookOpen,
   Sparkles, TrendingUp, SlidersHorizontal, ChevronDown, Zap, Clock,
-  Trash2, ExternalLink, Copy,
+  Trash2, ExternalLink, Copy, Check,
 } from 'lucide-react';
 import { fetchHistory, fetchHistoryStats, toggleFavorite, deleteHistoryItem } from '../services/historyService';
 import type { HistoryItem, HistoryStats, SortBy } from '../types/history.types';
+import ScoreSpinner from '@/components/ScoreSpinner';
+import { useRouter } from 'next/navigation';
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 10;
 
 const FILTER_CATEGORIES = [
   { id: 'all', label: 'All' }, { id: 'favorites', label: '★ Favorites' }, { id: 'general', label: 'General' },
@@ -54,17 +56,39 @@ function scoreColor(score: number): string {
 
 function useCountUp(target: number, active: boolean, duration = 1200): number {
   const [value, setValue] = useState(0);
+  const prevTargetRef = useRef(0);
+
   useEffect(() => {
-    if (!active || target === 0) return;
-    let current = 0;
-    const step = target / (duration / 16);
+    if (!active) {
+      setValue(target);
+      return;
+    }
+    const start = prevTargetRef.current;
+    prevTargetRef.current = target;
+
+    if (start === target) {
+      setValue(target);
+      return;
+    }
+
+    let current = start;
+    const diff = target - start;
+    const steps = duration / 16;
+    const step = diff / steps;
+
     const timer = setInterval(() => {
       current += step;
-      if (current >= target) { setValue(target); clearInterval(timer); }
-      else setValue(Math.floor(current));
+      if ((diff > 0 && current >= target) || (diff < 0 && current <= target)) {
+        setValue(target);
+        clearInterval(timer);
+      } else {
+        setValue(Math.round(current));
+      }
     }, 16);
+
     return () => clearInterval(timer);
   }, [target, active, duration]);
+
   return value;
 }
 
@@ -106,16 +130,25 @@ function StatCard({ label, value, suffix = '', prefix = '', icon: Icon, accent, 
 /* ── HistoryRow ── */
 function HistoryRow({ item, onToggleFavorite, onDelete }: { item: HistoryItem; onToggleFavorite: (id: string, current: boolean) => void; onDelete: (id: string) => void; }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [copied, setCopied]     = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const Icon    = CATEGORY_ICONS[item.category] || FileText;
   const accent  = CATEGORY_ACCENTS[item.category] || '#7C3AED';
+  const router  = useRouter();
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(item.prompt);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   useEffect(() => {
     function close(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
     }
-    document.addEventListener('mousedown', close);
-    return () => document.removeEventListener('mousedown', close);
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
   }, []);
 
   return (
@@ -146,8 +179,21 @@ function HistoryRow({ item, onToggleFavorite, onDelete }: { item: HistoryItem; o
 
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, flexShrink: 0 }}>
         <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', color: 'var(--color-text-secondary)', opacity: 0.6 }}>Score</span>
-        <span style={{ fontSize: 18, fontWeight: 800, lineHeight: 1, color: scoreColor(item.score) }}>{item.score}</span>
+        {item.score == null ? (
+          // Quality analysis still processing in the background — show a spinner
+          // until the real score is persisted to and fetched from the DB.
+          <ScoreSpinner size={18} />
+        ) : (
+          <span style={{ fontSize: 18, fontWeight: 800, lineHeight: 1, color: scoreColor(item.score) }}>{item.score}</span>
+        )}
       </div>
+
+      <button id={`copy-btn-${item.id}`} onClick={handleCopy} title="Copy Prompt"
+        style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', border: 'none', cursor: 'pointer', background: 'transparent', color: copied ? '#10B981' : 'rgba(107,107,138,0.50)', transition: 'all 200ms ease', flexShrink: 0 }}
+        className="hover:!bg-[rgba(124,58,237,0.08)] hover:!text-[var(--color-primary)] hover:scale-110"
+      >
+        {copied ? <Check size={15} strokeWidth={2} /> : <Copy size={15} strokeWidth={1.5} />}
+      </button>
 
       <button id={`star-btn-${item.id}`} onClick={() => onToggleFavorite(item.id, item.isFavorite)} title={item.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
         style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', border: 'none', cursor: 'pointer', background: 'transparent', color: item.isFavorite ? '#F59E0B' : 'rgba(107,107,138,0.40)', transition: 'all 200ms ease', flexShrink: 0 }}
@@ -156,37 +202,12 @@ function HistoryRow({ item, onToggleFavorite, onDelete }: { item: HistoryItem; o
         <Star size={15} strokeWidth={item.isFavorite ? 0 : 1.5} fill={item.isFavorite ? 'currentColor' : 'none'} />
       </button>
 
-      <div style={{ position: 'relative', flexShrink: 0 }} ref={menuRef}>
-        <button id={`more-btn-${item.id}`} onClick={() => setMenuOpen(v => !v)}
-          style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', border: 'none', cursor: 'pointer', background: 'transparent', color: 'rgba(107,107,138,0.50)', transition: 'all 200ms ease' }}
-          className="hover:!bg-[rgba(124,58,237,0.08)] hover:!text-[var(--color-primary)]"
-        >
-          <MoreHorizontal size={16} strokeWidth={1.5} />
-        </button>
-        {menuOpen && (
-          <div id={`row-dropdown-${item.id}`} style={{
-            position: 'absolute', top: 'calc(100% + 4px)', right: 0, background: '#FFFFFF',
-            border: '1px solid rgba(124,58,237,0.10)', borderRadius: 10, minWidth: 170,
-            overflow: 'hidden', zIndex: 50, boxShadow: '0 8px 24px rgba(109,40,217,0.10), 0 2px 8px rgba(0,0,0,0.06)',
-            animation: 'dropdownFadeIn 150ms ease',
-          }}>
-            {[
-              { icon: ExternalLink, label: 'Open in Optimizer', danger: false, onClick: () => {} },
-              { icon: Copy, label: 'Copy Prompt', danger: false, onClick: () => { navigator.clipboard.writeText(item.prompt); setMenuOpen(false); } },
-            ].map(({ icon: Icon2, label, onClick }) => (
-              <button key={label} onClick={onClick}
-                style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '9px 14px', fontSize: 13, color: 'var(--color-text-primary)', border: 'none', cursor: 'pointer', background: 'transparent', textAlign: 'left' }}
-                className="hover:bg-[rgba(124,58,237,0.05)]"
-              ><Icon2 size={13} strokeWidth={1.8} />{label}</button>
-            ))}
-            <div style={{ height: 1, background: 'rgba(124,58,237,0.08)', margin: '4px 0' }} />
-            <button onClick={() => { setMenuOpen(false); onDelete(item.id); }}
-              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '9px 14px', fontSize: 13, color: '#EF4444', border: 'none', cursor: 'pointer', background: 'transparent', textAlign: 'left' }}
-              className="hover:bg-[rgba(239,68,68,0.06)]"
-            ><Trash2 size={13} strokeWidth={1.8} />Delete</button>
-          </div>
-        )}
-      </div>
+      <button id={`delete-btn-${item.id}`} onClick={(e) => { e.stopPropagation(); onDelete(item.id); }} title="Delete prompt"
+        style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', border: 'none', cursor: 'pointer', background: 'transparent', color: 'rgba(239,68,68,0.60)', transition: 'all 200ms ease', flexShrink: 0 }}
+        className="hover:!bg-[rgba(239,68,68,0.10)] hover:!text-[#EF4444] hover:scale-110"
+      >
+        <Trash2 size={16} strokeWidth={1.5} />
+      </button>
     </div>
   );
 }
@@ -249,9 +270,23 @@ export default function HistoryPage() {
     });
   }, [currentPage, debSearch, activeCategory, sortBy]);
   useEffect(() => {
+    const handleHistoryUpdate = () => {
+      fetchHistoryStats().then(d => {
+        setStats(d);
+        setTimeout(() => setStatsAnimate(true), 80);
+      });
+      setLoading(true);
+      fetchHistory(currentPage, PAGE_SIZE, { search: debSearch, category: activeCategory, sortBy }).then(d => {
+        setItems(d.items); setTotalPages(d.totalPages); setTotal(d.total); setLoading(false);
+      });
+    };
+    window.addEventListener('promptiq:history-updated', handleHistoryUpdate);
+    return () => window.removeEventListener('promptiq:history-updated', handleHistoryUpdate);
+  }, [currentPage, debSearch, activeCategory, sortBy]);
+  useEffect(() => {
     function close(e: MouseEvent) { if (sortRef.current && !sortRef.current.contains(e.target as Node)) setShowSort(false); }
-    document.addEventListener('mousedown', close);
-    return () => document.removeEventListener('mousedown', close);
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
   }, []);
 
   const handleToggleFavorite = useCallback((id: string, current: boolean) => {

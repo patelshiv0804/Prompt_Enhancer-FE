@@ -1,77 +1,222 @@
+import { apiClient } from '@/utils/apiClient';
 import type { HistoryItem, HistoryStats, HistoryFilters, PaginatedHistoryResponse } from '../types/history.types';
 
-const delay = (ms: number) => new Promise<void>(r => setTimeout(r, ms));
-
-function hoursAgo(n: number): string {
-  const d = new Date(); d.setHours(d.getHours() - n); return d.toISOString();
-}
-function daysAgo(n: number, extraHours = 0): string {
-  const d = new Date(); d.setDate(d.getDate() - n); d.setHours(d.getHours() - extraHours); return d.toISOString();
-}
-
-const DUMMY_STATS: HistoryStats = { totalPrompts: 1284, averageScore: 84, thisWeekDelta: 42, favoritesCount: 156 };
-
-function buildDummyItems(): HistoryItem[] {
-  return [
-    { id: 'hist-001', prompt: 'Write a blog post about AI tools for marketing automation including real-world examples and ROI metrics', optimizedPrompt: 'Write a 1,500-word expert blog post...', category: 'marketing', score: 92, isFavorite: false, targetModel: 'ChatGPT', mode: 'Marketing', createdAt: hoursAgo(2), wordCount: { original: 18, optimized: 84 }, tokenCount: 112 },
-    { id: 'hist-002', prompt: 'Generate a script for a 5-minute YouTube video explaining quantum computing for beginners with analogies', optimizedPrompt: 'Create a complete 5-minute YouTube script...', category: 'youtube', score: 78, isFavorite: true, targetModel: 'GPT-4o', mode: 'YouTube Shorts', createdAt: hoursAgo(4), wordCount: { original: 16, optimized: 76 }, tokenCount: 98 },
-    { id: 'hist-003', prompt: 'Optimize this React component for better performance using memoization and lazy loading techniques', optimizedPrompt: 'You are a senior React performance engineer...', category: 'coding', score: 95, isFavorite: false, targetModel: 'Claude Sonnet', mode: 'Coding', createdAt: daysAgo(1), wordCount: { original: 14, optimized: 92 }, tokenCount: 118 },
-    { id: 'hist-004', prompt: 'Draft a series of 5 cold outreach emails for a SaaS product targeting marketing directors at mid-size companies', optimizedPrompt: 'You are an expert B2B copywriter...', category: 'email', score: 88, isFavorite: true, targetModel: 'ChatGPT', mode: 'Marketing', createdAt: daysAgo(3), wordCount: { original: 18, optimized: 88 }, tokenCount: 105 },
-    { id: 'hist-005', prompt: 'Create a cinematic establishing shot prompt for a dystopian cityscape at golden hour for VEO', optimizedPrompt: 'Generate a photorealistic cinematic establishing shot...', category: 'cinematic', score: 97, isFavorite: true, targetModel: 'VEO', mode: 'Cinematic Video', createdAt: daysAgo(3, 4), wordCount: { original: 15, optimized: 96 }, tokenCount: 124 },
-    { id: 'hist-006', prompt: 'Write a research summary on the latest developments in large language model alignment and safety', optimizedPrompt: 'Provide a comprehensive research summary...', category: 'research', score: 82, isFavorite: false, targetModel: 'Claude Sonnet', mode: 'Research', createdAt: daysAgo(5), wordCount: { original: 16, optimized: 74 }, tokenCount: 96 },
-    { id: 'hist-007', prompt: 'Generate product photography prompt for a luxury watch on marble surface for commercial use', optimizedPrompt: 'Luxury timepiece product photograph...', category: 'image-gen', score: 91, isFavorite: false, targetModel: 'Midjourney', mode: 'Image Gen', createdAt: daysAgo(6), wordCount: { original: 13, optimized: 45 }, tokenCount: 58 },
-    { id: 'hist-008', prompt: 'Create SEO-optimized meta description and title tags for a fintech startup homepage and blog', optimizedPrompt: 'Generate high-CTR keyword-rich meta tags...', category: 'seo', score: 73, isFavorite: false, targetModel: 'ChatGPT', mode: 'SEO', createdAt: daysAgo(7), wordCount: { original: 15, optimized: 62 }, tokenCount: 80 },
-    { id: 'hist-009', prompt: 'Write a short story about a time traveler who accidentally prevents the invention of the internet', optimizedPrompt: 'Write a 1,200-word literary short story in the style of Kurt Vonnegut...', category: 'storytelling', score: 87, isFavorite: true, targetModel: 'Claude Sonnet', mode: 'Storytelling', createdAt: daysAgo(8), wordCount: { original: 18, optimized: 88 }, tokenCount: 112 },
-    { id: 'hist-010', prompt: 'Debug and fix TypeScript type errors in a Next.js API route handler with proper error handling', optimizedPrompt: 'You are a senior TypeScript engineer...', category: 'coding', score: 94, isFavorite: false, targetModel: 'Claude Sonnet', mode: 'Coding', createdAt: daysAgo(9), wordCount: { original: 15, optimized: 78 }, tokenCount: 100 },
-    { id: 'hist-011', prompt: 'Create a B-roll shot list for a brand documentary about a sustainable fashion startup in NYC', optimizedPrompt: 'Generate a 10-scene B-roll shot list...', category: 'cinematic', score: 89, isFavorite: false, targetModel: 'VEO', mode: 'Cinematic Video', createdAt: daysAgo(10), wordCount: { original: 16, optimized: 82 }, tokenCount: 105 },
-    { id: 'hist-012', prompt: 'Analyze the competitive landscape for AI-powered project management tools in the enterprise market', optimizedPrompt: 'Conduct a structured competitive analysis...', category: 'research', score: 68, isFavorite: false, targetModel: 'Gemini', mode: 'Research', createdAt: daysAgo(12), wordCount: { original: 13, optimized: 58 }, tokenCount: 74 },
-    { id: 'hist-013', prompt: 'Write a LinkedIn post announcing a Series A funding round of $12M for our AI startup', optimizedPrompt: 'Craft a high-engagement LinkedIn announcement post...', category: 'marketing', score: 83, isFavorite: true, targetModel: 'ChatGPT', mode: 'Marketing', createdAt: daysAgo(14), wordCount: { original: 14, optimized: 68 }, tokenCount: 88 },
-    { id: 'hist-014', prompt: 'Generate a midjourney prompt for a surrealist oil painting of an underwater art deco city', optimizedPrompt: 'Surrealist underwater metropolis, Art Deco architecture...', category: 'image-gen', score: 96, isFavorite: true, targetModel: 'Midjourney', mode: 'Image Gen', createdAt: daysAgo(15), wordCount: { original: 14, optimized: 52 }, tokenCount: 68 },
-    { id: 'hist-015', prompt: 'Explain retrieval augmented generation to a non-technical executive audience in simple terms', optimizedPrompt: 'Explain RAG clearly for a non-technical business audience...', category: 'general', score: 75, isFavorite: false, targetModel: 'Claude Sonnet', mode: 'General', createdAt: daysAgo(18), wordCount: { original: 14, optimized: 65 }, tokenCount: 84 },
-    { id: 'hist-016', prompt: 'Create a 30-day content calendar for a B2B SaaS company in the HR tech space with post ideas', optimizedPrompt: 'Develop a comprehensive 30-day content calendar...', category: 'marketing', score: 86, isFavorite: false, targetModel: 'ChatGPT', mode: 'Marketing', createdAt: daysAgo(20), wordCount: { original: 17, optimized: 72 }, tokenCount: 92 },
-  ];
-}
-
-let _items: HistoryItem[] | null = null;
-function getItems(): HistoryItem[] {
-  if (!_items) _items = buildDummyItems();
-  return _items;
-}
-
 export async function fetchHistoryStats(): Promise<HistoryStats> {
-  await delay(150);
-  return { ...DUMMY_STATS };
+  try {
+    const promptsRes = await apiClient.get<any>('/api/v1/prompts/?page=1&page_size=100');
+    
+    let totalPrompts = promptsRes.data ? promptsRes.data.length : 0;
+    
+    const activeIds = new Set((promptsRes.data || []).map((p: any) => p.id || p.prompt_id));
+    const localFavs = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('promptiq_favorites') || '[]') : [];
+    
+    // Clean up favorites (keep only active ones)
+    const cleanedFavs = localFavs.filter((id: string) => activeIds.has(id));
+    
+    if (typeof window !== 'undefined' && localFavs.length !== cleanedFavs.length) {
+      localStorage.setItem('promptiq_favorites', JSON.stringify(cleanedFavs));
+    }
+
+    let averageScore = 0;
+    if (promptsRes.data && promptsRes.data.length > 0) {
+      // Only average prompts that already have a persisted score. Prompts whose
+      // background analysis is still running are excluded so the average is not
+      // skewed by placeholders and doesn't jump once scoring completes.
+      const scored = promptsRes.data
+        .map((p: any) => {
+          const newAna = p.new_analysis || p.current_version?.new_analysis;
+          const oldAna = p.old_analysis || p.current_version?.old_analysis;
+          return newAna?.overall_score
+            ?? (oldAna?.overall_score ? Math.min(95, oldAna.overall_score + 35) : null);
+        })
+        .filter((s: number | null): s is number => s != null);
+      if (scored.length > 0) {
+        const totalScore = scored.reduce((sum: number, s: number) => sum + s, 0);
+        averageScore = Math.round(totalScore / scored.length);
+      }
+    }
+
+    // Prompts created in the last 7 days
+    const thisWeekDelta = promptsRes.data ? promptsRes.data.filter((p: any) => {
+      if (!p.created_at) return false;
+      const created = new Date(p.created_at);
+      const diff = Date.now() - created.getTime();
+      return diff < 7 * 24 * 60 * 60 * 1000;
+    }).length : 0;
+
+    return {
+      totalPrompts,
+      averageScore,
+      thisWeekDelta,
+      favoritesCount: cleanedFavs.length,
+    };
+  } catch (err) {
+    console.error('Failed to fetch history stats:', err);
+    return {
+      totalPrompts: 0,
+      averageScore: 0,
+      thisWeekDelta: 0,
+      favoritesCount: 0,
+    };
+  }
 }
 
 export async function fetchHistory(page: number, pageSize: number, filters: HistoryFilters): Promise<PaginatedHistoryResponse> {
-  await delay(200);
-  let items = [...getItems()];
-  if (filters.category === 'favorites') items = items.filter(i => i.isFavorite);
-  else if (filters.category !== 'all') items = items.filter(i => i.category === filters.category);
-  if (filters.search.trim()) {
-    const q = filters.search.toLowerCase();
-    items = items.filter(i => i.prompt.toLowerCase().includes(q) || i.mode.toLowerCase().includes(q) || i.targetModel.toLowerCase().includes(q));
+  try {
+    const favorites = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('promptiq_favorites') || '[]') : [];
+
+    // Map sorting parameters
+    let sortBy = 'created_at';
+    let sortOrder = 'desc';
+
+    if (filters.sortBy === 'highest-score' || filters.sortBy === 'lowest-score') {
+      sortBy = 'created_at';
+      sortOrder = filters.sortBy === 'highest-score' ? 'desc' : 'asc';
+    } else if (filters.sortBy === 'oldest') {
+      sortBy = 'created_at';
+      sortOrder = 'asc';
+    }
+
+    let items: any[] = [];
+    let total = 0;
+
+    const isCategoryFilterActive = Boolean(filters.category && filters.category !== 'all');
+    const isSearchActive = Boolean(filters.search && filters.search.trim().length > 0);
+
+    // Use semantic search if a search query is active
+    if (isSearchActive) {
+      const searchRes = await apiClient.post<any>('/api/v1/prompts/search', {
+        prompt: filters.search,
+        limit: 100
+      });
+      if (searchRes && searchRes.results) {
+        items = searchRes.results;
+      }
+    } else if (isCategoryFilterActive) {
+      // Fetch larger set of items so client category filter has complete data
+      const res = await apiClient.get<any>(
+        `/api/v1/prompts/?page=1&page_size=100&sort_by=${sortBy}&sort_order=${sortOrder}`
+      );
+      if (res && res.data) {
+        items = res.data;
+      }
+    } else {
+      const res = await apiClient.get<any>(
+        `/api/v1/prompts/?page=${page}&page_size=${pageSize}&sort_by=${sortBy}&sort_order=${sortOrder}`
+      );
+      if (res && res.data) {
+        items = res.data;
+        total = res.total ?? items.length;
+      }
+    }
+
+    const favSet = new Set(favorites.map((f: any) => String(f)));
+
+    // Map backend items to HistoryItem structures
+    let mappedItems: HistoryItem[] = items.map((p: any) => {
+      const itemId = String(p.id || p.prompt_id);
+      const isFav = favSet.has(itemId);
+      const newAna = p.new_analysis || p.current_version?.new_analysis;
+      const oldAna = p.old_analysis || p.current_version?.old_analysis;
+      // No persisted analysis yet => the background scoring task is still
+      // running. Return null (not a placeholder number) so the UI can render a
+      // loader on the score until the real value lands in the DB.
+      const finalScore = newAna?.overall_score
+        ?? (oldAna?.overall_score ? Math.min(95, oldAna.overall_score + 35) : null);
+
+      return {
+        id: itemId,
+        prompt: p.original_prompt || p.title || 'Untitled Prompt',
+        optimizedPrompt: p.original_prompt || '',
+        category: (p.template?.role || p.template?.mode || p.title?.split(' - ')[1] || 'general').toLowerCase(),
+        score: finalScore,
+        isFavorite: isFav,
+        targetModel: p.ai_model?.model_name || 'ChatGPT',
+        mode: p.template?.mode || p.title?.split(' - ')[1] || 'General',
+        createdAt: p.created_at || new Date().toISOString(),
+        wordCount: { original: (p.original_prompt || '').split(/\s+/).length, optimized: 20 },
+        tokenCount: 50,
+      };
+    });
+
+    // Handle frontend filters
+    if (filters.category === 'favorites') {
+      mappedItems = mappedItems.filter(i => i.isFavorite);
+    } else if (filters.category && filters.category !== 'all') {
+      mappedItems = mappedItems.filter(i => i.category === filters.category);
+    }
+
+    if (isSearchActive || isCategoryFilterActive) {
+      total = mappedItems.length;
+      mappedItems = mappedItems.slice((page - 1) * pageSize, page * pageSize);
+    }
+
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+    return {
+      items: mappedItems,
+      total,
+      page,
+      pageSize,
+      totalPages,
+    };
+  } catch (err) {
+    console.error('Failed to fetch history list:', err);
+    return {
+      items: [],
+      total: 0,
+      page,
+      pageSize: 8,
+      totalPages: 1,
+    };
   }
-  switch (filters.sortBy) {
-    case 'highest-score': items.sort((a, b) => b.score - a.score); break;
-    case 'lowest-score':  items.sort((a, b) => a.score - b.score); break;
-    case 'oldest':        items.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()); break;
-    default:              items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }
-  const total = items.length;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const safePage = Math.min(page, totalPages);
-  const start = (safePage - 1) * pageSize;
-  return { items: items.slice(start, start + pageSize), total, page: safePage, pageSize, totalPages };
 }
 
 export async function toggleFavorite(id: string, isFavorite: boolean): Promise<void> {
-  await delay(80);
-  const item = getItems().find(i => i.id === id);
-  if (item) item.isFavorite = isFavorite;
+  if (typeof window !== 'undefined') {
+    const favorites = JSON.parse(localStorage.getItem('promptiq_favorites') || '[]');
+    const idStr = String(id);
+    const existingIndex = favorites.findIndex((f: any) => String(f) === idStr);
+
+    if (isFavorite) {
+      if (existingIndex === -1) favorites.push(idStr);
+    } else {
+      if (existingIndex > -1) favorites.splice(existingIndex, 1);
+    }
+    localStorage.setItem('promptiq_favorites', JSON.stringify(favorites));
+  }
+}
+
+export interface DeleteHistoryResult {
+  deletedIds: string[];
+  failedIds: string[];
+}
+
+export async function deleteHistoryItems(ids: string[]): Promise<DeleteHistoryResult> {
+  const uniqueIds = [...new Set(ids.map(String))];
+  const results = await Promise.allSettled(
+    uniqueIds.map(id => apiClient.delete(`/api/v1/prompts/${id}`))
+  );
+  const deletedIds = uniqueIds.filter((_, index) => results[index].status === 'fulfilled');
+  const failedIds = uniqueIds.filter((_, index) => results[index].status === 'rejected');
+
+  if (typeof window !== 'undefined' && deletedIds.length > 0) {
+    const deleted = new Set(deletedIds);
+    const favorites = JSON.parse(localStorage.getItem('promptiq_favorites') || '[]');
+    localStorage.setItem(
+      'promptiq_favorites',
+      JSON.stringify(favorites.filter((id: unknown) => !deleted.has(String(id))))
+    );
+    // Keeps the sidebar's Recent History and any other history view in sync.
+    window.dispatchEvent(new Event('promptiq:history-updated'));
+  }
+
+  return { deletedIds, failedIds };
 }
 
 export async function deleteHistoryItem(id: string): Promise<void> {
-  await delay(100);
-  _items = getItems().filter(i => i.id !== id);
+  const { failedIds } = await deleteHistoryItems([id]);
+  if (failedIds.length > 0 && typeof window !== 'undefined') {
+    console.error('Failed to delete prompt.');
+  }
 }

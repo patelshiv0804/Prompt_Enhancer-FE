@@ -3,34 +3,17 @@
 import React, { useState, useEffect } from 'react';
 import {
   Copy, RefreshCw, Bookmark, ArrowRightToLine,
-  Sparkles, Code, Search, Megaphone, BookOpen, Image as ImageIcon,
-  Film, PlaySquare, TrendingUp, Wand2,
-  CheckCircle2, AlertTriangle, Minus,
+  Sparkles, Code2, Search, Megaphone, GraduationCap, Briefcase,
+  School, Rocket, PenTool, BarChart3, Palette, Video, Wand2,
+  CheckCircle2, AlertTriangle, Minus, FileText, Layers, Monitor,
+  Smartphone, Server, Database, ShieldCheck, Globe, Cpu, Terminal,
+  Lightbulb, DollarSign, Scale, ShoppingCart, Users, Mail, Radio,
+  Activity, PieChart, TrendingUp, BookOpen, Building2, Layout, Award, Zap, GitBranch, ChevronDown, Feather,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import FormattedPromptViewer from './FormattedPromptViewer';
 
-const MODES = [
-  { name: 'General', icon: Sparkles },
-  { name: 'Coding', icon: Code },
-  { name: 'Research', icon: Search },
-  { name: 'Marketing', icon: Megaphone },
-  { name: 'Storytelling', icon: BookOpen },
-  { name: 'Image Gen', icon: ImageIcon },
-  { name: 'Cinematic Video', icon: Film },
-  { name: 'YouTube Shorts', icon: PlaySquare },
-  { name: 'SEO', icon: TrendingUp },
-];
-
-const DIMENSIONS = [
-  { id: 'clarity', label: 'Clarity', status: 'good', icon: CheckCircle2, desc: 'Instructions are direct and unambiguous.', scoreBefore: 68, scoreAfter: 91 },
-  { id: 'context', label: 'Context', status: 'good', icon: CheckCircle2, desc: 'Sufficient background information provided.', scoreBefore: 72, scoreAfter: 88 },
-  { id: 'role', label: 'Role', status: 'neutral', icon: Minus, desc: 'No specific persona requested.', scoreBefore: 32, scoreAfter: 74 },
-  { id: 'format', label: 'Format', status: 'good', icon: CheckCircle2, desc: 'Output structure clearly defined.', scoreBefore: 55, scoreAfter: 90 },
-  { id: 'constraints', label: 'Constraints', status: 'warning', icon: AlertTriangle, desc: 'Negative constraints could be stricter.', scoreBefore: 40, scoreAfter: 77 },
-  { id: 'examples', label: 'Examples', status: 'neutral', icon: Minus, desc: 'Zero-shot approach used.', scoreBefore: 28, scoreAfter: 65 },
-];
-
-const BEFORE_TOTAL = 49;
+import { ROLES, ROLE_MODES, getModeIcon } from '@/constants/roles';
 
 function scoreColor(s: number) {
   if (s >= 80) return 'var(--color-success)';
@@ -38,36 +21,70 @@ function scoreColor(s: number) {
   return '#F59E0B';
 }
 
+function scoreLabel(s: number) {
+  if (s >= 90) return 'Excellent';
+  if (s >= 75) return 'Good';
+  if (s >= 55) return 'Fair';
+  return 'Needs Work';
+}
+
 function useCountUp(target: number, active: boolean, duration = 1200): number {
   const [value, setValue] = useState(0);
   useEffect(() => {
     if (!active) { setValue(0); return; }
-    let rafId: number;
-    let startTime: number | null = null;
-    const startVal = 0;
-
-    const animate = (timestamp: number) => {
-      if (!startTime) startTime = timestamp;
-      const elapsed = timestamp - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
-      setValue(Math.round(startVal + eased * (target - startVal)));
-      if (progress < 1) rafId = requestAnimationFrame(animate);
-      else setValue(target);
-    };
-
-    rafId = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(rafId);
+    let current = 0;
+    const step = target / (duration / 16);
+    const timer = setInterval(() => {
+      current += step;
+      if (current >= target) { setValue(target); clearInterval(timer); }
+      else setValue(Math.floor(current));
+    }, 16);
+    return () => clearInterval(timer);
   }, [target, active, duration]);
   return value;
 }
 
+function formatPromptText(text?: string): string {
+  if (!text) return '';
+  let cleaned = text.trim();
+
+  const markers = ['ENHANCED PROMPT:', 'ENHANCED PROMPT', 'Enhanced Prompt:'];
+  for (const m of markers) {
+    const idx = cleaned.indexOf(m);
+    if (idx !== -1) {
+      cleaned = cleaned.substring(idx + m.length).trim();
+      break;
+    }
+  }
+
+  // If there's still a DIAGNOSED MODE header before the main content, strip it out
+  if (cleaned.includes('DIAGNOSED MODE:') || cleaned.includes('DIAGNOSIS NOTES:')) {
+    const actIdx = cleaned.search(/(Act as|You are|Your task|System Prompt|# )/i);
+    if (actIdx !== -1) {
+      cleaned = cleaned.substring(actIdx).trim();
+    }
+  }
+
+  return cleaned;
+}
+
 /* ── Inline Score Panel ─────────────────────────────────────────────────── */
-function InlineScorePanel({ active }: { active: boolean }) {
-  const animScore = useCountUp(BEFORE_TOTAL, active);
+function InlineScorePanel({ active, analysisResult }: { active: boolean; analysisResult: any }) {
+  const score = analysisResult?.overall_score || 0;
+  const animScore = useCountUp(score, active);
   const radius = 44;
   const circ = 2 * Math.PI * radius;
   const offset = circ - (animScore / 100) * circ;
+
+  const dims = analysisResult?.dimensions || {};
+  const mappedDimensions = [
+    { id: 'clarity', label: 'Clarity', status: dims.clarity?.score >= 80 ? 'good' : dims.clarity?.score >= 55 ? 'warning' : 'neutral', icon: CheckCircle2, desc: dims.clarity?.explanation || 'Instructions are direct and unambiguous.', score: dims.clarity?.score || 0 },
+    { id: 'context', label: 'Context', status: dims.context?.score >= 80 ? 'good' : dims.context?.score >= 55 ? 'warning' : 'neutral', icon: CheckCircle2, desc: dims.context?.explanation || 'Sufficient background information provided.', score: dims.context?.score || 0 },
+    { id: 'role', label: 'Role', status: dims.role_definition?.score >= 80 ? 'good' : dims.role_definition?.score >= 55 ? 'warning' : 'neutral', icon: Minus, desc: dims.role_definition?.explanation || 'Define AI persona or domain context.', score: dims.role_definition?.score || 0 },
+    { id: 'format', label: 'Format', status: dims.output_format?.score >= 80 ? 'good' : dims.output_format?.score >= 55 ? 'warning' : 'neutral', icon: CheckCircle2, desc: dims.output_format?.explanation || 'Output structure defined.', score: dims.output_format?.score || 0 },
+    { id: 'constraints', label: 'Constraints', status: dims.constraints?.score >= 80 ? 'good' : dims.constraints?.score >= 55 ? 'warning' : 'neutral', icon: AlertTriangle, desc: dims.constraints?.explanation || 'Negative constraints specified.', score: dims.constraints?.score || 0 },
+    { id: 'examples', label: 'Examples', status: dims.examples?.score >= 80 ? 'good' : dims.examples?.score >= 55 ? 'warning' : 'neutral', icon: Minus, desc: dims.examples?.explanation || 'Zero-shot approach used.', score: dims.examples?.score || 0 },
+  ];
 
   const edgeBg = (status: string) => {
     if (status === 'good') return 'linear-gradient(180deg, var(--color-success), rgba(16,185,129,0.3))';
@@ -100,30 +117,20 @@ function InlineScorePanel({ active }: { active: boolean }) {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
-          <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-primary)', letterSpacing: -0.3 }}>Needs Work</div>
-          <p style={{ fontSize: 12, color: 'var(--color-text-secondary)', lineHeight: 1.4, margin: 0 }}>
-            Run Optimize to improve your score
-          </p>
-          <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-            {[['Words', '16'], ['Tokens', '~24']].map(([k, v]) => (
-              <div key={k} style={{
-                display: 'flex', alignItems: 'center', gap: 5,
-                background: 'rgba(124,58,237,0.05)', border: '1px solid rgba(124,58,237,0.10)',
-                borderRadius: 9999, padding: '3px 10px', fontSize: 12,
-              }}>
-                <span style={{ color: 'var(--color-text-secondary)' }}>{k}</span>
-                <span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>{v}</span>
-              </div>
-            ))}
+          <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-primary)', letterSpacing: -0.3 }}>
+            {scoreLabel(score)}
           </div>
+          <p style={{ fontSize: 12, color: 'var(--color-text-secondary)', lineHeight: 1.4, margin: 0 }}>
+            {analysisResult?.summary || 'Run Optimize to improve your score'}
+          </p>
         </div>
       </div>
 
       {/* Dimension grid (2 cols) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, flex: 1 }}>
-        {DIMENSIONS.map((dim, i) => {
+        {mappedDimensions.map((dim, i) => {
           const Icon = dim.icon;
-          const score = dim.scoreBefore;
+          const scoreVal = dim.score;
           return (
             <div
               key={dim.id}
@@ -140,15 +147,15 @@ function InlineScorePanel({ active }: { active: boolean }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <Icon size={14} style={{ color: iconCol(dim.status), flexShrink: 0 }} />
                 <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)', flex: 1 }}>{dim.label}</span>
-                <span style={{ fontSize: 14, fontWeight: 700, flexShrink: 0, color: scoreColor(score) }}>{score}</span>
+                <span style={{ fontSize: 14, fontWeight: 700, flexShrink: 0, color: scoreColor(scoreVal) }}>{scoreVal}</span>
               </div>
               <div style={{ height: 3, background: 'rgba(124,58,237,0.08)', borderRadius: 99, overflow: 'hidden' }}>
                 <div style={{
-                  height: '100%', borderRadius: 99, background: scoreColor(score),
-                  width: active ? `${score}%` : '0%', transition: `width 0.8s ease-out ${i * 60}ms`,
+                  height: '100%', borderRadius: 99, background: scoreColor(scoreVal),
+                  width: active ? `${scoreVal}%` : '0%', transition: `width 0.8s ease-out ${i * 60}ms`,
                 }} />
               </div>
-              <p style={{ fontSize: 11, color: 'var(--color-text-secondary)', lineHeight: 1.4, margin: 0 }}>{dim.desc}</p>
+              <p style={{ fontSize: 11, color: 'var(--color-text-secondary)', lineHeight: 1.4, margin: 0, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={dim.desc}>{dim.desc}</p>
             </div>
           );
         })}
@@ -160,22 +167,62 @@ function InlineScorePanel({ active }: { active: boolean }) {
 /* ── Shared card style ── */
 const cardStyle: React.CSSProperties = {
   flex: 1, display: 'flex', flexDirection: 'column', background: '#FFFFFF',
-  border: '1px solid rgba(124,58,237,0.10)', borderRadius: 28, padding: 40,
+  border: '1px solid rgba(124,58,237,0.10)', borderRadius: 28, padding: 36,
   boxShadow: '0 4px 24px rgba(109,40,217,0.07), 0 1px 4px rgba(0,0,0,0.04)',
-  minHeight: 400, transition: 'transform 300ms ease-in-out, box-shadow 300ms ease-in-out',
+  height: 780, maxHeight: 780, boxSizing: 'border-box',
+  transition: 'transform 300ms ease-in-out, box-shadow 300ms ease-in-out',
 };
 
+interface ComparisonBlockProps {
+  isAnalyzing: boolean;
+  isAnalyzed: boolean;
+  isOptimizing: boolean;
+  isOptimized: boolean;
+  onAnalyze: (promptText: string) => void;
+  onOptimize: (promptText: string, activeRole: string, activeMode?: string, enhancementLevel?: string) => void;
+  onReenhance?: () => Promise<void>;
+  analysisResult?: any;
+  optimizationResult?: any;
+  // History fields
+  versions?: any[];
+  activeVersionNumber?: number | null;
+  onRestoreVersion?: (versionNumber: number) => void;
+  initialOriginalPromptText?: string;
+}
+
 /* ── Main component ─────────────────────────────────────────────────────── */
-export default function ComparisonBlock({ isAnalyzing, isAnalyzed, isOptimizing, isOptimized, onAnalyze, onOptimize }: {
-  isAnalyzing: boolean; isAnalyzed: boolean; isOptimizing: boolean; isOptimized: boolean;
-  onAnalyze: () => void; onOptimize: () => void;
-}) {
+export default function ComparisonBlock({
+  isAnalyzing, isAnalyzed, isOptimizing, isOptimized, onAnalyze, onOptimize, onReenhance,
+  analysisResult, optimizationResult, versions = [], activeVersionNumber = null, onRestoreVersion,
+  initialOriginalPromptText = '',
+}: ComparisonBlockProps) {
   const [originalText, setOriginalText] = useState(
     'write a cinematic short about an astronaut who discovers a garden on mars. make it emotional.'
   );
-  const [activeTab, setActiveTab] = useState('Optimized');
-  const [activeMode, setActiveMode] = useState('General');
+  const [activeRole, setActiveRole] = useState('general');
+  const [activeMode, setActiveMode] = useState('');
+  const [enhancementLevel, setEnhancementLevel] = useState<'auto' | 'minimal' | 'standard' | 'deep'>('auto');
   const [scoreReady, setScoreReady] = useState(false);
+  const [isReenhancing, setIsReenhancing] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
+  const [isVersionMenuOpen, setIsVersionMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (initialOriginalPromptText) {
+      setOriginalText(initialOriginalPromptText);
+    }
+  }, [initialOriginalPromptText]);
+
+  useEffect(() => {
+    if (activeRole && activeRole !== 'general') {
+      const modes = ROLE_MODES[activeRole] || [];
+      if (modes.length > 0 && !modes.includes(activeMode)) {
+        setActiveMode(modes[0]);
+      }
+    } else {
+      setActiveMode('');
+    }
+  }, [activeRole]);
 
   useEffect(() => {
     if (isAnalyzed) {
@@ -184,16 +231,32 @@ export default function ComparisonBlock({ isAnalyzing, isAnalyzed, isOptimizing,
     } else { setScoreReady(false); }
   }, [isAnalyzed]);
 
+  const handleCopy = async () => {
+    if (optimizationResult?.enhanced_prompt) {
+      await navigator.clipboard.writeText(optimizationResult.enhanced_prompt);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    }
+  };
+
   const showScorePanel = isAnalyzing || (isAnalyzed && !isOptimizing && !isOptimized);
   const showOptimizedPanel = isOptimizing || isOptimized;
   const showRightPanel = showScorePanel || showOptimizedPanel;
+
+  const currentAnalysis = optimizationResult?.original_analysis || analysisResult;
 
   return (
     <div style={{ display: 'flex', width: '100%', marginBottom: 32 }}>
 
       {/* ── Left Card: Original Prompt ── */}
       <motion.div
-        style={cardStyle} layout
+        style={{
+          ...cardStyle,
+          overflowY: 'auto',
+          scrollbarWidth: 'thin',
+          scrollbarColor: 'rgba(124,58,237,0.2) transparent',
+        }}
+        layout
         transition={{ type: 'spring', bounce: 0, duration: 0.6 }}
         className="hover:translate-y-[-3px] hover:shadow-[0_12px_48px_rgba(109,40,217,0.10),0_4px_12px_rgba(0,0,0,0.05)]"
       >
@@ -207,43 +270,72 @@ export default function ComparisonBlock({ isAnalyzing, isAnalyzed, isOptimizing,
         {/* Textarea */}
         <div
           style={{
-            flex: 1, border: '1px solid rgba(124,58,237,0.10)', borderRadius: 18,
-            background: '#FDFCFF', padding: 24, display: 'flex', flexDirection: 'column',
-            minHeight: 200, boxShadow: 'inset 0 1px 3px rgba(109,40,217,0.03)', transition: 'all 300ms ease-in-out',
+            flex: 1,
+            border: originalText.length > 12000 ? '1px solid #EF4444' : '1px solid rgba(124,58,237,0.10)',
+            borderRadius: 18,
+            background: originalText.length > 12000 ? '#FFF5F5' : '#FDFCFF',
+            padding: 24,
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: 200,
+            boxShadow: originalText.length > 12000 ? '0 0 0 3px rgba(239,68,68,0.12)' : 'inset 0 1px 3px rgba(109,40,217,0.03)',
+            transition: 'all 300ms ease-in-out',
+            opacity: (isOptimizing || isAnalyzing) ? 0.7 : 1,
           }}
           className="focus-within:!bg-[#FAFAFE] focus-within:!border-[rgba(124,58,237,0.35)] focus-within:shadow-[inset_0_1px_3px_rgba(0,0,0,0.02),0_0_0_3px_rgba(124,58,237,0.08),0_0_20px_rgba(124,58,237,0.05)]"
         >
           <textarea
             value={originalText}
             onChange={e => setOriginalText(e.target.value)}
+            disabled={isOptimizing || isAnalyzing}
             placeholder="Paste, drop, or write below..."
             style={{
               width: '100%', flex: 1, fontSize: 14, lineHeight: 1.6, color: 'var(--color-text-primary)',
               background: 'transparent', border: 'none', resize: 'none', outline: 'none', letterSpacing: '0.01em',
+              cursor: (isOptimizing || isAnalyzing) ? 'not-allowed' : 'text',
             }}
           />
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
-            <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>
-              {originalText.split(' ').filter(Boolean).length} words &middot; {originalText.length} chars
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 }}>
+            {originalText.length > 12000 ? (
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#DC2626', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <AlertTriangle size={14} /> Maximum character limit reached (12,000 max)
+              </span>
+            ) : (
+              <span />
+            )}
+            <span style={{ fontSize: 12, fontWeight: originalText.length > 12000 ? 700 : 400, color: originalText.length > 12000 ? '#DC2626' : 'var(--color-text-secondary)' }}>
+              {originalText.split(' ').filter(Boolean).length} words &middot; {originalText.length.toLocaleString()} / 12,000 chars
             </span>
           </div>
         </div>
 
         {/* Controls */}
-        <div style={{ marginTop: 32, display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '1.2px' }}>Mode</div>
+        <div style={{
+          marginTop: 32, display: 'flex', flexDirection: 'column', gap: 16,
+          opacity: (isOptimizing || isAnalyzing) ? 0.6 : 1,
+          pointerEvents: (isOptimizing || isAnalyzing) ? 'none' : 'auto',
+          transition: 'opacity 200ms ease',
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '1.2px' }}>Role</div>
           <div style={{ paddingBottom: 4 }}>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-              {MODES.map(mode => {
-                const Icon = mode.icon;
-                const active = activeMode === mode.name;
+              {ROLES.map(role => {
+                const Icon = role.icon;
+                const active = activeRole === role.id;
                 return (
                   <button
-                    key={mode.name}
-                    onClick={() => setActiveMode(mode.name)}
+                    key={role.id}
+                    disabled={isOptimizing || isAnalyzing}
+                    onClick={() => {
+                      if (isOptimizing || isAnalyzing) return;
+                      setActiveRole(role.id);
+                      const modes = ROLE_MODES[role.id] || [];
+                      if (modes.length > 0) setActiveMode(modes[0]);
+                      else setActiveMode('');
+                    }}
                     style={{
                       padding: '8px 16px', borderRadius: 9999, fontSize: 13, fontWeight: active ? 600 : 500,
-                      cursor: 'pointer', transition: 'all 250ms ease', display: 'flex', alignItems: 'center', gap: 6,
+                      cursor: (isOptimizing || isAnalyzing) ? 'not-allowed' : 'pointer', transition: 'all 250ms ease', display: 'flex', alignItems: 'center', gap: 6,
                       color: active ? '#6D28D9' : '#6B6B8A',
                       background: active
                         ? 'linear-gradient(160deg, rgba(167,139,250,0.22) 0%, rgba(196,181,253,0.12) 100%)'
@@ -256,56 +348,187 @@ export default function ComparisonBlock({ isAnalyzing, isAnalyzed, isOptimizing,
                     }}
                   >
                     <Icon size={14} style={{ opacity: active ? 1 : 0.75 }} />
-                    {mode.name}
+                    {role.label}
                   </button>
                 );
               })}
             </div>
           </div>
 
+          {/* Mode Selector for non-general roles */}
+          <AnimatePresence>
+            {activeRole !== 'general' && ROLE_MODES[activeRole] && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+                style={{ display: 'flex', flexDirection: 'column', gap: 10, overflow: 'hidden', marginTop: 4 }}
+              >
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#7C3AED', textTransform: 'uppercase', letterSpacing: '1.2px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span>Select Mode</span>
+                  <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--color-text-secondary)', textTransform: 'none' }}>
+                    for {ROLES.find(r => r.id === activeRole)?.label}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, maxHeight: 180, overflowY: 'auto', paddingRight: 4 }}>
+                  {ROLE_MODES[activeRole].map(m => {
+                    const active = activeMode === m;
+                    const ModeIcon = getModeIcon(m);
+                    return (
+                      <button
+                        key={m}
+                        disabled={isOptimizing || isAnalyzing}
+                        onClick={() => {
+                          if (isOptimizing || isAnalyzing) return;
+                          setActiveMode(m);
+                        }}
+                        style={{
+                          padding: '6px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: active ? 600 : 500,
+                          cursor: (isOptimizing || isAnalyzing) ? 'not-allowed' : 'pointer', transition: 'all 180ms ease', display: 'flex', alignItems: 'center', gap: 6,
+                          color: active ? '#FFFFFF' : 'var(--color-text-primary)',
+                          background: active
+                            ? 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)'
+                            : 'rgba(124,58,237,0.05)',
+                          border: active ? 'none' : '1px solid rgba(124,58,237,0.10)',
+                          boxShadow: active ? '0 3px 10px rgba(124,58,237,0.25)' : 'none',
+                        }}
+                        className={!active ? 'hover:!bg-[rgba(124,58,237,0.10)]' : ''}
+                      >
+                        <ModeIcon size={13} style={{ opacity: active ? 1 : 0.75 }} />
+                        {m}
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Enhancement Level Segmented Control */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '1.2px' }}>Enhancement Depth</div>
+            <div style={{
+              display: 'inline-flex', position: 'relative',
+              background: 'linear-gradient(160deg, rgba(109,40,217,0.09) 0%, rgba(124,58,237,0.04) 100%)',
+              border: '1px solid rgba(124,58,237,0.13)', borderRadius: 9999, padding: 4,
+              boxShadow: 'inset 0 2px 5px rgba(80,20,180,0.13), inset 0 1px 2px rgba(0,0,0,0.07), 0 1px 0 rgba(255,255,255,0.80)',
+              alignSelf: 'flex-start', gap: 2,
+            }}>
+              {[
+                { id: 'auto' as const, label: 'Auto', icon: Zap },
+                { id: 'minimal' as const, label: 'Minimal', icon: Feather },
+                { id: 'standard' as const, label: 'Standard', icon: Sparkles },
+                { id: 'deep' as const, label: 'Deep', icon: Layers },
+              ].map(({ id, label, icon: Icon }) => {
+                const active = id === enhancementLevel;
+                return (
+                  <button
+                    key={id}
+                    id={`enhancement-level-${id}`}
+                    disabled={isOptimizing || isAnalyzing}
+                    onClick={() => {
+                      if (isOptimizing || isAnalyzing) return;
+                      setEnhancementLevel(id);
+                    }}
+                    style={{
+                      height: 32,
+                      padding: '0 15px',
+                      fontSize: 13,
+                      fontWeight: active ? 600 : 500,
+                      color: active ? 'var(--color-primary)' : 'var(--color-text-secondary)',
+                      position: 'relative',
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: (isOptimizing || isAnalyzing) ? 'not-allowed' : 'pointer',
+                      borderRadius: 9999,
+                      whiteSpace: 'nowrap',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'color 200ms ease',
+                    }}
+                  >
+                    {active && (
+                      <motion.div
+                        layoutId="activeDepthPill"
+                        transition={{ type: 'spring', bounce: 0.15, duration: 0.35 }}
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          background: '#FFFFFF',
+                          borderRadius: 9999,
+                          zIndex: 1,
+                          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.95), 0 3px 8px rgba(80,20,180,0.12), 0 1px 3px rgba(0,0,0,0.10), 0 0 0 1px rgba(124,58,237,0.07)',
+                        }}
+                      />
+                    )}
+                    <span style={{ position: 'relative', zIndex: 2, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <Icon size={13} strokeWidth={2.2} style={{ opacity: active ? 1 : 0.75 }} />
+                      <span>{label}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            {enhancementLevel === 'auto' && (
+              <p style={{ fontSize: 11, color: 'var(--color-text-secondary)', margin: 0, lineHeight: 1.4 }}>
+                AI will detect the right depth automatically.
+              </p>
+            )}
+          </div>
+        </div>
+
           {/* Action buttons */}
           <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
             <button
               id="analyze-btn"
-              onClick={onAnalyze}
-              disabled={isAnalyzing || isOptimizing}
+              onClick={() => {
+                if (originalText.length > 12000) return;
+                onAnalyze(originalText);
+              }}
+              disabled={isAnalyzing || isOptimizing || originalText.length > 12000}
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 32px',
-                borderRadius: 11, fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer',
-                background: 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)', color: 'white',
-                boxShadow: '0 4px 16px rgba(124,58,237,0.30)',
-                opacity: (isAnalyzing || isOptimizing) ? 0.75 : 1,
+                borderRadius: 11, fontSize: 14, fontWeight: 600, border: 'none',
+                cursor: (isAnalyzing || isOptimizing || originalText.length > 12000) ? 'not-allowed' : 'pointer',
+                background: originalText.length > 12000 ? 'rgba(107,107,138,0.20)' : 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)',
+                color: originalText.length > 12000 ? 'rgba(107,107,138,0.60)' : 'white',
+                boxShadow: originalText.length > 12000 ? 'none' : '0 4px 16px rgba(124,58,237,0.30)',
+                opacity: (isAnalyzing || isOptimizing || originalText.length > 12000) ? 0.75 : 1,
                 transition: 'all 220ms ease',
               }}
-              className={!(isAnalyzing || isOptimizing) ? 'hover:translate-y-[-1px] hover:shadow-[0_8px_24px_rgba(124,58,237,0.40)] hover:brightness-105' : ''}
+              className={!(isAnalyzing || isOptimizing || originalText.length > 12000) ? 'hover:translate-y-[-1px] hover:shadow-[0_8px_24px_rgba(124,58,237,0.40)] hover:brightness-105' : ''}
             >
               <Sparkles size={13} style={{ animation: 'pulseGlow 2s infinite' }} />
               <span>{isAnalyzing ? 'Analyzing...' : 'Analyze'}</span>
             </button>
             <button
               id="optimize-btn"
-              onClick={onOptimize}
-              disabled={isOptimizing || isAnalyzing}
+              onClick={() => {
+                if (originalText.length > 12000) return;
+                onOptimize(originalText, activeRole, activeMode, enhancementLevel);
+              }}
+              disabled={isOptimizing || isAnalyzing || originalText.length > 12000}
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 32px',
                 borderRadius: 11, fontSize: 14, fontWeight: 600,
-                cursor: (isOptimizing || isAnalyzing) ? 'not-allowed' : 'pointer',
-                background: (!isOptimizing && !isAnalyzing)
+                cursor: (isOptimizing || isAnalyzing || originalText.length > 12000) ? 'not-allowed' : 'pointer',
+                background: (!isOptimizing && !isAnalyzing && originalText.length <= 12000)
                   ? 'linear-gradient(135deg, #6D28D9 0%, #7C3AED 100%)'
-                  : 'rgba(124,58,237,0.06)',
-                color: (!isOptimizing && !isAnalyzing) ? 'white' : 'rgba(107,107,138,0.50)',
-                border: (!isOptimizing && !isAnalyzing) ? 'none' : '1px solid rgba(124,58,237,0.10)',
-                boxShadow: (!isOptimizing && !isAnalyzing) ? '0 4px 16px rgba(109,40,217,0.30)' : 'none',
-                opacity: isOptimizing ? 0.75 : 1,
+                  : 'rgba(107,107,138,0.20)',
+                color: (!isOptimizing && !isAnalyzing && originalText.length <= 12000) ? 'white' : 'rgba(107,107,138,0.60)',
+                border: (!isOptimizing && !isAnalyzing && originalText.length <= 12000) ? 'none' : '1px solid rgba(124,58,237,0.10)',
+                boxShadow: (!isOptimizing && !isAnalyzing && originalText.length <= 12000) ? '0 4px 16px rgba(109,40,217,0.30)' : 'none',
+                opacity: (isOptimizing || originalText.length > 12000) ? 0.75 : 1,
                 transition: 'all 220ms ease',
               }}
-              className={(!isOptimizing && !isAnalyzing) ? 'hover:translate-y-[-1px] hover:shadow-[0_8px_24px_rgba(109,40,217,0.42)] hover:brightness-105' : ''}
+              className={(!isOptimizing && !isAnalyzing && originalText.length <= 12000) ? 'hover:translate-y-[-1px] hover:shadow-[0_8px_24px_rgba(109,40,217,0.42)] hover:brightness-105' : ''}
             >
               <Wand2 size={13} />
               <span>{isOptimizing ? 'Optimizing...' : 'Optimize'}</span>
             </button>
           </div>
-        </div>
       </motion.div>
 
       {/* ── Right Panel ── */}
@@ -318,11 +541,11 @@ export default function ComparisonBlock({ isAnalyzing, isAnalyzed, isOptimizing,
             animate={{ opacity: 1, flex: 0.818, paddingLeft: 24, minWidth: 0, width: 'auto' }}
             exit={{ opacity: 0, flex: 0, paddingLeft: 0, minWidth: 0, width: 0 }}
             transition={{ type: 'spring', bounce: 0, duration: 0.6 }}
-            style={{ overflow: 'hidden', display: 'flex' }}
+            style={{ overflow: 'hidden', display: 'flex', height: 780, maxHeight: 780 }}
           >
             {/* Score panel */}
             {showScorePanel && (
-              <div style={{ ...cardStyle, width: '100%', flex: 'none', overflowY: 'auto' }}>
+              <div style={{ ...cardStyle, width: '100%', flex: 'none', height: '100%', overflowY: 'auto' }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', letterSpacing: '1.2px', textTransform: 'uppercase', marginBottom: 8 }}>
                   Analysis
                 </div>
@@ -346,72 +569,192 @@ export default function ComparisonBlock({ isAnalyzing, isAnalyzed, isOptimizing,
                     </div>
                   </div>
                 ) : (
-                  <InlineScorePanel active={scoreReady} />
+                  <InlineScorePanel active={scoreReady} analysisResult={currentAnalysis} />
                 )}
               </div>
             )}
 
             {/* Optimized panel */}
             {showOptimizedPanel && (
-              <div style={{ ...cardStyle, width: '100%', flex: 'none' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, height: 36 }}>
-                  {(isOptimized || isOptimizing) ? (
-                    <div style={{
-                      display: 'flex', position: 'relative',
-                      background: 'linear-gradient(160deg, rgba(109,40,217,0.09) 0%, rgba(124,58,237,0.04) 100%)',
-                      border: '1px solid rgba(124,58,237,0.13)', borderRadius: 9999, padding: 4,
-                      boxShadow: 'inset 0 2px 5px rgba(80,20,180,0.13), inset 0 1px 2px rgba(0,0,0,0.07), 0 1px 0 rgba(255,255,255,0.80)',
-                      opacity: isOptimizing ? 0.6 : 1, pointerEvents: isOptimizing ? 'none' : 'auto',
-                    }}>
-                      {['Optimized', 'Diff View'].map(tab => (
-                        <button key={tab} onClick={() => setActiveTab(tab)} style={{
-                          padding: '4px 16px', fontSize: 13, fontWeight: tab === activeTab ? 600 : 500,
-                          color: tab === activeTab ? 'var(--color-primary)' : 'var(--color-text-secondary)',
-                          position: 'relative', zIndex: 2, transition: 'color 250ms ease',
-                          background: 'transparent', border: 'none', cursor: 'pointer', borderRadius: 9999,
-                        }}>{tab}</button>
-                      ))}
-                      <div style={{
-                        position: 'absolute', top: 4, left: 4, bottom: 4, width: 'calc(50% - 4px)',
-                        background: '#FFFFFF', borderRadius: 9999, zIndex: 1,
-                        transform: activeTab === 'Optimized' ? 'translateX(0)' : 'translateX(100%)',
-                        transition: 'transform 300ms cubic-bezier(0.4,0,0.2,1)',
-                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.95), 0 3px 8px rgba(80,20,180,0.12), 0 1px 3px rgba(0,0,0,0.10), 0 0 0 1px rgba(124,58,237,0.07)',
-                      }} />
-                    </div>
-                  ) : (
-                    <h2 style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                      Optimized Prompt
-                    </h2>
-                  )}
+              <div style={{ ...cardStyle, width: '100%', flex: 'none', height: '100%', padding: '36px 8px 36px 36px', overflow: 'hidden' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 24, height: 36, paddingRight: 28 }}>
+                  <h2 style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', opacity: isOptimizing ? 0.6 : 1 }}>
+                    Optimized Prompt
+                  </h2>
 
                   {(isOptimized || isOptimizing) && (
-                    <div style={{ display: 'flex', gap: 8, opacity: isOptimizing ? 0.6 : 1, pointerEvents: isOptimizing ? 'none' : 'auto' }}>
-                      {[
-                        { icon: Copy, title: 'Copy', primary: false },
-                        { icon: RefreshCw, title: 'Regenerate', primary: false },
-                        { icon: Bookmark, title: 'Save to Vault', primary: true },
-                      ].map(({ icon: Icon, title, primary }) => (
-                        <button key={title} title={title} style={{
-                          width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          borderRadius: '50%', cursor: 'pointer', transition: 'all 250ms ease',
-                          background: primary ? 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)' : '#F3F4F6',
-                          border: primary ? 'none' : '1px solid rgba(0,0,0,0.07)',
-                          color: primary ? 'white' : '#6B7280',
-                          boxShadow: primary ? '0 4px 16px rgba(124,58,237,0.35)' : 'none',
-                        }}
-                          className={primary
-                            ? 'hover:brightness-110 hover:translate-y-[-2px] hover:scale-[1.08] hover:shadow-[0_8px_24px_rgba(124,58,237,0.45)]'
-                            : 'hover:!bg-[rgba(255,255,255,0.70)] hover:!text-[var(--color-primary)] hover:translate-y-[-2px] hover:scale-[1.05] hover:shadow-[0_6px_16px_rgba(124,58,237,0.10)]'}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, opacity: isOptimizing ? 0.6 : 1, pointerEvents: isOptimizing ? 'none' : 'auto', flexShrink: 0 }}>
+                      {/* Detected enhancement level badge */}
+                      {isOptimized && optimizationResult?.detected_level && (
+                        <div
+                          title={optimizationResult.level_reason || ''}
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 5,
+                            padding: '3px 10px', borderRadius: 9999, fontSize: 11, fontWeight: 600,
+                            background: 'linear-gradient(135deg, rgba(124,58,237,0.10) 0%, rgba(168,85,247,0.07) 100%)',
+                            border: '1px solid rgba(124,58,237,0.18)',
+                            color: 'var(--color-primary)', cursor: 'default', flexShrink: 0,
+                          }}
                         >
-                          <Icon size={16} />
+                          <Zap size={10} />
+                          <span style={{ textTransform: 'capitalize' }}>{optimizationResult.detected_level}</span>
+                        </div>
+                      )}
+                      {/* Version selector dropdown */}
+                      {versions && versions.length > 1 && (
+                        <div style={{ position: 'relative', marginRight: 4 }}>
+                          <button
+                            type="button"
+                            aria-haspopup="menu"
+                            aria-expanded={isVersionMenuOpen}
+                            onClick={() => setIsVersionMenuOpen((open) => !open)}
+                            style={{
+                              minWidth: 68,
+                              height: 36,
+                              padding: '6px 10px',
+                              borderRadius: 9999,
+                              border: '1px solid rgba(124,58,237,0.20)',
+                              fontSize: '13px',
+                              fontWeight: 600,
+                              background: 'linear-gradient(160deg, rgba(255,255,255,1) 0%, rgba(248,245,255,1) 100%)',
+                              color: 'var(--color-primary)',
+                              cursor: 'pointer',
+                              outline: 'none',
+                              boxShadow: '0 2px 6px rgba(124,58,237,0.12), inset 0 1px 0 rgba(255,255,255,0.9)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: 5,
+                            }}
+                          >
+                            <span>v{activeVersionNumber ?? versions[versions.length - 1]?.version_number}</span>
+                            <ChevronDown size={15} strokeWidth={2.5} style={{ transform: isVersionMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 180ms ease' }} />
+                          </button>
+                          <AnimatePresence>
+                            {isVersionMenuOpen && (
+                              <motion.div
+                                initial={{ opacity: 0, y: -5, scale: 0.97 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: -5, scale: 0.97 }}
+                                transition={{ duration: 0.16 }}
+                                role="menu"
+                                style={{
+                                  position: 'absolute', top: 'calc(100% + 8px)', right: 0, minWidth: '100%',
+                                  padding: 5, borderRadius: 14, zIndex: 20, overflow: 'hidden',
+                                  background: 'linear-gradient(160deg, #FFFFFF 0%, #F8F5FF 100%)',
+                                  border: '1px solid rgba(124,58,237,0.18)',
+                                  boxShadow: '0 12px 28px rgba(91,33,182,0.18), 0 2px 8px rgba(0,0,0,0.07)',
+                                }}
+                              >
+                                {versions.map((version: any) => {
+                                  const isActive = version.version_number === activeVersionNumber;
+                                  return (
+                                    <button
+                                      key={version.id}
+                                      type="button"
+                                      role="menuitem"
+                                      onClick={() => {
+                                        setIsVersionMenuOpen(false);
+                                        onRestoreVersion?.(version.version_number);
+                                      }}
+                                      style={{
+                                        width: '100%', padding: '7px 12px', border: 'none', borderRadius: 9,
+                                        background: isActive ? 'linear-gradient(135deg, #7C3AED, #A855F7)' : 'transparent',
+                                        color: isActive ? '#FFFFFF' : 'var(--color-primary)',
+                                        fontSize: 13, fontWeight: isActive ? 700 : 600, textAlign: 'left', cursor: 'pointer',
+                                      }}
+                                    >
+                                      v{version.version_number}
+                                    </button>
+                                  );
+                                })}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      )}
+
+                      {[
+                        {
+                          id: 'copy',
+                          icon: Copy,
+                          title: copySuccess ? 'Copied!' : 'Copy',
+                          primary: false,
+                          onClick: handleCopy,
+                          disabled: false,
+                          spinning: false,
+                        },
+                        // Regenerate starts a new normal enhancement. Once this
+                        // prompt has a re-enhanced version, retain only the
+                        // version-aware Re-enhance action.
+                        ...(versions.some((version: any) =>
+                          version.version_type?.toLowerCase() === 'reenhancement'
+                        ) ? [] : [{
+                          id: 'regenerate',
+                          icon: RefreshCw,
+                          title: 'Regenerate',
+                          primary: false,
+                          onClick: () => onOptimize(originalText, activeRole, activeMode, enhancementLevel),
+                          disabled: isOptimizing || isReenhancing,
+                          spinning: false,
+                        }]),
+                        {
+                          id: 'reenhance',
+                          icon: Wand2,
+                          title: isReenhancing
+                            ? 'Re-enhancing...'
+                            : onReenhance
+                              ? activeVersionNumber
+                                ? `Re-enhance v${activeVersionNumber}`
+                                : 'Re-enhance'
+                              : 'Re-enhance is available after the prompt is saved',
+                          primary: true,
+                          onClick: async () => {
+                            // Re-enhance must never fall back to /enhance: it needs
+                            // the persisted prompt id supplied by the page handler.
+                            if (!onReenhance || isReenhancing || isOptimizing) return;
+                            setIsReenhancing(true);
+                            try {
+                              await onReenhance();
+                            } finally {
+                              setIsReenhancing(false);
+                            }
+                          },
+                          disabled: !onReenhance || isReenhancing || isOptimizing,
+                          spinning: isReenhancing,
+                        },
+                      ].map(({ id, icon: Icon, title, primary, onClick, disabled, spinning }) => (
+                        <button
+                          key={id}
+                          id={`${id}-btn`}
+                          title={title}
+                          disabled={disabled}
+                          onClick={onClick}
+                          style={{
+                            width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            borderRadius: '50%', cursor: disabled ? 'not-allowed' : 'pointer', transition: 'all 250ms ease',
+                            background: primary ? 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)' : '#F3F4F6',
+                            border: primary ? 'none' : '1px solid rgba(0,0,0,0.07)',
+                            color: primary ? 'white' : '#6B7280',
+                            boxShadow: primary ? '0 4px 16px rgba(124,58,237,0.35)' : 'none',
+                            opacity: disabled ? 0.7 : 1,
+                          }}
+                          className={disabled ? '' : (primary
+                            ? 'hover:brightness-110 hover:translate-y-[-2px] hover:scale-[1.08] hover:shadow-[0_8px_24px_rgba(124,58,237,0.45)]'
+                            : 'hover:!bg-[rgba(255,255,255,0.70)] hover:!text-[var(--color-primary)] hover:translate-y-[-2px] hover:scale-[1.05] hover:shadow-[0_6px_16px_rgba(124,58,237,0.10)]')}
+                        >
+                          {copySuccess && id === 'copy' ? (
+                            <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-success)' }}>✓</span>
+                          ) : (
+                            <Icon size={16} style={{ animation: spinning ? 'spin 1s linear infinite' : 'none' }} />
+                          )}
                         </button>
                       ))}
                     </div>
                   )}
                 </div>
 
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative', minHeight: 0 }}>
                   {isOptimizing ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 24, marginTop: 8 }}>
                       {[['30%', '60%'], ['40%', '50%'], ['35%', '55%']].map(([w1, w2], gi) => (
@@ -426,33 +769,21 @@ export default function ComparisonBlock({ isAnalyzing, isAnalyzed, isOptimizing,
                       ))}
                     </div>
                   ) : isOptimized ? (
-                    <div style={{ fontSize: 14, lineHeight: 1.6, animation: 'fadeInRise 400ms ease-out forwards', overflowY: 'auto', paddingRight: 16, color: 'var(--color-text-primary)', letterSpacing: '0.01em' }}>
-                      {activeTab === 'Optimized' ? (
-                        <>
-                          <p style={{ marginBottom: 20 }}>
-                            <span style={{ color: 'var(--color-primary)', fontWeight: 600 }}>Subject & Setting:</span>{' '}
-                            A solitary astronaut standing in awe within a lush, bioluminescent garden hidden deep inside a Martian cavern.
-                          </p>
-                          <p style={{ marginBottom: 20 }}>
-                            <span style={{ color: 'var(--color-primary)', fontWeight: 600 }}>Lighting & Atmosphere:</span>{' '}
-                            Cinematic lighting with deep shadows and glowing, otherworldly flora.
-                          </p>
-                          <p style={{ marginBottom: 20 }}>
-                            <span style={{ color: 'var(--color-primary)', fontWeight: 600 }}>Camera Movement:</span>{' '}
-                            Slow, sweeping drone shot starting from the stark Martian landscape, moving seamlessly through a crevice into the hidden oasis.
-                          </p>
-                        </>
-                      ) : (
-                        <p>
-                          <span style={{ background: 'var(--color-diff-remove)', color: 'var(--color-diff-remove-text)', textDecoration: 'line-through', padding: '2px 6px', borderRadius: 6 }}>
-                            write a cinematic short about an astronaut who discovers a garden on mars. make it emotional.
-                          </span>
-                          {' '}
-                          <span style={{ background: 'var(--color-diff-add)', color: 'var(--color-diff-add-text)', padding: '2px 6px', borderRadius: 6 }}>
-                            A solitary astronaut standing in awe within a lush, bioluminescent garden hidden deep inside a Martian cavern. Cinematic lighting with deep shadows and glowing, otherworldly flora.
-                          </span>
-                        </p>
-                      )}
+                    <div
+                      className="custom-scrollbar"
+                      style={{
+                        flex: 1,
+                        minHeight: 0,
+                        fontSize: 14,
+                        lineHeight: 1.6,
+                        animation: 'fadeInRise 400ms ease-out forwards',
+                        overflowY: 'auto',
+                        paddingRight: 28,
+                        color: 'var(--color-text-primary)',
+                        letterSpacing: '0.01em',
+                      }}
+                    >
+                      <FormattedPromptViewer content={optimizationResult?.enhanced_prompt || ''} />
                     </div>
                   ) : (
                     <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(17,24,39,0.18)' }}>

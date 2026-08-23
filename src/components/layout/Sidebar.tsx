@@ -1,16 +1,20 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter, usePathname } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 import {
   Sparkles, LayoutTemplate, Library, Fingerprint,
-  Settings, User, History as HistoryIcon, Clock,
+  Settings, User, Clock,
   Code2, Search, Film, PlaySquare, Image as ImageIcon,
   Megaphone, BookOpen, Mail, Star, ChevronDown, ChevronRight,
+  LogOut, Trash2,
 } from 'lucide-react';
+import { fetchHistory, deleteHistoryItem } from '@/features/history/services/historyService';
+import ScoreSpinner from '@/components/ScoreSpinner';
 
-export type ActivePage = 'optimizer' | 'history' | 'templates' | 'vault' | 'style-memory' | 'chaining' | 'settings' | 'chat';
+export type ActivePage = 'optimizer' | 'templates' | 'vault' | 'style-memory' | 'chaining' | 'settings' | 'chat';
 
 interface NavItem { id: ActivePage; icon: React.ElementType; label: string; shortcut?: string; }
 interface NavGroup { label: string; items: NavItem[]; }
@@ -43,36 +47,74 @@ const SIDEBAR_HISTORY_ACCENTS: Record<string, string> = {
   storytelling: '#F59E0B', 'image-gen': '#EC4899', cinematic: '#8B5CF6',
   youtube: '#EF4444', general: '#7C3AED', email: '#0EA5E9',
 };
-const MOCK_RECENT = [
-  { id: 'r1', prompt: 'Write a viral Twitter thread about AI in healthcare', category: 'marketing', score: 94, isFavorite: true, ago: '2m' },
-  { id: 'r2', prompt: 'Debug my React useEffect infinite loop issue', category: 'coding', score: 88, isFavorite: false, ago: '1h' },
-  { id: 'r3', prompt: 'Cinematic shot of neon rain on cyberpunk streets', category: 'cinematic', score: 91, isFavorite: false, ago: '3h' },
-  { id: 'r4', prompt: 'Explain quantum entanglement to a 10-year-old', category: 'research', score: 76, isFavorite: false, ago: '5h' },
-  { id: 'r5', prompt: 'Generate a product launch email sequence', category: 'email', score: 83, isFavorite: true, ago: 'Yesterday' },
-  { id: 'r6', prompt: 'YouTube thumbnail prompt for tech review video', category: 'youtube', score: 79, isFavorite: false, ago: 'Yesterday' },
-  { id: 'r7', prompt: 'Anime-style landscape with cherry blossoms', category: 'image-gen', score: 95, isFavorite: true, ago: '2d' },
-  { id: 'r8', prompt: 'Write a compelling SaaS landing page headline', category: 'marketing', score: 87, isFavorite: false, ago: '3d' },
-];
 
 export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
+  const { user, logout } = useAuth();
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [recentCollapsed, setRecentCollapsed] = useState(false);
+  const [recentItems, setRecentItems] = useState<any[]>([]);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [chatToDelete, setChatToDelete] = useState<{ id: string; prompt: string } | null>(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  const loadRecentItems = useCallback(() => {
+    fetchHistory(1, 8, { search: '', category: 'all', sortBy: 'most-recent' }).then(res => {
+      const formatted = (res?.items || []).map(item => ({
+        id: item.id,
+        prompt: item.prompt,
+        category: item.category || 'general',
+        score: item.score,
+        isFavorite: item.isFavorite,
+        ago: item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'Recent'
+      }));
+      setRecentItems(formatted);
+    }).catch(err => console.error(err));
+  }, []);
+
+  useEffect(() => {
+    loadRecentItems();
+
+    const handleHistoryUpdate = () => {
+      loadRecentItems();
+    };
+
+    window.addEventListener('promptiq:history-updated', handleHistoryUpdate);
+    return () => window.removeEventListener('promptiq:history-updated', handleHistoryUpdate);
+  }, [loadRecentItems]);
+
+  // A freshly optimized prompt lands in the list with score === null while its
+  // quality analysis is still being computed in the background. Poll until every
+  // score has been persisted so the loader resolves on its own — even after a
+  // hard reload, when the optimizer page isn't around to drive the refresh.
+  const pollAttemptsRef = useRef(0);
+  const hasPendingScores = recentItems.some(item => item.score == null);
+  useEffect(() => {
+    if (!hasPendingScores) {
+      pollAttemptsRef.current = 0;
+      return;
+    }
+    const timer = setInterval(() => {
+      pollAttemptsRef.current += 1;
+      loadRecentItems();
+      // Cap the wall-clock at ~36s (12 × 3s); background scoring normally
+      // finishes well within that. If it never lands, stop hammering the API —
+      // the next history-updated event or navigation will retry.
+      if (pollAttemptsRef.current >= 12) clearInterval(timer);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [hasPendingScores, loadRecentItems]);
+
   const toggleGroup = (label: string) =>
     setCollapsedGroups(prev => ({ ...prev, [label]: !prev[label] }));
 
   const navigate = (page: ActivePage) => router.push(`/dashboard/${page}`);
-  const isActive = (page: ActivePage) => {
-    if (!mounted) return false;
-    return pathname === `/dashboard/${page}` || (page === 'optimizer' && pathname === '/dashboard');
-  };
+  const isActive = (page: ActivePage) => pathname === `/dashboard/${page}` || (page === 'optimizer' && pathname === '/dashboard');
 
   const currentChatId = pathname.startsWith('/dashboard/chat/') ? pathname.split('/dashboard/chat/')[1] : null;
 
@@ -87,29 +129,6 @@ export default function Sidebar() {
         boxShadow: '0 2px 24px rgba(109,40,217,0.07), 0 1px 4px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.80)',
       }}
     >
-      <style>{`
-        .sidebar-history-item {
-          transition: background-color 160ms ease !important;
-          outline: none !important;
-          border: none !important;
-        }
-        .sidebar-history-item:focus,
-        .sidebar-history-item:focus-visible,
-        .sidebar-history-item:active {
-          outline: none !important;
-          box-shadow: none !important;
-        }
-        .sidebar-history-item:hover {
-          background-color: rgba(124, 58, 237, 0.07) !important;
-        }
-        .sidebar-history-item.active {
-          background-color: rgba(124, 58, 237, 0.12) !important;
-          outline: none !important;
-        }
-        .sidebar-history-item.active:hover {
-          background-color: rgba(124, 58, 237, 0.18) !important;
-        }
-      `}</style>
       {/* Logo */}
       <div style={{ padding: '20px 20px 16px', flexShrink: 0, borderBottom: '1px solid rgba(124,58,237,0.07)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -149,16 +168,8 @@ export default function Sidebar() {
                 }
               </button>
 
-              <AnimatePresence initial={false}>
-                {!isCollapsed && (
-                  <motion.div
-                    key="nav-items"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                    style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: 1 }}
-                  >
+              {!isCollapsed && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 1, animation: 'groupItemsIn 0.18s ease-out' }}>
                   {group.items.map(item => {
                     const Icon = item.icon;
                     const active = isActive(item.id);
@@ -198,9 +209,8 @@ export default function Sidebar() {
                       </button>
                     );
                   })}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                </div>
+              )}
             </div>
           );
         })}
@@ -225,7 +235,6 @@ export default function Sidebar() {
             }}
             className="hover:bg-[rgba(124,58,237,0.06)] transition-colors duration-150"
           >
-            <HistoryIcon size={12} style={{ color: 'rgba(109,40,217,0.45)', flexShrink: 0 }} />
             <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'rgba(45,27,105,0.45)', flex: 1 }}>Recent</span>
             <button
               id="sidebar-history-view-all"
@@ -242,98 +251,348 @@ export default function Sidebar() {
             }
           </div>
 
-          <AnimatePresence initial={false}>
-            {!recentCollapsed && (
-              <motion.div
-                key="recent-items"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: 1 }}
-              >
-              {MOCK_RECENT.map(item => {
-                const Icon = SIDEBAR_HISTORY_ICONS[item.category] || Clock;
-                const accent = SIDEBAR_HISTORY_ACCENTS[item.category] || '#7C3AED';
-                const active = pathname === `/dashboard/chat/${item.id}`;
-                return (
-                  <button
-                    key={item.id}
-                    id={`sidebar-history-item-${item.id}`}
-                    title={item.prompt}
-                    onClick={() => router.push(`/dashboard/chat/${item.id}`)}
+          {!recentCollapsed && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 1, animation: 'groupItemsIn 0.18s ease-out' }}>
+              {recentItems.length === 0 ? (
+                <div
+                  style={{
+                    minHeight: 180,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    textAlign: 'center',
+                    padding: '20px 12px',
+                  }}
+                >
+                  <div
                     style={{
-                      display: 'flex', alignItems: 'center', gap: 9, padding: '8px 10px',
-                      borderRadius: 10, border: 'none', cursor: 'pointer', width: '100%',
-                      textAlign: 'left', flexShrink: 0,
+                      fontSize: 12.5,
+                      lineHeight: 1.6,
+                      color: 'rgba(45,27,105,0.55)',
+                      maxWidth: 170,
                     }}
-                    className={`sidebar-history-item ${active ? 'active' : ''}`}
                   >
-                    <div style={{
-                      width: 26, height: 26, borderRadius: 7, display: 'flex', alignItems: 'center',
-                      justifyContent: 'center', flexShrink: 0, color: accent, background: `${accent}18`,
-                    }}>
-                      <Icon size={11} strokeWidth={2} />
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0, flex: 1 }}>
-                      <p style={{
-                        fontSize: 12, fontWeight: active ? 600 : 500,
-                        color: active ? '#4C1D95' : 'rgba(45,27,105,0.80)',
-                        margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3,
-                      }}>{item.prompt}</p>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                        <span style={{ fontSize: 10, color: 'rgba(45,27,105,0.40)', fontWeight: 400, whiteSpace: 'nowrap' }}>{item.ago}</span>
-                        {item.isFavorite && <Star size={9} fill="#F59E0B" color="#F59E0B" style={{ flexShrink: 0 }} />}
+                    No prompt history yet.
+                  </div>
+                </div>
+              ) : (
+                recentItems.map(item => {
+                  const Icon = SIDEBAR_HISTORY_ICONS[item.category] || Clock;
+                  const accent = SIDEBAR_HISTORY_ACCENTS[item.category] || '#7C3AED';
+                  const active = pathname === `/dashboard/chat/${item.id}`;
+                  return (
+                    <div
+                      key={item.id}
+                      id={`sidebar-history-item-${item.id}`}
+                      role="button"
+                      tabIndex={0}
+                      title={item.prompt}
+                      onClick={() => router.push(`/dashboard/chat/${item.id}`)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          router.push(`/dashboard/chat/${item.id}`);
+                        }
+                      }}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 9, padding: '8px 10px',
+                        borderRadius: 10,
+                        background: active
+                          ? 'linear-gradient(135deg, rgba(124,58,237,0.14) 0%, rgba(168,85,247,0.08) 100%)'
+                          : 'transparent',
+                        border: '1px solid',
+                        borderColor: active ? 'rgba(124,58,237,0.20)' : 'transparent',
+                        borderLeft: active ? '3px solid #7C3AED' : '3px solid transparent',
+                        boxShadow: active ? '0 2px 8px rgba(124,58,237,0.10)' : 'none',
+                        cursor: 'pointer', width: '100%', textAlign: 'left',
+                        transition: 'all 200ms cubic-bezier(0.22, 1, 0.36, 1)', flexShrink: 0,
+                      }}
+                      className={`group/chatitem ${!active ? 'hover:!bg-[rgba(124,58,237,0.09)] hover:!border-[rgba(124,58,237,0.12)] hover:shadow-[0_3px_12px_rgba(109,40,217,0.08)] hover:translate-x-[2px]' : ''}`}
+                    >
+                      <div
+                        style={{
+                          width: 26, height: 26, borderRadius: 7, display: 'flex', alignItems: 'center',
+                          justifyContent: 'center', flexShrink: 0, color: accent, background: `${accent}18`,
+                          transition: 'transform 180ms ease, background 180ms ease',
+                        }}
+                        className="group-hover/chatitem:scale-105"
+                      >
+                        <Icon size={11} strokeWidth={2} />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0, flex: 1 }}>
+                        <p
+                          style={{
+                            fontSize: 12, fontWeight: active ? 600 : 500,
+                            color: active ? '#4C1D95' : 'rgba(45,27,105,0.80)',
+                            margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3,
+                            transition: 'color 180ms ease',
+                          }}
+                          className={!active ? 'group-hover/chatitem:!text-[#4C1D95] group-hover/chatitem:!font-semibold' : ''}
+                        >
+                          {item.prompt}
+                        </p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <span style={{ fontSize: 10, color: 'rgba(45,27,105,0.40)', fontWeight: 400, whiteSpace: 'nowrap' }}>{item.ago}</span>
+                          {item.isFavorite && <Star size={9} fill="#F59E0B" color="#F59E0B" style={{ flexShrink: 0 }} />}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <span
+                          style={{
+                            fontSize: 10.5, fontWeight: 700, lineHeight: 1, flexShrink: 0, color: accent, opacity: 0.85,
+                            padding: '2px 5px', borderRadius: 5, transition: 'all 180ms ease',
+                          }}
+                          className="group-hover/chatitem:hidden"
+                        >
+                          {item.score == null ? (
+                            // Score not yet available — background analysis still running
+                            <ScoreSpinner size={12} color={accent} />
+                          ) : item.score}
+                        </span>
+                        <button
+                          id={`sidebar-delete-btn-${item.id}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setChatToDelete({ id: item.id, prompt: item.prompt });
+                          }}
+                          title="Delete chat"
+                          style={{
+                            display: 'none', alignItems: 'center', justifyContent: 'center',
+                            width: 22, height: 22, borderRadius: 6, border: 'none',
+                            cursor: 'pointer', background: 'rgba(239,68,68,0.12)', color: '#EF4444',
+                            transition: 'all 180ms ease', flexShrink: 0,
+                          }}
+                          className="group-hover/chatitem:!flex hover:!bg-[#EF4444] hover:!text-white hover:scale-110"
+                        >
+                          <Trash2 size={12} strokeWidth={2} />
+                        </button>
                       </div>
                     </div>
-                    <span style={{ fontSize: 10.5, fontWeight: 700, lineHeight: 1, flexShrink: 0, color: accent, opacity: 0.75 }}>
-                      {item.score}
-                    </span>
-                  </button>
-                );
-              })}
-              </motion.div>
-            )}
-          </AnimatePresence>
+                  );
+                })
+              )}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Footer */}
       <div style={{ flexShrink: 0, padding: '0 10px 12px' }}>
         <div style={{ height: 1, background: 'rgba(124,58,237,0.09)', margin: '0 0 10px' }} />
-        <button
-          id="user-profile-btn"
-          onClick={() => router.push('/dashboard/profile')}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
-            borderRadius: 12, width: '100%', cursor: 'pointer',
-            background: mounted && (pathname === '/dashboard/profile' || pathname.includes('view=profile')) ? 'rgba(124,58,237,0.14)' : 'rgba(255,255,255,0.55)',
-            border: mounted && (pathname === '/dashboard/profile' || pathname.includes('view=profile')) ? '1px solid rgba(124,58,237,0.30)' : '1px solid rgba(124,58,237,0.10)',
-            textAlign: 'left', boxShadow: '0 1px 4px rgba(109,40,217,0.06)', transition: 'all 160ms ease',
-          }}
-          className="hover:!bg-[rgba(255,255,255,0.80)] hover:border-[rgba(124,58,237,0.18)]"
-        >
-          <div style={{
-            background: 'linear-gradient(135deg, rgba(124,58,237,0.18), rgba(167,139,250,0.12))',
-            color: '#7C3AED', width: 30, height: 30, borderRadius: '50%',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            border: '1px solid rgba(124,58,237,0.15)', flexShrink: 0,
-          }}>
-            <User size={15} strokeWidth={1.5} />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
-            <span style={{ fontSize: 12.5, fontWeight: 600, color: '#3B1082', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              Alex P.
-            </span>
-            <span style={{
-              fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px',
-              background: 'linear-gradient(135deg, #7C3AED, #A855F7)', color: 'white',
-              padding: '2px 8px', borderRadius: 9999, flexShrink: 0,
-              boxShadow: '0 2px 6px rgba(124,58,237,0.25)',
-            }}>Pro</span>
-          </div>
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button
+            id="user-profile-btn"
+            onClick={() => router.push('/dashboard/profile')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
+              borderRadius: 12, flex: 1,
+              background: 'rgba(255,255,255,0.55)', border: '1px solid rgba(124,58,237,0.10)',
+              textAlign: 'left', boxShadow: '0 1px 4px rgba(109,40,217,0.06)', transition: 'background 160ms ease',
+              minWidth: 0, cursor: 'pointer',
+            }}
+            className="hover:bg-[rgba(124,58,237,0.06)]"
+          >
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(124,58,237,0.18), rgba(167,139,250,0.12))',
+              color: '#7C3AED', width: 30, height: 30, borderRadius: '50%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              border: '1px solid rgba(124,58,237,0.15)', flexShrink: 0,
+              overflow: 'hidden',
+            }}>
+              {user?.avatar_url ? (
+                <img
+                  src={user.avatar_url}
+                  alt={user.display_name || user.email || 'User avatar'}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                <User size={15} strokeWidth={1.5} />
+              )}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
+              <span style={{ fontSize: 12.5, fontWeight: 600, color: '#3B1082', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {user?.display_name || user?.email || 'Alex P.'}
+              </span>
+              <span style={{
+                fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px',
+                background: 'linear-gradient(135deg, #7C3AED, #A855F7)', color: 'white',
+                padding: '2px 8px', borderRadius: 9999, flexShrink: 0,
+                boxShadow: '0 2px 6px rgba(124,58,237,0.25)',
+              }}>{user?.plan || 'Pro'}</span>
+            </div>
+          </button>
+          <button
+            onClick={() => setShowLogoutConfirm(true)}
+            title="Logout"
+            style={{
+              width: 38, height: 38, borderRadius: 12, display: 'flex', alignItems: 'center',
+              justifyContent: 'center', cursor: 'pointer', background: 'rgba(255,255,255,0.55)',
+              border: '1px solid rgba(124,58,237,0.10)', color: 'rgba(45,27,105,0.60)',
+              boxShadow: '0 1px 4px rgba(109,40,217,0.06)', transition: 'all 160ms ease',
+            }}
+            className="hover:!bg-[rgba(239,68,68,0.08)] hover:!border-[rgba(239,68,68,0.20)] hover:!color-[#dc2626]"
+          >
+            <LogOut size={16} strokeWidth={2} />
+          </button>
+        </div>
       </div>
+
+      {showLogoutConfirm && mounted && createPortal(
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.4)',
+          backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', zIndex: 99999,
+        }}>
+          <div style={{
+            background: '#FFFFFF', borderRadius: 16, padding: '24px 28px',
+            maxWidth: 340, width: '90%', border: '1px solid rgba(124,58,237,0.15)',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 16,
+          }}>
+            <div style={{
+              width: 48, height: 48, borderRadius: '50%', background: 'rgba(239, 68, 68, 0.08)',
+              color: '#EF4444', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto', border: '1px solid rgba(239, 68, 68, 0.15)'
+            }}>
+              <LogOut size={18} strokeWidth={2} />
+            </div>
+            <div>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1E293B', margin: '0 0 6px' }}>Confirm Logout</h3>
+              <p style={{ fontSize: 13, color: '#64748B', margin: 0, lineHeight: 1.5 }}>Are you sure you want to log out of your account?</p>
+            </div>
+            <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                style={{
+                  flex: 1, padding: '10px 0', borderRadius: 10, border: '1px solid #E2E8F0',
+                  background: '#FFFFFF', color: '#64748B', fontWeight: 600, fontSize: 13,
+                  cursor: 'pointer', transition: 'all 160ms ease',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { setShowLogoutConfirm(false); logout(); }}
+                style={{
+                  flex: 1, padding: '10px 0', borderRadius: 10, border: 'none',
+                  background: 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)', color: '#FFFFFF',
+                  fontWeight: 600, fontSize: 13, cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(124,58,237,0.25)',
+                }}
+              >
+                Log Out
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {chatToDelete && mounted && createPortal(
+        <div
+          role="presentation"
+          onClick={() => setChatToDelete(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            background: 'rgba(15, 23, 42, 0.45)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 24,
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: 'min(100%, 440px)',
+              borderRadius: 20,
+              border: '1px solid rgba(124,58,237,0.12)',
+              background: '#FFFFFF',
+              boxShadow: '0 24px 80px rgba(15, 23, 42, 0.25)',
+              padding: 24,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 18,
+              animation: 'dropdownFadeIn 180ms ease-out',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+              <div style={{
+                width: 44,
+                height: 44,
+                borderRadius: 14,
+                flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'rgba(124,58,237,0.10)',
+                color: '#7C3AED',
+              }}>
+                <Trash2 size={18} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                <h3 style={{ margin: '0 0 6px', fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary, #1A1033)' }}>
+                  Delete prompt?
+                </h3>
+                <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: 'var(--color-text-secondary, #6B6B8A)' }}>
+                  Do you want to permanently remove this prompt? This cannot be undone.
+                </p>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => setChatToDelete(null)}
+                style={{
+                  padding: '10px 16px',
+                  borderRadius: 10,
+                  border: '1px solid rgba(124,58,237,0.14)',
+                  background: '#FFFFFF',
+                  color: 'var(--color-text-primary, #1A1033)',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+                className="hover:bg-[rgba(124,58,237,0.04)]"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const targetId = chatToDelete.id;
+                  setChatToDelete(null);
+                  await deleteHistoryItem(targetId);
+                  if (pathname === `/dashboard/chat/${targetId}`) {
+                    router.push('/dashboard/vault');
+                  }
+                }}
+                style={{
+                  padding: '10px 16px',
+                  borderRadius: 10,
+                  border: 'none',
+                  background: 'linear-gradient(135deg, #EF4444, #DC2626)',
+                  color: '#FFFFFF',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(239,68,68,0.28)',
+                }}
+                className="hover:brightness-105"
+              >
+                Delete prompt
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </aside>
   );
 }

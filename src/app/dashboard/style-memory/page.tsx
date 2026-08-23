@@ -5,100 +5,42 @@ import { useRouter } from 'next/navigation';
 import {
   Plus, X, Zap, ChevronRight, ArrowRight,
   Fingerprint, Palette, Film, Trees, User as UserIcon,
-  Sparkles, ChevronDown, Pencil, Trash2,
+  Sparkles, ChevronDown, Pencil, Trash2, RefreshCw, Loader2
 } from 'lucide-react';
-import { useStyleProfiles } from '@/features/style-memory/services/styleMemoryService';
+import {
+  useStyleProfiles,
+  StyleProfile,
+  StyleCategory,
+  CATEGORY_COLORS
+} from '@/features/style-memory/services/styleMemoryService';
 
 /* ═══════════════════════════════════════════════════
    Types & Constants
    ═══════════════════════════════════════════════════ */
 
-interface StyleProfile {
-  id: string;
-  name: string;
-  description: string;
-  category: Category;
-  injectionPrompt: string;
-  tags: string[];
-  enabled: boolean;
-  lastUsed?: string;
-}
-
-type Category = 'character' | 'art-style' | 'cinematic-style' | 'environment';
-
-const CATEGORIES: { id: Category | 'all'; label: string }[] = [
+const CATEGORIES: { id: StyleCategory | 'all'; label: string }[] = [
   { id: 'all', label: 'All' },
   { id: 'character', label: 'Character' },
-  { id: 'art-style', label: 'Art Style' },
-  { id: 'cinematic-style', label: 'Cinematic Style' },
+  { id: 'art_style', label: 'Art Style' },
+  { id: 'cinematic', label: 'Cinematic Style' },
   { id: 'environment', label: 'Environment' },
+  { id: 'brand_voice', label: 'Brand Voice' },
 ];
 
-const CATEGORY_META: Record<Category, { icon: React.ElementType; color: string }> = {
+const CATEGORY_META: Record<StyleCategory, { icon: React.ElementType; color: string }> = {
   'character': { icon: UserIcon, color: '#7C3AED' },
-  'art-style': { icon: Palette, color: '#EC4899' },
-  'cinematic-style': { icon: Film, color: '#F59E0B' },
+  'art_style': { icon: Palette, color: '#EC4899' },
+  'cinematic': { icon: Film, color: '#F59E0B' },
   'environment': { icon: Trees, color: '#10B981' },
+  'brand_voice': { icon: Fingerprint, color: '#3B82F6' },
 };
 
-const CATEGORY_OPTIONS: { id: Category; label: string }[] = [
+const CATEGORY_OPTIONS: { id: StyleCategory; label: string }[] = [
   { id: 'character', label: 'Character' },
-  { id: 'art-style', label: 'Art Style' },
-  { id: 'cinematic-style', label: 'Cinematic Style' },
+  { id: 'art_style', label: 'Art Style' },
+  { id: 'cinematic', label: 'Cinematic Style' },
   { id: 'environment', label: 'Environment' },
-];
-
-const MOCK_PROFILES: StyleProfile[] = [
-  {
-    id: 'sp-1',
-    name: 'Cyberpunk Hero',
-    description: 'Neon-lit, high-contrast character design with augmented cybernetic features and dystopian flair.',
-    category: 'character',
-    injectionPrompt: 'Apply cyberpunk aesthetic: neon glow, chrome implants, rain-soaked streets, holographic HUD overlays.',
-    tags: ['#sci-fi', '#character', '#neon', '#cyberpunk'],
-    enabled: true,
-    lastUsed: '1d ago',
-  },
-  {
-    id: 'sp-2',
-    name: 'Watercolor Dream',
-    description: 'Soft watercolor wash effect with bleeding edges, muted pastels, and organic brush textures.',
-    category: 'art-style',
-    injectionPrompt: 'Render in watercolor style: soft edges, paper texture, transparent layering, muted warm palette.',
-    tags: ['#watercolor', '#soft', '#artistic', '#pastel'],
-    enabled: false,
-    lastUsed: '3d ago',
-  },
-  {
-    id: 'sp-3',
-    name: 'Film Noir',
-    description: 'Classic black-and-white cinematic look with dramatic shadows, venetian blinds lighting, and moody atmosphere.',
-    category: 'cinematic-style',
-    injectionPrompt: 'Apply film noir style: high contrast B&W, deep shadows, low-key lighting, 1940s atmosphere, grain texture.',
-    tags: ['#noir', '#cinematic', '#monochrome'],
-    enabled: true,
-    lastUsed: '2h ago',
-  },
-  {
-    id: 'sp-4',
-    name: 'Enchanted Forest',
-    description: 'Mystical woodland environment with bioluminescent flora, misty atmosphere, and ancient tree canopies.',
-    category: 'environment',
-    injectionPrompt: 'Create enchanted forest setting: bioluminescent plants, volumetric fog, ancient trees, magical particles, twilight.',
-    tags: ['#forest', '#fantasy', '#magical', '#nature'],
-    enabled: false,
-    lastUsed: '5d ago',
-  },
-  {
-    id: 'sp-5',
-    name: 'Anime Protagonist',
-    description: 'Vibrant anime character design with large expressive eyes, dynamic hair, and cel-shaded rendering.',
-    category: 'character',
-    injectionPrompt: 'Design in anime style: large eyes, cel shading, vibrant palette, dynamic pose, speed lines, detailed hair.',
-    tags: ['#anime', '#character', '#vibrant'],
-    enabled: true,
-    lastUsed: 'Just now',
-  },
+  { id: 'brand_voice', label: 'Brand Voice' },
 ];
 
 /* ═══════════════════════════════════════════════════
@@ -106,8 +48,10 @@ const MOCK_PROFILES: StyleProfile[] = [
    ═══════════════════════════════════════════════════ */
 
 /* ── Category Avatar ── */
-function CategoryAvatar({ category, size = 40 }: { category: Category; size?: number }) {
-  const { icon: Icon, color } = CATEGORY_META[category];
+function CategoryAvatar({ category, size = 40 }: { category: StyleCategory; size?: number }) {
+  const meta = CATEGORY_META[category] || CATEGORY_META.character;
+  const Icon = meta.icon;
+  const color = meta.color;
   return (
     <div style={{
       width: size, height: size, borderRadius: '50%',
@@ -121,16 +65,18 @@ function CategoryAvatar({ category, size = 40 }: { category: Category; size?: nu
 }
 
 /* ── Toggle Switch ── */
-function ToggleSwitch({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) {
+function ToggleSwitch({ enabled, onToggle, disabled = false }: { enabled: boolean; onToggle: () => void; disabled?: boolean }) {
   return (
     <button
       onClick={onToggle}
-      aria-label={enabled ? 'Disable auto-injection' : 'Enable auto-injection'}
+      disabled={disabled}
+      aria-label={enabled ? 'Deactivate style' : 'Activate style'}
       style={{
-        width: 38, height: 20, borderRadius: 9999, border: 'none', cursor: 'pointer',
+        width: 38, height: 20, borderRadius: 9999, border: 'none', cursor: disabled ? 'not-allowed' : 'pointer',
         background: enabled ? 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)' : 'rgba(124,58,237,0.12)',
         position: 'relative', transition: 'background 250ms ease', flexShrink: 0,
         boxShadow: enabled ? '0 2px 8px rgba(124,58,237,0.25)' : 'none',
+        opacity: disabled ? 0.6 : 1,
       }}
     >
       <span style={{
@@ -150,6 +96,9 @@ function ProfileCard({ profile, onToggle, onEdit, onDelete }: {
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const meta = CATEGORY_META[profile.category] || CATEGORY_META.character;
+  const label = CATEGORY_OPTIONS.find(c => c.id === profile.category)?.label || profile.category;
+
   return (
     <div style={{
       background: '#FFFFFF',
@@ -160,9 +109,7 @@ function ProfileCard({ profile, onToggle, onEdit, onDelete }: {
       justifyContent: 'space-between',
       height: '100%',
       minHeight: 280,
-      boxShadow: '0 4px 12px rgba(109,40,217,0.06), 0 1px 3px rgba(0,0,0,0.04)',
-      transition: 'transform 250ms ease, box-shadow 250ms ease, border-color 250ms ease',
-      animation: 'dimCardEnter 400ms ease both',
+      transition: 'transform 250ms ease, box-shadow 250ms ease, border-color 250ms ease, opacity 250ms ease',
       opacity: profile.enabled ? 1 : 0.8,
     }}
       className="hover:translate-y-[-3px] hover:shadow-[0_8px_24px_rgba(109,40,217,0.09),0_2px_6px_rgba(0,0,0,0.05)] hover:!border-[rgba(124,58,237,0.18)] hover:!opacity-100"
@@ -178,9 +125,9 @@ function ProfileCard({ profile, onToggle, onEdit, onDelete }: {
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
               <span style={{
                 fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px',
-                color: CATEGORY_META[profile.category].color, opacity: 0.8,
+                color: meta.color, opacity: 0.8,
               }}>
-                {CATEGORY_OPTIONS.find(c => c.id === profile.category)?.label}
+                {label}
               </span>
             </div>
           </div>
@@ -230,7 +177,7 @@ function ProfileCard({ profile, onToggle, onEdit, onDelete }: {
         flexDirection: 'column',
         gap: 10,
       }}>
-        {/* Row 1: Auto-inject + Toggle */}
+        {/* Row 1: Active Style + Toggle */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{
             fontSize: 13.5,
@@ -240,7 +187,7 @@ function ProfileCard({ profile, onToggle, onEdit, onDelete }: {
             alignItems: 'center',
             gap: 2,
           }}>
-            Auto-inject <span style={{ color: 'var(--color-primary)', fontSize: 12 }}>✦</span>
+            Active Style <span style={{ color: 'var(--color-primary)', fontSize: 12 }}>✦</span>
           </span>
           <ToggleSwitch enabled={profile.enabled} onToggle={onToggle} />
         </div>
@@ -311,12 +258,9 @@ function AddNewCard({ onClick }: { onClick: () => void }) {
   );
 }
 
-/* ── Injection Flow Card — Premium Redesign ── */
+/* ── Injection Flow Card ── */
 function InjectionFlowCard() {
   const [activeIdx, setActiveIdx] = useState(0);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -361,62 +305,30 @@ function InjectionFlowCard() {
       background: 'linear-gradient(135deg, rgba(124,58,237,0.35) 0%, rgba(56,189,248,0.20) 30%, rgba(192,132,252,0.30) 60%, rgba(52,211,153,0.25) 100%)',
       overflow: 'hidden',
     }}>
-      {/* Shimmer border sweep */}
       <style>{`
-        @keyframes ifc-borderShimmer {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-        @keyframes ifc-floatOrb1 {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          33% { transform: translate(40px, -20px) scale(1.15); }
-          66% { transform: translate(-20px, 15px) scale(0.9); }
-        }
-        @keyframes ifc-floatOrb2 {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          50% { transform: translate(-30px, -25px) scale(1.2); }
-        }
-        @keyframes ifc-floatOrb3 {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          40% { transform: translate(25px, 20px) scale(0.85); }
-          80% { transform: translate(-15px, -10px) scale(1.1); }
-        }
-        @keyframes ifc-nodeBreath {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.06); }
-        }
         @keyframes ifc-ringPulse {
           0% { transform: scale(0.85); opacity: 0.7; }
           50% { transform: scale(1.2); opacity: 0; }
           100% { transform: scale(0.85); opacity: 0; }
         }
         @keyframes ifc-nodeGlow0 {
-          0%, 100% { box-shadow: 0 0 20px rgba(56,189,248,0.15), 0 0 60px rgba(56,189,248,0.05), inset 0 1px 0 rgba(255,255,255,0.08); }
-          50% { box-shadow: 0 0 30px rgba(56,189,248,0.45), 0 0 80px rgba(56,189,248,0.15), inset 0 1px 0 rgba(255,255,255,0.15); }
+          0%, 100% { box-shadow: 0 0 20px rgba(56,189,248,0.15), 0 0 60px rgba(56,189,248,0.05); }
+          50% { box-shadow: 0 0 30px rgba(56,189,248,0.45), 0 0 80px rgba(56,189,248,0.15); }
         }
         @keyframes ifc-nodeGlow1 {
-          0%, 100% { box-shadow: 0 0 20px rgba(192,132,252,0.15), 0 0 60px rgba(192,132,252,0.05), inset 0 1px 0 rgba(255,255,255,0.08); }
-          50% { box-shadow: 0 0 30px rgba(192,132,252,0.45), 0 0 80px rgba(192,132,252,0.15), inset 0 1px 0 rgba(255,255,255,0.15); }
+          0%, 100% { box-shadow: 0 0 20px rgba(192,132,252,0.15), 0 0 60px rgba(192,132,252,0.05); }
+          50% { box-shadow: 0 0 30px rgba(192,132,252,0.45), 0 0 80px rgba(192,132,252,0.15); }
         }
         @keyframes ifc-nodeGlow2 {
-          0%, 100% { box-shadow: 0 0 20px rgba(52,211,153,0.15), 0 0 60px rgba(52,211,153,0.05), inset 0 1px 0 rgba(255,255,255,0.08); }
-          50% { box-shadow: 0 0 30px rgba(52,211,153,0.45), 0 0 80px rgba(52,211,153,0.15), inset 0 1px 0 rgba(255,255,255,0.15); }
+          0%, 100% { box-shadow: 0 0 20px rgba(52,211,153,0.15), 0 0 60px rgba(52,211,153,0.05); }
+          50% { box-shadow: 0 0 30px rgba(52,211,153,0.45), 0 0 80px rgba(52,211,153,0.15); }
         }
-        @keyframes ifc-packetTravel {
-          0% { offset-distance: 0%; opacity: 0; }
-          10% { opacity: 1; }
-          90% { opacity: 1; }
-          100% { offset-distance: 100%; opacity: 0; }
-        }
-        @keyframes ifc-flowDash {
-          to { stroke-dashoffset: -24; }
-        }
-        .ifc-active-node-0 { animation: ifc-nodeGlow0 2.4s infinite ease-in-out, ifc-nodeBreath 2.4s infinite ease-in-out !important; }
-        .ifc-active-node-1 { animation: ifc-nodeGlow1 2.4s infinite ease-in-out, ifc-nodeBreath 2.4s infinite ease-in-out !important; }
-        .ifc-active-node-2 { animation: ifc-nodeGlow2 2.4s infinite ease-in-out, ifc-nodeBreath 2.4s infinite ease-in-out !important; }
+        @keyframes ifc-flowDash { to { stroke-dashoffset: -24; } }
+        .ifc-active-node-0 { animation: ifc-nodeGlow0 2.4s infinite ease-in-out !important; }
+        .ifc-active-node-1 { animation: ifc-nodeGlow1 2.4s infinite ease-in-out !important; }
+        .ifc-active-node-2 { animation: ifc-nodeGlow2 2.4s infinite ease-in-out !important; }
       `}</style>
 
-      {/* Inner card */}
       <div style={{
         background: 'linear-gradient(145deg, #0C0620 0%, #150D30 30%, #1A0E3A 55%, #0D0920 100%)',
         borderRadius: 27,
@@ -424,57 +336,7 @@ function InjectionFlowCard() {
         position: 'relative',
         overflow: 'hidden',
       }}>
-
-        {/* ─── Layered background effects ─── */}
-        {/* Aurora mesh */}
-        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.7 }}>
-          <div style={{
-            position: 'absolute', top: '-20%', left: '-10%', width: '60%', height: '140%',
-            background: 'radial-gradient(ellipse, rgba(124,58,237,0.18) 0%, transparent 65%)',
-            filter: 'blur(40px)',
-          }} />
-          <div style={{
-            position: 'absolute', top: '-30%', right: '-5%', width: '50%', height: '120%',
-            background: 'radial-gradient(ellipse, rgba(56,189,248,0.10) 0%, transparent 60%)',
-            filter: 'blur(50px)',
-          }} />
-          <div style={{
-            position: 'absolute', bottom: '-20%', left: '30%', width: '45%', height: '100%',
-            background: 'radial-gradient(ellipse, rgba(52,211,153,0.08) 0%, transparent 55%)',
-            filter: 'blur(45px)',
-          }} />
-        </div>
-
-        {/* Floating orbs */}
-        <div style={{
-          position: 'absolute', top: '15%', left: '8%', width: 120, height: 120,
-          borderRadius: '50%', pointerEvents: 'none',
-          background: 'radial-gradient(circle, rgba(168,85,247,0.12) 0%, transparent 70%)',
-          animation: 'ifc-floatOrb1 12s ease-in-out infinite',
-        }} />
-        <div style={{
-          position: 'absolute', top: '40%', right: '12%', width: 90, height: 90,
-          borderRadius: '50%', pointerEvents: 'none',
-          background: 'radial-gradient(circle, rgba(56,189,248,0.10) 0%, transparent 70%)',
-          animation: 'ifc-floatOrb2 10s ease-in-out infinite',
-        }} />
-        <div style={{
-          position: 'absolute', bottom: '10%', left: '50%', width: 80, height: 80,
-          borderRadius: '50%', pointerEvents: 'none',
-          background: 'radial-gradient(circle, rgba(52,211,153,0.08) 0%, transparent 70%)',
-          animation: 'ifc-floatOrb3 14s ease-in-out infinite',
-        }} />
-
-        {/* Fine dot grid overlay */}
-        <div style={{
-          position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.04,
-          backgroundImage: 'radial-gradient(circle, #FFFFFF 1px, transparent 1px)',
-          backgroundSize: '24px 24px',
-        }} />
-
-        {/* ─── Content ─── */}
         <div style={{ position: 'relative', zIndex: 2 }}>
-
           {/* Header */}
           <div style={{ marginBottom: 36 }}>
             <div style={{
@@ -516,7 +378,7 @@ function InjectionFlowCard() {
             </p>
           </div>
 
-          {/* ─── 3-Step Flow Pipeline ─── */}
+          {/* 3-Step Pipeline */}
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             gap: 0, padding: '8px 0 4px',
@@ -526,18 +388,15 @@ function InjectionFlowCard() {
               const isNext = activeIdx === i && i < steps.length - 1;
               return (
                 <React.Fragment key={step.label}>
-                  {/* Step Node */}
                   <div style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
                     gap: 14, flex: '0 0 auto', position: 'relative',
                   }}>
-                    {/* Outer pulse ring (active only) */}
                     {isActive && (
                       <div style={{
                         position: 'absolute', top: 0, left: '50%',
                         width: 70, height: 70,
-                        marginLeft: -35,
-                        borderRadius: '50%',
+                        marginLeft: -35, borderRadius: '50%',
                         border: `2px solid ${step.color}`,
                         opacity: 0,
                         animation: 'ifc-ringPulse 2.4s infinite ease-out',
@@ -545,7 +404,6 @@ function InjectionFlowCard() {
                       }} />
                     )}
 
-                    {/* Main circle */}
                     <div
                       className={isActive ? `ifc-active-node-${i}` : ''}
                       style={{
@@ -562,32 +420,23 @@ function InjectionFlowCard() {
                         transition: 'all 600ms cubic-bezier(0.16, 1, 0.3, 1)',
                       }}
                     >
-                      {/* Inner decorative ring */}
-                      <div style={{
-                        position: 'absolute', inset: 6, borderRadius: '50%',
-                        border: `1px solid rgba(${step.colorRgb},${isActive ? 0.2 : 0.06})`,
-                        transition: 'border-color 600ms ease',
-                      }} />
                       <step.icon
                         size={26}
                         strokeWidth={isActive ? 2 : 1.5}
                         style={{
                           color: step.color,
                           opacity: isActive ? 1 : 0.35,
-                          filter: isActive ? `drop-shadow(0 0 8px rgba(${step.colorRgb},0.5))` : 'none',
                           transition: 'all 600ms cubic-bezier(0.16, 1, 0.3, 1)',
                         }}
                       />
                     </div>
 
-                    {/* Label + subtitle */}
                     <div style={{ textAlign: 'center', minWidth: 110 }}>
                       <span style={{
                         fontSize: 13, fontWeight: 700,
                         color: isActive ? '#EDE9FE' : 'rgba(237,233,254,0.4)',
                         display: 'block', whiteSpace: 'nowrap',
                         transition: 'color 500ms ease',
-                        letterSpacing: '-0.01em',
                       }}>
                         {step.label}
                       </span>
@@ -602,7 +451,6 @@ function InjectionFlowCard() {
                     </div>
                   </div>
 
-                  {/* ─── Connector ─── */}
                   {i < steps.length - 1 && (
                     <div style={{
                       display: 'flex', alignItems: 'center',
@@ -610,85 +458,22 @@ function InjectionFlowCard() {
                       position: 'relative',
                     }}>
                       <svg width="100" height="20" viewBox="0 0 100 20" style={{ overflow: 'visible' }}>
-                        <defs>
-                          <linearGradient id={`ifc-connGrad-${i}`} x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stopColor={steps[i].color} stopOpacity={isNext ? 0.6 : 0.1} />
-                            <stop offset="100%" stopColor={steps[i + 1].color} stopOpacity={isNext ? 0.6 : 0.1} />
-                          </linearGradient>
-                          <filter id={`ifc-connGlow-${i}`}>
-                            <feGaussianBlur stdDeviation="2" result="blur" />
-                            <feMerge>
-                              <feMergeNode in="blur" />
-                              <feMergeNode in="SourceGraphic" />
-                            </feMerge>
-                          </filter>
-                        </defs>
-                        {/* Track background */}
+                        <line x1="4" y1="10" x2="88" y2="10" stroke="rgba(167,139,250,0.08)" strokeWidth="2" strokeLinecap="round" />
                         <line
                           x1="4" y1="10" x2="88" y2="10"
-                          stroke="rgba(167,139,250,0.08)"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                        />
-                        {/* Active flow line */}
-                        <line
-                          x1="4" y1="10" x2="88" y2="10"
-                          stroke={`url(#ifc-connGrad-${i})`}
+                          stroke={isNext ? steps[i].color : 'rgba(167,139,250,0.15)'}
                           strokeWidth="2"
                           strokeLinecap="round"
                           strokeDasharray={isNext ? '6, 8' : 'none'}
-                          style={{
-                            animation: isNext ? 'ifc-flowDash 1s linear infinite' : 'none',
-                            transition: 'all 500ms ease',
-                          }}
-                          filter={isNext ? `url(#ifc-connGlow-${i})` : undefined}
+                          style={{ animation: isNext ? 'ifc-flowDash 1s linear infinite' : 'none' }}
                         />
-                        {/* Traveling data packet */}
-                        {isNext && (
-                          <circle r="3.5" fill={steps[i].color} opacity="0.9"
-                            style={{
-                              filter: `drop-shadow(0 0 6px ${steps[i].color})`,
-                              offsetPath: `path('M 4 10 L 88 10')`,
-                              animation: 'ifc-packetTravel 1.4s ease-in-out infinite',
-                            }}
-                          />
-                        )}
-                        {/* Arrow head */}
-                        <path
-                          d="M 84 5 L 92 10 L 84 15"
-                          fill="none"
-                          stroke={isNext ? steps[i + 1].color : 'rgba(167,139,250,0.15)'}
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          style={{
-                            transition: 'stroke 500ms ease',
-                            opacity: isNext ? 0.8 : 0.3,
-                          }}
-                        />
+                        <path d="M 84 5 L 92 10 L 84 15" fill="none" stroke={isNext ? steps[i + 1].color : 'rgba(167,139,250,0.15)'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     </div>
                   )}
                 </React.Fragment>
               );
             })}
-          </div>
-
-          {/* Bottom progress indicator */}
-          <div style={{
-            display: 'flex', justifyContent: 'center', gap: 6, marginTop: 20,
-          }}>
-            {steps.map((step, i) => (
-              <div key={i} style={{
-                width: activeIdx === i ? 24 : 6, height: 6,
-                borderRadius: 9999,
-                background: activeIdx === i
-                  ? step.gradient
-                  : 'rgba(167,139,250,0.12)',
-                transition: 'all 500ms cubic-bezier(0.16, 1, 0.3, 1)',
-                boxShadow: activeIdx === i ? `0 0 12px rgba(${step.colorRgb},0.3)` : 'none',
-              }} />
-            ))}
           </div>
         </div>
       </div>
@@ -702,17 +487,17 @@ function ProfileModal({
 }: {
   open: boolean;
   onClose: () => void;
-  onSave: (profile: Omit<StyleProfile, 'id'>) => void;
+  onSave: (profile: Omit<StyleProfile, 'id'>) => Promise<void>;
   editingProfile?: StyleProfile | null;
 }) {
   const [name, setName] = useState('');
-  const [category, setCategory] = useState<Category>('character');
+  const [category, setCategory] = useState<StyleCategory>('character');
   const [injection, setInjection] = useState('');
   const [tagsInput, setTagsInput] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const isEditing = !!editingProfile;
 
-  // Populate form on open — prefill when editing, reset when creating
   useEffect(() => {
     if (open && editingProfile) {
       setName(editingProfile.name);
@@ -724,16 +509,29 @@ function ProfileModal({
     }
   }, [open, editingProfile]);
 
-  const handleSave = () => {
-    if (!name.trim()) return;
-    const tags = tagsInput.split(',').map(t => t.trim()).filter(Boolean).map(t => t.startsWith('#') ? t : `#${t}`);
-    onSave({ name: name.trim(), description: injection.slice(0, 120), category, injectionPrompt: injection, tags, enabled: editingProfile?.enabled ?? true });
-    onClose();
+  const handleSave = async () => {
+    if (!name.trim() || submitting) return;
+    setSubmitting(true);
+    try {
+      const tags = tagsInput.split(',').map(t => t.trim()).filter(Boolean).map(t => t.startsWith('#') ? t : `#${t}`);
+      await onSave({
+        name: name.trim(),
+        description: injection.slice(0, 120) || 'Custom style profile.',
+        category,
+        injectionPrompt: injection || `Apply ${name.trim()} style instructions.`,
+        tags,
+        enabled: editingProfile?.enabled ?? false
+      });
+      onClose();
+    } catch (err) {
+      console.error('Failed to save profile:', err);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
     <>
-      {/* Glassmorphic Backdrop */}
       <div
         onClick={onClose}
         style={{
@@ -748,15 +546,13 @@ function ProfileModal({
         }}
       />
 
-      {/* Spring Animated Modal Container */}
       <div style={{
         position: 'fixed',
-        top: '50%',
-        left: '50%',
+        top: '50%', left: '50%',
         transform: open ? 'translate(-50%, -50%) scale(1)' : 'translate(-50%, -50%) scale(0.95)',
         opacity: open ? 1 : 0,
         pointerEvents: open ? 'auto' : 'none',
-        width: 520,
+        width: 540,
         maxWidth: 'calc(100vw - 32px)',
         maxHeight: 'calc(100vh - 48px)',
         background: '#FFFFFF',
@@ -815,6 +611,7 @@ function ProfileModal({
             <input
               type="text" placeholder="e.g. Cyberpunk Hero"
               value={name} onChange={e => setName(e.target.value)}
+              disabled={submitting}
               style={{
                 width: '100%', padding: '10px 14px', fontSize: 13, borderRadius: 10,
                 border: '1px solid rgba(124,58,237,0.12)', background: '#FFFFFF',
@@ -838,13 +635,15 @@ function ProfileModal({
                 return (
                   <button
                     key={opt.id}
+                    type="button"
                     onClick={() => setCategory(opt.id)}
+                    disabled={submitting}
                     style={{
                       display: 'flex', alignItems: 'center', gap: 10,
                       padding: '11px 14px', borderRadius: 12,
                       border: isSel ? `2px solid ${meta.color}` : '1px solid rgba(124,58,237,0.12)',
                       background: isSel ? `${meta.color}08` : '#FFFFFF',
-                      cursor: 'pointer', textAlign: 'left',
+                      cursor: submitting ? 'not-allowed' : 'pointer', textAlign: 'left',
                       transition: 'all 200ms ease',
                     }}
                     className={!isSel ? 'hover:!border-[rgba(124,58,237,0.22)] hover:!bg-[rgba(124,58,237,0.02)]' : ''}
@@ -879,6 +678,7 @@ function ProfileModal({
             <textarea
               placeholder="Describe the style instructions to inject..."
               value={injection} onChange={e => setInjection(e.target.value)}
+              disabled={submitting}
               rows={4}
               style={{
                 width: '100%', padding: '10px 14px', fontSize: 13, borderRadius: 10,
@@ -890,7 +690,7 @@ function ProfileModal({
               className="focus:!border-[rgba(124,58,237,0.35)] focus:shadow-[0_0_0_3px_rgba(124,58,237,0.08)]"
             />
             <span style={{ fontSize: 11.5, color: 'var(--color-text-secondary)', lineHeight: 1.4 }}>
-              This instructions will be appended to base prompts automatically when active.
+              These instructions will be appended to base prompts automatically when active.
             </span>
           </div>
 
@@ -902,6 +702,7 @@ function ProfileModal({
             <input
               type="text" placeholder="sci-fi, character, neon (comma separated)"
               value={tagsInput} onChange={e => setTagsInput(e.target.value)}
+              disabled={submitting}
               style={{
                 width: '100%', padding: '10px 14px', fontSize: 13, borderRadius: 10,
                 border: '1px solid rgba(124,58,237,0.12)', background: '#FFFFFF',
@@ -922,6 +723,7 @@ function ProfileModal({
         }}>
           <button
             onClick={onClose}
+            disabled={submitting}
             style={{
               padding: '9px 20px', borderRadius: 10, fontSize: 13, fontWeight: 600,
               border: '1px solid rgba(124,58,237,0.12)', cursor: 'pointer',
@@ -934,17 +736,19 @@ function ProfileModal({
           </button>
           <button
             onClick={handleSave}
-            disabled={!name.trim()}
+            disabled={!name.trim() || submitting}
             style={{
               padding: '9px 22px', borderRadius: 10, fontSize: 13, fontWeight: 600,
-              border: 'none', cursor: name.trim() ? 'pointer' : 'not-allowed',
-              background: name.trim() ? 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)' : 'rgba(124,58,237,0.25)',
+              border: 'none', cursor: (name.trim() && !submitting) ? 'pointer' : 'not-allowed',
+              background: (name.trim() && !submitting) ? 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)' : 'rgba(124,58,237,0.25)',
               color: 'white',
-              boxShadow: name.trim() ? '0 4px 14px rgba(124,58,237,0.30)' : 'none',
+              boxShadow: (name.trim() && !submitting) ? '0 4px 14px rgba(124,58,237,0.30)' : 'none',
               transition: 'all 200ms ease',
+              display: 'flex', alignItems: 'center', gap: 6,
             }}
-            className={name.trim() ? 'hover:translate-y-[-1px] hover:brightness-105' : ''}
+            className={(name.trim() && !submitting) ? 'hover:translate-y-[-1px] hover:brightness-105' : ''}
           >
+            {submitting && <Loader2 size={14} className="animate-spin" />}
             {isEditing ? 'Update Profile' : 'Create Profile'}
           </button>
         </div>
@@ -959,8 +763,8 @@ function ProfileModal({
 
 export default function StyleMemoryPage() {
   const router = useRouter();
-  const [profiles, setProfiles] = useStyleProfiles();
-  const [activeFilter, setActiveFilter] = useState<Category | 'all'>('all');
+  const [profiles, loading, { reload, add, update, toggle, remove }] = useStyleProfiles();
+  const [activeFilter, setActiveFilter] = useState<StyleCategory | 'all'>('all');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editingProfile, setEditingProfile] = useState<StyleProfile | null>(null);
 
@@ -968,20 +772,17 @@ export default function StyleMemoryPage() {
     ? profiles
     : profiles.filter(p => p.category === activeFilter);
 
-  const handleSaveProfile = (data: Omit<StyleProfile, 'id'>) => {
+  const handleSaveProfile = async (data: Omit<StyleProfile, 'id'>) => {
     if (editingProfile) {
-      // Update existing
-      setProfiles(profiles.map(p => p.id === editingProfile.id ? { ...p, ...data } : p));
+      await update(editingProfile.id, data);
     } else {
-      // Create new
-      const newProfile: StyleProfile = { ...data, id: `sp-${Date.now()}` };
-      setProfiles([newProfile, ...profiles]);
+      await add(data);
     }
     setEditingProfile(null);
   };
 
-  const handleToggle = (id: string) => {
-    setProfiles(profiles.map(p => p.id === id ? { ...p, enabled: !p.enabled } : p));
+  const handleToggle = async (profile: StyleProfile) => {
+    await toggle(profile.id, profile.enabled);
   };
 
   const handleEdit = (profile: StyleProfile) => {
@@ -989,9 +790,9 @@ export default function StyleMemoryPage() {
     setDrawerOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this style profile?')) {
-      setProfiles(profiles.filter(p => p.id !== id));
+      await remove(id);
     }
   };
 
@@ -1025,22 +826,39 @@ export default function StyleMemoryPage() {
                 Personalize your optimization with saved style profiles
               </p>
             </div>
-            <button
-              id="create-profile-btn"
-              onClick={openCreateDrawer}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 7,
-                padding: '9px 18px', borderRadius: 10, fontSize: 13, fontWeight: 600,
-                border: 'none', cursor: 'pointer',
-                background: 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)',
-                color: 'white',
-                boxShadow: '0 4px 14px rgba(124,58,237,0.30)',
-                transition: 'all 200ms ease', flexShrink: 0,
-              }}
-              className="hover:translate-y-[-1px] hover:brightness-105"
-            >
-              <Plus size={14} strokeWidth={2.5} />Create New Profile
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <button
+                onClick={() => reload()}
+                title="Refresh from Database"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '9px 14px', borderRadius: 10, fontSize: 13, fontWeight: 600,
+                  border: '1px solid rgba(124,58,237,0.15)', cursor: 'pointer',
+                  background: '#FFFFFF', color: 'var(--color-text-secondary)',
+                  transition: 'all 200ms ease',
+                }}
+                className="hover:!border-[rgba(124,58,237,0.3)] hover:!text-[var(--color-primary)]"
+              >
+                <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+                Refresh
+              </button>
+              <button
+                id="create-profile-btn"
+                onClick={openCreateDrawer}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 7,
+                  padding: '9px 18px', borderRadius: 10, fontSize: 13, fontWeight: 600,
+                  border: 'none', cursor: 'pointer',
+                  background: 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)',
+                  color: 'white',
+                  boxShadow: '0 4px 14px rgba(124,58,237,0.30)',
+                  transition: 'all 200ms ease', flexShrink: 0,
+                }}
+                className="hover:translate-y-[-1px] hover:brightness-105"
+              >
+                <Plus size={14} strokeWidth={2.5} />Create New Profile
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1072,23 +890,29 @@ export default function StyleMemoryPage() {
         <InjectionFlowCard />
 
         {/* ── Profile Cards Grid ── */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: 16,
-        }}>
-          {filtered.map((profile, i) => (
-            <div key={profile.id} style={{ animationDelay: `${i * 60}ms` }}>
+        {loading && profiles.length === 0 ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 0', gap: 10, color: 'var(--color-text-secondary)' }}>
+            <Loader2 size={20} className="animate-spin" />
+            <span style={{ fontSize: 14, fontWeight: 500 }}>Loading style profiles from database...</span>
+          </div>
+        ) : (
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: 16,
+          }}>
+            {filtered.map((profile) => (
               <ProfileCard
+                key={profile.id}
                 profile={profile}
-                onToggle={() => handleToggle(profile.id)}
+                onToggle={() => handleToggle(profile)}
                 onEdit={() => handleEdit(profile)}
                 onDelete={() => handleDelete(profile.id)}
               />
-            </div>
-          ))}
-          <AddNewCard onClick={openCreateDrawer} />
-        </div>
+            ))}
+            <AddNewCard onClick={openCreateDrawer} />
+          </div>
+        )}
       </div>
 
       {/* ── Create / Edit Profile Centered Modal ── */}

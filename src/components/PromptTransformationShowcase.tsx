@@ -63,55 +63,20 @@ function AnimatedScore({ from, to, delay = 0 }: { from: number; to: number; dela
 }
 
 // 6 Dimensions Data Configuration
-const dimensions = [
-  {
-    name: "Clarity",
-    from: 78,
-    to: 96,
-    gradient: "from-[#A78BFA] to-[#60A5FA]", // Lavender -> Soft Blue
-    arrowColor: "text-[#A78BFA]", // Lavender
-  },
-  {
-    name: "Context",
-    from: 60,
-    to: 92,
-    gradient: "from-[#EC4899] to-[#A78BFA]", // Pink -> Lavender
-    arrowColor: "text-[#A78BFA]",
-  },
-  {
-    name: "Role",
-    from: 45,
-    to: 90,
-    gradient: "from-[#8B5CF6] to-[#C4B5FD]", // Purple -> Light Violet
-    arrowColor: "text-[#A78BFA]",
-  },
-  {
-    name: "Format",
-    from: 50,
-    to: 88,
-    gradient: "from-[#A78BFA] to-[#EC4899]", // Lavender -> Pink
-    arrowColor: "text-[#A78BFA]",
-  },
-  {
-    name: "Constraints",
-    from: 40,
-    to: 86,
-    gradient: "from-[#60A5FA] to-[#A78BFA]", // Soft Blue -> Lavender
-    arrowColor: "text-[#A78BFA]",
-  },
-  {
-    name: "Examples",
-    from: 30,
-    to: 80,
-    gradient: "from-[#EC4899] to-[#8B5CF6]", // Pink -> Purple
-    arrowColor: "text-[#A78BFA]",
-  },
-];
+interface PromptTransformationShowcaseProps {
+  originalText?: string;
+  enhancedText?: string;
+  originalAnalysis?: any;
+  enhancedAnalysis?: any;
+}
 
-
-export default function PromptTransformationShowcase() {
+export default function PromptTransformationShowcase({
+  originalText = "Write a product launch announcement.",
+  enhancedText = "Write a compelling product launch announcement for our AI-powered productivity tool. Highlight the key benefits, who it's for, and what makes it unique. Keep it engaging, concise, and action-oriented.",
+  originalAnalysis,
+  enhancedAnalysis,
+}: PromptTransformationShowcaseProps) {
   const [copied, setCopied] = useState(false);
-  const enhancedText = "Write a compelling product launch announcement for our AI-powered productivity tool. Highlight the key benefits, who it's for, and what makes it unique. Keep it engaging, concise, and action-oriented.";
 
   const handleCopy = async () => {
     try {
@@ -122,6 +87,56 @@ export default function PromptTransformationShowcase() {
       console.error("Failed to copy text: ", err);
     }
   };
+
+  const getScore = (analysis: any, key: string, fallback: number) => {
+    if (!analysis || !analysis.dimensions || !analysis.dimensions[key]) return fallback;
+    return analysis.dimensions[key].score;
+  };
+
+  const dimensions = [
+    {
+      name: "Clarity",
+      from: getScore(originalAnalysis, "clarity", 78),
+      to: getScore(enhancedAnalysis, "clarity", 96),
+      gradient: "from-[#A78BFA] to-[#60A5FA]",
+      arrowColor: "text-[#A78BFA]",
+    },
+    {
+      name: "Context",
+      from: getScore(originalAnalysis, "context", 60),
+      to: getScore(enhancedAnalysis, "context", 92),
+      gradient: "from-[#EC4899] to-[#A78BFA]",
+      arrowColor: "text-[#A78BFA]",
+    },
+    {
+      name: "Role",
+      from: getScore(originalAnalysis, "role_definition", 45),
+      to: getScore(enhancedAnalysis, "role_definition", 90),
+      gradient: "from-[#8B5CF6] to-[#C4B5FD]",
+      arrowColor: "text-[#A78BFA]",
+    },
+    {
+      name: "Format",
+      from: getScore(originalAnalysis, "output_format", 50),
+      to: getScore(enhancedAnalysis, "output_format", 88),
+      gradient: "from-[#A78BFA] to-[#EC4899]",
+      arrowColor: "text-[#A78BFA]",
+    },
+    {
+      name: "Constraints",
+      from: getScore(originalAnalysis, "constraints", 40),
+      to: getScore(enhancedAnalysis, "constraints", 86),
+      gradient: "from-[#60A5FA] to-[#A78BFA]",
+      arrowColor: "text-[#A78BFA]",
+    },
+    {
+      name: "Examples",
+      from: getScore(originalAnalysis, "examples", 30),
+      to: getScore(enhancedAnalysis, "examples", 80),
+      gradient: "from-[#EC4899] to-[#8B5CF6]",
+      arrowColor: "text-[#A78BFA]",
+    },
+  ];
 
   // Entry animation variants
   const containerVariants: Variants = {
@@ -184,7 +199,7 @@ export default function PromptTransformationShowcase() {
 
 
   return (
-    <section className="w-full bg-[#FAFBFC] pb-20 px-6 md:px-12 lg:px-16" id="examples">
+    <section className="w-full bg-[#FAFBFC] pb-20 px-6 md:px-12 lg:px-16" id="transformation-showcase">
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -222,7 +237,7 @@ export default function PromptTransformationShowcase() {
             <span className="text-[11px] font-bold tracking-[0.22em] text-white/40 uppercase">
               SEE THE TRANSFORMATION
             </span>
-            <h2 className="text-[clamp(36px,4.5vw,54px)] font-extrabold text-white tracking-tight leading-[1.12] mt-5 mb-6">
+            <h2 className="text-[clamp(32px,4.5vw,46px)] font-semibold text-white tracking-tight leading-[1.1] mt-5 mb-6">
               Better prompts.
               <br />
               Better outcomes.
@@ -300,12 +315,12 @@ export default function PromptTransformationShowcase() {
                       </div>
 
                       <div className="bg-[#030307]/50 border border-white/[0.04] rounded-xl p-5 text-[14px] leading-relaxed text-white/70 min-h-[140px] font-sans">
-                        Write a product launch announcement.
+                        {originalText}
                       </div>
                     </div>
 
                     <div className="text-[11px] text-white/30 font-mono mt-6">
-                      28/1000
+                      {originalText.length}/1000
                     </div>
                   </div>
 

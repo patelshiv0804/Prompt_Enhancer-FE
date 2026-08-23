@@ -1,7 +1,7 @@
 'use client';
 
 import React, { Suspense } from 'react';
-import SettingsPage from '../settings/page';
+import { SettingsComponent } from '../settings/SettingsComponent';
 
 export default function ProfilePage() {
   return (
@@ -10,7 +10,7 @@ export default function ProfilePage() {
         Loading Profile...
       </div>
     }>
-      <SettingsPage initialTab="profile" />
+      <SettingsComponent initialTab="profile" />
     </Suspense>
   );
 }

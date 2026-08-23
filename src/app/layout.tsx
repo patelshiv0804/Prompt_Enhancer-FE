@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/context/AuthContext";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -19,13 +20,6 @@ export const metadata: Metadata = {
     "Claude",
     "prompt optimizer",
   ],
-  icons: {
-    icon: [
-      { url: "/logo_1.svg", type: "image/svg+xml" },
-    ],
-    shortcut: "/logo_1.svg",
-    apple: "/logo_1.svg",
-  },
   openGraph: {
     title: "Prompt Enhancer — Write Better Prompts, Get Better Answers",
     description:
@@ -42,7 +36,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} h-full antialiased`} data-scroll-behavior="smooth">
       <body className="min-h-full flex flex-col bg-white text-foreground">
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
