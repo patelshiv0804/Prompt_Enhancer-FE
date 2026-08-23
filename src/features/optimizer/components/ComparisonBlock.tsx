@@ -280,16 +280,19 @@ export default function ComparisonBlock({
             minHeight: 200,
             boxShadow: originalText.length > 12000 ? '0 0 0 3px rgba(239,68,68,0.12)' : 'inset 0 1px 3px rgba(109,40,217,0.03)',
             transition: 'all 300ms ease-in-out',
+            opacity: (isOptimizing || isAnalyzing) ? 0.7 : 1,
           }}
           className="focus-within:!bg-[#FAFAFE] focus-within:!border-[rgba(124,58,237,0.35)] focus-within:shadow-[inset_0_1px_3px_rgba(0,0,0,0.02),0_0_0_3px_rgba(124,58,237,0.08),0_0_20px_rgba(124,58,237,0.05)]"
         >
           <textarea
             value={originalText}
             onChange={e => setOriginalText(e.target.value)}
+            disabled={isOptimizing || isAnalyzing}
             placeholder="Paste, drop, or write below..."
             style={{
               width: '100%', flex: 1, fontSize: 14, lineHeight: 1.6, color: 'var(--color-text-primary)',
               background: 'transparent', border: 'none', resize: 'none', outline: 'none', letterSpacing: '0.01em',
+              cursor: (isOptimizing || isAnalyzing) ? 'not-allowed' : 'text',
             }}
           />
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 }}>
@@ -307,7 +310,12 @@ export default function ComparisonBlock({
         </div>
 
         {/* Controls */}
-        <div style={{ marginTop: 32, display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{
+          marginTop: 32, display: 'flex', flexDirection: 'column', gap: 16,
+          opacity: (isOptimizing || isAnalyzing) ? 0.6 : 1,
+          pointerEvents: (isOptimizing || isAnalyzing) ? 'none' : 'auto',
+          transition: 'opacity 200ms ease',
+        }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '1.2px' }}>Role</div>
           <div style={{ paddingBottom: 4 }}>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
@@ -317,7 +325,9 @@ export default function ComparisonBlock({
                 return (
                   <button
                     key={role.id}
+                    disabled={isOptimizing || isAnalyzing}
                     onClick={() => {
+                      if (isOptimizing || isAnalyzing) return;
                       setActiveRole(role.id);
                       const modes = ROLE_MODES[role.id] || [];
                       if (modes.length > 0) setActiveMode(modes[0]);
@@ -325,7 +335,7 @@ export default function ComparisonBlock({
                     }}
                     style={{
                       padding: '8px 16px', borderRadius: 9999, fontSize: 13, fontWeight: active ? 600 : 500,
-                      cursor: 'pointer', transition: 'all 250ms ease', display: 'flex', alignItems: 'center', gap: 6,
+                      cursor: (isOptimizing || isAnalyzing) ? 'not-allowed' : 'pointer', transition: 'all 250ms ease', display: 'flex', alignItems: 'center', gap: 6,
                       color: active ? '#6D28D9' : '#6B6B8A',
                       background: active
                         ? 'linear-gradient(160deg, rgba(167,139,250,0.22) 0%, rgba(196,181,253,0.12) 100%)'
@@ -368,10 +378,14 @@ export default function ComparisonBlock({
                     return (
                       <button
                         key={m}
-                        onClick={() => setActiveMode(m)}
+                        disabled={isOptimizing || isAnalyzing}
+                        onClick={() => {
+                          if (isOptimizing || isAnalyzing) return;
+                          setActiveMode(m);
+                        }}
                         style={{
                           padding: '6px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: active ? 600 : 500,
-                          cursor: 'pointer', transition: 'all 180ms ease', display: 'flex', alignItems: 'center', gap: 6,
+                          cursor: (isOptimizing || isAnalyzing) ? 'not-allowed' : 'pointer', transition: 'all 180ms ease', display: 'flex', alignItems: 'center', gap: 6,
                           color: active ? '#FFFFFF' : 'var(--color-text-primary)',
                           background: active
                             ? 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)'
@@ -412,7 +426,11 @@ export default function ComparisonBlock({
                   <button
                     key={id}
                     id={`enhancement-level-${id}`}
-                    onClick={() => setEnhancementLevel(id)}
+                    disabled={isOptimizing || isAnalyzing}
+                    onClick={() => {
+                      if (isOptimizing || isAnalyzing) return;
+                      setEnhancementLevel(id);
+                    }}
                     style={{
                       height: 32,
                       padding: '0 15px',
@@ -422,7 +440,7 @@ export default function ComparisonBlock({
                       position: 'relative',
                       background: 'transparent',
                       border: 'none',
-                      cursor: 'pointer',
+                      cursor: (isOptimizing || isAnalyzing) ? 'not-allowed' : 'pointer',
                       borderRadius: 9999,
                       whiteSpace: 'nowrap',
                       display: 'flex',
@@ -459,6 +477,7 @@ export default function ComparisonBlock({
               </p>
             )}
           </div>
+        </div>
 
           {/* Action buttons */}
           <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
@@ -510,7 +529,6 @@ export default function ComparisonBlock({
               <span>{isOptimizing ? 'Optimizing...' : 'Optimize'}</span>
             </button>
           </div>
-        </div>
       </motion.div>
 
       {/* ── Right Panel ── */}
