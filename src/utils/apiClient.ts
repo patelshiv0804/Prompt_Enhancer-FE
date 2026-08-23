@@ -60,7 +60,12 @@ export async function apiRequest<T = any>(
       if (!isAuthEndpoint) {
         window.dispatchEvent(new CustomEvent('aure_unauthorized', { detail: { path } }));
         window.dispatchEvent(new CustomEvent('promptiq:unauthorized', { detail: { path } }));
-        if (!window.location.pathname.startsWith('/auth')) {
+        // Only bounce to /auth from protected (dashboard) routes. On public
+        // pages like the landing page, a 401 from the session probe simply
+        // means "not logged in" — redirecting there would drag every visitor
+        // to /auth before they can click Log in, and block them from ever
+        // returning home. The dashboard is still guarded by AuthGuard.
+        if (window.location.pathname.startsWith('/dashboard')) {
           window.location.href = '/auth';
         }
       }
