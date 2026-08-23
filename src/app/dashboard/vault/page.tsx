@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { fetchHistory, fetchHistoryStats, toggleFavorite, deleteHistoryItems } from '@/features/history/services/historyService';
 import type { HistoryItem, HistoryStats, SortBy } from '@/features/history/types/history.types';
+import ScoreSpinner from '@/components/ScoreSpinner';
 
 const PAGE_SIZE = 10;
 
@@ -201,15 +202,7 @@ function VaultRow({ item, isSelectionMode, selected, onSelect, onToggleFavorite,
         {item.score == null ? (
           // Quality analysis still processing in the background — show a spinner
           // until the real score is persisted to and fetched from the DB.
-          <span
-            role="status"
-            aria-label="Calculating score"
-            style={{
-              display: 'inline-block', width: 16, height: 16, borderRadius: '50%',
-              border: '2px solid rgba(124,58,237,0.25)', borderTopColor: '#7C3AED',
-              animation: 'scoreSpin 0.7s linear infinite',
-            }}
-          />
+          <ScoreSpinner size={18} />
         ) : (
           <span style={{ fontSize: 18, fontWeight: 800, lineHeight: 1, color: scoreColor(item.score) }}>{item.score}</span>
         )}

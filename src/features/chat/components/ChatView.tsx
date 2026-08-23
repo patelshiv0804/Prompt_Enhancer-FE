@@ -1051,12 +1051,12 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
   // Render a prompt panel
   const renderOptimizedPanel = (v: PromptVersion, label: string) => (
     <div style={{
-      flex: 1, background: '#FFFFFF', borderRadius: 20, padding: 24,
+      flex: 1, background: '#FFFFFF', borderRadius: 20, padding: '24px 8px 24px 24px',
       boxShadow: '0 4px 20px rgba(109,40,217,0.06), 0 1px 3px rgba(0,0,0,0.03)',
       border: '1px solid rgba(124,58,237,0.12)', display: 'flex', flexDirection: 'column',
-      position: 'relative', overflow: 'hidden', minWidth: 0,
+      position: 'relative', overflow: 'hidden', minWidth: 0, height: 420, maxHeight: 420, boxSizing: 'border-box',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, paddingRight: 16 }}>
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 9999,
           fontSize: 12, fontWeight: 700, letterSpacing: '0.3px',
@@ -1074,7 +1074,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', maxHeight: 380, paddingRight: 6 }}>
+      <div className="custom-scrollbar" style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 16 }}>
         <FormattedPromptViewer content={v.optimizedPrompt} />
       </div>
 
@@ -1082,6 +1082,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
         <div style={{
           display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, paddingTop: 14,
           borderTop: '1px dashed rgba(124,58,237,0.16)', fontSize: 12, color: '#6D28D9', fontWeight: 600,
+          paddingRight: 16,
         }}>
           <Wand2 size={13} style={{ flexShrink: 0 }} />
           <span>{v.tweakNote}</span>
@@ -1218,11 +1219,11 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
                 {/* Input / Original panel */}
                 <div style={{
-                  background: '#FFFFFF', borderRadius: 20, padding: 24,
+                  background: '#FFFFFF', borderRadius: 20, padding: '24px 8px 24px 24px',
                   boxShadow: '0 4px 20px rgba(109,40,217,0.04)', border: '1px solid rgba(124,58,237,0.10)',
-                  display: 'flex', flexDirection: 'column',
+                  display: 'flex', flexDirection: 'column', height: 420, maxHeight: 420, boxSizing: 'border-box', overflow: 'hidden', minWidth: 0,
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, paddingRight: 16 }}>
                     <div style={{
                       display: 'inline-flex', alignItems: 'center', padding: '6px 14px', borderRadius: 9999,
                       fontSize: 12, fontWeight: 700, background: '#F1F5F9', color: '#64748B',
@@ -1235,7 +1236,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                     </div>
                     <CopyPromptButton text={inputPromptContent} />
                   </div>
-                  <div style={{ flex: 1, overflowY: 'auto', maxHeight: 380, paddingRight: 6 }}>
+                  <div className="custom-scrollbar" style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 16 }}>
                     <FormattedPromptViewer content={inputPromptContent} />
                   </div>
                 </div>

@@ -12,6 +12,7 @@ import {
   LogOut, Trash2,
 } from 'lucide-react';
 import { fetchHistory, deleteHistoryItem } from '@/features/history/services/historyService';
+import ScoreSpinner from '@/components/ScoreSpinner';
 
 export type ActivePage = 'optimizer' | 'templates' | 'vault' | 'style-memory' | 'chaining' | 'settings' | 'chat';
 
@@ -345,20 +346,7 @@ export default function Sidebar() {
                         >
                           {item.score == null ? (
                             // Score not yet available — background analysis still running
-                            <span
-                              role="status"
-                              aria-label="Calculating score"
-                              style={{
-                                display: 'inline-block',
-                                width: 12,
-                                height: 12,
-                                borderRadius: '50%',
-                                border: `2px solid ${accent}33`,
-                                borderTopColor: accent,
-                                animation: 'scoreSpin 0.7s linear infinite',
-                                verticalAlign: 'middle',
-                              }}
-                            />
+                            <ScoreSpinner size={12} color={accent} />
                           ) : item.score}
                         </span>
                         <button

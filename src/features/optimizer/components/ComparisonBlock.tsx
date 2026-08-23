@@ -167,9 +167,10 @@ function InlineScorePanel({ active, analysisResult }: { active: boolean; analysi
 /* ── Shared card style ── */
 const cardStyle: React.CSSProperties = {
   flex: 1, display: 'flex', flexDirection: 'column', background: '#FFFFFF',
-  border: '1px solid rgba(124,58,237,0.10)', borderRadius: 28, padding: 40,
+  border: '1px solid rgba(124,58,237,0.10)', borderRadius: 28, padding: 36,
   boxShadow: '0 4px 24px rgba(109,40,217,0.07), 0 1px 4px rgba(0,0,0,0.04)',
-  minHeight: 400, transition: 'transform 300ms ease-in-out, box-shadow 300ms ease-in-out',
+  height: 780, maxHeight: 780, boxSizing: 'border-box',
+  transition: 'transform 300ms ease-in-out, box-shadow 300ms ease-in-out',
 };
 
 interface ComparisonBlockProps {
@@ -249,7 +250,13 @@ export default function ComparisonBlock({
 
       {/* ── Left Card: Original Prompt ── */}
       <motion.div
-        style={cardStyle} layout
+        style={{
+          ...cardStyle,
+          overflowY: 'auto',
+          scrollbarWidth: 'thin',
+          scrollbarColor: 'rgba(124,58,237,0.2) transparent',
+        }}
+        layout
         transition={{ type: 'spring', bounce: 0, duration: 0.6 }}
         className="hover:translate-y-[-3px] hover:shadow-[0_12px_48px_rgba(109,40,217,0.10),0_4px_12px_rgba(0,0,0,0.05)]"
       >
@@ -491,11 +498,11 @@ export default function ComparisonBlock({
             animate={{ opacity: 1, flex: 0.818, paddingLeft: 24, minWidth: 0, width: 'auto' }}
             exit={{ opacity: 0, flex: 0, paddingLeft: 0, minWidth: 0, width: 0 }}
             transition={{ type: 'spring', bounce: 0, duration: 0.6 }}
-            style={{ overflow: 'hidden', display: 'flex' }}
+            style={{ overflow: 'hidden', display: 'flex', height: 780, maxHeight: 780 }}
           >
             {/* Score panel */}
             {showScorePanel && (
-              <div style={{ ...cardStyle, width: '100%', flex: 'none', overflowY: 'auto' }}>
+              <div style={{ ...cardStyle, width: '100%', flex: 'none', height: '100%', overflowY: 'auto' }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', letterSpacing: '1.2px', textTransform: 'uppercase', marginBottom: 8 }}>
                   Analysis
                 </div>
@@ -526,8 +533,8 @@ export default function ComparisonBlock({
 
             {/* Optimized panel */}
             {showOptimizedPanel && (
-              <div style={{ ...cardStyle, width: '100%', flex: 'none' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 24, height: 36 }}>
+              <div style={{ ...cardStyle, width: '100%', flex: 'none', height: '100%', padding: '36px 8px 36px 36px', overflow: 'hidden' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 24, height: 36, paddingRight: 28 }}>
                   <h2 style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', opacity: isOptimizing ? 0.6 : 1 }}>
                     Optimized Prompt
                   </h2>
@@ -704,7 +711,7 @@ export default function ComparisonBlock({
                   )}
                 </div>
 
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative', minHeight: 0 }}>
                   {isOptimizing ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 24, marginTop: 8 }}>
                       {[['30%', '60%'], ['40%', '50%'], ['35%', '55%']].map(([w1, w2], gi) => (
@@ -719,7 +726,20 @@ export default function ComparisonBlock({
                       ))}
                     </div>
                   ) : isOptimized ? (
-                    <div style={{ fontSize: 14, lineHeight: 1.6, animation: 'fadeInRise 400ms ease-out forwards', overflowY: 'auto', paddingRight: 16, color: 'var(--color-text-primary)', letterSpacing: '0.01em' }}>
+                    <div
+                      className="custom-scrollbar"
+                      style={{
+                        flex: 1,
+                        minHeight: 0,
+                        fontSize: 14,
+                        lineHeight: 1.6,
+                        animation: 'fadeInRise 400ms ease-out forwards',
+                        overflowY: 'auto',
+                        paddingRight: 28,
+                        color: 'var(--color-text-primary)',
+                        letterSpacing: '0.01em',
+                      }}
+                    >
                       <FormattedPromptViewer content={optimizationResult?.enhanced_prompt || ''} />
                     </div>
                   ) : (
