@@ -8,7 +8,7 @@ import {
   CheckCircle2, AlertTriangle, Minus, FileText, Layers, Monitor,
   Smartphone, Server, Database, ShieldCheck, Globe, Cpu, Terminal,
   Lightbulb, DollarSign, Scale, ShoppingCart, Users, Mail, Radio,
-  Activity, PieChart, TrendingUp, BookOpen, Building2, Layout, Award, Zap, GitBranch, ChevronDown,
+  Activity, PieChart, TrendingUp, BookOpen, Building2, Layout, Award, Zap, GitBranch, ChevronDown, Feather,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import FormattedPromptViewer from './FormattedPromptViewer';
@@ -399,34 +399,59 @@ export default function ComparisonBlock({
               background: 'linear-gradient(160deg, rgba(109,40,217,0.09) 0%, rgba(124,58,237,0.04) 100%)',
               border: '1px solid rgba(124,58,237,0.13)', borderRadius: 9999, padding: 4,
               boxShadow: 'inset 0 2px 5px rgba(80,20,180,0.13), inset 0 1px 2px rgba(0,0,0,0.07), 0 1px 0 rgba(255,255,255,0.80)',
-              alignSelf: 'flex-start',
+              alignSelf: 'flex-start', gap: 2,
             }}>
-              {(['auto', 'minimal', 'standard', 'deep'] as const).map((lvl) => (
-                <button
-                  key={lvl}
-                  id={`enhancement-level-${lvl}`}
-                  onClick={() => setEnhancementLevel(lvl)}
-                  style={{
-                    padding: '5px 14px', fontSize: 13,
-                    fontWeight: lvl === enhancementLevel ? 600 : 500,
-                    color: lvl === enhancementLevel ? 'var(--color-primary)' : 'var(--color-text-secondary)',
-                    position: 'relative', zIndex: 2, transition: 'color 250ms ease',
-                    background: 'transparent', border: 'none', cursor: 'pointer', borderRadius: 9999, whiteSpace: 'nowrap',
-                    textTransform: 'capitalize',
-                  }}
-                >
-                  {lvl === 'auto' ? '⚡ Auto' : lvl.charAt(0).toUpperCase() + lvl.slice(1)}
-                </button>
-              ))}
-              {/* Sliding pill indicator */}
-              <div style={{
-                position: 'absolute', top: 4, bottom: 4,
-                width: 'calc(25% - 4px)',
-                left: `calc(${['auto','minimal','standard','deep'].indexOf(enhancementLevel)} * 25% + 4px)`,
-                background: '#FFFFFF', borderRadius: 9999, zIndex: 1,
-                transition: 'left 300ms cubic-bezier(0.4,0,0.2,1)',
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.95), 0 3px 8px rgba(80,20,180,0.12), 0 1px 3px rgba(0,0,0,0.10), 0 0 0 1px rgba(124,58,237,0.07)',
-              }} />
+              {[
+                { id: 'auto' as const, label: 'Auto', icon: Zap },
+                { id: 'minimal' as const, label: 'Minimal', icon: Feather },
+                { id: 'standard' as const, label: 'Standard', icon: Sparkles },
+                { id: 'deep' as const, label: 'Deep', icon: Layers },
+              ].map(({ id, label, icon: Icon }) => {
+                const active = id === enhancementLevel;
+                return (
+                  <button
+                    key={id}
+                    id={`enhancement-level-${id}`}
+                    onClick={() => setEnhancementLevel(id)}
+                    style={{
+                      height: 32,
+                      padding: '0 15px',
+                      fontSize: 13,
+                      fontWeight: active ? 600 : 500,
+                      color: active ? 'var(--color-primary)' : 'var(--color-text-secondary)',
+                      position: 'relative',
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      borderRadius: 9999,
+                      whiteSpace: 'nowrap',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'color 200ms ease',
+                    }}
+                  >
+                    {active && (
+                      <motion.div
+                        layoutId="activeDepthPill"
+                        transition={{ type: 'spring', bounce: 0.15, duration: 0.35 }}
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          background: '#FFFFFF',
+                          borderRadius: 9999,
+                          zIndex: 1,
+                          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.95), 0 3px 8px rgba(80,20,180,0.12), 0 1px 3px rgba(0,0,0,0.10), 0 0 0 1px rgba(124,58,237,0.07)',
+                        }}
+                      />
+                    )}
+                    <span style={{ position: 'relative', zIndex: 2, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <Icon size={13} strokeWidth={2.2} style={{ opacity: active ? 1 : 0.75 }} />
+                      <span>{label}</span>
+                    </span>
+                  </button>
+                );
+              })}
             </div>
             {enhancementLevel === 'auto' && (
               <p style={{ fontSize: 11, color: 'var(--color-text-secondary)', margin: 0, lineHeight: 1.4 }}>
