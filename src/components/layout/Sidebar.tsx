@@ -266,10 +266,9 @@ export default function Sidebar() {
                 border: 'none',
                 color: 'rgba(45,27,105,0.75)',
                 cursor: 'pointer',
-                transition: 'all 160ms ease',
                 position: 'relative',
               }}
-              className="group/toplogo hover:bg-[rgba(124,58,237,0.08)] hover:text-[#4C1D95]"
+              className="group/toplogo aure-rail-btn"
             >
               {/* Default state: AURE Logo */}
               <div
@@ -347,9 +346,8 @@ export default function Sidebar() {
                   background: 'transparent',
                   color: 'rgba(45,27,105,0.55)',
                   cursor: 'pointer',
-                  transition: 'all 150ms ease',
                 }}
-                className="hover:bg-[rgba(124,58,237,0.08)] hover:!text-[#4C1D95]"
+                className="aure-soft-btn hover:!text-[#4C1D95]"
               >
                 <PanelLeftClose size={17} strokeWidth={1.75} />
               </button>
@@ -407,9 +405,8 @@ export default function Sidebar() {
                           border: 'none',
                           background: active ? 'rgba(124,58,237,0.10)' : 'transparent',
                           color: active ? '#7C3AED' : 'rgba(45,27,105,0.70)',
-                          transition: 'all 140ms ease',
                         }}
-                        className={!active ? 'hover:bg-[rgba(124,58,237,0.07)] hover:text-[#4C1D95]' : ''}
+                        className={`aure-rail-btn ${active ? 'is-active' : ''}`}
                       >
                         <Icon size={18} strokeWidth={active ? 2.1 : 1.75} />
                       </button>
@@ -446,9 +443,8 @@ export default function Sidebar() {
                     border: 'none',
                     background: showRecentFlyout ? 'rgba(124,58,237,0.10)' : 'transparent',
                     color: showRecentFlyout ? '#7C3AED' : 'rgba(45,27,105,0.70)',
-                    transition: 'all 140ms ease',
                   }}
-                  className="hover:bg-[rgba(124,58,237,0.07)] hover:text-[#4C1D95]"
+                  className={`aure-rail-btn ${showRecentFlyout ? 'is-active' : ''}`}
                 >
                   <Clock size={18} strokeWidth={1.75} />
                 </button>
@@ -594,7 +590,7 @@ export default function Sidebar() {
                         borderRadius: 4, border: 'none', background: 'transparent', cursor: 'pointer',
                         width: '100%', textAlign: 'left', marginBottom: 1,
                       }}
-                      className="group/navgroup hover:bg-[rgba(124,58,237,0.04)] transition-colors duration-140"
+                      className="aure-soft-btn"
                     >
                       <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'capitalize', letterSpacing: '0.2px', color: 'rgba(45,27,105,0.45)', flex: 1 }}>
                         {group.label}
@@ -621,17 +617,18 @@ export default function Sidebar() {
                                 cursor: 'pointer', border: 'none', width: '100%', textAlign: 'left',
                                 color: active ? '#4C1D95' : 'rgba(45,27,105,0.78)',
                                 background: active ? 'rgba(124,58,237,0.09)' : 'transparent',
-                                transition: 'background 140ms ease, color 140ms ease',
                               }}
-                              className={!active ? 'hover:bg-[rgba(124,58,237,0.06)] hover:!text-[#2D1B69]' : ''}
+                              className={`aure-nav-item ${active ? 'is-active' : ''}`}
                             >
-                              <Icon size={17} strokeWidth={active ? 2 : 1.75} style={{ color: active ? '#7C3AED' : 'rgba(109,40,217,0.55)', flexShrink: 0 }} />
+                              <Icon className="aure-nav-icon" size={17} strokeWidth={active ? 2 : 1.75} style={{ color: active ? '#7C3AED' : 'rgba(109,40,217,0.55)', flexShrink: 0 }} />
                               <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                 {item.label}
                               </span>
                               {item.shortcut && (
-                                <span style={{ fontSize: 10, fontWeight: 500, color: 'rgba(109,40,217,0.30)', opacity: 0, transition: 'opacity 140ms' }}
-                                  className="group-hover/navgroup:opacity-100">
+                                <span
+                                  className="aure-nav-shortcut"
+                                  style={{ fontSize: 10, fontWeight: 500, color: 'rgba(109,40,217,0.30)' }}
+                                >
                                   {item.shortcut}
                                 </span>
                               )}
@@ -662,7 +659,7 @@ export default function Sidebar() {
                     borderRadius: 4, border: 'none', background: 'transparent', cursor: 'pointer',
                     width: '100%', textAlign: 'left', marginBottom: 1,
                   }}
-                  className="hover:bg-[rgba(124,58,237,0.04)] transition-colors duration-140"
+                  className="aure-soft-btn"
                 >
                   <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'capitalize', letterSpacing: '0.2px', color: 'rgba(45,27,105,0.45)', flex: 1 }}>Recent</span>
                   <button
@@ -672,7 +669,7 @@ export default function Sidebar() {
                       fontSize: 10.5, fontWeight: 600, color: '#6D28D9', background: 'none', border: 'none',
                       cursor: 'pointer', padding: '1px 4px', borderRadius: 4, marginRight: 2,
                     }}
-                    className="hover:bg-[rgba(124,58,237,0.08)] hover:!text-[#5B21B6] transition-colors duration-140"
+                    className="aure-soft-btn hover:!text-[#5B21B6]"
                   >View all</button>
                   {recentCollapsed
                     ? <ChevronRight size={11} style={{ color: 'rgba(109,40,217,0.30)', flexShrink: 0 }} />
@@ -717,9 +714,9 @@ export default function Sidebar() {
                               borderRadius: 8,
                               background: active ? 'rgba(124,58,237,0.09)' : 'transparent',
                               cursor: 'pointer', width: '100%', textAlign: 'left',
-                              transition: 'all 140ms ease', flexShrink: 0,
+                              flexShrink: 0,
                             }}
-                            className={`group/chatitem ${!active ? 'hover:bg-[rgba(124,58,237,0.06)]' : ''}`}
+                            className={`group/chatitem aure-recent-item ${active ? 'is-active' : ''}`}
                           >
                             <Icon size={14} color={accent} strokeWidth={1.75} style={{ flexShrink: 0 }} />
                             <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0, flex: 1 }}>
@@ -800,10 +797,10 @@ export default function Sidebar() {
                   color: '#FFFFFF',
                   border: 'none',
                   cursor: 'pointer',
-                  transition: 'all 150ms ease',
+                  transition: 'transform 260ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 260ms cubic-bezier(0.22, 1, 0.36, 1)',
                   overflow: 'hidden',
                 }}
-                className="hover:scale-105"
+                className="hover:scale-105 hover:shadow-[0_6px_16px_rgba(45,27,105,0.28)]"
               >
                 {user?.avatar_url ? (
                   <img
@@ -828,9 +825,9 @@ export default function Sidebar() {
                   display: 'flex', alignItems: 'center', gap: 9, padding: '6px 8px',
                   borderRadius: 8, flex: 1, border: 'none',
                   background: 'transparent', textAlign: 'left',
-                  minWidth: 0, cursor: 'pointer', transition: 'background 140ms ease',
+                  minWidth: 0, cursor: 'pointer',
                 }}
-                className="hover:bg-[rgba(124,58,237,0.06)]"
+                className="aure-soft-btn"
               >
                 <div style={{
                   background: '#2D1B69', color: '#FFFFFF',
@@ -868,9 +865,9 @@ export default function Sidebar() {
                   width: 28, height: 28, borderRadius: 6, display: 'flex', alignItems: 'center',
                   justifyContent: 'center', cursor: 'pointer', background: 'transparent',
                   border: 'none', color: 'rgba(45,27,105,0.50)',
-                  transition: 'all 140ms ease',
+                  transition: 'all 200ms cubic-bezier(0.22, 1, 0.36, 1)',
                 }}
-                className="hover:!bg-[rgba(239,68,68,0.08)] hover:!color-[#DC2626]"
+                className="hover:!bg-[rgba(239,68,68,0.10)] hover:!text-[#DC2626]"
               >
                 <LogOut size={15} strokeWidth={1.8} />
               </button>
