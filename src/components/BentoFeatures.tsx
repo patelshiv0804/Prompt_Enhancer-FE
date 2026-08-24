@@ -221,11 +221,11 @@ function CardChaining() { ... }
  * ═══════════════════════════════════════════════════════════════════ */
 /* Model data — palette strictly purple/lavender/pink per brand rules */
 const MODELS = [
-  { ab: "GP", name: "ChatGPT", c: P.purple, bg: "rgba(139,92,246,0.10)", pos: { x: 52, y: 68 }, size: 58 },
-  { ab: "Cl", name: "Claude", c: P.lav, bg: "rgba(167,139,250,0.10)", pos: { x: 168, y: 32 }, size: 52 },
-  { ab: "Ge", name: "Gemini", c: P.violet, bg: "rgba(124,58,237,0.10)", pos: { x: 295, y: 48 }, size: 60 },
-  { ab: "Mj", name: "Midjourney", c: P.pink, bg: "rgba(236,72,153,0.10)", pos: { x: 390, y: 22 }, size: 50 },
-  { ab: "Ve", name: "VEO", c: "#C084FC", bg: "rgba(192,132,252,0.10)", pos: { x: 80, y: 178 }, size: 46 },
+  { name: "ChatGPT", icon: "/chatgpt-icon.svg", c: P.purple, bg: "rgba(139,92,246,0.10)", pos: { x: 52, y: 68 }, size: 60 },
+  { name: "Claude", icon: "/claude-ai-icon.svg", c: P.lav, bg: "rgba(167,139,250,0.10)", pos: { x: 168, y: 32 }, size: 54 },
+  { name: "Gemini", icon: "/google-gemini-icon.svg", c: P.violet, bg: "rgba(124,58,237,0.10)", pos: { x: 295, y: 48 }, size: 58 },
+  { name: "Midjourney", icon: "/midjourney-color-icon.svg", c: P.pink, bg: "rgba(236,72,153,0.10)", pos: { x: 388, y: 22 }, size: 68 },
+  { name: "VEO", icon: "/veo-icon.svg", c: "#C084FC", bg: "rgba(192,132,252,0.10)", pos: { x: 80, y: 178 }, size: 46 },
 ];
 /* Central prompt node in SVG coordinates */
 const MODEL_CENTER = { x: 230, y: 230 };
@@ -302,7 +302,7 @@ function CardMultiModel() {
 
           {/* Floating model cards */}
           {MODELS.map((m, i) => {
-            const cardW = m.size + 36;
+            const cardW = m.size + 38;
             const cardH = 36;
             return (
               <motion.g
@@ -332,18 +332,21 @@ function CardMultiModel() {
                 {/* avatar circle */}
                 <circle
                   cx={m.pos.x - cardW / 2 + 18} cy={m.pos.y}
-                  r={9} fill={m.bg}
+                  r={10} fill="rgba(255,255,255,0.95)"
+                  stroke={`${m.c}20`} strokeWidth={0.8}
                 />
-                {/* abbrev */}
-                <text
-                  x={m.pos.x - cardW / 2 + 18} y={m.pos.y + 1}
-                  fontSize={8} fontWeight="700" fill={m.c}
-                  textAnchor="middle" dominantBaseline="middle"
-                  fontFamily="system-ui,-apple-system,sans-serif"
-                >{m.ab}</text>
+                {/* AI logo image */}
+                <image
+                  href={m.icon}
+                  x={m.pos.x - cardW / 2 + 18 - 6.5}
+                  y={m.pos.y - 6.5}
+                  width={13}
+                  height={13}
+                  preserveAspectRatio="xMidYMid meet"
+                />
                 {/* name */}
                 <text
-                  x={m.pos.x - cardW / 2 + 32} y={m.pos.y + 1}
+                  x={m.pos.x - cardW / 2 + 33} y={m.pos.y + 1}
                   fontSize={9.5} fontWeight="580" fill="#374151"
                   dominantBaseline="middle"
                   fontFamily="system-ui,-apple-system,sans-serif"

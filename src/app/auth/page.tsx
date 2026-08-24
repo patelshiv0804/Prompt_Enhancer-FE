@@ -321,7 +321,7 @@ export default function AuthPage() {
     .pulse { animation: pulse2 2s ease-in-out infinite; }
     .card-hover { transition: transform 0.5s; }
     .card-hover:hover { transform: scale(1.02); }
-    .btn-main { width:100%; background:#171A2B; color:#fff; border:none; border-radius:9999px; padding:14px 0; font-size:14px; font-weight:600; letter-spacing:0.02em; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:transform 0.3s, box-shadow 0.3s; margin-top:4px; font-family:'Geist',sans-serif; }
+    .btn-main { width:100%; background:#171A2B; color:#fff; border:none; border-radius:9999px; padding:12px 0; font-size:14px; font-weight:600; letter-spacing:0.02em; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:transform 0.3s, box-shadow 0.3s; margin-top:4px; font-family:'Geist',sans-serif; }
     .btn-main:hover:not(:disabled) { transform:scale(1.02); box-shadow:0 0 15px rgba(167,139,250,0.4); }
     .btn-main:disabled { opacity: 0.7; cursor: not-allowed; }
     .btn-secondary { width:100%; background:transparent; color:#171A2B; border:1.5px solid rgba(23,26,43,0.15); border-radius:9999px; padding:13px 0; font-size:14px; font-weight:600; letter-spacing:0.02em; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:all 0.2s; font-family:'Geist',sans-serif; }
@@ -329,11 +329,11 @@ export default function AuthPage() {
     .btn-secondary:disabled { opacity:0.6; cursor:not-allowed; }
     .arrow-icon { display:inline-block; transition:transform 0.2s; }
     .btn-main:hover .arrow-icon { transform:translateX(4px); }
-    .tab-btn { flex:1; padding:14px 0; background:none; border:none; border-bottom:2px solid transparent; cursor:pointer; font-size:14px; font-family:'Geist',sans-serif; letter-spacing:0.02em; transition:all 0.2s; }
+    .tab-btn { flex:1; padding:11px 0; background:none; border:none; border-bottom:2px solid transparent; cursor:pointer; font-size:14px; font-family:'Geist',sans-serif; letter-spacing:0.02em; transition:all 0.2s; }
     .tab-active { border-bottom-color:#A78BFA; color:#171A2B; font-weight:700; }
     .tab-inactive { color:rgba(70,70,76,0.6); font-weight:500; }
     .input-wrap { position:relative; }
-    .field-input { width:100%; box-sizing:border-box; padding:13px 16px 13px 44px; background:rgba(255,255,255,0.9); border:1px solid #ECEAF5; border-radius:12px; font-size:16px; color:#111; font-family:'Inter',sans-serif; transition:border-color 0.3s, box-shadow 0.3s; }
+    .field-input { width:100%; box-sizing:border-box; padding:11px 16px 11px 44px; background:rgba(255,255,255,0.9); border:1px solid #ECEAF5; border-radius:12px; font-size:16px; color:#111; font-family:'Inter',sans-serif; transition:border-color 0.3s, box-shadow 0.3s; }
     .field-input::placeholder { color:rgba(70,70,76,0.4); }
     .field-input.has-right { padding-right:48px; }
     .field-icon-left { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:rgba(70,70,76,0.5); font-size:20px; pointer-events:none; }
@@ -354,15 +354,15 @@ export default function AuthPage() {
     .auth-home-link .auth-home-arrow { transition:transform 0.2s; }
     .auth-home-link:hover .auth-home-arrow { transform:translateX(-3px); }
     .green-dot { width:8px; height:8px; border-radius:50%; background:#22c55e; }
-    .oauth-divider { display:flex; align-items:center; gap:12px; margin-top:12px; color:rgba(70,70,76,0.45); font-size:12px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; }
+    .oauth-divider { display:flex; align-items:center; gap:12px; margin-top:6px; color:rgba(70,70,76,0.45); font-size:12px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; }
     .oauth-divider::before, .oauth-divider::after { content:''; flex:1; height:1px; background:rgba(229,225,227,0.8); }
-    .google-fallback { width:100%; min-height:50px; border-radius:9999px; border:1px solid #E5E7EB; background:#fff; color:#171A2B; font-family:'Geist',sans-serif; font-size:14px; font-weight:600; letter-spacing:0.02em; display:flex; align-items:center; justify-content:center; gap:10px; padding:14px 0; box-sizing:border-box; box-shadow:0 1px 2px rgba(17,24,39,0.04); }
-    .google-hint { margin-top:10px; font-size:12px; line-height:1.5; color:rgba(70,70,76,0.62); text-align:center; }
+    .google-fallback { width:100%; min-height:46px; border-radius:9999px; border:1px solid #E5E7EB; background:#fff; color:#171A2B; font-family:'Geist',sans-serif; font-size:14px; font-weight:600; letter-spacing:0.02em; display:flex; align-items:center; justify-content:center; gap:10px; padding:11px 0; box-sizing:border-box; box-shadow:0 1px 2px rgba(17,24,39,0.04); }
+    .google-hint { margin-top:6px; font-size:11px; line-height:1.4; color:rgba(70,70,76,0.62); text-align:center; }
     .inline-skeleton { width:100%; border-radius:9999px; background:linear-gradient(90deg, rgba(167,139,250,0.12), rgba(236,72,153,0.14), rgba(167,139,250,0.12)); background-size:200% 100%; animation:shimmer 1.4s linear infinite; }
-    .inline-skeleton.btn { height:50px; margin-top:6px; }
-    .inline-skeleton.google { height:50px; margin-top:2px; }
-    .google-button-shell { position:relative; min-height:50px; }
-    .google-button-host { width:100%; min-height:50px; display:flex; justify-content:center; }
+    .inline-skeleton.btn { height:44px; margin-top:6px; }
+    .inline-skeleton.google { height:44px; margin-top:2px; }
+    .google-button-shell { position:relative; min-height:44px; }
+    .google-button-host { width:100%; min-height:44px; display:flex; justify-content:center; }
     .google-button-skeleton { position:absolute; inset:0; }
     .auth-loading-overlay { position:absolute; inset:0; z-index:80; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; background:rgba(250,250,252,0.42); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border-radius:40px; }
     .auth-loading-spinner { width:42px; height:42px; border-radius:50%; border:3px solid rgba(167,139,250,0.18); border-top-color:#171A2B; animation:spin 0.8s linear infinite; }
@@ -620,7 +620,7 @@ export default function AuthPage() {
   );
 
   return (
-    <div style={{ fontFamily: "'Inter', sans-serif", background: '#FAFAFC', minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ fontFamily: "'Inter', sans-serif", background: '#FAFAFC', minHeight: '100vh', height: '100dvh', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
       <Script
         src="https://accounts.google.com/gsi/client"
         strategy="afterInteractive"
@@ -644,7 +644,7 @@ export default function AuthPage() {
         <span style={{ fontFamily: "'Geist',sans-serif", fontSize: 12, fontWeight: 600, letterSpacing: '0.05em', color: '#171A2B' }}>Token Efficiency: 94%</span>
       </div>
 
-      <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 10, padding: '48px 24px' }}>
+      <main style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 10, padding: 'clamp(10px, 2vh, 26px) 24px', overflowX: 'hidden', overflowY: 'auto' }}>
 
         {/* Background */}
         <div style={{ position: 'absolute', inset: 0, zIndex: 0, overflow: 'hidden', pointerEvents: 'none' }}>
@@ -677,7 +677,7 @@ export default function AuthPage() {
         </div>
 
         {/* Main Container */}
-        <div style={{ position: 'relative', zIndex: 20, width: '100%', maxWidth: 1200, display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 48, flexWrap: 'wrap' }}>
+        <div style={{ position: 'relative', zIndex: 20, width: '100%', maxWidth: 1200, margin: 'auto', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 40, flexWrap: 'wrap' }}>
 
           {/* LEFT */}
           <div style={{ flex: '1 1 400px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
@@ -762,7 +762,7 @@ export default function AuthPage() {
             }} />
 
             {/* Card */}
-            <div className="glass-floating" style={{ position: 'relative', borderRadius: 40, padding: '48px 40px', overflow: 'hidden', zIndex: 1, backdropFilter: 'blur(48px)' }}>
+            <div className="glass-floating" style={{ position: 'relative', borderRadius: 32, padding: 'clamp(16px, 2.2vh, 32px) clamp(24px, 3vw, 38px)', overflow: 'hidden', zIndex: 1, backdropFilter: 'blur(48px)' }}>
               {showSubmitOverlay && (
                 <div className="auth-loading-overlay">
                   <div className="auth-loading-spinner" />
@@ -787,17 +787,17 @@ export default function AuthPage() {
               {/* ── NORMAL AUTH VIEW ── */}
               {view === 'auth' && (
                 <>
-                  <div style={{ textAlign: 'center', marginBottom: 28 }}>
-                    <h2 style={{ fontFamily: "'Geist',sans-serif", fontSize: 24, fontWeight: 600, letterSpacing: '-0.01em', color: '#111', marginBottom: 6 }}>
+                  <div style={{ textAlign: 'center', marginBottom: 12 }}>
+                    <h2 style={{ fontFamily: "'Geist',sans-serif", fontSize: 22, fontWeight: 600, letterSpacing: '-0.01em', color: '#111', marginBottom: 4 }}>
                       {tab === 'signin' ? 'Welcome back' : 'Create Account'}
                     </h2>
-                    <p style={{ fontSize: 16, color: 'rgba(70,70,76,0.6)' }}>
+                    <p style={{ fontSize: 14, color: 'rgba(70,70,76,0.6)' }}>
                       {tab === 'signin' ? 'Sign in to continue to AURE' : 'Register your AURE developer profile'}
                     </p>
                   </div>
 
                   {/* Tabs */}
-                  <div style={{ display: 'flex', borderBottom: '1px solid #f3f4f6', marginBottom: 28 }}>
+                  <div style={{ display: 'flex', borderBottom: '1px solid #f3f4f6', marginBottom: 14 }}>
                     <button type="button" className={`tab-btn ${tab === 'signin' ? 'tab-active' : 'tab-inactive'}`} onClick={() => { setTab('signin'); setError(null); }}>Sign In</button>
                     <button type="button" className={`tab-btn ${tab === 'signup' ? 'tab-active' : 'tab-inactive'}`} onClick={() => { setTab('signup'); setError(null); }}>Create Account</button>
                   </div>
@@ -810,7 +810,7 @@ export default function AuthPage() {
 
                   {/* Form */}
                   <form onSubmit={handleSubmit}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
                       {/* Full Name — signup only */}
                       <div className={`signup-field ${tab === 'signup' ? 'visible' : 'hidden'}`}>
@@ -846,51 +846,54 @@ export default function AuthPage() {
                         </div>
                       </div>
 
-                      {/* Password */}
-                      <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, marginLeft: 4 }}>
-                          <label style={{ fontFamily: "'Geist',sans-serif", fontSize: 14, fontWeight: 500, letterSpacing: '0.02em', color: '#111' }}>Password</label>
-                          <button
-                            type="button"
-                            className="forgot-link"
-                            style={{ visibility: tab === 'signin' ? 'visible' : 'hidden' }}
-                            onClick={handleForgotOpen}
-                          >
-                            Forgot?
-                          </button>
+                      {/* Password + Confirm — side-by-side on signup so the card fits the viewport without scrolling */}
+                      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                        <div style={{ flex: '1 1 150px', minWidth: 0 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, marginLeft: 4 }}>
+                            <label style={{ fontFamily: "'Geist',sans-serif", fontSize: 14, fontWeight: 500, letterSpacing: '0.02em', color: '#111' }}>Password</label>
+                            <button
+                              type="button"
+                              className="forgot-link"
+                              style={{ visibility: tab === 'signin' ? 'visible' : 'hidden' }}
+                              onClick={handleForgotOpen}
+                            >
+                              Forgot?
+                            </button>
+                          </div>
+                          <div className="input-wrap">
+                            <Lock size={18} className="field-icon-left" />
+                            <input
+                              className="field-input input-glow has-right"
+                              type={showPass ? 'text' : 'password'}
+                              placeholder="••••••••"
+                              value={password}
+                              onChange={(e) => setPassword(e.target.value)}
+                              disabled={isBusy}
+                              required
+                            />
+                            <button type="button" className="field-icon-right" onClick={() => setShowPass(p => !p)}>
+                              {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                          </div>
                         </div>
-                        <div className="input-wrap">
-                          <Lock size={18} className="field-icon-left" />
-                          <input
-                            className="field-input input-glow has-right"
-                            type={showPass ? 'text' : 'password'}
-                            placeholder="••••••••"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            disabled={isBusy}
-                            required
-                          />
-                          <button type="button" className="field-icon-right" onClick={() => setShowPass(p => !p)}>
-                            {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
-                          </button>
-                        </div>
-                      </div>
 
-                      {/* Confirm Password — signup only */}
-                      <div className={`signup-field ${tab === 'signup' ? 'visible' : 'hidden'}`}>
-                        <label style={{ fontFamily: "'Geist',sans-serif", fontSize: 14, fontWeight: 500, letterSpacing: '0.02em', color: '#111', display: 'block', marginBottom: 6, marginLeft: 4 }}>Confirm Password</label>
-                        <div className="input-wrap">
-                          <Lock size={18} className="field-icon-left" />
-                          <input
-                            className="field-input input-glow has-right"
-                            type="password"
-                            placeholder="••••••••"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            disabled={isBusy}
-                            tabIndex={tab === 'signup' ? 0 : -1}
-                          />
-                        </div>
+                        {tab === 'signup' && (
+                          <div style={{ flex: '1 1 150px', minWidth: 0 }}>
+                            <label style={{ fontFamily: "'Geist',sans-serif", fontSize: 14, fontWeight: 500, letterSpacing: '0.02em', color: '#111', display: 'block', marginBottom: 6, marginLeft: 4 }}>Confirm Password</label>
+                            <div className="input-wrap">
+                              <Lock size={18} className="field-icon-left" />
+                              <input
+                                className="field-input input-glow has-right"
+                                type="password"
+                                placeholder="••••••••"
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                disabled={isBusy}
+                                tabIndex={tab === 'signup' ? 0 : -1}
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       {showInitialSkeleton ? (
@@ -938,8 +941,8 @@ export default function AuthPage() {
                         </div>
                       )}
 
-                      <div style={{ marginTop: 8, paddingTop: 20, borderTop: '1px solid rgba(229,225,227,0.5)', textAlign: 'center' }}>
-                        <p style={{ fontSize: 16, color: 'rgba(70,70,76,0.8)' }}>
+                      <div style={{ marginTop: 6, paddingTop: 14, borderTop: '1px solid rgba(229,225,227,0.5)', textAlign: 'center' }}>
+                        <p style={{ fontSize: 14, color: 'rgba(70,70,76,0.8)' }}>
                           {tab === 'signin' ? (
                             <>Don&apos;t have an account? <button type="button" className="link-style" onClick={() => { setTab('signup'); setError(null); }}>Get Started</button></>
                           ) : (
