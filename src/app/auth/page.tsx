@@ -343,10 +343,23 @@ export default function AuthPage() {
     .link-style:hover { color:#8B5CF6; }
     .forgot-link { font-size:12px; font-weight:600; color:#8B5CF6; text-decoration:none; letter-spacing:0.05em; transition:color 0.2s; background:none; border:none; cursor:pointer; font-family:'Inter',sans-serif; padding:0; }
     .forgot-link:hover { color:#09090B; }
-    .vault-card { display:none; }
-    @media(min-width:1024px) { .vault-card { display:block; } }
     @media(min-width:768px) { .badge-a-wrap { display:flex !important; } .badge-b-wrap { display:flex !important; } }
     @media(max-width:767px) { .badge-a-wrap { display:none !important; } .badge-b-wrap { display:none !important; } }
+    /* ── Responsive: below the desktop split, stack & center so the form leads ── */
+    @media (max-width: 1023px) {
+      .auth-container { flex-direction:column !important; align-items:center !important; justify-content:center !important; gap:18px !important; }
+      .auth-left { width:100% !important; align-items:center !important; flex:0 0 auto !important; }
+      .auth-headline { text-align:center !important; margin-bottom:0 !important; }
+      .auth-hero-visual { display:none !important; }
+      .auth-right { width:100% !important; max-width:440px !important; flex:0 0 auto !important; }
+    }
+    @media (max-width: 767px) {
+      .auth-main { padding-top:70px !important; }
+      .auth-headline h1 { font-size:clamp(26px,7.5vw,34px) !important; }
+    }
+    @media (max-width: 520px) {
+      .auth-token-badge { display:none !important; }
+    }
     .footer-link { font-size:12px; font-weight:600; color:rgba(70,70,76,0.6); text-decoration:none; letter-spacing:0.05em; transition:color 0.2s; }
     .footer-link:hover { color:#7C3AED; }
     .auth-home-link { cursor:pointer; transition:transform 0.2s, box-shadow 0.2s; }
@@ -371,7 +384,7 @@ export default function AuthPage() {
     @keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
     @keyframes shimmer { 0% { background-position:200% 0; } 100% { background-position:-200% 0; } }
     /* OTP boxes */
-    .otp-box { width:44px; height:54px; text-align:center; font-size:22px; font-weight:700; font-family:'Geist',sans-serif; color:#09090B; background:rgba(255,255,255,0.95); border:1.5px solid #ECEAF5; border-radius:12px; outline:none; transition:border-color 0.2s, box-shadow 0.2s, transform 0.15s; caret-color:#8B5CF6; }
+    .otp-box { width:clamp(30px,8.5vw,44px); height:clamp(42px,11vw,54px); text-align:center; font-size:clamp(18px,5.2vw,22px); font-weight:700; font-family:'Geist',sans-serif; color:#09090B; background:rgba(255,255,255,0.95); border:1.5px solid #ECEAF5; border-radius:12px; outline:none; transition:border-color 0.2s, box-shadow 0.2s, transform 0.15s; caret-color:#8B5CF6; }
     .otp-box:focus { border-color:#8B5CF6; box-shadow:0 0 0 3px rgba(139,92,246,0.2); transform:scale(1.06); }
     .otp-box.filled { border-color:#8B5CF6; background:linear-gradient(135deg,rgba(139,92,246,0.06),rgba(236,72,153,0.04)); }
     /* OTP timer */
@@ -480,7 +493,7 @@ export default function AuthPage() {
       </div>
       {fpError && errorBox(fpError)}
       <form onSubmit={handleVerifyOtp}>
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 20 }}>
+        <div style={{ display: 'flex', gap: 'clamp(4px, 1.6vw, 8px)', justifyContent: 'center', marginBottom: 20 }}>
           {fpOtp.map((digit, i) => (
             <input
               key={i}
@@ -639,12 +652,12 @@ export default function AuthPage() {
       </Link>
 
       {/* Top Right Badge */}
-      <div className="glass-floating" style={{ position: 'absolute', top: 24, right: 24, zIndex: 50, padding: '8px 16px', borderRadius: 9999, display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div className="glass-floating auth-token-badge" style={{ position: 'absolute', top: 24, right: 24, zIndex: 50, padding: '8px 16px', borderRadius: 9999, display: 'flex', alignItems: 'center', gap: 8 }}>
         <Zap size={16} color="#8B5CF6" />
         <span style={{ fontFamily: "'Geist',sans-serif", fontSize: 12, fontWeight: 600, letterSpacing: '0.05em', color: '#09090B' }}>Token Efficiency: 94%</span>
       </div>
 
-      <main style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 10, padding: 'clamp(10px, 2vh, 26px) 24px', overflowX: 'hidden', overflowY: 'auto' }}>
+      <main className="auth-main" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 10, padding: 'clamp(10px, 2vh, 26px) 24px', overflowX: 'hidden', overflowY: 'auto' }}>
 
         {/* Background */}
         <div style={{ position: 'absolute', inset: 0, zIndex: 0, overflow: 'hidden', pointerEvents: 'none' }}>
@@ -653,42 +666,19 @@ export default function AuthPage() {
           <div style={{ position: 'absolute', top: 0, right: 0, width: '120vw', height: '120vh', background: 'rgba(255,255,255,0.4)', backdropFilter: 'blur(48px)', transform: 'rotate(12deg) translate(33%,-25%)', borderRadius: 100, border: '1px solid rgba(255,255,255,0.2)', boxShadow: '0 25px 50px rgba(0,0,0,0.08)' }} />
         </div>
 
-        {/* Vault Preview */}
-        <div className="vault-card" style={{ position: 'absolute', top: '33%', right: '25%', zIndex: 10, opacity: 0.6, transform: 'translate(50%,-50%) rotate(6deg) scale(0.9)' }}>
-          <div className="glass-floating" style={{ padding: 24, borderRadius: 16, width: 320, position: 'relative', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.6)', boxShadow: '0 25px 50px rgba(0,0,0,0.1)' }}>
-            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: 4, background: 'linear-gradient(90deg,#60a5fa,#8B5CF6)' }} />
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-              <span style={{ padding: '4px 8px', background: '#eff6ff', color: '#2563eb', borderRadius: 4, fontSize: 11, fontWeight: 600 }}>Vault</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#22c55e' }}>
-                <span className="ms" style={{ fontSize: 16 }}>verified</span>
-                <span style={{ fontSize: 12, fontWeight: 700 }}>99</span>
-              </div>
-            </div>
-            <h3 style={{ fontFamily: "'Geist',sans-serif", fontSize: 14, fontWeight: 700, marginBottom: 8 }}>React Component Scaffold Generator</h3>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-              <span style={{ padding: '4px 10px', background: '#f3f4f6', color: '#4b5563', borderRadius: 9999, fontSize: 11 }}>React</span>
-              <span style={{ padding: '4px 10px', background: '#f3f4f6', color: '#4b5563', borderRadius: 9999, fontSize: 11 }}>TypeScript</span>
-            </div>
-            <div style={{ background: '#f9fafb', padding: 12, borderRadius: 8, border: '1px solid #f3f4f6', fontFamily: 'monospace', fontSize: 11, color: '#6b7280', height: 96, overflow: 'hidden', position: 'relative' }}>
-              <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: 48, background: 'linear-gradient(to top,#f9fafb,transparent)' }} />
-              You are an expert frontend engineer. Create a reusable React component for...
-            </div>
-          </div>
-        </div>
-
         {/* Main Container */}
-        <div style={{ position: 'relative', zIndex: 20, width: '100%', maxWidth: 1200, margin: 'auto', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 40, flexWrap: 'wrap' }}>
+        <div className="auth-container" style={{ position: 'relative', zIndex: 20, width: '100%', maxWidth: 1200, margin: 'auto', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 40, flexWrap: 'wrap' }}>
 
           {/* LEFT */}
-          <div style={{ flex: '1 1 400px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-            <div style={{ marginBottom: 24, textAlign: 'left' }}>
+          <div className="auth-left" style={{ flex: '1 1 400px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+            <div className="auth-headline" style={{ marginBottom: 24, textAlign: 'left' }}>
               <h1 style={{ fontFamily: "'Geist',sans-serif", fontSize: 'clamp(32px,4vw,48px)', lineHeight: 1.15, fontWeight: 700, letterSpacing: '-0.04em', color: '#111', marginBottom: 8 }}>
                 Architect your <br />
                 <span className="animated-remarkable-gradient">intelligence.</span>
               </h1>
             </div>
 
-            <div style={{ position: 'relative', width: '100%', maxWidth: 448 }}>
+            <div className="auth-hero-visual" style={{ position: 'relative', width: '100%', maxWidth: 448 }}>
               {/* PromptScore Badge */}
               <div className="badge-a-wrap glass-floating badge-a" style={{ position: 'absolute', top: -32, right: -64, zIndex: 40, padding: '14px 16px', borderRadius: 12, alignItems: 'center', gap: 14, border: '1px solid rgba(255,255,255,0.5)', backdropFilter: 'blur(48px)' }}>
                 <div style={{ position: 'relative', width: 48, height: 48 }}>
@@ -753,7 +743,7 @@ export default function AuthPage() {
           </div>
 
           {/* RIGHT: Auth Card */}
-          <div style={{ flex: '1 1 380px', position: 'relative', zIndex: 30, maxWidth: 480 }}>
+          <div className="auth-right" style={{ flex: '1 1 380px', position: 'relative', zIndex: 30, maxWidth: 480 }}>
             <div className="fluid-shape" style={{
               position: 'absolute', top: '50%', left: '50%',
               width: '110%', height: '110%',
