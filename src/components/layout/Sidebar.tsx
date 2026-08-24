@@ -9,10 +9,11 @@ import {
   Settings, User, Clock,
   Code2, Search, Film, PlaySquare, Image as ImageIcon,
   Megaphone, BookOpen, Mail, Star, ChevronDown, ChevronRight,
-  LogOut, Trash2, PanelLeftClose, PanelLeftOpen,
+  LogOut, Trash2, PanelLeftClose, PanelLeftOpen, Menu, X,
 } from 'lucide-react';
 import { fetchHistory, deleteHistoryItem } from '@/features/history/services/historyService';
 import ScoreSpinner from '@/components/ScoreSpinner';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 export type ActivePage = 'optimizer' | 'templates' | 'vault' | 'style-memory' | 'chaining' | 'settings' | 'chat';
 
@@ -57,6 +58,11 @@ export default function Sidebar() {
   
   // Collapse state
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
+  // Mobile drawer state — below 768px the sidebar becomes an off-canvas drawer.
+  const isMobile = useMediaQuery('(max-width: 768px)');
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  // On mobile the drawer always shows the full (expanded) nav — the 56px rail is desktop-only.
+  const showCollapsed = isCollapsed && !isMobile;
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [recentCollapsed, setRecentCollapsed] = useState(false);
   const [recentItems, setRecentItems] = useState<any[]>([]);
@@ -190,16 +196,22 @@ export default function Sidebar() {
   const toggleGroup = (label: string) =>
     setCollapsedGroups(prev => ({ ...prev, [label]: !prev[label] }));
 
+  // Close the mobile drawer whenever the route changes.
+  useEffect(() => {
+    setIsMobileOpen(false);
+  }, [pathname]);
+
   const navigate = (page: ActivePage) => {
     setShowRecentFlyout(false);
     setActiveTooltip(null);
+    setIsMobileOpen(false);
     router.push(`/dashboard/${page}`);
   };
 
   const isActive = (page: ActivePage) => pathname === `/dashboard/${page}` || (page === 'optimizer' && pathname === '/dashboard');
 
   const handleMouseEnterIcon = (e: React.MouseEvent, text: string, shortcut?: string) => {
-    if (!isCollapsed) return;
+    if (!showCollapsed) return;
     const rect = e.currentTarget.getBoundingClientRect();
     setActiveTooltip({
       text,
@@ -218,36 +230,43 @@ export default function Sidebar() {
         id="aure-dashboard-sidebar"
         aria-label="Main navigation"
         style={{
-          width: isCollapsed ? 56 : 240,
-          height: 'calc(100vh - 24px)',
+          width: showCollapsed ? 56 : 240,
+          height: isMobile ? '100vh' : 'calc(100vh - 24px)',
           display: 'flex',
           flexDirection: 'column',
           flexShrink: 0,
-          position: 'relative',
-          zIndex: 100,
-          margin: 12,
-          borderRadius: 16,
+          position: isMobile ? 'fixed' : 'relative',
+          left: isMobile ? 0 : undefined,
+          top: isMobile ? 0 : undefined,
+          zIndex: isMobile ? 1000 : 100,
+          margin: isMobile ? 0 : 12,
+          borderRadius: isMobile ? 0 : 16,
           overflow: 'hidden',
           background: 'rgba(250, 248, 255, 0.88)',
           backdropFilter: 'blur(24px) saturate(160%)',
           WebkitBackdropFilter: 'blur(24px) saturate(160%)',
           border: '1px solid rgba(139, 92, 246, 0.10)',
-          boxShadow: '0 2px 20px rgba(109,40,217,0.06), 0 1px 3px rgba(0,0,0,0.03)',
-          transition: 'width 220ms cubic-bezier(0.2, 0.8, 0.2, 1)',
+          boxShadow: isMobile
+            ? '0 8px 40px rgba(15,23,42,0.20)'
+            : '0 2px 20px rgba(109,40,217,0.06), 0 1px 3px rgba(0,0,0,0.03)',
+          transform: isMobile ? (isMobileOpen ? 'translateX(0)' : 'translateX(-100%)') : undefined,
+          transition: isMobile
+            ? 'transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1)'
+            : 'width 220ms cubic-bezier(0.2, 0.8, 0.2, 1)',
         }}
       >
         {/* Header / Logo bar */}
         <div
           style={{
-            padding: isCollapsed ? '14px 8px 12px' : '14px 14px 12px 16px',
+            padding: showCollapsed ? '14px 8px 12px' : '14px 14px 12px 16px',
             flexShrink: 0,
             borderBottom: '1px solid rgba(124,58,237,0.06)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: isCollapsed ? 'center' : 'space-between',
+            justifyContent: showCollapsed ? 'center' : 'space-between',
           }}
         >
-          {isCollapsed ? (
+          {showCollapsed ? (
             /* Collapsed Header: Aure Logo that reveals Sidebar expand icon on hover (ChatGPT style) */
             <button
               id="sidebar-expand-top-btn"
@@ -333,8 +352,9 @@ export default function Sidebar() {
 
               <button
                 id="sidebar-collapse-btn"
-                onClick={toggleSidebar}
-                title="Close sidebar (⌘B)"
+                onClick={isMobile ? () => setIsMobileOpen(false) : toggleSidebar}
+                title={isMobile ? 'Close menu' : 'Close sidebar (⌘B)'}
+                aria-label={isMobile ? 'Close menu' : 'Close sidebar'}
                 style={{
                   width: 28,
                   height: 28,
@@ -349,7 +369,9 @@ export default function Sidebar() {
                 }}
                 className="aure-soft-btn hover:!text-[#4C1D95]"
               >
-                <PanelLeftClose size={17} strokeWidth={1.75} />
+                {isMobile
+                  ? <X size={18} strokeWidth={1.9} />
+                  : <PanelLeftClose size={17} strokeWidth={1.75} />}
               </button>
             </>
           )}
@@ -361,14 +383,14 @@ export default function Sidebar() {
             flex: 1,
             overflowY: 'auto',
             overflowX: 'hidden',
-            padding: isCollapsed ? '8px 6px' : '10px 8px',
+            padding: showCollapsed ? '8px 6px' : '10px 8px',
             display: 'flex',
             flexDirection: 'column',
-            gap: isCollapsed ? 4 : 2,
+            gap: showCollapsed ? 4 : 2,
             scrollbarWidth: 'none',
           }}
         >
-          {isCollapsed ? (
+          {showCollapsed ? (
             /* COLLAPSED VIEW: Minimalist Clean Icon Rail (Matching ChatGPT Image 2) */
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
               {NAV_GROUPS.map((group, groupIdx) => (
@@ -775,9 +797,9 @@ export default function Sidebar() {
         </div>
 
         {/* Footer (ChatGPT style) */}
-        <div style={{ flexShrink: 0, padding: isCollapsed ? '0 6px 10px' : '0 8px 10px' }}>
+        <div style={{ flexShrink: 0, padding: showCollapsed ? '0 6px 10px' : '0 8px 10px' }}>
           <div style={{ height: 1, background: 'rgba(124,58,237,0.06)', margin: '0 0 8px' }} />
-          {isCollapsed ? (
+          {showCollapsed ? (
             /* Collapsed Footer: Avatar circular button (Matching Image 2 SH avatar) */
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
               <button
@@ -876,8 +898,55 @@ export default function Sidebar() {
         </div>
       </aside>
 
+      {/* Mobile: floating hamburger to open the drawer (hidden while open) */}
+      {isMobile && !isMobileOpen && (
+        <button
+          id="sidebar-mobile-toggle"
+          onClick={() => setIsMobileOpen(true)}
+          aria-label="Open navigation menu"
+          style={{
+            position: 'fixed',
+            top: 12,
+            left: 12,
+            width: 40,
+            height: 40,
+            borderRadius: 10,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(250, 248, 255, 0.92)',
+            backdropFilter: 'blur(12px) saturate(160%)',
+            WebkitBackdropFilter: 'blur(12px) saturate(160%)',
+            border: '1px solid rgba(139, 92, 246, 0.18)',
+            boxShadow: '0 4px 14px rgba(109,40,217,0.12)',
+            color: '#4C1D95',
+            cursor: 'pointer',
+            zIndex: 998,
+          }}
+        >
+          <Menu size={20} strokeWidth={1.9} />
+        </button>
+      )}
+
+      {/* Mobile: backdrop behind the open drawer — tap to close */}
+      {isMobile && isMobileOpen && (
+        <div
+          role="presentation"
+          onClick={() => setIsMobileOpen(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.40)',
+            backdropFilter: 'blur(2px)',
+            WebkitBackdropFilter: 'blur(2px)',
+            zIndex: 999,
+            animation: 'dropdownFadeIn 160ms ease-out',
+          }}
+        />
+      )}
+
       {/* Floating Tooltip in Collapsed Mode */}
-      {isCollapsed && activeTooltip && mounted && createPortal(
+      {showCollapsed && activeTooltip && mounted && createPortal(
         <div
           style={{
             position: 'fixed',

@@ -11,6 +11,7 @@ import {
 import { fetchHistory, fetchHistoryStats, toggleFavorite, deleteHistoryItems } from '@/features/history/services/historyService';
 import type { HistoryItem, HistoryStats, SortBy } from '@/features/history/types/history.types';
 import ScoreSpinner from '@/components/ScoreSpinner';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 const PAGE_SIZE = 10;
 

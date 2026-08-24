@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import FormattedPromptViewer from './FormattedPromptViewer';
 
 import { ROLES, ROLE_MODES, getModeIcon } from '@/constants/roles';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 function scoreColor(s: number) {
   if (s >= 80) return 'var(--color-success)';
@@ -245,13 +246,32 @@ export default function ComparisonBlock({
 
   const currentAnalysis = optimizationResult?.original_analysis || analysisResult;
 
+  const stackCards = useMediaQuery('(max-width: 1024px)');
+  const isMobile = useMediaQuery('(max-width: 768px)');
+  // Below ~560px a single row of 4 depth pills no longer fits, so the segmented
+  // control becomes a tidy 2×2 grid instead of wrapping one pill onto its own line.
+  const narrowControls = useMediaQuery('(max-width: 560px)');
+
+  // The two comparison cards are locked to 780px tall side-by-side on desktop.
+  // When they stack (≤1024px) they must go fluid-height; on phones (≤768px)
+  // they also shrink their padding/radius. Spread over `cardStyle` per use-site.
+  const responsiveCard: React.CSSProperties = {
+    flex: stackCards ? 'none' : 1,
+    padding: isMobile ? 20 : 36,
+    borderRadius: isMobile ? 20 : 28,
+    height: stackCards ? 'auto' : 780,
+    maxHeight: stackCards ? 'none' : 780,
+    minHeight: stackCards ? 460 : undefined,
+  };
+
   return (
-    <div style={{ display: 'flex', width: '100%', marginBottom: 32 }}>
+    <div style={{ display: 'flex', flexDirection: stackCards ? 'column' : 'row', gap: stackCards ? 20 : 0, width: '100%', marginBottom: 32 }}>
 
       {/* ── Left Card: Original Prompt ── */}
       <motion.div
         style={{
           ...cardStyle,
+          ...responsiveCard,
           overflowY: 'auto',
           scrollbarWidth: 'thin',
           scrollbarColor: 'rgba(124,58,237,0.2) transparent',
@@ -416,11 +436,15 @@ export default function ComparisonBlock({
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '1.2px' }}>Enhancement Depth</div>
             <div style={{
-              display: 'inline-flex', position: 'relative',
+              display: narrowControls ? 'grid' : 'inline-flex',
+              gridTemplateColumns: narrowControls ? '1fr 1fr' : undefined,
+              position: 'relative',
               background: 'linear-gradient(160deg, rgba(109,40,217,0.09) 0%, rgba(124,58,237,0.04) 100%)',
-              border: '1px solid rgba(124,58,237,0.13)', borderRadius: 9999, padding: 4,
+              border: '1px solid rgba(124,58,237,0.13)', borderRadius: narrowControls ? 16 : 9999, padding: 4,
               boxShadow: 'inset 0 2px 5px rgba(80,20,180,0.13), inset 0 1px 2px rgba(0,0,0,0.07), 0 1px 0 rgba(255,255,255,0.80)',
-              alignSelf: 'flex-start', gap: 2,
+              alignSelf: narrowControls ? 'stretch' : 'flex-start',
+              width: narrowControls ? '100%' : undefined,
+              gap: narrowControls ? 4 : 2,
             }}>
               {[
                 { id: 'auto' as const, label: 'Auto', icon: Zap },
@@ -487,7 +511,7 @@ export default function ComparisonBlock({
         </div>
 
           {/* Action buttons */}
-          <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 16 }}>
             <button
               id="analyze-btn"
               onClick={() => {
@@ -496,7 +520,8 @@ export default function ComparisonBlock({
               }}
               disabled={isAnalyzing || isOptimizing || originalText.length > 12000}
               style={{
-                display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 32px',
+                display: 'inline-flex', justifyContent: 'center', alignItems: 'center', gap: 7, padding: '8px 32px',
+                flex: narrowControls ? 1 : undefined,
                 borderRadius: 11, fontSize: 14, fontWeight: 600, border: 'none',
                 cursor: (isAnalyzing || isOptimizing || originalText.length > 12000) ? 'not-allowed' : 'pointer',
                 background: originalText.length > 12000 ? 'rgba(107,107,138,0.20)' : 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)',
@@ -518,7 +543,8 @@ export default function ComparisonBlock({
               }}
               disabled={isOptimizing || isAnalyzing || originalText.length > 12000}
               style={{
-                display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 32px',
+                display: 'inline-flex', justifyContent: 'center', alignItems: 'center', gap: 7, padding: '8px 32px',
+                flex: narrowControls ? 1 : undefined,
                 borderRadius: 11, fontSize: 14, fontWeight: 600,
                 cursor: (isOptimizing || isAnalyzing || originalText.length > 12000) ? 'not-allowed' : 'pointer',
                 background: (!isOptimizing && !isAnalyzing && originalText.length <= 12000)
@@ -544,15 +570,22 @@ export default function ComparisonBlock({
           <motion.div
             key={showScorePanel ? 'score' : 'optimized'}
             layout
-            initial={{ opacity: 0, flex: 0, paddingLeft: 0, minWidth: 0, width: 0 }}
-            animate={{ opacity: 1, flex: 0.818, paddingLeft: 24, minWidth: 0, width: 'auto' }}
-            exit={{ opacity: 0, flex: 0, paddingLeft: 0, minWidth: 0, width: 0 }}
+            initial={stackCards ? { opacity: 0, y: 12 } : { opacity: 0, flex: 0, paddingLeft: 0, minWidth: 0, width: 0 }}
+            animate={stackCards ? { opacity: 1, y: 0 } : { opacity: 1, flex: 0.818, paddingLeft: 24, minWidth: 0, width: 'auto' }}
+            exit={stackCards ? { opacity: 0, y: 8 } : { opacity: 0, flex: 0, paddingLeft: 0, minWidth: 0, width: 0 }}
             transition={{ type: 'spring', bounce: 0, duration: 0.6 }}
-            style={{ overflow: 'hidden', display: 'flex', height: 780, maxHeight: 780 }}
+            style={{
+              overflow: 'hidden',
+              display: 'flex',
+              width: stackCards ? '100%' : undefined,
+              flex: stackCards ? 'none' : undefined,
+              height: stackCards ? 'auto' : 780,
+              maxHeight: stackCards ? 'none' : 780,
+            }}
           >
             {/* Score panel */}
             {showScorePanel && (
-              <div style={{ ...cardStyle, width: '100%', flex: 'none', height: '100%', overflowY: 'auto' }}>
+              <div style={{ ...cardStyle, ...responsiveCard, width: '100%', flex: 'none', height: stackCards ? 'auto' : '100%', overflowY: 'auto' }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', letterSpacing: '1.2px', textTransform: 'uppercase', marginBottom: 8 }}>
                   Analysis
                 </div>
@@ -583,7 +616,7 @@ export default function ComparisonBlock({
 
             {/* Optimized panel */}
             {showOptimizedPanel && (
-              <div style={{ ...cardStyle, width: '100%', flex: 'none', height: '100%', padding: '36px 8px 36px 36px', overflow: 'hidden' }}>
+              <div style={{ ...cardStyle, ...responsiveCard, width: '100%', flex: 'none', height: stackCards ? 'auto' : '100%', padding: isMobile ? '20px 6px 20px 20px' : '36px 8px 36px 36px', overflow: 'hidden' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 24, height: 36, paddingRight: 28 }}>
                   <h2 style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', opacity: isOptimizing ? 0.6 : 1 }}>
                     Optimized Prompt

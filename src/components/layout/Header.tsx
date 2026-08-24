@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 interface HeaderProps {
   activeTab?: string;
@@ -22,6 +23,10 @@ export default function Header({ activeTab = 'Draft', onTabChange }: HeaderProps
 
   const [showStyleDropdown, setShowStyleDropdown] = useState(false);
   const [showTargetDropdown, setShowTargetDropdown] = useState(false);
+
+  // Below 768px the shared shell has a floating hamburger at top-left; the
+  // header wraps and reserves left space so its title clears that button.
+  const isMobile = useMediaQuery('(max-width: 768px)');
 
   const styleDropdownRef  = useRef<HTMLDivElement>(null);
   const targetDropdownRef = useRef<HTMLDivElement>(null);
@@ -64,19 +69,21 @@ export default function Header({ activeTab = 'Draft', onTabChange }: HeaderProps
 
   /* ── Shared inline styles as objects for readability ── */
   const pillBase: React.CSSProperties = {
-    display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '7px 12px',
     borderRadius: 9999, fontSize: 13, fontWeight: 500, cursor: 'pointer',
     whiteSpace: 'nowrap', transition: 'all 250ms ease',
+    width: isMobile ? '100%' : undefined,
   };
 
   return (
     <header style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '32px 48px 24px', gap: 16, flexShrink: 0,
+      padding: isMobile ? '16px 16px 14px' : '32px 48px 24px',
+      gap: 16, rowGap: 12, flexWrap: isMobile ? 'wrap' : 'nowrap', flexShrink: 0,
       maxWidth: 1100, margin: '0 auto', width: '100%',
     }}>
       {/* Left: Title + Tabs */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 20, paddingLeft: isMobile ? 44 : 0 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: '-0.02em' }}>
           {activeTab === 'Vault' ? 'Vault' : 'Optimizer'}
         </h1>
@@ -110,10 +117,10 @@ export default function Header({ activeTab = 'Draft', onTabChange }: HeaderProps
 
       {/* Right: Style + Target pills (only shown when not in Vault) */}
       {activeTab !== 'Vault' && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: isMobile ? '100%' : undefined }}>
 
         {/* Style dropdown */}
-        <div style={{ position: 'relative' }} ref={styleDropdownRef}>
+        <div style={{ position: 'relative', flex: isMobile ? 1 : undefined }} ref={styleDropdownRef}>
           <button
             onClick={() => { setShowStyleDropdown(!showStyleDropdown); setShowTargetDropdown(false); }}
             style={{
@@ -133,7 +140,7 @@ export default function Header({ activeTab = 'Draft', onTabChange }: HeaderProps
 
           {showStyleDropdown && (
             <div style={{
-              position: 'absolute', top: 'calc(100% + 8px)', right: 0, background: 'white',
+              position: 'absolute', top: 'calc(100% + 8px)', right: isMobile ? 'auto' : 0, left: isMobile ? 0 : 'auto', background: 'white',
               border: '1px solid rgba(124,58,237,0.10)', borderRadius: 12, minWidth: 200,
               overflow: 'hidden', zIndex: 100,
               boxShadow: '0 8px 24px rgba(109,40,217,0.10), 0 2px 8px rgba(0,0,0,0.06)',
@@ -162,7 +169,7 @@ export default function Header({ activeTab = 'Draft', onTabChange }: HeaderProps
         </div>
 
         {/* Target dropdown */}
-        <div style={{ position: 'relative' }} ref={targetDropdownRef}>
+        <div style={{ position: 'relative', flex: isMobile ? 1 : undefined }} ref={targetDropdownRef}>
           <button
             onClick={() => { setShowTargetDropdown(!showTargetDropdown); setShowStyleDropdown(false); }}
             style={{
