@@ -10,20 +10,26 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Prompt Enhancer — Write Better Prompts, Get Better Answers",
+  title: "AURE — Write Better Prompts, Get Better Answers",
   description:
-    "Prompt Enhancer helps you write better prompts so AI can give you better answers. Optimize for ChatGPT, Claude, Gemini, Midjourney, and more.",
+    "AURE helps you write better prompts so AI can give you better answers. Optimize for ChatGPT, Claude, Gemini, Midjourney, and more.",
   keywords: [
+    "AURE",
     "prompt engineering",
     "AI prompts",
     "ChatGPT",
     "Claude",
     "prompt optimizer",
   ],
+  icons: {
+    icon: "/logo_1.svg",
+    shortcut: "/logo_1.svg",
+    apple: "/logo_1.svg",
+  },
   openGraph: {
-    title: "Prompt Enhancer — Write Better Prompts, Get Better Answers",
+    title: "AURE — Write Better Prompts, Get Better Answers",
     description:
-      "Prompt Enhancer helps you write better prompts so AI can give you better answers.",
+      "AURE helps you write better prompts so AI can give you better answers.",
     type: "website",
   },
 };

@@ -264,7 +264,7 @@ export default function ComparisonBlock({
           Your Prompt
         </div>
         <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)', margin: '0 0 24px', letterSpacing: -0.3 }}>
-          Paste, drop, or write below
+          Paste or write below
         </h2>
 
         {/* Textarea */}
@@ -288,7 +288,7 @@ export default function ComparisonBlock({
             value={originalText}
             onChange={e => setOriginalText(e.target.value)}
             disabled={isOptimizing || isAnalyzing}
-            placeholder="Paste, drop, or write below..."
+            placeholder="Paste or write below..."
             style={{
               width: '100%', flex: 1, fontSize: 14, lineHeight: 1.6, color: 'var(--color-text-primary)',
               background: 'transparent', border: 'none', resize: 'none', outline: 'none', letterSpacing: '0.01em',

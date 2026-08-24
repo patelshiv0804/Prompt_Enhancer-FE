@@ -53,12 +53,7 @@ export default function Hero() {
           From rough ideas
           <br />
           to{" "}
-          <span style={{
-            background: "linear-gradient(135deg, #6366F1 0%, #8B5CF6 40%, #EC4899 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text",
-          }}>
+          <span className="animated-remarkable-gradient">
             remarkable
           </span>{" "}results.
         </motion.h1>
