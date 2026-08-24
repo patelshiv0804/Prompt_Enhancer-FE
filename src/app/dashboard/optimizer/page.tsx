@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { LayoutTemplate, X } from 'lucide-react';
 import { ComparisonBlock } from '@/features/optimizer';
 import ScoreSection from '@/features/optimizer/components/ScoreSection';
 import { apiClient } from '@/utils/apiClient';
@@ -23,6 +24,10 @@ function OptimizerPageContent() {
   const { activeStyle } = useAuth();
   const searchParams = useSearchParams();
   const promptId = searchParams.get('prompt_id');
+  // Template picked from the library "Use" button. Only the title is passed —
+  // the prompt body (the proprietary "recipe") is never exposed to the client.
+  const activeTemplateName = searchParams.get('template');
+  const [templateDismissed, setTemplateDismissed] = useState(false);
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isAnalyzed, setIsAnalyzed] = useState(false);
@@ -135,6 +140,12 @@ function OptimizerPageContent() {
       loadPromptDetails(promptId);
     }
   }, [promptId]);
+
+  // Re-show the "template in use" banner whenever a different template is
+  // opened from the library (a previous dismissal shouldn't hide the new one).
+  useEffect(() => {
+    setTemplateDismissed(false);
+  }, [activeTemplateName]);
 
   const handleRestoreVersion = async (versionNumber: number) => {
     if (!loadedPromptId) return;
@@ -323,6 +334,33 @@ function OptimizerPageContent() {
 
   return (
     <div className="workspace-container">
+      {activeTemplateName && !templateDismissed && (
+        <div id="active-template-banner" style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          padding: '12px 16px',
+          background: 'rgba(124,58,237,0.06)',
+          border: '1px solid rgba(124,58,237,0.18)',
+          borderRadius: 16,
+          maxWidth: 1100,
+          margin: '0 auto 20px',
+        }}>
+          <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 34, height: 34, borderRadius: 10, background: 'rgba(124,58,237,0.12)', color: 'var(--color-primary)', flexShrink: 0 }}>
+            <LayoutTemplate size={17} strokeWidth={2} />
+          </span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', letterSpacing: 0.4, textTransform: 'uppercase' }}>Template in use</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{activeTemplateName}</div>
+          </div>
+          <button onClick={() => setTemplateDismissed(true)} aria-label="Stop using template"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 30, height: 30, borderRadius: 8, border: 'none', background: 'transparent', color: 'var(--color-text-secondary)', cursor: 'pointer', flexShrink: 0, transition: 'all 180ms ease' }}
+            className="hover:!bg-[rgba(124,58,237,0.10)] hover:!text-[var(--color-primary)]"
+          >
+            <X size={16} strokeWidth={2} />
+          </button>
+        </div>
+      )}
       {error && (
         <div style={{
           padding: '12px 20px',
