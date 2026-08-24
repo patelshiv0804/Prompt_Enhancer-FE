@@ -107,14 +107,14 @@ function useCountUp(target: number, active: boolean, duration = 1200): number {
 /* ── StatCard ── */
 interface StatCardProps {
   label: string; value: number; suffix?: string; prefix?: string;
-  icon: React.ElementType; accent: string; sub?: React.ReactNode; sparkline?: boolean; animate: boolean;
+  icon: React.ElementType; accent: string; sub?: React.ReactNode; sparkline?: boolean; animate: boolean; isMobile?: boolean;
 }
 
-function StatCard({ label, value, suffix = '', prefix = '', icon: Icon, accent, sub, sparkline, animate }: StatCardProps) {
+function StatCard({ label, value, suffix = '', prefix = '', icon: Icon, accent, sub, sparkline, animate, isMobile = false }: StatCardProps) {
   const count = useCountUp(value, animate);
   return (
     <div style={{
-      background: '#FFFFFF', border: '1px solid rgba(124,58,237,0.10)', borderRadius: 16, padding: '20px 24px',
+      background: '#FFFFFF', border: '1px solid rgba(124,58,237,0.10)', borderRadius: 16, padding: isMobile ? '16px 16px' : '20px 24px',
       flex: '1 1 0', minWidth: 0, boxShadow: '0 4px 12px rgba(109,40,217,0.06), 0 1px 3px rgba(0,0,0,0.04)',
       display: 'flex', flexDirection: 'column', gap: 8, transition: 'transform 250ms ease, box-shadow 250ms ease',
     }}
@@ -126,7 +126,7 @@ function StatCard({ label, value, suffix = '', prefix = '', icon: Icon, accent, 
           <Icon size={14} strokeWidth={2} />
         </div>
       </div>
-      <div style={{ fontSize: 32, fontWeight: 800, color: accent, letterSpacing: -1, lineHeight: 1 }}>
+      <div style={{ fontSize: isMobile ? 27 : 32, fontWeight: 800, color: accent, letterSpacing: -1, lineHeight: 1 }}>
         {prefix}{count.toLocaleString()}{suffix}
       </div>
       {sub && <div style={{ marginTop: 4 }}>{sub}</div>}
@@ -140,7 +140,7 @@ function StatCard({ label, value, suffix = '', prefix = '', icon: Icon, accent, 
 }
 
 /* ── VaultRow ── */
-function VaultRow({ item, isSelectionMode, selected, onSelect, onToggleFavorite, onDelete, onOpenInOptimizer }: { item: HistoryItem; isSelectionMode: boolean; selected: boolean; onSelect: (id: string) => void; onToggleFavorite: (id: string, current: boolean) => void; onDelete: (id: string) => void; onOpenInOptimizer: (id: string) => void; }) {
+function VaultRow({ item, isSelectionMode, selected, onSelect, onToggleFavorite, onDelete, onOpenInOptimizer, isMobile = false }: { item: HistoryItem; isSelectionMode: boolean; selected: boolean; onSelect: (id: string) => void; onToggleFavorite: (id: string, current: boolean) => void; onDelete: (id: string) => void; onOpenInOptimizer: (id: string) => void; isMobile?: boolean; }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const Icon    = CATEGORY_ICONS[item.category] || FileText;
@@ -156,7 +156,7 @@ function VaultRow({ item, isSelectionMode, selected, onSelect, onToggleFavorite,
 
   return (
     <div id={`vault-row-${item.id}`} style={{
-      display: 'flex', alignItems: 'center', gap: 16, padding: '14px 20px',
+      display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 16, padding: isMobile ? '11px 12px' : '14px 20px',
       background: menuOpen ? 'rgba(124,58,237,0.04)' : selected ? 'rgba(124,58,237,0.03)' : '#FFFFFF',
       border: selected ? '1px solid rgba(124,58,237,0.25)' : '1px solid rgba(124,58,237,0.09)', borderRadius: 14,
       transition: 'background 200ms ease, box-shadow 200ms ease, border-color 200ms ease',
@@ -182,19 +182,19 @@ function VaultRow({ item, isSelectionMode, selected, onSelect, onToggleFavorite,
           style={{ width: 16, height: 16, accentColor: '#7C3AED', cursor: 'pointer', flexShrink: 0 }}
         />
       )}
-      <div style={{ width: 38, height: 38, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accent, background: `${accent}14`, border: `1px solid ${accent}22`, flexShrink: 0 }}>
-        <Icon size={16} strokeWidth={1.6} />
+      <div style={{ width: isMobile ? 32 : 38, height: isMobile ? 32 : 38, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accent, background: `${accent}14`, border: `1px solid ${accent}22`, flexShrink: 0 }}>
+        <Icon size={isMobile ? 15 : 16} strokeWidth={1.6} />
       </div>
 
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
         <p style={{ margin: 0, fontSize: 14, fontWeight: 500, color: 'var(--color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.prompt}</p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--color-text-secondary)' }}>
-          <Clock size={11} strokeWidth={1.5} />
-          <span>{timeAgo(item.createdAt)}</span>
-          <span style={{ opacity: 0.3 }}>·</span>
-          <span style={{ fontWeight: 500 }}>{item.targetModel}</span>
-          <span style={{ opacity: 0.3 }}>·</span>
-          <span style={{ fontWeight: 500 }}>{item.mode}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--color-text-secondary)', minWidth: 0, overflow: 'hidden', whiteSpace: 'nowrap' }}>
+          <Clock size={11} strokeWidth={1.5} style={{ flexShrink: 0 }} />
+          <span style={{ flexShrink: 0 }}>{timeAgo(item.createdAt)}</span>
+          <span style={{ opacity: 0.3, flexShrink: 0 }}>·</span>
+          <span style={{ fontWeight: 500, flexShrink: 0 }}>{item.targetModel}</span>
+          <span style={{ opacity: 0.3, flexShrink: 0 }}>·</span>
+          <span style={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.mode}</span>
         </div>
       </div>
 
@@ -294,6 +294,17 @@ export default function VaultPage() {
   const [statsLoading,   setStatsLoading]   = useState(true);
 
   const sortRef = useRef<HTMLDivElement>(null);
+
+  /* Responsive breakpoints — inline styles beat CSS @media (specificity), so
+     layout decisions are driven from JS via matchMedia. Mirrors the pattern in
+     ComparisonBlock/ScoreSection. */
+  const isTablet = useMediaQuery('(max-width: 1024px)');
+  const isMobile = useMediaQuery('(max-width: 768px)');
+  // Horizontal page padding as a longhand value. Kept separate from the
+  // paddingTop/paddingBottom longhands below — mixing a `padding` shorthand with
+  // longhand props triggers a React "conflicting style property" warning when the
+  // shorthand changes across rerenders (which it does, per breakpoint).
+  const pagePadX = isMobile ? 16 : isTablet ? 32 : 48;
 
   /* Debounce search */
   useEffect(() => {
@@ -468,24 +479,24 @@ export default function VaultPage() {
 
   if (initialLoading) {
     return (
-      <div id="vault-page-loading" style={{ maxWidth: 1100, margin: '0 auto', padding: '0 48px', paddingTop: 8, width: '100%', display: 'flex', flexDirection: 'column', paddingBottom: 64 }}>
+      <div id="vault-page-loading" style={{ maxWidth: 1100, margin: '0 auto', paddingLeft: pagePadX, paddingRight: pagePadX, paddingTop: 8, width: '100%', display: 'flex', flexDirection: 'column', paddingBottom: 64 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '32px 0 28px' }}>
           <div>
-            <div className="skeleton" style={{ height: 24, width: 240, borderRadius: 8, marginBottom: 10 }} />
-            <div className="skeleton" style={{ height: 14, width: 360, borderRadius: 8 }} />
+            <div className="skeleton" style={{ height: 24, width: 240, maxWidth: '55vw', borderRadius: 8, marginBottom: 10 }} />
+            <div className="skeleton" style={{ height: 14, width: 360, maxWidth: '80vw', borderRadius: 8 }} />
           </div>
-          <div className="skeleton" style={{ height: 40, width: 130, borderRadius: 10 }} />
+          <div className="skeleton" style={{ height: 40, width: 130, borderRadius: 10, flexShrink: 0 }} />
         </div>
 
-        <div style={{ display: 'flex', gap: 16, marginBottom: 28 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isTablet ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? 12 : 16, marginBottom: isMobile ? 20 : 28 }}>
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="skeleton" style={{ flex: '1 1 0', height: 116, borderRadius: 16 }} />
+            <div key={i} className="skeleton" style={{ height: 116, borderRadius: 16 }} />
           ))}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
-          <div className="skeleton" style={{ height: 40, width: 260, borderRadius: 10 }} />
-          <div className="skeleton" style={{ height: 34, width: 560, borderRadius: 9999 }} />
+          <div className="skeleton" style={{ height: 40, width: isMobile ? '100%' : 260, borderRadius: 10 }} />
+          <div className="skeleton" style={{ height: 34, flex: '1 1 200px', minWidth: 0, borderRadius: 9999 }} />
           <div className="skeleton" style={{ height: 38, width: 90, borderRadius: 10 }} />
         </div>
 
@@ -499,24 +510,24 @@ export default function VaultPage() {
   }
 
   return (
-    <div id="vault-page" style={{ maxWidth: 1100, margin: '0 auto', padding: '0 48px', paddingTop: 8, width: '100%', display: 'flex', flexDirection: 'column', paddingBottom: 64 }}>
+    <div id="vault-page" style={{ maxWidth: 1100, margin: '0 auto', paddingLeft: pagePadX, paddingRight: pagePadX, paddingTop: 8, width: '100%', display: 'flex', flexDirection: 'column', paddingBottom: 64 }}>
 
       {/* Stats */}
-      <div style={{ display: 'flex', gap: 16, marginBottom: 28 }}>
-        <StatCard label="Total Prompts" value={stats?.totalPrompts ?? 0} icon={Sparkles} accent="#7C3AED" animate={statsAnimate} />
-        <StatCard label="Avg Score" value={stats?.averageScore ?? 0} suffix="%" icon={TrendingUp} accent="#10B981" animate={statsAnimate}
+      <div style={{ display: 'grid', gridTemplateColumns: isTablet ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? 12 : 16, marginBottom: isMobile ? 20 : 28 }}>
+        <StatCard label="Total Prompts" value={stats?.totalPrompts ?? 0} icon={Sparkles} accent="#7C3AED" animate={statsAnimate} isMobile={isMobile} />
+        <StatCard label="Avg Score" value={stats?.averageScore ?? 0} suffix="%" icon={TrendingUp} accent="#10B981" animate={statsAnimate} isMobile={isMobile}
           sub={<div style={{ height: 4, background: 'rgba(16,185,129,0.12)', borderRadius: 99, overflow: 'hidden' }}><div style={{ height: '100%', background: '#10B981', borderRadius: 99, width: statsAnimate ? `${stats?.averageScore ?? 0}%` : '0%', transition: 'width 1.2s ease-out' }} /></div>}
         />
-        <StatCard label="This Week" value={stats?.thisWeekDelta ?? 0} prefix="+" icon={Zap} accent="#0EA5E9" animate={statsAnimate} sparkline />
-        <StatCard label="Favorites" value={stats?.favoritesCount ?? 0} icon={Star} accent="#F59E0B" animate={statsAnimate}
+        <StatCard label="This Week" value={stats?.thisWeekDelta ?? 0} prefix="+" icon={Zap} accent="#0EA5E9" animate={statsAnimate} isMobile={isMobile} sparkline />
+        <StatCard label="Favorites" value={stats?.favoritesCount ?? 0} icon={Star} accent="#F59E0B" animate={statsAnimate} isMobile={isMobile}
           sub={<button id="view-all-favorites-btn" onClick={() => setActiveCategory('favorites')} style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-primary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} className="hover:underline">View all →</button>}
         />
       </div>
 
       {/* Toolbar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 12, marginBottom: 16, flexWrap: 'wrap' }}>
         {/* Search */}
-        <div style={{ position: 'relative', flex: '0 0 260px' }}>
+        <div style={{ position: 'relative', flex: isMobile ? '1 1 100%' : '0 0 260px' }}>
           <Search size={14} strokeWidth={1.8} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-secondary)', pointerEvents: 'none' }} />
           <input id="vault-search-input" type="text" placeholder="Search prompts..." value={search} onChange={e => setSearch(e.target.value)}
             style={{ width: '100%', padding: '9px 36px 9px 36px', fontSize: 13, background: '#FFFFFF', border: '1px solid rgba(124,58,237,0.12)', borderRadius: 10, outline: 'none', color: 'var(--color-text-primary)', transition: 'border-color 200ms ease, box-shadow 200ms ease' }}
@@ -526,7 +537,7 @@ export default function VaultPage() {
         </div>
 
         {/* Category chips */}
-        <div id="vault-filter-chips" style={{ display: 'flex', gap: 6, overflowX: 'auto', flexWrap: 'nowrap', flex: 1, scrollbarWidth: 'none', msOverflowStyle: 'none' }} className="no-scrollbar">
+        <div id="vault-filter-chips" style={{ display: 'flex', gap: 6, overflowX: 'auto', flexWrap: 'nowrap', flex: isMobile ? '1 1 100%' : 1, minWidth: 0, scrollbarWidth: 'none', msOverflowStyle: 'none' }} className="no-scrollbar">
           {FILTER_CATEGORIES.map(cat => (
             <button key={cat.id} id={`filter-${cat.id}`} onClick={() => setActiveCategory(cat.id)}
               style={{
@@ -542,9 +553,9 @@ export default function VaultPage() {
         </div>
 
         {/* Sort */}
-        <div style={{ position: 'relative', flexShrink: 0 }} ref={sortRef}>
+        <div style={{ position: 'relative', flex: isMobile ? '1 1 0' : '0 0 auto' }} ref={sortRef}>
           <button id="sort-btn" onClick={() => setShowSort(v => !v)}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, fontSize: 13, fontWeight: 500, border: '1px solid rgba(124,58,237,0.12)', cursor: 'pointer', background: '#FFFFFF', color: 'var(--color-text-secondary)', transition: 'all 200ms ease' }}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: 6, padding: '8px 14px', borderRadius: 10, fontSize: 13, fontWeight: 500, border: '1px solid rgba(124,58,237,0.12)', cursor: 'pointer', background: '#FFFFFF', color: 'var(--color-text-secondary)', transition: 'all 200ms ease', width: isMobile ? '100%' : undefined }}
             className="hover:!border-[rgba(124,58,237,0.22)] hover:!text-[var(--color-text-primary)]"
           >
             <SlidersHorizontal size={13} strokeWidth={2} />{activeSortLabel}
@@ -568,10 +579,10 @@ export default function VaultPage() {
         {/* Select / Multiple Delete Mode Toggle Button */}
         <button id="vault-toggle-select-btn" onClick={() => { setIsSelectionMode(v => !v); setSelectedIds(new Set()); }}
           style={{
-            display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, fontSize: 13, fontWeight: 500,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, fontSize: 13, fontWeight: 500,
             border: isSelectionMode ? '1px solid rgba(124,58,237,0.30)' : '1px solid rgba(124,58,237,0.12)', cursor: 'pointer',
             background: isSelectionMode ? 'rgba(124,58,237,0.08)' : '#FFFFFF',
-            color: isSelectionMode ? 'var(--color-primary)' : 'var(--color-text-secondary)', transition: 'all 200ms ease', flexShrink: 0,
+            color: isSelectionMode ? 'var(--color-primary)' : 'var(--color-text-secondary)', transition: 'all 200ms ease', flex: isMobile ? '1 1 0' : '0 0 auto', width: isMobile ? '100%' : undefined,
           }}
           className="hover:!border-[rgba(124,58,237,0.22)] hover:!text-[var(--color-text-primary)]"
         >
@@ -581,7 +592,7 @@ export default function VaultPage() {
 
       {/* Selection action bar (rendered ONLY in selection mode) */}
       {isSelectionMode && items.length > 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, padding: '10px 16px', background: 'rgba(124,58,237,0.04)', borderRadius: 12, border: '1px solid rgba(124,58,237,0.10)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 12, padding: '10px 16px', background: 'rgba(124,58,237,0.04)', borderRadius: 12, border: '1px solid rgba(124,58,237,0.10)' }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--color-text-primary)', fontWeight: 600, cursor: 'pointer' }}>
             <input
               id="vault-select-all"
@@ -634,7 +645,7 @@ export default function VaultPage() {
             <p style={{ fontSize: 14, color: 'var(--color-text-secondary)', margin: 0 }}>Save optimized prompts to build your personal library.</p>
           </div>
         ) : items.map(item => (
-          <VaultRow key={item.id} item={item} isSelectionMode={isSelectionMode} selected={selectedIds.has(item.id)} onSelect={toggleSelected} onToggleFavorite={handleToggleFavorite} onDelete={(id) => requestDelete([id])} onOpenInOptimizer={(id) => router.push(`/dashboard/chat/${id}`)} />
+          <VaultRow key={item.id} item={item} isSelectionMode={isSelectionMode} selected={selectedIds.has(item.id)} onSelect={toggleSelected} onToggleFavorite={handleToggleFavorite} onDelete={(id) => requestDelete([id])} onOpenInOptimizer={(id) => router.push(`/dashboard/chat/${id}`)} isMobile={isMobile} />
         ))}
       </div>
 

@@ -45,7 +45,7 @@ export default function AuthPage() {
   const googleButtonRef = useRef<HTMLDivElement | null>(null);
 
   const { login, register, loginWithGoogle, loading,
-          sendPasswordResetOtp, verifyPasswordResetOtp, resetPassword } = useAuth();
+    sendPasswordResetOtp, verifyPasswordResetOtp, resetPassword } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -428,7 +428,7 @@ export default function AuthPage() {
     const cur = stepFor(view);
     return (
       <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 28 }}>
-        {[1,2,3].map(s => (
+        {[1, 2, 3].map(s => (
           <div key={s} className={`step-dot ${s === cur ? 'active' : s < cur ? 'done' : 'upcoming'}`} />
         ))}
       </div>
@@ -573,9 +573,9 @@ export default function AuthPage() {
             {/* Strength indicator */}
             {fpNewPass.length > 0 && (
               <div style={{ marginTop: 8, display: 'flex', gap: 4 }}>
-                {[0,1,2,3].map(i => {
+                {[0, 1, 2, 3].map(i => {
                   const strength = fpNewPass.length >= 12 ? 4 : fpNewPass.length >= 10 ? 3 : fpNewPass.length >= 8 ? 2 : 1;
-                  const colors = ['#ef4444','#f97316','#eab308','#22c55e'];
+                  const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e'];
                   return (
                     <div key={i} style={{ flex: 1, height: 3, borderRadius: 9999, background: i < strength ? colors[strength - 1] : 'rgba(70,70,76,0.1)', transition: 'background 0.3s' }} />
                   );
@@ -918,10 +918,10 @@ export default function AuthPage() {
                         <div>
                           <div className="google-fallback">
                             <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
-                              <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.654 32.657 29.221 36 24 36c-6.627 0-12-5.373-12-12S17.373 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.278 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917Z"/>
-                              <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.278 4 24 4c-7.682 0-14.346 4.337-17.694 10.691Z"/>
-                              <path fill="#4CAF50" d="M24 44c5.18 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.143 35.091 26.715 36 24 36c-5.2 0-9.62-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44Z"/>
-                              <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.05 12.05 0 0 1-4.084 5.571h.003l6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917Z"/>
+                              <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.654 32.657 29.221 36 24 36c-6.627 0-12-5.373-12-12S17.373 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.278 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917Z" />
+                              <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.278 4 24 4c-7.682 0-14.346 4.337-17.694 10.691Z" />
+                              <path fill="#4CAF50" d="M24 44c5.18 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.143 35.091 26.715 36 24 36c-5.2 0-9.62-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44Z" />
+                              <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.05 12.05 0 0 1-4.084 5.571h.003l6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917Z" />
                             </svg>
                             {tab === 'signin' ? 'Continue with Google' : 'Sign up with Google'}
                           </div>
