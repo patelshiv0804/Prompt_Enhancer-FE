@@ -70,16 +70,16 @@ function SpotlightBanner({
   onQuickLook,
   bookmarkedIds,
   onToggleBookmark,
-  isMobile,
-  isTablet,
+  isStacked,
+  isSmall,
 }: {
   templates: Template[];
   onUse: (t: Template) => void;
   onQuickLook: (t: Template) => void;
   bookmarkedIds: Set<string>;
   onToggleBookmark: (id: string) => void;
-  isMobile: boolean;
-  isTablet: boolean;
+  isStacked: boolean;
+  isSmall: boolean;
 }) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -100,15 +100,15 @@ function SpotlightBanner({
     <div
       id="spotlight-carousel-banner"
       style={{
-        borderRadius: 28,
+        borderRadius: isSmall ? 20 : 28,
         overflow: 'hidden',
-        marginBottom: isMobile ? 24 : 36,
+        marginBottom: isStacked ? 22 : 36,
         position: 'relative',
         background: 'linear-gradient(135deg, #09090D 0%, #150D2A 50%, #200E3E 100%)',
         boxShadow: '0 20px 48px rgba(109,40,217,0.25), 0 4px 14px rgba(0,0,0,0.14)',
         border: '1px solid rgba(139,92,246,0.28)',
         color: '#FFFFFF',
-        minHeight: isMobile ? 'auto' : 320,
+        minHeight: isStacked ? 'auto' : 320,
       }}
     >
       {/* Ambient background glow & radial highlights */}
@@ -126,16 +126,16 @@ function SpotlightBanner({
         style={{
           position: 'relative',
           display: 'grid',
-          gridTemplateColumns: isTablet ? '1fr' : '1.15fr 0.85fr',
+          gridTemplateColumns: isStacked ? '1fr' : '1.15fr 0.85fr',
           alignItems: 'center',
-          padding: isMobile ? '28px 20px' : '40px 44px',
-          gap: isMobile ? 24 : 36,
+          padding: isSmall ? '20px 16px' : isStacked ? '30px 24px' : '38px 44px',
+          gap: isSmall ? 18 : isStacked ? 22 : 36,
         }}
       >
         {/* LEFT COLUMN: Metadata, Title, Description, Tags, Actions */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, justifyContent: 'center' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: isSmall ? 12 : 16, justifyContent: 'center' }}>
           {/* Top Pill Badges */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
             <span
               style={{
                 display: 'inline-flex',
@@ -143,15 +143,15 @@ function SpotlightBanner({
                 gap: 5,
                 background: 'linear-gradient(135deg, #8B5CF6, #EC4899)',
                 borderRadius: 9999,
-                padding: '5px 13px',
-                fontSize: 11,
+                padding: isSmall ? '3px 10px' : '5px 13px',
+                fontSize: isSmall ? 10.5 : 11,
                 fontWeight: 700,
                 letterSpacing: '0.05em',
                 textTransform: 'uppercase',
                 boxShadow: '0 2px 10px rgba(139,92,246,0.45)',
               }}
             >
-              <Sparkles size={12} /> Spotlight
+              <Sparkles size={11} /> Spotlight
             </span>
 
             <span
@@ -163,13 +163,13 @@ function SpotlightBanner({
                 backdropFilter: 'blur(10px)',
                 border: '1px solid rgba(255,255,255,0.18)',
                 borderRadius: 9999,
-                padding: '5px 13px',
-                fontSize: 12,
+                padding: isSmall ? '3px 10px' : '5px 13px',
+                fontSize: isSmall ? 11 : 12,
                 fontWeight: 600,
                 color: '#EDE9FE',
               }}
             >
-              <Icon size={13} strokeWidth={2} />
+              <Icon size={12} strokeWidth={2} />
               {categoryLabel(current.category)}
             </span>
 
@@ -181,8 +181,8 @@ function SpotlightBanner({
                 background: 'rgba(255,255,255,0.08)',
                 border: '1px solid rgba(255,255,255,0.12)',
                 borderRadius: 9999,
-                padding: '5px 11px',
-                fontSize: 11.5,
+                padding: isSmall ? '3px 8px' : '5px 11px',
+                fontSize: isSmall ? 10.5 : 11.5,
                 color: 'rgba(255,255,255,0.85)',
               }}
             >
@@ -194,7 +194,7 @@ function SpotlightBanner({
           {/* Title */}
           <h2
             style={{
-              fontSize: isMobile ? 22 : 27,
+              fontSize: isSmall ? 20 : isStacked ? 23 : 27,
               fontWeight: 800,
               color: '#FFFFFF',
               letterSpacing: '-0.025em',
@@ -213,7 +213,7 @@ function SpotlightBanner({
               margin: 0,
               lineHeight: 1.65,
               display: '-webkit-box',
-              WebkitLineClamp: 3,
+              WebkitLineClamp: isSmall ? 3 : 3,
               WebkitBoxOrient: 'vertical',
               overflow: 'hidden',
             }}
@@ -228,9 +228,9 @@ function SpotlightBanner({
                 <span
                   key={tag}
                   style={{
-                    fontSize: 11.5,
+                    fontSize: isSmall ? 10.5 : 11.5,
                     fontWeight: 600,
-                    padding: '4px 11px',
+                    padding: isSmall ? '2px 8px' : '4px 11px',
                     borderRadius: 9999,
                     background: 'rgba(255,255,255,0.10)',
                     border: '1px solid rgba(255,255,255,0.14)',
@@ -244,17 +244,18 @@ function SpotlightBanner({
           )}
 
           {/* Action Row */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 11, flexWrap: 'wrap', marginTop: 4 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: isSmall ? 8 : 11, flexWrap: 'wrap', marginTop: 4 }}>
             <button
               id="spotlight-use-btn"
               onClick={() => onUse(current)}
               style={{
                 display: 'flex',
                 alignItems: 'center',
+                justifyContent: 'center',
                 gap: 7,
-                padding: '11px 22px',
+                padding: isSmall ? '10px 16px' : '11px 22px',
                 borderRadius: 12,
-                fontSize: 13.5,
+                fontSize: isSmall ? 12.5 : 13.5,
                 fontWeight: 700,
                 border: 'none',
                 cursor: 'pointer',
@@ -262,12 +263,13 @@ function SpotlightBanner({
                 color: 'white',
                 boxShadow: '0 4px 20px rgba(139,92,246,0.45)',
                 transition: 'all 200ms ease',
+                flex: isSmall ? '1 1 auto' : undefined,
               }}
               className="hover:brightness-110 hover:translate-y-[-1px]"
             >
-              <Zap size={15} strokeWidth={2.2} />
+              <Zap size={14} strokeWidth={2.2} />
               <span>Use in Optimizer</span>
-              <ArrowUpRight size={14} />
+              <ArrowUpRight size={13} />
             </button>
 
             <button
@@ -276,10 +278,11 @@ function SpotlightBanner({
               style={{
                 display: 'flex',
                 alignItems: 'center',
+                justifyContent: 'center',
                 gap: 6,
-                padding: '11px 18px',
+                padding: isSmall ? '10px 14px' : '11px 18px',
                 borderRadius: 12,
-                fontSize: 13.5,
+                fontSize: isSmall ? 12.5 : 13.5,
                 fontWeight: 600,
                 border: '1px solid rgba(255,255,255,0.22)',
                 background: 'rgba(255,255,255,0.10)',
@@ -287,6 +290,7 @@ function SpotlightBanner({
                 cursor: 'pointer',
                 backdropFilter: 'blur(8px)',
                 transition: 'all 200ms ease',
+                flex: isSmall ? '1 1 auto' : undefined,
               }}
               className="hover:!bg-[rgba(255,255,255,0.18)]"
             >
@@ -298,8 +302,8 @@ function SpotlightBanner({
               id="spotlight-bookmark-btn"
               onClick={() => onToggleBookmark(current.id)}
               style={{
-                width: 42,
-                height: 42,
+                width: isSmall ? 38 : 42,
+                height: isSmall ? 38 : 42,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -309,6 +313,7 @@ function SpotlightBanner({
                 background: isBookmarked ? 'rgba(139,92,246,0.40)' : 'rgba(255,255,255,0.08)',
                 color: isBookmarked ? '#F472B6' : '#EDE9FE',
                 transition: 'all 200ms ease',
+                flexShrink: 0,
               }}
               className="hover:!bg-[rgba(255,255,255,0.18)]"
               title={isBookmarked ? 'Remove bookmark' : 'Bookmark template'}
@@ -328,7 +333,7 @@ function SpotlightBanner({
               WebkitBackdropFilter: 'blur(28px)',
               border: '1px solid rgba(255, 255, 255, 0.18)',
               borderRadius: 20,
-              padding: '22px 24px',
+              padding: isSmall ? '16px 16px' : '22px 24px',
               boxShadow: '0 20px 48px rgba(0, 0, 0, 0.30)',
               position: 'relative',
               overflow: 'hidden',
@@ -337,9 +342,9 @@ function SpotlightBanner({
             {/* Top window dots & status */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, paddingBottom: 10, borderBottom: '1px solid rgba(255,255,255,0.10)' }}>
               <div style={{ display: 'flex', gap: 6 }}>
-                <div style={{ width: 9, height: 9, borderRadius: '50%', background: '#EF4444' }} />
-                <div style={{ width: 9, height: 9, borderRadius: '50%', background: '#F59E0B' }} />
-                <div style={{ width: 9, height: 9, borderRadius: '50%', background: '#10B981' }} />
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#EF4444' }} />
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#F59E0B' }} />
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#10B981' }} />
               </div>
               <span style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.65)', textTransform: 'uppercase' }}>
                 Prompt Architecture v2.4
@@ -347,28 +352,32 @@ function SpotlightBanner({
             </div>
 
             {/* Prompt Recipe Content Blueprint */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
-              <div style={{ background: 'rgba(0,0,0,0.28)', borderRadius: 12, padding: '11px 14px', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ background: 'rgba(0,0,0,0.28)', borderRadius: 12, padding: '10px 12px', border: '1px solid rgba(255,255,255,0.08)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                   <span style={{ fontSize: 10.5, fontWeight: 700, color: '#A78BFA', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Role Context</span>
                   <span style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.5)' }}>98 PromptScore</span>
                 </div>
-                <p style={{ fontSize: 12.5, color: '#F3E8FF', margin: 0, lineHeight: 1.45, fontFamily: 'monospace' }}>
+                <p style={{ fontSize: isSmall ? 11.5 : 12, color: '#F3E8FF', margin: 0, lineHeight: 1.45, fontFamily: 'monospace', wordBreak: 'break-word' }}>
                   &ldquo;Act as a specialist in {current.category}. Structure findings with high clarity and depth.&rdquo;
                 </p>
               </div>
 
-              <div style={{ background: 'rgba(139,92,246,0.14)', borderRadius: 12, padding: '11px 14px', border: '1px solid rgba(139,92,246,0.30)' }}>
+              <div style={{ background: 'rgba(139,92,246,0.14)', borderRadius: 12, padding: '10px 12px', border: '1px solid rgba(139,92,246,0.30)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                   <span style={{ fontSize: 10.5, fontWeight: 700, color: '#F472B6', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Engine Specs</span>
                   <span style={{ fontSize: 10.5, color: '#34D399', fontWeight: 600 }}>● Active</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#FFFFFF' }}>
-                  <Cpu size={14} style={{ color: '#A78BFA' }} />
-                  <span>Engine: {current.model}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: isSmall ? 11 : 12, color: '#FFFFFF', flexWrap: 'wrap' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <Cpu size={13} style={{ color: '#A78BFA' }} />
+                    {current.model}
+                  </span>
                   <span style={{ color: 'rgba(255,255,255,0.4)' }}>•</span>
-                  <Award size={14} style={{ color: '#F59E0B' }} />
-                  <span>{current.useCount ?? 0} uses</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <Award size={13} style={{ color: '#F59E0B' }} />
+                    {current.useCount ?? 0} uses
+                  </span>
                 </div>
               </div>
             </div>
@@ -464,6 +473,7 @@ function NotionTemplateCard({
   isBookmarked,
   onToggleBookmark,
   onSelectTag,
+  isSmall,
 }: {
   template: Template;
   onUse: (t: Template) => void;
@@ -471,6 +481,7 @@ function NotionTemplateCard({
   isBookmarked: boolean;
   onToggleBookmark: (id: string) => void;
   onSelectTag: (tag: string) => void;
+  isSmall: boolean;
 }) {
   const Icon = CATEGORY_ICON_MAP[template.category] || Sparkles;
   const categoryStyle = getCategoryColor(template.category);
@@ -483,7 +494,7 @@ function NotionTemplateCard({
         background: '#FFFFFF',
         border: '1px solid rgba(124,58,237,0.10)',
         borderRadius: 20,
-        padding: '18px 20px',
+        padding: isSmall ? '16px 16px' : '18px 20px',
         display: 'flex',
         flexDirection: 'column',
         gap: 12,
@@ -496,7 +507,7 @@ function NotionTemplateCard({
     >
       {/* Top row: Icon, Category Pill, AI Model badge, Bookmark */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div
             style={{
               width: 36,
@@ -656,6 +667,8 @@ function NotionTemplateCard({
           marginTop: 'auto',
           paddingTop: 10,
           borderTop: '1px solid rgba(124,58,237,0.07)',
+          flexWrap: 'wrap',
+          gap: 6,
         }}
       >
         <span
@@ -738,14 +751,16 @@ function NotionListRow({
   onQuickLook,
   isBookmarked,
   onToggleBookmark,
-  isMobile,
+  isPhone,
+  isSmall,
 }: {
   template: Template;
   onUse: (t: Template) => void;
   onQuickLook: (t: Template) => void;
   isBookmarked: boolean;
   onToggleBookmark: (id: string) => void;
-  isMobile: boolean;
+  isPhone: boolean;
+  isSmall: boolean;
 }) {
   const Icon = CATEGORY_ICON_MAP[template.category] || Sparkles;
   const categoryStyle = getCategoryColor(template.category);
@@ -757,21 +772,21 @@ function NotionListRow({
         background: '#FFFFFF',
         border: '1px solid rgba(124,58,237,0.08)',
         borderRadius: 14,
-        padding: isMobile ? '12px 14px' : '14px 20px',
+        padding: isSmall ? '10px 12px' : isPhone ? '12px 14px' : '14px 20px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        gap: 14,
+        gap: isSmall ? 8 : 14,
         cursor: 'pointer',
         transition: 'all 160ms ease',
       }}
       className="hover:!border-[rgba(124,58,237,0.22)] hover:!bg-[rgba(124,58,237,0.02)] hover:shadow-sm"
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0, flex: 1 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: isSmall ? 9 : 14, minWidth: 0, flex: 1 }}>
         <div
           style={{
-            width: 34,
-            height: 34,
+            width: 32,
+            height: 32,
             borderRadius: 9,
             display: 'flex',
             alignItems: 'center',
@@ -781,14 +796,14 @@ function NotionListRow({
             flexShrink: 0,
           }}
         >
-          <Icon size={16} strokeWidth={1.8} />
+          <Icon size={15} strokeWidth={1.8} />
         </div>
 
         <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
             <h4
               style={{
-                fontSize: 14,
+                fontSize: isSmall ? 13 : 14,
                 fontWeight: 700,
                 color: 'var(--color-text-primary)',
                 margin: 0,
@@ -799,10 +814,10 @@ function NotionListRow({
             </h4>
             <span
               style={{
-                fontSize: 10,
+                fontSize: 9.5,
                 fontWeight: 700,
-                padding: '2px 6px',
-                borderRadius: 5,
+                padding: '2px 5px',
+                borderRadius: 4,
                 background: categoryStyle.bg,
                 color: categoryStyle.text,
                 textTransform: 'uppercase',
@@ -812,7 +827,7 @@ function NotionListRow({
             </span>
           </div>
 
-          {!isMobile && (
+          {!isPhone && (
             <p
               style={{
                 fontSize: 12,
@@ -829,8 +844,8 @@ function NotionListRow({
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 14, flexShrink: 0 }}>
-        {!isMobile && (
+      <div style={{ display: 'flex', alignItems: 'center', gap: isSmall ? 6 : isPhone ? 8 : 14, flexShrink: 0 }}>
+        {!isPhone && (
           <span
             style={{
               fontSize: 11,
@@ -878,10 +893,10 @@ function NotionListRow({
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 5,
-            padding: '6px 12px',
-            borderRadius: 8,
-            fontSize: 12,
+            gap: 4,
+            padding: '5px 11px',
+            borderRadius: 7,
+            fontSize: 11.5,
             fontWeight: 700,
             border: 'none',
             cursor: 'pointer',
@@ -890,7 +905,7 @@ function NotionListRow({
             boxShadow: '0 2px 6px rgba(124,58,237,0.2)',
           }}
         >
-          <Zap size={12} strokeWidth={2} />
+          <Zap size={11} strokeWidth={2} />
           <span>Use</span>
         </button>
       </div>
@@ -905,12 +920,14 @@ function QuickLookModal({
   onUse,
   isBookmarked,
   onToggleBookmark,
+  isSmall,
 }: {
   template: Template | null;
   onClose: () => void;
   onUse: (t: Template) => void;
   isBookmarked: boolean;
   onToggleBookmark: (id: string) => void;
+  isSmall: boolean;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -930,13 +947,13 @@ function QuickLookModal({
         position: 'fixed',
         inset: 0,
         zIndex: 9999,
-        background: 'rgba(9, 9, 11, 0.45)',
+        background: 'rgba(9, 9, 11, 0.50)',
         backdropFilter: 'blur(8px)',
         WebkitBackdropFilter: 'blur(8px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 20,
+        padding: isSmall ? 12 : 20,
       }}
       onClick={onClose}
     >
@@ -944,11 +961,12 @@ function QuickLookModal({
         onClick={(e) => e.stopPropagation()}
         style={{
           background: '#FFFFFF',
-          borderRadius: 24,
+          borderRadius: isSmall ? 20 : 24,
           maxWidth: 580,
           width: '100%',
+          maxHeight: '92vh',
+          overflowY: 'auto',
           boxShadow: '0 25px 60px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(124, 58, 237, 0.15)',
-          overflow: 'hidden',
           position: 'relative',
         }}
       >
@@ -961,14 +979,14 @@ function QuickLookModal({
           }}
         />
 
-        <div style={{ padding: '28px 32px' }}>
+        <div style={{ padding: isSmall ? '20px 16px' : '28px 32px' }}>
           {/* Header Row */}
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 14, marginBottom: 18 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <div
                 style={{
-                  width: 48,
-                  height: 48,
+                  width: isSmall ? 40 : 48,
+                  height: isSmall ? 40 : 48,
                   borderRadius: 14,
                   display: 'flex',
                   alignItems: 'center',
@@ -976,17 +994,18 @@ function QuickLookModal({
                   background: categoryStyle.bg,
                   color: categoryStyle.text,
                   border: `1px solid ${categoryStyle.border}`,
+                  flexShrink: 0,
                 }}
               >
-                <Icon size={22} strokeWidth={1.8} />
+                <Icon size={isSmall ? 18 : 22} strokeWidth={1.8} />
               </div>
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
                   <span
                     style={{
-                      fontSize: 11,
+                      fontSize: 10.5,
                       fontWeight: 700,
-                      padding: '2px 8px',
+                      padding: '2px 7px',
                       borderRadius: 6,
                       background: categoryStyle.bg,
                       color: categoryStyle.text,
@@ -997,11 +1016,11 @@ function QuickLookModal({
                   </span>
                   <span
                     style={{
-                      fontSize: 11,
+                      fontSize: 10.5,
                       fontWeight: 600,
                       color: 'var(--color-text-secondary)',
                       background: 'rgba(124,58,237,0.06)',
-                      padding: '2px 8px',
+                      padding: '2px 7px',
                       borderRadius: 6,
                       display: 'flex',
                       alignItems: 'center',
@@ -1012,7 +1031,7 @@ function QuickLookModal({
                     {template.model}
                   </span>
                 </div>
-                <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--color-text-primary)', margin: 0, letterSpacing: -0.3 }}>
+                <h2 style={{ fontSize: isSmall ? 18 : 20, fontWeight: 800, color: 'var(--color-text-primary)', margin: 0, letterSpacing: -0.3 }}>
                   {template.title}
                 </h2>
               </div>
@@ -1031,6 +1050,7 @@ function QuickLookModal({
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: 'var(--color-text-secondary)',
+                flexShrink: 0,
               }}
               className="hover:!bg-[rgba(0,0,0,0.10)]"
             >
@@ -1041,27 +1061,27 @@ function QuickLookModal({
           {/* Description Block */}
           <div
             style={{
-              padding: '16px 18px',
+              padding: '14px 16px',
               borderRadius: 14,
               background: 'rgba(124, 58, 237, 0.03)',
               border: '1px solid rgba(124, 58, 237, 0.08)',
-              marginBottom: 20,
+              marginBottom: 18,
             }}
           >
-            <h4 style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-primary)', letterSpacing: '0.05em', margin: '0 0 6px' }}>
+            <h4 style={{ fontSize: 11.5, fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-primary)', letterSpacing: '0.05em', margin: '0 0 6px' }}>
               About this Template
             </h4>
-            <p style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--color-text-primary)', margin: 0 }}>
+            <p style={{ fontSize: 13.5, lineHeight: 1.6, color: 'var(--color-text-primary)', margin: 0 }}>
               {template.description}
             </p>
           </div>
 
           {/* Highlights / Best For */}
-          <div style={{ marginBottom: 20 }}>
-            <h4 style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-secondary)', letterSpacing: '0.05em', margin: '0 0 10px' }}>
+          <div style={{ marginBottom: 18 }}>
+            <h4 style={{ fontSize: 11.5, fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-secondary)', letterSpacing: '0.05em', margin: '0 0 10px' }}>
               Included Capabilities
             </h4>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isSmall ? '1fr' : '1fr 1fr', gap: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: 'var(--color-text-secondary)' }}>
                 <CheckCircle2 size={15} style={{ color: '#10B981', flexShrink: 0 }} />
                 <span>Multi-turn prompt guidance</span>
@@ -1083,15 +1103,15 @@ function QuickLookModal({
 
           {/* Tags */}
           {template.tags.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 24 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 22 }}>
               {template.tags.map((tag) => (
                 <span
                   key={tag}
                   style={{
-                    fontSize: 12,
+                    fontSize: 11.5,
                     fontWeight: 600,
-                    padding: '4px 10px',
-                    borderRadius: 8,
+                    padding: '3px 9px',
+                    borderRadius: 7,
                     background: 'rgba(124, 58, 237, 0.07)',
                     color: 'var(--color-primary)',
                   }}
@@ -1103,15 +1123,16 @@ function QuickLookModal({
           )}
 
           {/* Action Buttons */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, borderTop: '1px solid rgba(0,0,0,0.07)', paddingTop: 20 }}>
-            <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, borderTop: '1px solid rgba(0,0,0,0.07)', paddingTop: 18, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 7, flex: isSmall ? '1 1 100%' : '0 0 auto' }}>
               <button
                 onClick={handleCopyTitle}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
+                  justifyContent: 'center',
                   gap: 6,
-                  padding: '9px 14px',
+                  padding: '9px 13px',
                   borderRadius: 10,
                   fontSize: 13,
                   fontWeight: 600,
@@ -1119,6 +1140,7 @@ function QuickLookModal({
                   background: '#FFFFFF',
                   color: 'var(--color-text-secondary)',
                   cursor: 'pointer',
+                  flex: isSmall ? '1 1 auto' : undefined,
                 }}
                 className="hover:!bg-gray-50"
               >
@@ -1131,8 +1153,9 @@ function QuickLookModal({
                 style={{
                   display: 'flex',
                   alignItems: 'center',
+                  justifyContent: 'center',
                   gap: 6,
-                  padding: '9px 14px',
+                  padding: '9px 13px',
                   borderRadius: 10,
                   fontSize: 13,
                   fontWeight: 600,
@@ -1140,6 +1163,7 @@ function QuickLookModal({
                   background: isBookmarked ? 'rgba(124,58,237,0.10)' : 'transparent',
                   color: isBookmarked ? 'var(--color-primary)' : 'var(--color-text-secondary)',
                   cursor: 'pointer',
+                  flex: isSmall ? '1 1 auto' : undefined,
                 }}
               >
                 {isBookmarked ? <BookmarkCheck size={14} /> : <Bookmark size={14} />}
@@ -1155,8 +1179,9 @@ function QuickLookModal({
               style={{
                 display: 'flex',
                 alignItems: 'center',
+                justifyContent: 'center',
                 gap: 7,
-                padding: '10px 22px',
+                padding: '10px 20px',
                 borderRadius: 10,
                 fontSize: 13,
                 fontWeight: 700,
@@ -1165,6 +1190,7 @@ function QuickLookModal({
                 background: 'linear-gradient(135deg, #7C3AED, #A855F7)',
                 color: 'white',
                 boxShadow: '0 4px 16px rgba(124,58,237,0.35)',
+                flex: isSmall ? '1 1 100%' : '0 0 auto',
               }}
               className="hover:brightness-105 hover:translate-y-[-1px]"
             >
@@ -1198,10 +1224,18 @@ export default function TemplatesPage() {
   // Bookmarks persisted in localStorage
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
 
-  // Responsive hooks & padding aligned with Vault / Optimizer
-  const isTablet = useMediaQuery('(max-width: 1024px)');
-  const isMobile = useMediaQuery('(max-width: 768px)');
-  const pagePadX = isMobile ? 16 : isTablet ? 32 : 48;
+  // Calibrated breakpoints across all devices
+  const isDesktop = useMediaQuery('(min-width: 1081px)');
+  const isTablet = useMediaQuery('(max-width: 1080px) and (min-width: 621px)');
+  const isPhone = useMediaQuery('(max-width: 620px)');
+  const isSmall = useMediaQuery('(max-width: 420px)');
+  const isStackedSpotlight = useMediaQuery('(max-width: 920px)');
+
+  // Expanded usable view area with device-calibrated padding
+  const pagePadX = isSmall ? 10 : isPhone ? 14 : isTablet ? 18 : 28;
+
+  // Adaptive Grid columns: Desktop (3-col), Tablet (2-col grid), Phone (1-col)
+  const gridColumns = isPhone ? '1fr' : isDesktop ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)';
 
   // Load bookmarks on mount
   useEffect(() => {
@@ -1326,14 +1360,14 @@ export default function TemplatesPage() {
   }, [templates]);
 
   const trendingTemplates = useMemo(() => {
-    return templates.filter((t) => t.isTrending).slice(0, 4);
+    return templates.filter((t) => t.isTrending).slice(0, 6);
   }, [templates]);
 
   return (
     <div
       id="templates-page"
       style={{
-        maxWidth: 1100,
+        maxWidth: 1340,
         margin: '0 auto',
         paddingLeft: pagePadX,
         paddingRight: pagePadX,
@@ -1348,18 +1382,18 @@ export default function TemplatesPage() {
       <div
         style={{
           display: 'flex',
-          flexDirection: isTablet ? 'column' : 'row',
-          alignItems: isTablet ? 'flex-start' : 'center',
+          flexDirection: isPhone ? 'column' : 'row',
+          alignItems: isPhone ? 'flex-start' : 'center',
           justifyContent: 'space-between',
-          padding: isMobile ? '20px 0 16px' : '28px 0 24px',
-          gap: 16,
+          padding: isPhone ? '18px 0 14px' : '26px 0 22px',
+          gap: 14,
         }}
       >
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
             <h1
               style={{
-                fontSize: isMobile ? 22 : 24,
+                fontSize: isSmall ? 20 : isPhone ? 22 : 25,
                 fontWeight: 800,
                 color: 'var(--color-text-primary)',
                 letterSpacing: -0.4,
@@ -1370,11 +1404,11 @@ export default function TemplatesPage() {
             </h1>
             <span
               style={{
-                fontSize: 11,
+                fontSize: 10.5,
                 fontWeight: 700,
                 background: 'rgba(124,58,237,0.08)',
                 color: 'var(--color-primary)',
-                padding: '3px 9px',
+                padding: '3px 8px',
                 borderRadius: 9999,
                 border: '1px solid rgba(124,58,237,0.18)',
               }}
@@ -1382,14 +1416,14 @@ export default function TemplatesPage() {
               {templates.length} Curated
             </span>
           </div>
-          <p style={{ fontSize: 13.5, color: 'var(--color-text-secondary)', margin: 0 }}>
+          <p style={{ fontSize: isSmall ? 12.5 : 13.5, color: 'var(--color-text-secondary)', margin: 0 }}>
             Masterfully engineered prompt recipes for industry-leading AI models
           </p>
         </div>
 
         {/* Search & View Mode Switcher */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: isTablet ? '100%' : 'auto' }}>
-          <div style={{ position: 'relative', flex: isTablet ? 1 : '0 0 280px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: isPhone ? '100%' : 'auto' }}>
+          <div style={{ position: 'relative', flex: isPhone ? 1 : '0 0 280px' }}>
             <Search
               size={15}
               strokeWidth={1.8}
@@ -1450,6 +1484,7 @@ export default function TemplatesPage() {
               padding: 3,
               borderRadius: 10,
               border: '1px solid rgba(124,58,237,0.10)',
+              flexShrink: 0,
             }}
           >
             <button
@@ -1497,12 +1532,12 @@ export default function TemplatesPage() {
           alignItems: 'center',
           justifyContent: 'space-between',
           borderBottom: '1px solid rgba(124,58,237,0.10)',
-          marginBottom: 24,
+          marginBottom: 22,
           flexWrap: 'wrap',
-          gap: 12,
+          gap: 10,
         }}
       >
-        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 }}>
+        <div style={{ display: 'flex', gap: 4, overflowX: 'auto', paddingBottom: 2, scrollbarWidth: 'none' }}>
           {[
             { id: 'curated', label: 'Curated Showcase', icon: Compass },
             { id: 'categories', label: 'All Categories', icon: LayoutGrid },
@@ -1522,14 +1557,14 @@ export default function TemplatesPage() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: 6,
-                  padding: '9px 14px',
+                  padding: isSmall ? '8px 10px' : '9px 14px',
                   borderRadius: '10px 10px 0 0',
                   border: 'none',
                   borderBottom: active ? '2px solid var(--color-primary)' : '2px solid transparent',
                   background: 'transparent',
                   color: active ? 'var(--color-primary)' : 'var(--color-text-secondary)',
                   fontWeight: active ? 700 : 500,
-                  fontSize: 13,
+                  fontSize: isSmall ? 12 : 13,
                   cursor: 'pointer',
                   transition: 'all 160ms ease',
                   whiteSpace: 'nowrap',
@@ -1545,8 +1580,8 @@ export default function TemplatesPage() {
 
         {/* Category Pills & Sort Dropdown */}
         {(navTab === 'categories' || navTab === 'curated' || searchQuery) && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 6, overflowX: 'auto' }}>
-            <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingBottom: 6, overflowX: 'auto', width: isPhone ? '100%' : 'auto', scrollbarWidth: 'none' }}>
+            <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none', flexWrap: isPhone ? 'nowrap' : 'wrap' }}>
               {categories.map((cat) => {
                 const active = activeCategory === cat;
                 return (
@@ -1554,9 +1589,9 @@ export default function TemplatesPage() {
                     key={cat}
                     onClick={() => setActiveCategory(cat)}
                     style={{
-                      padding: '5px 12px',
+                      padding: '4px 11px',
                       borderRadius: 999,
-                      fontSize: 12,
+                      fontSize: 11.5,
                       fontWeight: active ? 700 : 500,
                       border: active ? '1px solid var(--color-primary)' : '1px solid rgba(124,58,237,0.10)',
                       background: active ? 'var(--color-primary)' : '#FFFFFF',
@@ -1564,6 +1599,7 @@ export default function TemplatesPage() {
                       cursor: 'pointer',
                       transition: 'all 150ms ease',
                       whiteSpace: 'nowrap',
+                      flexShrink: 0,
                     }}
                     className={!active ? 'hover:!border-[rgba(124,58,237,0.25)] hover:!text-[var(--color-text-primary)]' : ''}
                   >
@@ -1655,8 +1691,8 @@ export default function TemplatesPage() {
                 onQuickLook={setQuickLookTemplate}
                 bookmarkedIds={bookmarkedIds}
                 onToggleBookmark={handleToggleBookmark}
-                isMobile={isMobile}
-                isTablet={isTablet}
+                isStacked={isStackedSpotlight}
+                isSmall={isSmall}
               />
 
               {/* Trending Now Shelf */}
@@ -1665,7 +1701,7 @@ export default function TemplatesPage() {
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <TrendingUp size={18} strokeWidth={2.2} style={{ color: '#F59E0B' }} />
-                      <h2 style={{ fontSize: 17, fontWeight: 800, color: 'var(--color-text-primary)', margin: 0 }}>
+                      <h2 style={{ fontSize: isSmall ? 16 : 17, fontWeight: 800, color: 'var(--color-text-primary)', margin: 0 }}>
                         Trending Prompt Recipes
                       </h2>
                     </div>
@@ -1675,7 +1711,7 @@ export default function TemplatesPage() {
                         display: 'flex',
                         alignItems: 'center',
                         gap: 4,
-                        fontSize: 13,
+                        fontSize: 12.5,
                         fontWeight: 600,
                         color: 'var(--color-primary)',
                         background: 'none',
@@ -1684,7 +1720,7 @@ export default function TemplatesPage() {
                       }}
                       className="hover:underline"
                     >
-                      <span>Explore all popular</span>
+                      <span>Explore all</span>
                       <ChevronRight size={14} />
                     </button>
                   </div>
@@ -1692,7 +1728,7 @@ export default function TemplatesPage() {
                   <div
                     style={{
                       display: 'grid',
-                      gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
+                      gridTemplateColumns: gridColumns,
                       gap: 16,
                     }}
                   >
@@ -1705,6 +1741,7 @@ export default function TemplatesPage() {
                         isBookmarked={bookmarkedIds.has(t.id)}
                         onToggleBookmark={handleToggleBookmark}
                         onSelectTag={setSearchQuery}
+                        isSmall={isSmall}
                       />
                     ))}
                   </div>
@@ -1716,29 +1753,30 @@ export default function TemplatesPage() {
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <Sparkles size={18} strokeWidth={2.2} style={{ color: 'var(--color-primary)' }} />
-                    <h2 style={{ fontSize: 17, fontWeight: 800, color: 'var(--color-text-primary)', margin: 0 }}>
+                    <h2 style={{ fontSize: isSmall ? 16 : 17, fontWeight: 800, color: 'var(--color-text-primary)', margin: 0 }}>
                       Role & Workflow Collections
                     </h2>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: isSmall ? 20 : 32 }}>
                   {Array.from(groupedByCategory.entries()).map(([cat, list]) => {
                     const Icon = CATEGORY_ICON_MAP[cat] || Sparkles;
                     const style = getCategoryColor(cat);
+                    const itemsToShow = isTablet ? 4 : isPhone ? 3 : 6;
                     return (
-                      <div key={cat} style={{ background: 'rgba(250,250,252,0.6)', borderRadius: 20, padding: isMobile ? 16 : 24, border: '1px solid rgba(124,58,237,0.06)' }}>
+                      <div key={cat} style={{ background: 'rgba(250,250,252,0.6)', borderRadius: isSmall ? 16 : 20, padding: isSmall ? 14 : isPhone ? 18 : 24, border: '1px solid rgba(124,58,237,0.06)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <div style={{ width: 32, height: 32, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', background: style.bg, color: style.text }}>
-                              <Icon size={16} strokeWidth={2} />
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                            <div style={{ width: 30, height: 30, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: style.bg, color: style.text, flexShrink: 0 }}>
+                              <Icon size={15} strokeWidth={2} />
                             </div>
                             <div>
-                              <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>
+                              <h3 style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>
                                 {categoryLabel(cat)} Specialists
                               </h3>
                             </div>
-                            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', background: '#FFFFFF', padding: '2px 8px', borderRadius: 99, border: '1px solid rgba(0,0,0,0.06)' }}>
+                            <span style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--color-text-secondary)', background: '#FFFFFF', padding: '2px 7px', borderRadius: 99, border: '1px solid rgba(0,0,0,0.06)' }}>
                               {list.length}
                             </span>
                           </div>
@@ -1769,11 +1807,11 @@ export default function TemplatesPage() {
                         <div
                           style={{
                             display: 'grid',
-                            gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
+                            gridTemplateColumns: gridColumns,
                             gap: 14,
                           }}
                         >
-                          {list.slice(0, 3).map((t) => (
+                          {list.slice(0, itemsToShow).map((t) => (
                             <NotionTemplateCard
                               key={t.id}
                               template={t}
@@ -1782,6 +1820,7 @@ export default function TemplatesPage() {
                               isBookmarked={bookmarkedIds.has(t.id)}
                               onToggleBookmark={handleToggleBookmark}
                               onSelectTag={setSearchQuery}
+                              isSmall={isSmall}
                             />
                           ))}
                         </div>
@@ -1797,7 +1836,7 @@ export default function TemplatesPage() {
           {(navTab !== 'curated' || searchQuery || activeCategory !== 'all') && (
             <div>
               {/* Header result counter */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
                 <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-secondary)' }}>
                   Showing {processedTemplates.length} {processedTemplates.length === 1 ? 'template' : 'templates'}
                   {activeCategory !== 'all' && ` in ${categoryLabel(activeCategory)}`}
@@ -1885,7 +1924,7 @@ export default function TemplatesPage() {
                 <div
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
+                    gridTemplateColumns: gridColumns,
                     gap: 16,
                   }}
                 >
@@ -1898,6 +1937,7 @@ export default function TemplatesPage() {
                       isBookmarked={bookmarkedIds.has(t.id)}
                       onToggleBookmark={handleToggleBookmark}
                       onSelectTag={setSearchQuery}
+                      isSmall={isSmall}
                     />
                   ))}
                 </div>
@@ -1911,7 +1951,8 @@ export default function TemplatesPage() {
                       onQuickLook={setQuickLookTemplate}
                       isBookmarked={bookmarkedIds.has(t.id)}
                       onToggleBookmark={handleToggleBookmark}
-                      isMobile={isMobile}
+                      isPhone={isPhone}
+                      isSmall={isSmall}
                     />
                   ))}
                 </div>
@@ -1928,6 +1969,7 @@ export default function TemplatesPage() {
         onUse={handleUse}
         isBookmarked={quickLookTemplate ? bookmarkedIds.has(quickLookTemplate.id) : false}
         onToggleBookmark={handleToggleBookmark}
+        isSmall={isSmall}
       />
     </div>
   );
