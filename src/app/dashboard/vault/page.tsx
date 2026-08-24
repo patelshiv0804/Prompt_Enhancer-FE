@@ -121,7 +121,7 @@ function StatCard({ label, value, suffix = '', prefix = '', icon: Icon, accent, 
     className="hover:translate-y-[-2px] hover:shadow-[0_8px_24px_rgba(109,40,217,0.09),0_2px_6px_rgba(0,0,0,0.05)]"
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.9px', color: 'var(--color-text-secondary)' }}>{label}</span>
+        <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: isMobile ? '0.4px' : '0.9px', color: 'var(--color-text-secondary)' }}>{label}</span>
         <div style={{ width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accent, background: `${accent}18` }}>
           <Icon size={14} strokeWidth={2} />
         </div>
@@ -305,6 +305,11 @@ export default function VaultPage() {
   // longhand props triggers a React "conflicting style property" warning when the
   // shorthand changes across rerenders (which it does, per breakpoint).
   const pagePadX = isMobile ? 16 : isTablet ? 32 : 48;
+  // Stat cards stay on one row (4 columns) down through tablets — a 2×2 grid at
+  // tablet widths stretches each card too wide. Only drop to 2×2 on genuinely
+  // narrow phone widths, where four columns would be unreadable and start
+  // clipping the card labels (below ~700px).
+  const statsTwoCol = useMediaQuery('(max-width: 700px)');
 
   /* Debounce search */
   useEffect(() => {
@@ -488,7 +493,7 @@ export default function VaultPage() {
           <div className="skeleton" style={{ height: 40, width: 130, borderRadius: 10, flexShrink: 0 }} />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: isTablet ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? 12 : 16, marginBottom: isMobile ? 20 : 28 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: statsTwoCol ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? 12 : 16, marginBottom: isMobile ? 20 : 28 }}>
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="skeleton" style={{ height: 116, borderRadius: 16 }} />
           ))}
@@ -513,7 +518,7 @@ export default function VaultPage() {
     <div id="vault-page" style={{ maxWidth: 1100, margin: '0 auto', paddingLeft: pagePadX, paddingRight: pagePadX, paddingTop: 8, width: '100%', display: 'flex', flexDirection: 'column', paddingBottom: 64 }}>
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: isTablet ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? 12 : 16, marginBottom: isMobile ? 20 : 28 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: statsTwoCol ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? 12 : 16, marginBottom: isMobile ? 20 : 28 }}>
         <StatCard label="Total Prompts" value={stats?.totalPrompts ?? 0} icon={Sparkles} accent="#7C3AED" animate={statsAnimate} isMobile={isMobile} />
         <StatCard label="Avg Score" value={stats?.averageScore ?? 0} suffix="%" icon={TrendingUp} accent="#10B981" animate={statsAnimate} isMobile={isMobile}
           sub={<div style={{ height: 4, background: 'rgba(16,185,129,0.12)', borderRadius: 99, overflow: 'hidden' }}><div style={{ height: '100%', background: '#10B981', borderRadius: 99, width: statsAnimate ? `${stats?.averageScore ?? 0}%` : '0%', transition: 'width 1.2s ease-out' }} /></div>}

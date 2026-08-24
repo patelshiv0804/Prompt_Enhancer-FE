@@ -13,6 +13,7 @@ import {
   StyleCategory,
   CATEGORY_COLORS
 } from '@/features/style-memory/services/styleMemoryService';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 /* ═══════════════════════════════════════════════════
    Types & Constants
@@ -259,8 +260,14 @@ function AddNewCard({ onClick }: { onClick: () => void }) {
 }
 
 /* ── Injection Flow Card ── */
-function InjectionFlowCard() {
+function InjectionFlowCard({ isMobile, isTablet }: { isMobile: boolean; isTablet: boolean }) {
   const [activeIdx, setActiveIdx] = useState(0);
+  // The three steps stay on one horizontal row at every width. Below ~1024px the
+  // original fixed 100px SVG connectors + nowrap labels would overflow, so tablet
+  // & mobile use a "compact" layout: flexible (flex) connectors that shrink to fit
+  // and labels that wrap. Desktop keeps the original fixed-connector look.
+  const compact = isTablet;
+  const nodeSize = isMobile ? 50 : 70;
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -299,8 +306,8 @@ function InjectionFlowCard() {
   return (
     <div style={{
       position: 'relative',
-      borderRadius: 28,
-      marginBottom: 36,
+      borderRadius: isMobile ? 20 : 28,
+      marginBottom: isMobile ? 24 : 36,
       padding: 1,
       background: 'linear-gradient(135deg, rgba(124,58,237,0.35) 0%, rgba(56,189,248,0.20) 30%, rgba(192,132,252,0.30) 60%, rgba(52,211,153,0.25) 100%)',
       overflow: 'hidden',
@@ -324,6 +331,7 @@ function InjectionFlowCard() {
           50% { box-shadow: 0 0 30px rgba(52,211,153,0.45), 0 0 80px rgba(52,211,153,0.15); }
         }
         @keyframes ifc-flowDash { to { stroke-dashoffset: -24; } }
+        @keyframes ifc-flowMove { to { background-position: 14px 0; } }
         .ifc-active-node-0 { animation: ifc-nodeGlow0 2.4s infinite ease-in-out !important; }
         .ifc-active-node-1 { animation: ifc-nodeGlow1 2.4s infinite ease-in-out !important; }
         .ifc-active-node-2 { animation: ifc-nodeGlow2 2.4s infinite ease-in-out !important; }
@@ -331,14 +339,14 @@ function InjectionFlowCard() {
 
       <div style={{
         background: 'linear-gradient(145deg, #0C0620 0%, #150D30 30%, #1A0E3A 55%, #0D0920 100%)',
-        borderRadius: 27,
-        padding: '40px 48px 44px',
+        borderRadius: isMobile ? 19 : 27,
+        padding: isMobile ? '28px 22px 30px' : isTablet ? '36px 32px 38px' : '40px 48px 44px',
         position: 'relative',
         overflow: 'hidden',
       }}>
         <div style={{ position: 'relative', zIndex: 2 }}>
           {/* Header */}
-          <div style={{ marginBottom: 36 }}>
+          <div style={{ marginBottom: isMobile ? 24 : 36 }}>
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
               padding: '5px 14px 5px 10px', borderRadius: 9999,
@@ -362,7 +370,7 @@ function InjectionFlowCard() {
             </div>
 
             <h3 style={{
-              fontSize: 24, fontWeight: 800, letterSpacing: -0.5, margin: '0 0 10px',
+              fontSize: isMobile ? 20 : 24, fontWeight: 800, letterSpacing: -0.5, margin: '0 0 10px',
               background: 'linear-gradient(135deg, #EDE9FE 0%, #C4B5FD 40%, #A78BFA 70%, #38BDF8 100%)',
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
@@ -371,7 +379,7 @@ function InjectionFlowCard() {
               Smart Style Injection Flow
             </h3>
             <p style={{
-              fontSize: 14, color: 'rgba(196,181,253,0.55)', margin: 0,
+              fontSize: isMobile ? 13 : 14, color: 'rgba(196,181,253,0.55)', margin: 0,
               lineHeight: 1.65, maxWidth: 560,
             }}>
               Your enabled style profiles are automatically appended to your base prompts during optimization, instantly giving your drafts the desired creative signature.
@@ -380,7 +388,10 @@ function InjectionFlowCard() {
 
           {/* 3-Step Pipeline */}
           <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: compact ? 'flex-start' : 'center',
+            justifyContent: 'center',
             gap: 0, padding: '8px 0 4px',
           }}>
             {steps.map((step, i) => {
@@ -390,13 +401,16 @@ function InjectionFlowCard() {
                 <React.Fragment key={step.label}>
                   <div style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
-                    gap: 14, flex: '0 0 auto', position: 'relative',
+                    gap: isMobile ? 10 : 14,
+                    flex: compact ? '1 1 0' : '0 0 auto',
+                    minWidth: 0, maxWidth: compact ? 120 : undefined,
+                    position: 'relative',
                   }}>
                     {isActive && (
                       <div style={{
                         position: 'absolute', top: 0, left: '50%',
-                        width: 70, height: 70,
-                        marginLeft: -35, borderRadius: '50%',
+                        width: nodeSize, height: nodeSize,
+                        marginLeft: -nodeSize / 2, borderRadius: '50%',
                         border: `2px solid ${step.color}`,
                         opacity: 0,
                         animation: 'ifc-ringPulse 2.4s infinite ease-out',
@@ -407,7 +421,8 @@ function InjectionFlowCard() {
                     <div
                       className={isActive ? `ifc-active-node-${i}` : ''}
                       style={{
-                        width: 70, height: 70, borderRadius: '50%',
+                        width: nodeSize, height: nodeSize, borderRadius: '50%',
+                        flexShrink: 0,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         position: 'relative',
                         background: isActive
@@ -421,7 +436,7 @@ function InjectionFlowCard() {
                       }}
                     >
                       <step.icon
-                        size={26}
+                        size={isMobile ? 20 : 26}
                         strokeWidth={isActive ? 2 : 1.5}
                         style={{
                           color: step.color,
@@ -431,19 +446,21 @@ function InjectionFlowCard() {
                       />
                     </div>
 
-                    <div style={{ textAlign: 'center', minWidth: 110 }}>
+                    <div style={{ textAlign: 'center', minWidth: 0, width: '100%' }}>
                       <span style={{
-                        fontSize: 13, fontWeight: 700,
+                        fontSize: isMobile ? 11 : 13, fontWeight: 700,
                         color: isActive ? '#EDE9FE' : 'rgba(237,233,254,0.4)',
-                        display: 'block', whiteSpace: 'nowrap',
+                        display: 'block', whiteSpace: compact ? 'normal' : 'nowrap',
+                        lineHeight: 1.25,
                         transition: 'color 500ms ease',
                       }}>
                         {step.label}
                       </span>
                       <span style={{
-                        fontSize: 11, fontWeight: 500,
+                        fontSize: isMobile ? 10 : 11, fontWeight: 500,
                         color: isActive ? `rgba(${step.colorRgb},0.7)` : 'rgba(167,139,250,0.2)',
-                        display: 'block', marginTop: 3, whiteSpace: 'nowrap',
+                        display: 'block', marginTop: 3, whiteSpace: compact ? 'normal' : 'nowrap',
+                        lineHeight: 1.3,
                         transition: 'color 500ms ease',
                       }}>
                         {step.subtitle}
@@ -452,24 +469,53 @@ function InjectionFlowCard() {
                   </div>
 
                   {i < steps.length - 1 && (
-                    <div style={{
-                      display: 'flex', alignItems: 'center',
-                      padding: '0 12px', marginBottom: 40,
-                      position: 'relative',
-                    }}>
-                      <svg width="100" height="20" viewBox="0 0 100 20" style={{ overflow: 'visible' }}>
-                        <line x1="4" y1="10" x2="88" y2="10" stroke="rgba(167,139,250,0.08)" strokeWidth="2" strokeLinecap="round" />
-                        <line
-                          x1="4" y1="10" x2="88" y2="10"
-                          stroke={isNext ? steps[i].color : 'rgba(167,139,250,0.15)'}
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeDasharray={isNext ? '6, 8' : 'none'}
-                          style={{ animation: isNext ? 'ifc-flowDash 1s linear infinite' : 'none' }}
-                        />
-                        <path d="M 84 5 L 92 10 L 84 15" fill="none" stroke={isNext ? steps[i + 1].color : 'rgba(167,139,250,0.15)'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </div>
+                    compact ? (
+                      /* Compact connector: a flex-grow line + arrow that shrinks
+                         to fit any width, keeping all 3 steps on one row. Its
+                         height matches the node so the arrow lands on the node's
+                         vertical center (container is aligned flex-start). */
+                      <div style={{
+                        flex: '0 0 auto',
+                        width: isMobile ? 24 : 40,
+                        height: nodeSize,
+                        display: 'flex', alignItems: 'center',
+                        position: 'relative',
+                      }}>
+                        <div style={{
+                          position: 'absolute', left: 1, right: 8, top: '50%', height: 2, marginTop: -1,
+                          background: 'rgba(167,139,250,0.12)', borderRadius: 2,
+                        }} />
+                        <div style={{
+                          position: 'absolute', left: 1, right: 8, top: '50%', height: 2, marginTop: -1, borderRadius: 2,
+                          backgroundColor: isNext ? 'transparent' : 'rgba(167,139,250,0.18)',
+                          backgroundImage: isNext ? `repeating-linear-gradient(90deg, ${steps[i].color} 0 6px, transparent 6px 14px)` : 'none',
+                          backgroundSize: '14px 100%',
+                          animation: isNext ? 'ifc-flowMove 0.8s linear infinite' : 'none',
+                        }} />
+                        <svg width="9" height="12" viewBox="0 0 9 12" style={{ position: 'absolute', right: -1, top: '50%', transform: 'translateY(-50%)', overflow: 'visible' }}>
+                          <path d="M 2 2 L 7 6 L 2 10" fill="none" stroke={isNext ? steps[i + 1].color : 'rgba(167,139,250,0.3)'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'stroke 400ms ease' }} />
+                        </svg>
+                      </div>
+                    ) : (
+                      <div style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        padding: '0 12px', marginBottom: 40,
+                        position: 'relative',
+                      }}>
+                        <svg width="100" height="20" viewBox="0 0 100 20" style={{ overflow: 'visible' }}>
+                          <line x1="4" y1="10" x2="88" y2="10" stroke="rgba(167,139,250,0.08)" strokeWidth="2" strokeLinecap="round" />
+                          <line
+                            x1="4" y1="10" x2="88" y2="10"
+                            stroke={isNext ? steps[i].color : 'rgba(167,139,250,0.15)'}
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeDasharray={isNext ? '6, 8' : 'none'}
+                            style={{ animation: isNext ? 'ifc-flowDash 1s linear infinite' : 'none' }}
+                          />
+                          <path d="M 84 5 L 92 10 L 84 15" fill="none" stroke={isNext ? steps[i + 1].color : 'rgba(167,139,250,0.15)'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </div>
+                    )
                   )}
                 </React.Fragment>
               );
@@ -483,12 +529,13 @@ function InjectionFlowCard() {
 
 /* ── Create / Edit Profile Centered Modal ── */
 function ProfileModal({
-  open, onClose, onSave, editingProfile,
+  open, onClose, onSave, editingProfile, isMobile = false,
 }: {
   open: boolean;
   onClose: () => void;
   onSave: (profile: Omit<StyleProfile, 'id'>) => Promise<void>;
   editingProfile?: StyleProfile | null;
+  isMobile?: boolean;
 }) {
   const [name, setName] = useState('');
   const [category, setCategory] = useState<StyleCategory>('character');
@@ -567,7 +614,7 @@ function ProfileModal({
         {/* Header */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '24px 28px 20px',
+          padding: isMobile ? '20px 18px 16px' : '24px 28px 20px',
           borderBottom: '1px solid rgba(124,58,237,0.08)',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -602,7 +649,7 @@ function ProfileModal({
         </div>
 
         {/* Body */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '20px 18px' : '24px 28px', display: 'flex', flexDirection: 'column', gap: 20 }}>
           {/* Profile Name */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-primary)', letterSpacing: '0.02em' }}>
@@ -717,7 +764,7 @@ function ProfileModal({
         {/* Footer */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10,
-          padding: '16px 28px 20px',
+          padding: isMobile ? '14px 18px 18px' : '16px 28px 20px',
           borderTop: '1px solid rgba(124,58,237,0.08)',
           background: '#FAFAFC',
         }}>
@@ -768,6 +815,12 @@ export default function StyleMemoryPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editingProfile, setEditingProfile] = useState<StyleProfile | null>(null);
 
+  // Responsive breakpoints — inline styles can't be overridden by CSS @media,
+  // so layout decisions are driven from JS (matches the vault/header pattern).
+  const isTablet = useMediaQuery('(max-width: 1024px)');
+  const isMobile = useMediaQuery('(max-width: 768px)');
+  const pagePadX = isMobile ? 16 : isTablet ? 32 : 48;
+
   const filtered = activeFilter === 'all'
     ? profiles
     : profiles.filter(p => p.category === activeFilter);
@@ -804,12 +857,17 @@ export default function StyleMemoryPage() {
   return (
     <>
       <div id="style-memory-page" style={{
-        maxWidth: 1100, margin: '0 auto', padding: '0 48px', paddingTop: 8,
+        maxWidth: 1100, margin: '0 auto',
+        padding: `0 ${pagePadX}px`, paddingTop: 8,
         width: '100%', display: 'flex', flexDirection: 'column', paddingBottom: 64,
       }}>
 
         {/* ── Header ── */}
-        <div style={{ padding: '28px 0 24px' }}>
+        {/* On mobile the shared shell floats a hamburger at top-left (top:12,
+            40px). Rather than indent the eyebrow/title to clear it (which left
+            the buttons + pills below misaligned), we push the whole header down
+            so every row shares the same left edge — a cohesive, aligned block. */}
+        <div style={{ padding: isMobile ? '52px 0 22px' : '28px 0 24px' }}>
           <span style={{
             fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase',
             letterSpacing: '0.9px', color: 'var(--color-text-secondary)',
@@ -817,7 +875,12 @@ export default function StyleMemoryPage() {
           }}>
             Your Creative Signature
           </span>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+          <div style={{
+            display: 'flex',
+            flexDirection: isMobile ? 'column' : 'row',
+            alignItems: isMobile ? 'stretch' : 'flex-start',
+            justifyContent: 'space-between', gap: 16,
+          }}>
             <div>
               <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: -0.3, margin: '0 0 6px' }}>
                 Style Memory
@@ -826,16 +889,16 @@ export default function StyleMemoryPage() {
                 Personalize your optimization with saved style profiles
               </p>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: isMobile ? '100%' : undefined }}>
               <button
                 onClick={() => reload()}
                 title="Refresh from Database"
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                   padding: '9px 14px', borderRadius: 10, fontSize: 13, fontWeight: 600,
                   border: '1px solid rgba(124,58,237,0.15)', cursor: 'pointer',
                   background: '#FFFFFF', color: 'var(--color-text-secondary)',
-                  transition: 'all 200ms ease',
+                  transition: 'all 200ms ease', flexShrink: 0,
                 }}
                 className="hover:!border-[rgba(124,58,237,0.3)] hover:!text-[var(--color-primary)]"
               >
@@ -846,13 +909,14 @@ export default function StyleMemoryPage() {
                 id="create-profile-btn"
                 onClick={openCreateDrawer}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 7,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
                   padding: '9px 18px', borderRadius: 10, fontSize: 13, fontWeight: 600,
                   border: 'none', cursor: 'pointer',
                   background: 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)',
                   color: 'white',
                   boxShadow: '0 4px 14px rgba(124,58,237,0.30)',
-                  transition: 'all 200ms ease', flexShrink: 0,
+                  transition: 'all 200ms ease',
+                  flex: isMobile ? '1 1 auto' : '0 0 auto',
                 }}
                 className="hover:translate-y-[-1px] hover:brightness-105"
               >
@@ -887,7 +951,7 @@ export default function StyleMemoryPage() {
         </div>
 
         {/* ── Injection Flow Card ── */}
-        <InjectionFlowCard />
+        <InjectionFlowCard isMobile={isMobile} isTablet={isTablet} />
 
         {/* ── Profile Cards Grid ── */}
         {loading && profiles.length === 0 ? (
@@ -898,7 +962,12 @@ export default function StyleMemoryPage() {
         ) : (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
+            // Auto-fitting track count: as many ~300px+ columns as fit. This
+            // yields 3 cols on desktop, 2 on tablet (incl. 768px, which the old
+            // isMobile check wrongly forced to a single full-width column), and
+            // 1 on phones — with no hard breakpoint to land on the wrong side of.
+            // min(300px,100%) keeps a lone/narrow card from overflowing < 300px.
+            gridTemplateColumns: 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))',
             gap: 16,
           }}>
             {filtered.map((profile) => (
@@ -921,6 +990,7 @@ export default function StyleMemoryPage() {
         onClose={() => { setDrawerOpen(false); setEditingProfile(null); }}
         onSave={handleSaveProfile}
         editingProfile={editingProfile}
+        isMobile={isMobile}
       />
     </>
   );
