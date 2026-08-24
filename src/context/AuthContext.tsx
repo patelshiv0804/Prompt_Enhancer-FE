@@ -118,7 +118,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setToken(null);
       setStyleProfiles([]);
       setActiveStyle({ id: null, name: 'None' });
-      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth')) {
+      // Clearing auth state above is always correct on a 401. Only force a
+      // redirect when the user is inside a protected (dashboard) route; on
+      // public pages (landing, /auth) we stay put so the visitor can browse
+      // the home page or choose to log in themselves. AuthGuard still guards
+      // the dashboard, and a session that expires there still lands here.
+      if (typeof window !== 'undefined' && window.location.pathname.startsWith('/dashboard')) {
         router.push('/auth');
       }
     };

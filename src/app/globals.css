@@ -528,3 +528,129 @@ button:focus-visible {
     padding-bottom: 80px;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   SIDEBAR — Smooth "slide + accent" hover interactions
+   (paired with src/components/layout/Sidebar.tsx)
+   ══════════════════════════════════════════════════════════════════ */
+:root {
+  --sb-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ── Expanded nav rows (Optimizer, Templates, Vault, …) ── */
+.aure-nav-item {
+  transition:
+    background-color 240ms var(--sb-ease),
+    background-image 240ms var(--sb-ease),
+    color 200ms var(--sb-ease),
+    transform 320ms var(--sb-ease),
+    box-shadow 260ms var(--sb-ease);
+  will-change: transform;
+}
+
+.aure-nav-item:hover:not(.is-active) {
+  background: linear-gradient(90deg, rgba(124, 58, 237, 0.10) 0%, rgba(168, 85, 247, 0.05) 100%) !important;
+  color: #2D1B69 !important;
+  transform: translateX(4px);
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.08);
+}
+
+.aure-nav-item:active:not(.is-active) {
+  transform: translateX(4px) scale(0.985);
+  transition-duration: 120ms;
+}
+
+.aure-nav-icon {
+  transition:
+    color 200ms var(--sb-ease),
+    transform 300ms var(--sb-ease);
+}
+
+.aure-nav-item:hover:not(.is-active) .aure-nav-icon {
+  color: #7C3AED !important;
+  transform: scale(1.1);
+}
+
+/* Shortcut hint — slides + fades in when hovering its own row */
+.aure-nav-shortcut {
+  opacity: 0;
+  transform: translateX(-4px);
+  transition:
+    opacity 200ms var(--sb-ease),
+    transform 240ms var(--sb-ease);
+}
+
+.aure-nav-item:hover .aure-nav-shortcut {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* ── Recent chat rows ── */
+.aure-recent-item {
+  position: relative;
+  transition:
+    background-color 220ms var(--sb-ease),
+    transform 300ms var(--sb-ease),
+    box-shadow 240ms var(--sb-ease);
+  will-change: transform;
+}
+
+.aure-recent-item:hover:not(.is-active) {
+  background: rgba(124, 58, 237, 0.06) !important;
+  transform: translateX(3px);
+}
+
+.aure-recent-item:active:not(.is-active) {
+  transform: translateX(3px) scale(0.99);
+  transition-duration: 110ms;
+}
+
+/* ── Collapsed rail icon buttons (nav icons, recent, top logo) ── */
+.aure-rail-btn {
+  transition:
+    background-color 220ms var(--sb-ease),
+    color 200ms var(--sb-ease),
+    transform 280ms var(--sb-ease),
+    box-shadow 240ms var(--sb-ease);
+  will-change: transform;
+}
+
+.aure-rail-btn:hover:not(.is-active) {
+  background: rgba(124, 58, 237, 0.09) !important;
+  color: #4C1D95 !important;
+  transform: translateY(-2px) scale(1.06);
+  box-shadow: 0 6px 16px rgba(124, 58, 237, 0.14);
+}
+
+.aure-rail-btn:active {
+  transform: translateY(-1px) scale(0.97);
+  transition-duration: 110ms;
+}
+
+/* ── Soft utility buttons (group headers, View all, footer profile) ── */
+.aure-soft-btn {
+  transition:
+    background-color 200ms var(--sb-ease),
+    color 200ms var(--sb-ease),
+    transform 220ms var(--sb-ease);
+}
+
+.aure-soft-btn:hover {
+  background: rgba(124, 58, 237, 0.07) !important;
+}
+
+.aure-soft-btn:active {
+  transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aure-nav-item,
+  .aure-nav-icon,
+  .aure-nav-shortcut,
+  .aure-recent-item,
+  .aure-rail-btn,
+  .aure-soft-btn {
+    transition: none !important;
+    transform: none !important;
+  }
+}

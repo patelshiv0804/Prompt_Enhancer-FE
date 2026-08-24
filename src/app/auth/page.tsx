@@ -1,5 +1,6 @@
 'use client';
 import Script from 'next/script';
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, CheckCircle, Eye, EyeOff, KeyRound, Lock, Mail, RefreshCw, Sparkles, User, Zap } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
@@ -348,6 +349,10 @@ export default function AuthPage() {
     @media(max-width:767px) { .badge-a-wrap { display:none !important; } .badge-b-wrap { display:none !important; } }
     .footer-link { font-size:12px; font-weight:600; color:rgba(70,70,76,0.6); text-decoration:none; letter-spacing:0.05em; transition:color 0.2s; }
     .footer-link:hover { color:#6b38d4; }
+    .auth-home-link { cursor:pointer; transition:transform 0.2s, box-shadow 0.2s; }
+    .auth-home-link:hover { transform:translateY(-1px); box-shadow:0 12px 24px rgba(23,26,43,0.1); }
+    .auth-home-link .auth-home-arrow { transition:transform 0.2s; }
+    .auth-home-link:hover .auth-home-arrow { transform:translateX(-3px); }
     .green-dot { width:8px; height:8px; border-radius:50%; background:#22c55e; }
     .oauth-divider { display:flex; align-items:center; gap:12px; margin-top:12px; color:rgba(70,70,76,0.45); font-size:12px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; }
     .oauth-divider::before, .oauth-divider::after { content:''; flex:1; height:1px; background:rgba(229,225,227,0.8); }
@@ -623,11 +628,15 @@ export default function AuthPage() {
       />
       <style>{sharedStyles}</style>
 
-      {/* Top Left Badge */}
-      <div className="glass-floating" style={{ position: 'absolute', top: 24, left: 24, zIndex: 50, padding: '8px 16px', borderRadius: 9999, display: 'flex', alignItems: 'center', gap: 8 }}>
-        <div className="green-dot pulse" />
-        <span style={{ fontFamily: "'Geist',sans-serif", fontSize: 12, fontWeight: 600, letterSpacing: '0.05em', color: '#171A2B' }}>Neural Network: Active</span>
-      </div>
+      {/* Top Left — Back to Home */}
+      <Link
+        href="/"
+        className="glass-floating auth-home-link"
+        style={{ position: 'absolute', top: 24, left: 24, zIndex: 50, padding: '8px 16px', borderRadius: 9999, display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}
+      >
+        <ArrowLeft size={16} color="#171A2B" className="auth-home-arrow" />
+        <span style={{ fontFamily: "'Geist',sans-serif", fontSize: 12, fontWeight: 600, letterSpacing: '0.05em', color: '#171A2B' }}>Back to home</span>
+      </Link>
 
       {/* Top Right Badge */}
       <div className="glass-floating" style={{ position: 'absolute', top: 24, right: 24, zIndex: 50, padding: '8px 16px', borderRadius: 9999, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -783,7 +792,7 @@ export default function AuthPage() {
                       {tab === 'signin' ? 'Welcome back' : 'Create Account'}
                     </h2>
                     <p style={{ fontSize: 16, color: 'rgba(70,70,76,0.6)' }}>
-                      {tab === 'signin' ? 'Sign in to continue to PromptIQ' : 'Register your PromptIQ developer profile'}
+                      {tab === 'signin' ? 'Sign in to continue to AURE' : 'Register your AURE developer profile'}
                     </p>
                   </div>
 
@@ -946,16 +955,6 @@ export default function AuthPage() {
           </div>
         </div>
       </main>
-
-      {/* Footer */}
-      <footer style={{ position: 'relative', zIndex: 20, width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 40px', flexWrap: 'wrap', gap: 16, maxWidth: 1440, margin: '0 auto' }}>
-        <span style={{ fontFamily: "'Geist',sans-serif", fontSize: 14, fontWeight: 900, color: '#1c1b1d', opacity: 0.8 }}>© 2024 PromptIQ Intelligence Systems</span>
-        <nav style={{ display: 'flex', gap: 24 }}>
-          {['Privacy', 'Terms', 'Security', 'Docs'].map(l => (
-            <a key={l} href="#" className="footer-link">{l}</a>
-          ))}
-        </nav>
-      </footer>
     </div>
   );
 }

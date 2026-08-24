@@ -305,6 +305,17 @@ export default function VaultPage() {
     setCurrentPage(1);
   }, [debSearch, activeCategory, sortBy]);
 
+  /* If every prompt on the current page was deleted, the page index can end up
+     past the last page that still has prompts — which renders a misleading
+     "empty vault" even though earlier pages are full. Snap back to the last
+     valid page so the user is never stranded on a page that no longer exists.
+     Changing currentPage re-runs the loader below and fetches that page. */
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
   const load = useCallback(async (silent = false) => {
     // Silent refreshes (the pending-score poll) must not toggle the full-list
     // skeleton or clear the user's selection — they update rows in place.
@@ -601,7 +612,10 @@ export default function VaultPage() {
 
       {/* List */}
       <div id="vault-list" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {loading ? (
+        {/* An empty page while total > 0 means the current page fell out of range
+            after a delete; the effect above is already snapping back to a valid
+            page, so keep showing skeletons instead of flashing the empty state. */}
+        {loading || (items.length === 0 && total > 0) ? (
           Array.from({ length: 5 }).map((_, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 20px', borderRadius: 14, border: '1px solid rgba(124,58,237,0.09)' }}>
               <div className="skeleton" style={{ width: 38, height: 38, borderRadius: 10 }} />
