@@ -310,9 +310,9 @@ export default function AuthPage() {
     .signup-field { overflow: hidden; transition: max-height 0.35s ease, opacity 0.3s ease, margin 0.3s ease; }
     .signup-field.visible { max-height: 120px; opacity: 1; }
     .signup-field.hidden { max-height: 0; opacity: 0; margin-top: 0 !important; margin-bottom: 0 !important; pointer-events: none; }
-    .orb1 { background: radial-gradient(circle, rgba(167,139,250,0.4) 0%, rgba(167,139,250,0) 70%); }
+    .orb1 { background: radial-gradient(circle, rgba(139,92,246,0.4) 0%, rgba(139,92,246,0) 70%); }
     .orb2 { background: radial-gradient(circle, rgba(236,72,153,0.3) 0%, rgba(236,72,153,0) 70%); }
-    .input-glow:focus { box-shadow: 0 0 0 2px rgba(167,139,250,0.3); border-color: #A78BFA; outline: none; }
+    .input-glow:focus { box-shadow: 0 0 0 2px rgba(139,92,246,0.3); border-color: #8B5CF6; outline: none; }
     @keyframes bounceA { 0%,100%{transform:rotate(3deg) translateY(0)} 50%{transform:rotate(3deg) translateY(-10px)} }
     @keyframes bounceB { 0%,100%{transform:rotate(-2deg) translateY(0)} 50%{transform:rotate(-2deg) translateY(-10px)} }
     @keyframes pulse2 { 0%,100%{opacity:1} 50%{opacity:0.5} }
@@ -321,16 +321,16 @@ export default function AuthPage() {
     .pulse { animation: pulse2 2s ease-in-out infinite; }
     .card-hover { transition: transform 0.5s; }
     .card-hover:hover { transform: scale(1.02); }
-    .btn-main { width:100%; background:#171A2B; color:#fff; border:none; border-radius:9999px; padding:12px 0; font-size:14px; font-weight:600; letter-spacing:0.02em; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:transform 0.3s, box-shadow 0.3s; margin-top:4px; font-family:'Geist',sans-serif; }
-    .btn-main:hover:not(:disabled) { transform:scale(1.02); box-shadow:0 0 15px rgba(167,139,250,0.4); }
+    .btn-main { width:100%; background:#09090B; color:#fff; border:none; border-radius:9999px; padding:12px 0; font-size:14px; font-weight:600; letter-spacing:-0.01em; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 6px 22px rgba(13,13,26,0.20); transition:transform 0.25s cubic-bezier(0.22,1,0.36,1), box-shadow 0.25s ease; margin-top:4px; font-family:'Geist',sans-serif; }
+    .btn-main:hover:not(:disabled) { transform:translateY(-2px) scale(1.02); box-shadow:0 10px 30px rgba(139,92,246,0.35), 0 6px 22px rgba(13,13,26,0.22); }
     .btn-main:disabled { opacity: 0.7; cursor: not-allowed; }
-    .btn-secondary { width:100%; background:transparent; color:#171A2B; border:1.5px solid rgba(23,26,43,0.15); border-radius:9999px; padding:13px 0; font-size:14px; font-weight:600; letter-spacing:0.02em; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:all 0.2s; font-family:'Geist',sans-serif; }
-    .btn-secondary:hover:not(:disabled) { border-color:#A78BFA; color:#A78BFA; background:rgba(167,139,250,0.05); }
+    .btn-secondary { width:100%; background:transparent; color:#09090B; border:1.5px solid rgba(23,26,43,0.15); border-radius:9999px; padding:13px 0; font-size:14px; font-weight:600; letter-spacing:0.02em; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:all 0.2s; font-family:'Geist',sans-serif; }
+    .btn-secondary:hover:not(:disabled) { border-color:#8B5CF6; color:#8B5CF6; background:rgba(139,92,246,0.05); }
     .btn-secondary:disabled { opacity:0.6; cursor:not-allowed; }
     .arrow-icon { display:inline-block; transition:transform 0.2s; }
     .btn-main:hover .arrow-icon { transform:translateX(4px); }
     .tab-btn { flex:1; padding:11px 0; background:none; border:none; border-bottom:2px solid transparent; cursor:pointer; font-size:14px; font-family:'Geist',sans-serif; letter-spacing:0.02em; transition:all 0.2s; }
-    .tab-active { border-bottom-color:#A78BFA; color:#171A2B; font-weight:700; }
+    .tab-active { border-bottom-color:#8B5CF6; color:#09090B; font-weight:700; }
     .tab-inactive { color:rgba(70,70,76,0.6); font-weight:500; }
     .input-wrap { position:relative; }
     .field-input { width:100%; box-sizing:border-box; padding:11px 16px 11px 44px; background:rgba(255,255,255,0.9); border:1px solid #ECEAF5; border-radius:12px; font-size:16px; color:#111; font-family:'Inter',sans-serif; transition:border-color 0.3s, box-shadow 0.3s; }
@@ -338,17 +338,17 @@ export default function AuthPage() {
     .field-input.has-right { padding-right:48px; }
     .field-icon-left { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:rgba(70,70,76,0.5); font-size:20px; pointer-events:none; }
     .field-icon-right { position:absolute; right:14px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:rgba(70,70,76,0.5); font-size:20px; display:flex; align-items:center; transition:color 0.2s; }
-    .field-icon-right:hover { color:#171A2B; }
-    .link-style { background:none; border:none; cursor:pointer; font-weight:700; color:#171A2B; font-size:16px; font-family:'Inter',sans-serif; padding:0; transition:color 0.2s; }
-    .link-style:hover { color:#A78BFA; }
-    .forgot-link { font-size:12px; font-weight:600; color:#A78BFA; text-decoration:none; letter-spacing:0.05em; transition:color 0.2s; background:none; border:none; cursor:pointer; font-family:'Inter',sans-serif; padding:0; }
-    .forgot-link:hover { color:#171A2B; }
+    .field-icon-right:hover { color:#09090B; }
+    .link-style { background:none; border:none; cursor:pointer; font-weight:700; color:#09090B; font-size:16px; font-family:'Inter',sans-serif; padding:0; transition:color 0.2s; }
+    .link-style:hover { color:#8B5CF6; }
+    .forgot-link { font-size:12px; font-weight:600; color:#8B5CF6; text-decoration:none; letter-spacing:0.05em; transition:color 0.2s; background:none; border:none; cursor:pointer; font-family:'Inter',sans-serif; padding:0; }
+    .forgot-link:hover { color:#09090B; }
     .vault-card { display:none; }
     @media(min-width:1024px) { .vault-card { display:block; } }
     @media(min-width:768px) { .badge-a-wrap { display:flex !important; } .badge-b-wrap { display:flex !important; } }
     @media(max-width:767px) { .badge-a-wrap { display:none !important; } .badge-b-wrap { display:none !important; } }
     .footer-link { font-size:12px; font-weight:600; color:rgba(70,70,76,0.6); text-decoration:none; letter-spacing:0.05em; transition:color 0.2s; }
-    .footer-link:hover { color:#6b38d4; }
+    .footer-link:hover { color:#7C3AED; }
     .auth-home-link { cursor:pointer; transition:transform 0.2s, box-shadow 0.2s; }
     .auth-home-link:hover { transform:translateY(-1px); box-shadow:0 12px 24px rgba(23,26,43,0.1); }
     .auth-home-link .auth-home-arrow { transition:transform 0.2s; }
@@ -356,30 +356,30 @@ export default function AuthPage() {
     .green-dot { width:8px; height:8px; border-radius:50%; background:#22c55e; }
     .oauth-divider { display:flex; align-items:center; gap:12px; margin-top:6px; color:rgba(70,70,76,0.45); font-size:12px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; }
     .oauth-divider::before, .oauth-divider::after { content:''; flex:1; height:1px; background:rgba(229,225,227,0.8); }
-    .google-fallback { width:100%; min-height:46px; border-radius:9999px; border:1px solid #E5E7EB; background:#fff; color:#171A2B; font-family:'Geist',sans-serif; font-size:14px; font-weight:600; letter-spacing:0.02em; display:flex; align-items:center; justify-content:center; gap:10px; padding:11px 0; box-sizing:border-box; box-shadow:0 1px 2px rgba(17,24,39,0.04); }
+    .google-fallback { width:100%; min-height:46px; border-radius:9999px; border:1px solid #E5E7EB; background:#fff; color:#09090B; font-family:'Geist',sans-serif; font-size:14px; font-weight:600; letter-spacing:0.02em; display:flex; align-items:center; justify-content:center; gap:10px; padding:11px 0; box-sizing:border-box; box-shadow:0 1px 2px rgba(17,24,39,0.04); }
     .google-hint { margin-top:6px; font-size:11px; line-height:1.4; color:rgba(70,70,76,0.62); text-align:center; }
-    .inline-skeleton { width:100%; border-radius:9999px; background:linear-gradient(90deg, rgba(167,139,250,0.12), rgba(236,72,153,0.14), rgba(167,139,250,0.12)); background-size:200% 100%; animation:shimmer 1.4s linear infinite; }
+    .inline-skeleton { width:100%; border-radius:9999px; background:linear-gradient(90deg, rgba(139,92,246,0.12), rgba(236,72,153,0.14), rgba(139,92,246,0.12)); background-size:200% 100%; animation:shimmer 1.4s linear infinite; }
     .inline-skeleton.btn { height:44px; margin-top:6px; }
     .inline-skeleton.google { height:44px; margin-top:2px; }
     .google-button-shell { position:relative; min-height:44px; }
     .google-button-host { width:100%; min-height:44px; display:flex; justify-content:center; }
     .google-button-skeleton { position:absolute; inset:0; }
     .auth-loading-overlay { position:absolute; inset:0; z-index:80; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; background:rgba(250,250,252,0.42); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border-radius:40px; }
-    .auth-loading-spinner { width:42px; height:42px; border-radius:50%; border:3px solid rgba(167,139,250,0.18); border-top-color:#171A2B; animation:spin 0.8s linear infinite; }
-    .auth-loading-title { font-family:'Geist',sans-serif; font-size:15px; font-weight:600; letter-spacing:0.02em; color:#171A2B; text-align:center; }
+    .auth-loading-spinner { width:42px; height:42px; border-radius:50%; border:3px solid rgba(139,92,246,0.18); border-top-color:#09090B; animation:spin 0.8s linear infinite; }
+    .auth-loading-title { font-family:'Geist',sans-serif; font-size:15px; font-weight:600; letter-spacing:0.02em; color:#09090B; text-align:center; }
     .auth-loading-copy { font-size:13px; color:rgba(70,70,76,0.68); text-align:center; }
     @keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
     @keyframes shimmer { 0% { background-position:200% 0; } 100% { background-position:-200% 0; } }
     /* OTP boxes */
-    .otp-box { width:44px; height:54px; text-align:center; font-size:22px; font-weight:700; font-family:'Geist',sans-serif; color:#171A2B; background:rgba(255,255,255,0.95); border:1.5px solid #ECEAF5; border-radius:12px; outline:none; transition:border-color 0.2s, box-shadow 0.2s, transform 0.15s; caret-color:#A78BFA; }
-    .otp-box:focus { border-color:#A78BFA; box-shadow:0 0 0 3px rgba(167,139,250,0.2); transform:scale(1.06); }
-    .otp-box.filled { border-color:#A78BFA; background:linear-gradient(135deg,rgba(167,139,250,0.06),rgba(236,72,153,0.04)); }
+    .otp-box { width:44px; height:54px; text-align:center; font-size:22px; font-weight:700; font-family:'Geist',sans-serif; color:#09090B; background:rgba(255,255,255,0.95); border:1.5px solid #ECEAF5; border-radius:12px; outline:none; transition:border-color 0.2s, box-shadow 0.2s, transform 0.15s; caret-color:#8B5CF6; }
+    .otp-box:focus { border-color:#8B5CF6; box-shadow:0 0 0 3px rgba(139,92,246,0.2); transform:scale(1.06); }
+    .otp-box.filled { border-color:#8B5CF6; background:linear-gradient(135deg,rgba(139,92,246,0.06),rgba(236,72,153,0.04)); }
     /* OTP timer */
     .otp-timer { font-size:13px; font-family:'Geist',sans-serif; font-weight:600; color:rgba(70,70,76,0.7); text-align:center; }
-    .otp-timer span { color:#A78BFA; }
+    .otp-timer span { color:#8B5CF6; }
     /* Back button */
     .back-btn { display:inline-flex; align-items:center; gap:6px; background:none; border:none; cursor:pointer; font-size:13px; font-weight:600; color:rgba(70,70,76,0.6); font-family:'Geist',sans-serif; padding:0; letter-spacing:0.02em; transition:color 0.2s; margin-bottom:20px; }
-    .back-btn:hover { color:#A78BFA; }
+    .back-btn:hover { color:#8B5CF6; }
     /* Success check animation */
     @keyframes scaleIn { 0%{transform:scale(0);opacity:0} 70%{transform:scale(1.15)} 100%{transform:scale(1);opacity:1} }
     @keyframes fadeUp { 0%{opacity:0;transform:translateY(16px)} 100%{opacity:1;transform:translateY(0)} }
@@ -387,8 +387,8 @@ export default function AuthPage() {
     .success-text { animation: fadeUp 0.4s 0.3s ease both; }
     /* Step indicator */
     .step-dot { width:8px; height:8px; border-radius:50%; transition:all 0.3s; }
-    .step-dot.active { background:#A78BFA; transform:scale(1.25); }
-    .step-dot.done { background:#A78BFA; opacity:0.4; }
+    .step-dot.active { background:#8B5CF6; transform:scale(1.25); }
+    .step-dot.done { background:#8B5CF6; opacity:0.4; }
     .step-dot.upcoming { background:rgba(70,70,76,0.2); }
     /* fp view slide */
     .fp-view { animation: fadeUp 0.3s ease both; }
@@ -429,8 +429,8 @@ export default function AuthPage() {
       </button>
       {renderStepDots()}
       <div style={{ textAlign: 'center', marginBottom: 28 }}>
-        <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'linear-gradient(135deg,rgba(167,139,250,0.15),rgba(236,72,153,0.1))', border: '1px solid rgba(167,139,250,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-          <KeyRound size={22} color="#A78BFA" />
+        <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'linear-gradient(135deg,rgba(139,92,246,0.15),rgba(236,72,153,0.1))', border: '1px solid rgba(139,92,246,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+          <KeyRound size={22} color="#8B5CF6" />
         </div>
         <h2 style={{ fontFamily: "'Geist',sans-serif", fontSize: 22, fontWeight: 700, color: '#111', marginBottom: 6, letterSpacing: '-0.02em' }}>Forgot Password?</h2>
         <p style={{ fontSize: 14, color: 'rgba(70,70,76,0.65)', lineHeight: 1.6 }}>
@@ -470,12 +470,12 @@ export default function AuthPage() {
       </button>
       {renderStepDots()}
       <div style={{ textAlign: 'center', marginBottom: 28 }}>
-        <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'linear-gradient(135deg,rgba(167,139,250,0.15),rgba(236,72,153,0.1))', border: '1px solid rgba(167,139,250,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-          <Mail size={22} color="#A78BFA" />
+        <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'linear-gradient(135deg,rgba(139,92,246,0.15),rgba(236,72,153,0.1))', border: '1px solid rgba(139,92,246,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+          <Mail size={22} color="#8B5CF6" />
         </div>
         <h2 style={{ fontFamily: "'Geist',sans-serif", fontSize: 22, fontWeight: 700, color: '#111', marginBottom: 6, letterSpacing: '-0.02em' }}>Check your inbox</h2>
         <p style={{ fontSize: 14, color: 'rgba(70,70,76,0.65)', lineHeight: 1.6 }}>
-          We sent a 6-digit code to <strong style={{ color: '#171A2B' }}>{fpEmail}</strong>
+          We sent a 6-digit code to <strong style={{ color: '#09090B' }}>{fpEmail}</strong>
         </p>
       </div>
       {fpError && errorBox(fpError)}
@@ -527,8 +527,8 @@ export default function AuthPage() {
     <div className="fp-view">
       {renderStepDots()}
       <div style={{ textAlign: 'center', marginBottom: 28 }}>
-        <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'linear-gradient(135deg,rgba(167,139,250,0.15),rgba(236,72,153,0.1))', border: '1px solid rgba(167,139,250,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-          <Lock size={22} color="#A78BFA" />
+        <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'linear-gradient(135deg,rgba(139,92,246,0.15),rgba(236,72,153,0.1))', border: '1px solid rgba(139,92,246,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+          <Lock size={22} color="#8B5CF6" />
         </div>
         <h2 style={{ fontFamily: "'Geist',sans-serif", fontSize: 22, fontWeight: 700, color: '#111', marginBottom: 6, letterSpacing: '-0.02em' }}>Set new password</h2>
         <p style={{ fontSize: 14, color: 'rgba(70,70,76,0.65)', lineHeight: 1.6 }}>
@@ -634,14 +634,14 @@ export default function AuthPage() {
         className="glass-floating auth-home-link"
         style={{ position: 'absolute', top: 24, left: 24, zIndex: 50, padding: '8px 16px', borderRadius: 9999, display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}
       >
-        <ArrowLeft size={16} color="#171A2B" className="auth-home-arrow" />
-        <span style={{ fontFamily: "'Geist',sans-serif", fontSize: 12, fontWeight: 600, letterSpacing: '0.05em', color: '#171A2B' }}>Back to home</span>
+        <ArrowLeft size={16} color="#09090B" className="auth-home-arrow" />
+        <span style={{ fontFamily: "'Geist',sans-serif", fontSize: 12, fontWeight: 600, letterSpacing: '0.05em', color: '#09090B' }}>Back to home</span>
       </Link>
 
       {/* Top Right Badge */}
       <div className="glass-floating" style={{ position: 'absolute', top: 24, right: 24, zIndex: 50, padding: '8px 16px', borderRadius: 9999, display: 'flex', alignItems: 'center', gap: 8 }}>
-        <Zap size={16} color="#A78BFA" />
-        <span style={{ fontFamily: "'Geist',sans-serif", fontSize: 12, fontWeight: 600, letterSpacing: '0.05em', color: '#171A2B' }}>Token Efficiency: 94%</span>
+        <Zap size={16} color="#8B5CF6" />
+        <span style={{ fontFamily: "'Geist',sans-serif", fontSize: 12, fontWeight: 600, letterSpacing: '0.05em', color: '#09090B' }}>Token Efficiency: 94%</span>
       </div>
 
       <main style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 10, padding: 'clamp(10px, 2vh, 26px) 24px', overflowX: 'hidden', overflowY: 'auto' }}>
@@ -656,7 +656,7 @@ export default function AuthPage() {
         {/* Vault Preview */}
         <div className="vault-card" style={{ position: 'absolute', top: '33%', right: '25%', zIndex: 10, opacity: 0.6, transform: 'translate(50%,-50%) rotate(6deg) scale(0.9)' }}>
           <div className="glass-floating" style={{ padding: 24, borderRadius: 16, width: 320, position: 'relative', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.6)', boxShadow: '0 25px 50px rgba(0,0,0,0.1)' }}>
-            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: 4, background: 'linear-gradient(90deg,#60a5fa,#A78BFA)' }} />
+            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: 4, background: 'linear-gradient(90deg,#60a5fa,#8B5CF6)' }} />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
               <span style={{ padding: '4px 8px', background: '#eff6ff', color: '#2563eb', borderRadius: 4, fontSize: 11, fontWeight: 600 }}>Vault</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#22c55e' }}>
@@ -684,7 +684,7 @@ export default function AuthPage() {
             <div style={{ marginBottom: 24, textAlign: 'left' }}>
               <h1 style={{ fontFamily: "'Geist',sans-serif", fontSize: 'clamp(32px,4vw,48px)', lineHeight: 1.15, fontWeight: 700, letterSpacing: '-0.04em', color: '#111', marginBottom: 8 }}>
                 Architect your <br />
-                <span style={{ background: 'linear-gradient(90deg,#171A2B,#A78BFA)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>intelligence.</span>
+                <span className="animated-remarkable-gradient">intelligence.</span>
               </h1>
             </div>
 
@@ -694,9 +694,9 @@ export default function AuthPage() {
                 <div style={{ position: 'relative', width: 48, height: 48 }}>
                   <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
                     <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#e5e7eb" strokeWidth="3" />
-                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#A78BFA" strokeWidth="3" strokeDasharray="98,100" />
+                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#8B5CF6" strokeWidth="3" strokeDasharray="98,100" />
                   </svg>
-                  <span style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', fontFamily: "'Geist',sans-serif", fontWeight: 700, fontSize: 13, color: '#171A2B' }}>98</span>
+                  <span style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', fontFamily: "'Geist',sans-serif", fontWeight: 700, fontSize: 13, color: '#09090B' }}>98</span>
                 </div>
                 <div>
                   <p style={{ fontFamily: "'Geist',sans-serif", fontSize: 10, fontWeight: 600, letterSpacing: '0.05em', color: 'rgba(70,70,76,0.7)', textTransform: 'uppercase', marginBottom: 4 }}>PromptScore</p>
@@ -723,16 +723,16 @@ export default function AuthPage() {
                     <p style={{ fontFamily: 'monospace', fontSize: 13, color: '#6b7280', marginTop: 4 }}>&ldquo;Write a react component for a login page...&rdquo;</p>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'center', margin: '-8px 0' }}>
-                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,#A78BFA,#EC4899)', padding: 1, zIndex: 10 }}>
+                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,#8B5CF6,#EC4899)', padding: 1, zIndex: 10 }}>
                       <div style={{ width: '100%', height: '100%', background: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Sparkles size={16} strokeWidth={2.2} color="#A78BFA" className="pulse" />
+                        <Sparkles size={16} strokeWidth={2.2} color="#8B5CF6" className="pulse" />
                       </div>
                     </div>
                   </div>
-                  <div style={{ background: 'linear-gradient(135deg,rgba(167,139,250,0.1),rgba(236,72,153,0.05))', padding: 16, borderRadius: 12, border: '1px solid rgba(167,139,250,0.3)', position: 'relative' }}>
-                    <span style={{ position: 'absolute', top: -10, left: 14, background: '#fff', padding: '0 8px', fontSize: 10, fontWeight: 700, color: '#A78BFA', borderRadius: 9999, border: '1px solid rgba(167,139,250,0.3)', boxShadow: '0 1px 4px rgba(167,139,250,0.2)' }}>Optimized Output</span>
-                    <p style={{ fontFamily: 'monospace', fontSize: 13, color: '#171A2B', lineHeight: 1.6, marginTop: 4 }}>
-                      <span style={{ color: '#A78BFA' }}>You are an expert Frontend Engineer.</span><br />
+                  <div style={{ background: 'linear-gradient(135deg,rgba(139,92,246,0.1),rgba(236,72,153,0.05))', padding: 16, borderRadius: 12, border: '1px solid rgba(139,92,246,0.3)', position: 'relative' }}>
+                    <span style={{ position: 'absolute', top: -10, left: 14, background: '#fff', padding: '0 8px', fontSize: 10, fontWeight: 700, color: '#8B5CF6', borderRadius: 9999, border: '1px solid rgba(139,92,246,0.3)', boxShadow: '0 1px 4px rgba(139,92,246,0.2)' }}>Optimized Output</span>
+                    <p style={{ fontFamily: 'monospace', fontSize: 13, color: '#09090B', lineHeight: 1.6, marginTop: 4 }}>
+                      <span style={{ color: '#8B5CF6' }}>You are an expert Frontend Engineer.</span><br />
                       Create a highly accessible, responsive React login component using Tailwind CSS...
                     </p>
                   </div>
@@ -741,12 +741,12 @@ export default function AuthPage() {
 
               {/* Model Badge */}
               <div className="badge-b-wrap glass-floating badge-b" style={{ position: 'absolute', bottom: -24, left: -48, zIndex: 40, padding: '10px 14px', borderRadius: 12, alignItems: 'center', gap: 10, border: '1px solid rgba(255,255,255,0.5)', backdropFilter: 'blur(48px)' }}>
-                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,#A78BFA,#EC4899)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,#8B5CF6,#EC4899)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Sparkles size={16} color="#fff" />
                 </div>
                 <div>
                   <p style={{ fontFamily: "'Geist',sans-serif", fontSize: 10, fontWeight: 600, letterSpacing: '0.05em', color: 'rgba(70,70,76,0.7)', textTransform: 'uppercase' }}>Target Model</p>
-                  <p style={{ fontFamily: "'Geist',sans-serif", fontSize: 12, fontWeight: 700, color: '#171A2B' }}>Claude 3.5 Sonnet</p>
+                  <p style={{ fontFamily: "'Geist',sans-serif", fontSize: 12, fontWeight: 700, color: '#09090B' }}>Claude 3.5 Sonnet</p>
                 </div>
               </div>
             </div>
@@ -776,7 +776,7 @@ export default function AuthPage() {
               )}
 
               {/* Top gradient bar */}
-              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: 8, background: 'linear-gradient(90deg,#A78BFA,#EC4899,#A78BFA)', opacity: 0.5 }} />
+              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: 8, background: 'linear-gradient(90deg,#6366F1,#8B5CF6,#EC4899)', opacity: 0.7 }} />
 
               {/* ── FORGOT PASSWORD VIEWS ── */}
               {view === 'forgot-email' && renderForgotEmail()}
@@ -792,7 +792,7 @@ export default function AuthPage() {
                       {tab === 'signin' ? 'Welcome back' : 'Create Account'}
                     </h2>
                     <p style={{ fontSize: 14, color: 'rgba(70,70,76,0.6)' }}>
-                      {tab === 'signin' ? 'Sign in to continue to AURE' : 'Register your AURE developer profile'}
+                      {tab === 'signin' ? 'Sign in to continue to AURE' : 'Register your profile'}
                     </p>
                   </div>
 

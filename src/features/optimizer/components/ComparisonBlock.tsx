@@ -318,7 +318,7 @@ export default function ComparisonBlock({
         }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '1.2px' }}>Role</div>
           <div style={{ paddingBottom: 4 }}>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, padding: '4px 6px 8px 4px' }}>
               {ROLES.map(role => {
                 const Icon = role.icon;
                 const active = activeRole === role.id;
@@ -363,15 +363,20 @@ export default function ComparisonBlock({
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.3 }}
-                style={{ display: 'flex', flexDirection: 'column', gap: 10, overflow: 'hidden', marginTop: 4 }}
+                style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 2 }}
               >
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#7C3AED', textTransform: 'uppercase', letterSpacing: '1.2px', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span>Select Mode</span>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '1.2px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span>Mode</span>
                   <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--color-text-secondary)', textTransform: 'none' }}>
                     for {ROLES.find(r => r.id === activeRole)?.label}
                   </span>
                 </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, maxHeight: 180, overflowY: 'auto', paddingRight: 4 }}>
+                <div style={{
+                  display: 'flex', flexWrap: 'wrap', gap: 8,
+                  maxHeight: 190, overflowY: 'auto',
+                  padding: '6px 8px 12px 6px',
+                  scrollbarWidth: 'thin',
+                }}>
                   {ROLE_MODES[activeRole].map(m => {
                     const active = activeMode === m;
                     const ModeIcon = getModeIcon(m);
@@ -384,16 +389,18 @@ export default function ComparisonBlock({
                           setActiveMode(m);
                         }}
                         style={{
-                          padding: '6px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: active ? 600 : 500,
-                          cursor: (isOptimizing || isAnalyzing) ? 'not-allowed' : 'pointer', transition: 'all 180ms ease', display: 'flex', alignItems: 'center', gap: 6,
-                          color: active ? '#FFFFFF' : 'var(--color-text-primary)',
+                          padding: '7px 15px', borderRadius: 9999, fontSize: 12.5, fontWeight: active ? 600 : 500,
+                          cursor: (isOptimizing || isAnalyzing) ? 'not-allowed' : 'pointer', transition: 'all 250ms ease', display: 'flex', alignItems: 'center', gap: 6,
+                          color: active ? '#6D28D9' : '#6B6B8A',
                           background: active
-                            ? 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)'
-                            : 'rgba(124,58,237,0.05)',
-                          border: active ? 'none' : '1px solid rgba(124,58,237,0.10)',
-                          boxShadow: active ? '0 3px 10px rgba(124,58,237,0.25)' : 'none',
+                            ? 'linear-gradient(160deg, rgba(167,139,250,0.22) 0%, rgba(196,181,253,0.12) 100%)'
+                            : 'linear-gradient(160deg, rgba(109,40,217,0.07) 0%, rgba(124,58,237,0.03) 100%)',
+                          border: `1px solid ${active ? 'rgba(124,58,237,0.30)' : 'rgba(124,58,237,0.12)'}`,
+                          boxShadow: active
+                            ? 'inset 0 1px 0 rgba(255,255,255,0.70), 0 4px 14px rgba(124,58,237,0.18), 0 1px 4px rgba(0,0,0,0.08), 0 0 0 1px rgba(124,58,237,0.18)'
+                            : 'inset 0 2px 4px rgba(80,20,180,0.10), inset 0 1px 2px rgba(0,0,0,0.06), 0 1px 0 rgba(255,255,255,0.80)',
+                          transform: active ? 'translateY(-1px)' : 'none',
                         }}
-                        className={!active ? 'hover:!bg-[rgba(124,58,237,0.10)]' : ''}
                       >
                         <ModeIcon size={13} style={{ opacity: active ? 1 : 0.75 }} />
                         {m}
