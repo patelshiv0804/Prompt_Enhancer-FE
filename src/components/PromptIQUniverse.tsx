@@ -974,7 +974,15 @@ export default function PromptIQUniverse() {
         </div>
       </div>
 
-      {/* ── Feature Nodes (Light Theme Glossy 3D Glass) ── */}
+      {/* ── Feature Nodes (Light Theme Glossy 3D Glass) ──
+           Hidden below lg: the grid projection places these at roughly
+           center ±650px (gridC 4–5 / 15–16 → u = ±492px × perspective),
+           which is off-screen on phone AND tablet-portrait widths (at
+           768px the md breakpoint used to reveal them and the labels
+           clipped ~190px off the left edge). Below lg the canvas stays
+           as an ambient backdrop and the Hero copy is the focus;
+           ≥1024px is unchanged. */}
+      <div className="hidden lg:block">
       {NODES.map((n) => {
         const NodeIcon = n.icon;
         const isActive = activeId === n.id;
@@ -1077,6 +1085,7 @@ export default function PromptIQUniverse() {
           </div>
         );
       })}
+      </div>
     </div>
   );
 }

@@ -125,6 +125,62 @@ export default function Footer() {
           border-color: rgba(255, 255, 255, 0.25) !important;
           color: #FFFFFF !important;
         }
+
+        /* ─── Responsive ───────────────────────────────────────────────
+           Every rule below lives inside a media query, so the desktop
+           layout is untouched. \`!important\` is required because the
+           markup sizes these elements with inline style={{}}, which
+           always beats a class selector. ─────────────────────────────── */
+
+        /* The desktop grid (280px brand + 4 link columns + 160px of gaps)
+           needs ~770px minimum. Below that the tracks bottom out at
+           min-content, the grid overflows, and body{overflow-x:hidden}
+           silently clips the right-hand columns off-screen. */
+        @media (max-width: 1023px) {
+          .footer-grid {
+            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+            gap: 40px 28px !important;
+          }
+          /* Brand spans the full row; max-width keeps the paragraph and
+             newsletter field at a readable measure instead of stretching. */
+          .footer-brand {
+            grid-column: 1 / -1;
+            max-width: 420px;
+          }
+          /* 16px is the threshold below which iOS Safari zooms the whole page
+             on focus. Lives here (not the 767px block) so iPad-portrait
+             (768px, still iOS Safari) is covered too. */
+          .footer-news-input {
+            font-size: 16px !important;
+          }
+        }
+
+        @media (max-width: 767px) {
+          .footer-inner {
+            padding: 56px 20px 32px !important;
+          }
+          .footer-grid {
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+            gap: 32px 20px !important;
+            margin-bottom: 36px !important;
+          }
+          /* Link rows are inline-flex, so a label + badge/status pair has a
+             hard minimum width and would clip rather than reflow. */
+          .footer-link {
+            flex-wrap: wrap;
+          }
+          .footer-bottom {
+            padding-top: 20px !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 14px !important;
+          }
+          .footer-bottom-left,
+          .footer-bottom-right {
+            flex-wrap: wrap;
+            gap: 8px 12px !important;
+          }
+        }
       `}</style>
 
       {/* ─── Ambient Mesh Background ─── */}
@@ -160,7 +216,7 @@ export default function Footer() {
         }} />
       </div>
 
-      <div style={{ maxWidth: 1240, margin: '0 auto', padding: '80px 32px 40px', position: 'relative', zIndex: 2 }}>
+      <div className="footer-inner" style={{ maxWidth: 1240, margin: '0 auto', padding: '80px 32px 40px', position: 'relative', zIndex: 2 }}>
 
         {/* ═══════════════════════════════════════════════════
            Hero CTA Section – Commented Out
@@ -178,7 +234,7 @@ export default function Footer() {
         {/* ═══════════════════════════════════════════════════
            Main Footer Grid (6-Column: Brand + Newsletter | 4 Link Cols)
            ═══════════════════════════════════════════════════ */}
-        <div style={{
+        <div className="footer-grid" style={{
           display: 'grid',
           gridTemplateColumns: '280px 1fr 1fr 1fr 1fr',
           gap: '48px 40px',
@@ -186,7 +242,7 @@ export default function Footer() {
         }}>
 
           {/* ── Column 1: Brand + Newsletter ── */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div className="footer-brand" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{
                 width: 34, height: 34, borderRadius: 10,
@@ -220,6 +276,7 @@ export default function Footer() {
                   placeholder="you@email.com"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
+                  className="footer-news-input"
                   style={{
                     flex: 1, padding: '9px 14px', fontSize: 12.5,
                     background: 'rgba(255,255,255,0.04)',
@@ -384,12 +441,12 @@ export default function Footer() {
         {/* ═══════════════════════════════════════════════════
            Bottom Bar: Copyright + Certs + Language
            ═══════════════════════════════════════════════════ */}
-        <div style={{
+        <div className="footer-bottom" style={{
           paddingTop: 24,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           gap: 20, flexWrap: 'wrap', fontSize: 12, color: '#475569',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div className="footer-bottom-left" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <span>© {new Date().getFullYear()} AURE Inc.</span>
             <span style={{ color: '#334155' }}>·</span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
@@ -397,7 +454,7 @@ export default function Footer() {
             </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div className="footer-bottom-right" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             {/* Trust Badges */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <ShieldCheck size={13} style={{ color: '#34D399' }} />

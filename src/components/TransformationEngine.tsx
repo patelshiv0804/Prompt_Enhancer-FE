@@ -69,6 +69,74 @@ export default function TransformationEngine({
       id="transformation-engine"
       style={{ minHeight: "100vh" }}
     >
+      <style>{`
+        /* ─── Responsive ───────────────────────────────────────────────
+           Every rule lives inside a media query, so the lg-and-up layout
+           is untouched. !important is needed where the markup positions
+           an element with inline style={{}}, which outranks a class. ──── */
+
+        /* The pipeline is a fixed 1060x780 coordinate space: the engine sits
+           at the particle paths' convergence point (530,415) and both cards
+           are absolutely positioned against it. Below lg the box is wider
+           than its column and the section's overflow:hidden clips it with no
+           scrollbar — at 375px only the middle 327px of 1060px is visible,
+           and RawPromptCard alone is a fixed 420px.
+
+           Scaling the box down (as WorksEverywhere does for its orbit) would
+           leave the 14px prompt text at ~4px, so instead the three stages are
+           unstacked into a plain vertical column at full size. DOM order is
+           already raw -> engine -> optimized, which is the pipeline's own
+           reading order, so nothing needs reordering. */
+        @media (max-width: 1023px) {
+          .te-flow {
+            width: 100% !important;
+            height: auto !important;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 28px;
+          }
+          /* position:static drops each stage back into normal flow.
+             Two separate resets are needed: .te-engine centres itself with an
+             inline transform:translate(-50%,-50%), while the cards use
+             Tailwind's -translate-x-1/2 — and Tailwind v4 compiles that to the
+             standalone 'translate' property, which transform:none does NOT
+             cancel. Without the translate reset the cards render 163px
+             off-screen to the left. */
+          .te-card-raw,
+          .te-engine,
+          .te-card-opt {
+            position: static !important;
+            transform: none !important;
+            translate: none !important;
+          }
+          .te-card-raw,
+          .te-card-opt { width: 100%; }
+          /* Overrides RawPromptCard's own w-[420px] on the inner card div. */
+          .te-card-raw > *,
+          .te-card-raw > * > * { width: 100% !important; }
+
+          /* The canvas draws bezier paths through the 1060x780 space; once the
+             stages are stacked those curves connect nothing. Hiding the
+             wrapper also collapses the canvas to no box, so the component's
+             own IntersectionObserver stops reporting it as intersecting and
+             its requestAnimationFrame loop shuts down. */
+          .te-particles { display: none !important; }
+          /* A dashed arrow annotation anchored to the engine's absolute
+             position — it points at empty space in a stacked column. */
+          .te-engine-label { display: none !important; }
+
+          /* 10 platform tiles in one justify-between row need ~872px of
+             min-content (56px icon + 24px padding each, plus 9x8px gaps);
+             a 375px screen leaves 263px inside the card. */
+          .te-opt-row {
+            flex-wrap: wrap !important;
+            justify-content: center !important;
+            row-gap: 4px;
+          }
+        }
+      `}</style>
+
       {/* Subtle background gradients */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
@@ -142,14 +210,18 @@ export default function TransformationEngine({
            * placed at the exact convergence point of the path system.
            */}
           <div
-            className="relative"
+            className="te-flow relative"
             style={{ width: FLOW_WIDTH, height: FLOW_HEIGHT }}
           >
-            {/* Particle flow (SVG overlay — covers full container) */}
-            {isVisible && <AnimatedParticleFlow />}
+            {/* Particle flow (SVG overlay — covers full container).
+                Wrapper is static, so the child's `absolute inset-0` still
+                resolves against .te-flow exactly as before. */}
+            <div className="te-particles">
+              {isVisible && <AnimatedParticleFlow />}
+            </div>
 
             {/* Top: Raw Prompt Card — centered horizontally at top */}
-            <div className="absolute left-1/2 top-2 z-10 -translate-x-1/2">
+            <div className="te-card-raw absolute left-1/2 top-2 z-10 -translate-x-1/2">
               <RawPromptCard
                 value={prompt}
                 onChange={setPrompt}
@@ -161,7 +233,7 @@ export default function TransformationEngine({
             {/* Center: AI Engine — placed at the exact convergence node.
              *  transform: translate(-50%, -50%) centers the hexagon on the point. */}
             <div
-              className="absolute z-10"
+              className="te-engine absolute z-10"
               style={{
                 left: engineLeftPct,
                 top: engineTopPct,
@@ -173,7 +245,7 @@ export default function TransformationEngine({
 
             {/* "AI Enhancement Engine" label — positioned to the right of the engine */}
             <motion.div
-              className="absolute z-10 flex items-center gap-2"
+              className="te-engine-label absolute z-10 flex items-center gap-2"
               style={{
                 left: `calc(${engineLeftPct} + 80px)`,
                 top: engineTopPct,
@@ -218,7 +290,7 @@ export default function TransformationEngine({
             </motion.div>
 
             {/* Bottom: Optimized For Card — centered horizontally at bottom */}
-            <div className="absolute bottom-2 left-1/2 z-10 -translate-x-1/2">
+            <div className="te-card-opt absolute bottom-2 left-1/2 z-10 -translate-x-1/2">
               <OptimizedForCard />
             </div>
           </div>

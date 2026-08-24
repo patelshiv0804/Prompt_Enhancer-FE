@@ -115,6 +115,31 @@ button:focus-visible {
   }
 }
 
+/* ── Landing Hero sizing ──
+   `100vh` on mobile browsers measures the *large* viewport (address bar
+   hidden), so the bottom of the hero sits under the browser chrome on first
+   paint. `100svh` measures the small viewport, which always fits. The plain
+   `vh` rule stays first as the fallback for browsers without svh support. */
+.hero-shell {
+  height: 100vh;
+  min-height: 640px;
+}
+
+@supports (height: 100svh) {
+  .hero-shell {
+    height: 100svh;
+  }
+}
+
+@media (max-width: 767px) {
+  /* Phones: let the copy define the height instead of forcing a tall
+     viewport box, so nothing is ever clipped on short screens. */
+  .hero-shell {
+    height: auto;
+    min-height: 560px;
+  }
+}
+
 /* ── Gradient text utility ── */
 .gradient-text {
   background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 40%, #EC4899 100%);

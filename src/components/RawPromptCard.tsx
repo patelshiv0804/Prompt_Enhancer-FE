@@ -32,9 +32,12 @@ const RawPromptCard = React.memo(function RawPromptCard({
           </span>
         </div>
 
-        {/* Prompt Input textarea */}
+        {/* Prompt Input textarea.
+            16px below lg: iOS Safari zooms the whole page when a field with
+            font-size < 16px receives focus, and this is the landing page's
+            primary input. lg keeps the 14px design size on desktop. */}
         <textarea
-          className="mb-3 w-full border-0 focus:ring-0 focus:outline-none p-0 resize-none font-mono text-[14px] leading-[1.75] text-gray-700 placeholder-gray-400 bg-transparent min-h-[80px]"
+          className="mb-3 w-full border-0 focus:ring-0 focus:outline-none p-0 resize-none font-mono text-[16px] lg:text-[14px] leading-[1.75] text-gray-700 placeholder-gray-400 bg-transparent min-h-[80px]"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="Type your prompt here..."
