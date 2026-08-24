@@ -12,6 +12,7 @@ import VersionHistoryDrawer from './VersionHistoryDrawer';
 import { useEnabledStyleOptions } from '@/features/style-memory/services/styleMemoryService';
 import { apiClient } from '@/utils/apiClient';
 import FormattedPromptViewer from '../../optimizer/components/FormattedPromptViewer';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface Dimension {
@@ -890,6 +891,14 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isReenhancing, setIsReenhancing] = useState(false);
 
+  // ── Responsive breakpoints ─────────────────────────────────────────────────
+  // Inline styles win over CSS @media (specificity), so layout decisions are
+  // driven from JS. `isDrawer` mirrors the Sidebar's 768px drawer breakpoint
+  // (the floating hamburger overlays the top-left, so we clear space for it).
+  const isCompact = useMediaQuery('(max-width: 1000px)'); // stack side-by-side blocks
+  const isDrawer = useMediaQuery('(max-width: 768px)');   // sidebar is an overlay drawer
+  const isMobile = useMediaQuery('(max-width: 640px)');   // phone-sized tightening
+
   // ── Re-enhance handler ───────────────────────────────────────────────────────
   const handleReenhance = async () => {
     if (!chatId || MOCK_SESSIONS[chatId]) return; // skip for mock sessions
@@ -1010,9 +1019,10 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
     if (!selected) return null;
 
     return (
-      <div style={{ position: 'relative' }}>
+      <div style={{ position: 'relative', width: isMobile ? '100%' : undefined }}>
         <button type="button" aria-haspopup="menu" aria-expanded={isOpen} onClick={() => setIsOpen(!isOpen)} style={{
-          minWidth: 214, height: 46, padding: '0 14px 0 18px', borderRadius: 999,
+          minWidth: isMobile ? 0 : 214, width: isMobile ? '100%' : undefined,
+          height: 46, padding: '0 14px 0 18px', borderRadius: 999,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
           background: 'linear-gradient(180deg, #FFFFFF 0%, #FAF7FF 100%)', border: '1px solid rgba(124,58,237,0.22)',
           color: '#241144', fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 14px rgba(124,58,237,0.10), inset 0 1px 0 rgba(255,255,255,0.9)',
@@ -1051,10 +1061,10 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
   // Render a prompt panel
   const renderOptimizedPanel = (v: PromptVersion, label: string) => (
     <div style={{
-      flex: 1, background: '#FFFFFF', borderRadius: 20, padding: '24px 8px 24px 24px',
+      flex: 1, background: '#FFFFFF', borderRadius: 20, padding: isMobile ? '18px 6px 18px 18px' : '24px 8px 24px 24px',
       boxShadow: '0 4px 20px rgba(109,40,217,0.06), 0 1px 3px rgba(0,0,0,0.03)',
       border: '1px solid rgba(124,58,237,0.12)', display: 'flex', flexDirection: 'column',
-      position: 'relative', overflow: 'hidden', minWidth: 0, height: 420, maxHeight: 420, boxSizing: 'border-box',
+      position: 'relative', overflow: 'hidden', minWidth: 0, height: isMobile ? 340 : 420, maxHeight: isMobile ? 340 : 420, boxSizing: 'border-box',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, paddingRight: 16 }}>
         <div style={{
@@ -1097,13 +1107,15 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
       background: 'transparent',
     }}>
       <div style={{
-        maxWidth: 1100, margin: '0 auto', width: '100%', padding: '20px 48px',
-        display: 'flex', flexDirection: 'column', gap: 28, flex: 1,
+        maxWidth: 1100, margin: '0 auto', width: '100%',
+        padding: `${isDrawer ? 62 : 20}px ${isMobile ? 14 : isCompact ? 28 : 48}px ${isMobile ? 28 : 20}px`,
+        display: 'flex', flexDirection: 'column', gap: isMobile ? 18 : 28, flex: 1,
       }}>
         {/* Header Bar */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '12px 20px', background: 'rgba(255,255,255,0.85)', borderRadius: 16,
+          flexWrap: 'wrap', gap: 12,
+          padding: isMobile ? '10px 14px' : '12px 20px', background: 'rgba(255,255,255,0.85)', borderRadius: 16,
           border: '1px solid rgba(124,58,237,0.10)', boxShadow: '0 2px 12px rgba(109,40,217,0.04)',
           backdropFilter: 'blur(12px)',
           width: '100%', boxSizing: 'border-box',
@@ -1164,7 +1176,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
         </div>
 
         {/* Main Content */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 28, width: '100%' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 18 : 28, width: '100%' }}>
           {/* Version Header Timeline */}
           {!compareMode && (
             <VersionHeader
@@ -1186,7 +1198,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
           {/* Compare vs Normal */}
           {compareMode ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14 }}>
+              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: isMobile ? 10 : 14 }}>
                 {renderComparisonSelector(compareIndex, isLeftCompareMenuOpen, setIsLeftCompareMenuOpen, setCompareIndex)}
                 <select
                   value={compareIndex} onChange={e => setCompareIndex(Number(e.target.value))}
@@ -1208,7 +1220,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                 </select>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isCompact ? '1fr' : '1fr 1fr', gap: 20 }}>
                 {renderOptimizedPanel(sessionVersions[compareIndex], `v${sessionVersions[compareIndex].versionNumber}`)}
                 {renderOptimizedPanel(sessionVersions[activeVersionIndex], `v${sessionVersions[activeVersionIndex].versionNumber}`)}
               </div>
@@ -1216,12 +1228,12 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
           ) : (
             <>
               {/* ── Side-by-side prompt comparison ── */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isCompact ? '1fr' : '1fr 1fr', gap: 20 }}>
                 {/* Input / Original panel */}
                 <div style={{
-                  background: '#FFFFFF', borderRadius: 20, padding: '24px 8px 24px 24px',
+                  background: '#FFFFFF', borderRadius: 20, padding: isMobile ? '18px 6px 18px 18px' : '24px 8px 24px 24px',
                   boxShadow: '0 4px 20px rgba(109,40,217,0.04)', border: '1px solid rgba(124,58,237,0.10)',
-                  display: 'flex', flexDirection: 'column', height: 420, maxHeight: 420, boxSizing: 'border-box', overflow: 'hidden', minWidth: 0,
+                  display: 'flex', flexDirection: 'column', height: isMobile ? 340 : 420, maxHeight: isMobile ? 340 : 420, boxSizing: 'border-box', overflow: 'hidden', minWidth: 0,
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, paddingRight: 16 }}>
                     <div style={{
@@ -1251,13 +1263,15 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                 boxShadow: '0 4px 20px rgba(109,40,217,0.05)',
                 overflow: 'hidden',
                 display: 'flex',
+                flexDirection: isCompact ? 'column' : 'row',
               }}>
                 {/* LEFT COLUMN — ring + label + pts + before/after */}
                 <div style={{
-                  width: 190, flexShrink: 0,
+                  width: isCompact ? '100%' : 190, flexShrink: 0, boxSizing: 'border-box',
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                   padding: '28px 20px', gap: 12,
-                  borderRight: '1px solid rgba(124,58,237,0.08)',
+                  borderRight: isCompact ? 'none' : '1px solid rgba(124,58,237,0.08)',
+                  borderBottom: isCompact ? '1px solid rgba(124,58,237,0.08)' : 'none',
                   background: '#FDFCFF',
                 }}>
                   {/* Ring */}
@@ -1313,9 +1327,9 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                 <div style={{
                   flex: 1,
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(3, 1fr)',
-                  gap: 16,
-                  padding: 20,
+                  gridTemplateColumns: isCompact ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
+                  gap: isMobile ? 10 : 16,
+                  padding: isMobile ? 12 : 20,
                   background: '#F8FAFC',
                 }}>
                   {version.dimensions.map((dim) => {
@@ -1328,8 +1342,9 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                         style={{
                           display: 'flex',
                           flexDirection: 'column',
-                          gap: 12,
-                          padding: 16,
+                          gap: isMobile ? 10 : 12,
+                          padding: isMobile ? 13 : 16,
+                          minWidth: 0,
                           background: '#FFFFFF',
                           borderRadius: 12,
                           border: '1px solid #E2E8F0',
@@ -1347,26 +1362,26 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                         }}
                       >
                         {/* Top row: icon + name + score */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 8, minWidth: 0 }}>
                             <div style={{
-                              width: 24, height: 24, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              width: isMobile ? 22 : 24, height: isMobile ? 22 : 24, flexShrink: 0, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center',
                               background: dim.status === 'good' ? 'rgba(16,185,129,0.10)' : dim.status === 'warning' ? 'rgba(245,158,11,0.10)' : 'rgba(148,163,184,0.10)',
                               color: dim.status === 'good' ? '#10B981' : dim.status === 'warning' ? '#F59E0B' : '#94A3B8',
                             }}>
                               <Icon size={13} strokeWidth={2.3} />
                             </div>
-                            <span style={{ fontSize: 13, fontWeight: 700, color: '#1E293B' }}>{dim.label}</span>
+                            <span style={{ fontSize: isMobile ? 12 : 13, fontWeight: 700, color: '#1E293B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{dim.label}</span>
                           </div>
                           {/* Score: show beforeScore → score if beforeScore exists */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700, flexShrink: 0 }}>
                             {dim.beforeScore !== undefined && (
                               <>
                                 <span style={{ color: '#94A3B8' }}>{dim.beforeScore}</span>
                                 <span style={{ color: '#CBD5E1', fontSize: 10 }}>→</span>
                               </>
                             )}
-                            <span style={{ fontSize: 15, fontWeight: 900, color: barColor }}>{score}</span>
+                            <span style={{ fontSize: isMobile ? 14 : 15, fontWeight: 900, color: barColor }}>{score}</span>
                           </div>
                         </div>
 
@@ -1389,12 +1404,12 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
               {/* Recommended AI Tools */}
               {session.toolRecommendations && session.toolRecommendations.tools && session.toolRecommendations.tools.length > 0 && (
                 <div style={{
-                  background: '#FFFFFF', borderRadius: 20, padding: '24px 28px',
+                  background: '#FFFFFF', borderRadius: 20, padding: isMobile ? '18px 16px' : '24px 28px',
                   border: '1px solid rgba(124,58,237,0.12)', boxShadow: '0 4px 20px rgba(109,40,217,0.06)',
                   display: 'flex', flexDirection: 'column', gap: 16, marginTop: 8
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <Sparkles size={18} style={{ color: '#7C3AED' }} />
                       <h3 style={{ fontSize: 16, fontWeight: 800, color: '#1E293B', margin: 0 }}>
                         Recommended AI Tools for Best Execution

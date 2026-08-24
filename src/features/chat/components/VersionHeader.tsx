@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { History, Star, ScrollText, Search, X } from 'lucide-react';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 interface VersionHeaderProps {
   versions: { versionNumber: number; overallScore: number; timestamp: string; originalIndex?: number }[];
@@ -36,6 +37,7 @@ export default function VersionHeader({
   const [searchQuery,    setSearchQuery]    = useState('');
   const [searchMatch,    setSearchMatch]    = useState<number | null>(null);
   const [searchNotFound, setSearchNotFound] = useState(false);
+  const isMobile = useMediaQuery('(max-width: 640px)');
 
   const activeVersion = versions[activeIndex];
   if (!activeVersion) return null;
@@ -240,7 +242,7 @@ export default function VersionHeader({
   return (
     <div style={{
       background: 'linear-gradient(135deg, #1E1035 0%, #2D1B69 40%, #1A0F2E 100%)',
-      borderRadius: 18, padding: '20px 24px 18px', marginBottom: 16,
+      borderRadius: 18, padding: isMobile ? '16px 14px 14px' : '20px 24px 18px', marginBottom: 16,
       boxShadow: '0 8px 32px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(109, 40, 217, 0.15), inset 0 1px 0 rgba(167, 139, 250, 0.1)',
       border: '1px solid rgba(167, 139, 250, 0.15)',
       position: 'relative', overflow: 'visible',
@@ -249,9 +251,9 @@ export default function VersionHeader({
       <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 0%, rgba(167, 139, 250, 0.15) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
       {/* Top Row */}
-      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+      <div style={{ position: 'relative', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12, marginBottom: 16 }}>
         {/* Badge group */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10, flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255, 255, 255, 0.08)', border: '1px solid rgba(167, 139, 250, 0.2)', borderRadius: 20, padding: '5px 14px', fontSize: 13, fontWeight: 600, color: 'rgba(255, 255, 255, 0.9)', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05)' }}>
             v{activeVersion.versionNumber} <span style={{ color: 'rgba(167, 139, 250, 0.5)' }}>·</span> Current
           </div>
@@ -266,7 +268,9 @@ export default function VersionHeader({
           position: 'relative', display: 'flex', alignItems: 'center',
           background: searchNotFound ? 'rgba(239, 68, 68, 0.12)' : searchMatch !== null ? 'rgba(96, 216, 250, 0.12)' : 'rgba(255, 255, 255, 0.07)',
           border: `1px solid ${searchNotFound ? 'rgba(239, 68, 68, 0.5)' : searchMatch !== null ? 'rgba(96, 216, 250, 0.5)' : 'rgba(167, 139, 250, 0.20)'}`,
-          borderRadius: 24, padding: '6px 12px', transition: 'all 250ms ease', width: 240,
+          borderRadius: 24, padding: '6px 12px', transition: 'all 250ms ease',
+          width: isMobile ? '100%' : 240,
+          order: isMobile ? 3 : undefined, flexBasis: isMobile ? '100%' : undefined, boxSizing: 'border-box',
         }}>
           <Search size={12} style={{ position: 'absolute', left: 12, color: searchNotFound ? 'rgba(239, 68, 68, 0.8)' : searchMatch !== null ? 'rgba(167, 139, 250, 1)' : 'rgba(196, 181, 253, 0.6)' }} />
           <input
@@ -292,6 +296,7 @@ export default function VersionHeader({
           background: 'rgba(255, 255, 255, 0.06)', border: '1px solid rgba(167, 139, 250, 0.15)',
           borderRadius: 10, fontSize: 13, fontWeight: 600, color: 'rgba(255, 255, 255, 0.7)', cursor: 'pointer',
           transition: 'all 250ms ease', whiteSpace: 'nowrap', boxShadow: '0 2px 6px rgba(0, 0, 0, 0.15)',
+          order: isMobile ? 2 : undefined,
         }} className="hover:!bg-[rgba(167,139,250,0.12)] hover:!text-[#A78BFA] hover:!border-[rgba(167,139,250,0.35)] hover:shadow-[0_4px_16px_rgba(124,58,237,0.2)] hover:translate-y-[-1px]">
           <ScrollText size={14} />
           <span>All Drafts ({versions.length})</span>

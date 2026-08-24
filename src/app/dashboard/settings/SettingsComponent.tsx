@@ -15,6 +15,7 @@ import {
 import { apiClient } from '@/utils/apiClient';
 import { ROLES, ROLE_MODES, getModeIcon } from '@/constants/roles';
 import { presetAvatarGradients, presetIcons, getInitials, renderPresetAvatar } from '@/constants/avatars';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 /* ── Custom Switch Component ── */
 interface ToggleSwitchProps {
@@ -53,6 +54,13 @@ function SettingsContent({ initialTab = 'settings' }: SettingsPageProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const queryTab = searchParams?.get('tab') || searchParams?.get('view');
+
+  // Responsive breakpoints — this page is styled with inline styles, which CSS
+  // @media rules can't override (inline wins specificity), so layout decisions
+  // are driven from JS. Breakpoints mirror the rest of the app / globals.css.
+  const isCompact = useMediaQuery('(max-width: 1024px)'); // tablet: tighten outer padding
+  const isDrawer = useMediaQuery('(max-width: 768px)');   // sidebar → drawer + floating toggle appears
+  const isMobile = useMediaQuery('(max-width: 640px)');   // phone: stack header, tighten cards
 
   const [activeTab, setActiveTab] = useState<'profile' | 'settings'>(() => {
     if (queryTab === 'profile') return 'profile';
@@ -434,7 +442,8 @@ function SettingsContent({ initialTab = 'settings' }: SettingsPageProps) {
   return (
     <>
       <div id="settings-page" style={{
-        maxWidth: 1100, margin: '0 auto', padding: '0 48px', paddingTop: 8,
+        maxWidth: 1100, margin: '0 auto',
+        padding: isDrawer ? '0 16px' : isCompact ? '0 32px' : '0 48px', paddingTop: 8,
         width: '100%', display: 'flex', flexDirection: 'column', paddingBottom: 64,
         background: colors.canvasBg, minHeight: '100vh', transition: 'background 250ms ease',
       }}>
@@ -505,8 +514,8 @@ function SettingsContent({ initialTab = 'settings' }: SettingsPageProps) {
         `}</style>
 
         {/* ── Page Title Header (Eyebrow + Bold Title + Segmented Pills) ── */}
-        <div style={{ padding: '28px 0 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+        <div style={{ padding: isDrawer ? '56px 0 20px' : '28px 0 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
             <div>
               <span style={{
                 fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase',
@@ -752,7 +761,7 @@ function SettingsContent({ initialTab = 'settings' }: SettingsPageProps) {
                   {isEditingName ? (
                     <form
                       onSubmit={(e) => { e.preventDefault(); handleSaveDisplayName(); }}
-                      style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, width: '100%', maxWidth: 320 }}
                     >
                       <input
                         type="text"
@@ -763,7 +772,7 @@ function SettingsContent({ initialTab = 'settings' }: SettingsPageProps) {
                           padding: '5px 10px', fontSize: 14, fontWeight: 700,
                           borderRadius: 8, border: '1.5px solid #7C3AED',
                           background: colors.inputBg, color: colors.textPrimary,
-                          outline: 'none', width: 200,
+                          outline: 'none', flex: 1, minWidth: 0, boxSizing: 'border-box',
                         }}
                       />
                       <button
@@ -959,7 +968,7 @@ function SettingsContent({ initialTab = 'settings' }: SettingsPageProps) {
               background: colors.cardBg,
               border: `1px solid ${colors.cardBorder}`,
               borderRadius: 20,
-              padding: '28px 32px',
+              padding: isMobile ? '22px 18px' : '28px 32px',
               boxShadow: colors.cardShadow,
               display: 'flex',
               flexDirection: 'column',
@@ -1047,7 +1056,7 @@ function SettingsContent({ initialTab = 'settings' }: SettingsPageProps) {
                 {/* Role Card Grid with Hover Elevation & Micro-Animations */}
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(135px, 1fr))',
+                  gridTemplateColumns: isMobile ? 'repeat(auto-fill, minmax(115px, 1fr))' : 'repeat(auto-fill, minmax(135px, 1fr))',
                   gap: 8,
                 }}>
                   {ROLES.map(role => {
@@ -1327,7 +1336,8 @@ function SettingsContent({ initialTab = 'settings' }: SettingsPageProps) {
         <div
           className="toast-fade"
           style={{
-            position: 'fixed', bottom: 24, right: 24, zIndex: 9999,
+            position: 'fixed', bottom: isMobile ? 16 : 24, right: isMobile ? 12 : 24,
+            left: isMobile ? 12 : 'auto', maxWidth: 'calc(100vw - 24px)', zIndex: 9999,
             display: 'flex', alignItems: 'center', gap: 10,
             padding: '12px 18px', borderRadius: 12,
             background: isDark ? 'rgba(30, 20, 50, 0.92)' : 'rgba(255, 255, 255, 0.95)',
