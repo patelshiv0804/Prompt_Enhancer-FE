@@ -8,7 +8,7 @@ import {
   CheckCircle2, AlertTriangle, Minus, FileText, Layers, Monitor,
   Smartphone, Server, Database, ShieldCheck, Globe, Cpu, Terminal,
   Lightbulb, DollarSign, Scale, ShoppingCart, Users, Mail, Radio,
-  Activity, PieChart, TrendingUp, BookOpen, Building2, Layout, Award, Zap, GitBranch, ChevronDown, Feather,
+  Activity, PieChart, TrendingUp, BookOpen, Building2, Layout, LayoutTemplate, Award, Zap, GitBranch, ChevronDown, Feather, X,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import FormattedPromptViewer from './FormattedPromptViewer';
@@ -189,13 +189,15 @@ interface ComparisonBlockProps {
   activeVersionNumber?: number | null;
   onRestoreVersion?: (versionNumber: number) => void;
   initialOriginalPromptText?: string;
+  templateName?: string | null;
+  onClearTemplate?: () => void;
 }
 
 /* ── Main component ─────────────────────────────────────────────────────── */
 export default function ComparisonBlock({
   isAnalyzing, isAnalyzed, isOptimizing, isOptimized, onAnalyze, onOptimize, onReenhance,
   analysisResult, optimizationResult, versions = [], activeVersionNumber = null, onRestoreVersion,
-  initialOriginalPromptText = '',
+  initialOriginalPromptText = '', templateName = null, onClearTemplate,
 }: ComparisonBlockProps) {
   const [originalText, setOriginalText] = useState(
     'write a cinematic short about an astronaut who discovers a garden on mars. make it emotional.'
@@ -280,12 +282,49 @@ export default function ComparisonBlock({
         transition={{ type: 'spring', bounce: 0, duration: 0.6 }}
         className="hover:translate-y-[-3px] hover:shadow-[0_12px_48px_rgba(109,40,217,0.10),0_4px_12px_rgba(0,0,0,0.05)]"
       >
-        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', letterSpacing: '1.2px', textTransform: 'uppercase', marginBottom: 8 }}>
-          Your Prompt
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap', marginBottom: 24 }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', letterSpacing: '1.2px', textTransform: 'uppercase', marginBottom: 8 }}>
+              Your Prompt
+            </div>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0, letterSpacing: -0.3 }}>
+              Paste or write below
+            </h2>
+          </div>
+
+          {/* Applied-template chip — shows which library template will drive the
+              enhancement. Dismissing it reverts to the normal (auto-retrieval) flow. */}
+          {templateName && (
+            <div
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '7px 8px', maxWidth: 240, borderRadius: 14,
+                background: 'linear-gradient(160deg, rgba(167,139,250,0.20) 0%, rgba(196,181,253,0.10) 100%)',
+                border: '1px solid rgba(124,58,237,0.28)',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6), 0 3px 12px rgba(124,58,237,0.12)',
+                flexShrink: 0,
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 30, height: 30, borderRadius: 9, background: 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)', color: '#fff', flexShrink: 0, boxShadow: '0 2px 8px rgba(124,58,237,0.35)' }}>
+                <LayoutTemplate size={15} strokeWidth={2.2} />
+              </span>
+              <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: 'var(--color-primary)', lineHeight: 1 }}>Template in use</span>
+                <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.25 }} title={templateName}>{templateName}</span>
+              </div>
+              {onClearTemplate && (
+                <button
+                  onClick={onClearTemplate}
+                  aria-label="Stop using template"
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, borderRadius: 7, border: 'none', background: 'transparent', color: 'var(--color-text-secondary)', cursor: 'pointer', flexShrink: 0, transition: 'all 180ms ease' }}
+                  className="hover:!bg-[rgba(124,58,237,0.14)] hover:!text-[var(--color-primary)]"
+                >
+                  <X size={13} strokeWidth={2.4} />
+                </button>
+              )}
+            </div>
+          )}
         </div>
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)', margin: '0 0 24px', letterSpacing: -0.3 }}>
-          Paste or write below
-        </h2>
 
         {/* Textarea */}
         <div
