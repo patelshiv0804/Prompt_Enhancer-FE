@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { loadTemplates, type Template } from '../services/templatesService';
+import TemplatesHubSkeleton from './TemplatesHubSkeleton';
 
 /* ── Category & Role Icon Taxonomy ── */
 const CATEGORY_ICON_MAP: Record<string, React.ElementType> = {
@@ -100,15 +101,15 @@ function SpotlightBanner({
     <div
       id="spotlight-carousel-banner"
       style={{
-        borderRadius: isSmall ? 20 : 28,
+        borderRadius: isSmall ? 22 : 30,
         overflow: 'hidden',
-        marginBottom: isStacked ? 22 : 36,
+        marginBottom: isStacked ? 26 : 40,
         position: 'relative',
         background: 'linear-gradient(135deg, #09090D 0%, #150D2A 50%, #200E3E 100%)',
-        boxShadow: '0 20px 48px rgba(109,40,217,0.25), 0 4px 14px rgba(0,0,0,0.14)',
-        border: '1px solid rgba(139,92,246,0.28)',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04)',
+        border: '1px solid rgba(139,92,246,0.22)',
         color: '#FFFFFF',
-        minHeight: isStacked ? 'auto' : 320,
+        minHeight: isStacked ? 'auto' : 395,
       }}
     >
       {/* Ambient background glow & radial highlights */}
@@ -117,7 +118,7 @@ function SpotlightBanner({
           position: 'absolute',
           inset: 0,
           background:
-            'radial-gradient(ellipse at 15% 25%, rgba(139,92,246,0.36) 0%, transparent 60%), radial-gradient(ellipse at 85% 70%, rgba(236,72,153,0.25) 0%, transparent 55%)',
+            'radial-gradient(ellipse at 15% 25%, rgba(139,92,246,0.38) 0%, transparent 60%), radial-gradient(ellipse at 85% 70%, rgba(236,72,153,0.28) 0%, transparent 55%)',
           pointerEvents: 'none',
         }}
       />
@@ -126,16 +127,16 @@ function SpotlightBanner({
         style={{
           position: 'relative',
           display: 'grid',
-          gridTemplateColumns: isStacked ? '1fr' : '1.15fr 0.85fr',
+          gridTemplateColumns: isStacked ? '1fr' : '1.18fr 0.82fr',
           alignItems: 'center',
-          padding: isSmall ? '20px 16px' : isStacked ? '30px 24px' : '38px 44px',
-          gap: isSmall ? 18 : isStacked ? 22 : 36,
+          padding: isSmall ? '22px 18px' : isStacked ? '32px 26px' : '42px 46px',
+          gap: isSmall ? 20 : isStacked ? 26 : 38,
         }}
       >
         {/* LEFT COLUMN: Metadata, Title, Description, Tags, Actions */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: isSmall ? 12 : 16, justifyContent: 'center' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: isSmall ? 14 : 18, justifyContent: 'center' }}>
           {/* Top Pill Badges */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <span
               style={{
                 display: 'inline-flex',
@@ -143,8 +144,8 @@ function SpotlightBanner({
                 gap: 5,
                 background: 'linear-gradient(135deg, #8B5CF6, #EC4899)',
                 borderRadius: 9999,
-                padding: isSmall ? '3px 10px' : '5px 13px',
-                fontSize: isSmall ? 10.5 : 11,
+                padding: isSmall ? '4px 11px' : '6px 14px',
+                fontSize: isSmall ? 11 : 11.5,
                 fontWeight: 700,
                 letterSpacing: '0.05em',
                 textTransform: 'uppercase',
@@ -163,13 +164,13 @@ function SpotlightBanner({
                 backdropFilter: 'blur(10px)',
                 border: '1px solid rgba(255,255,255,0.18)',
                 borderRadius: 9999,
-                padding: isSmall ? '3px 10px' : '5px 13px',
-                fontSize: isSmall ? 11 : 12,
+                padding: isSmall ? '4px 11px' : '6px 14px',
+                fontSize: isSmall ? 11.5 : 12.5,
                 fontWeight: 600,
                 color: '#EDE9FE',
               }}
             >
-              <Icon size={12} strokeWidth={2} />
+              <Icon size={13} strokeWidth={2} />
               {categoryLabel(current.category)}
             </span>
 
@@ -177,16 +178,16 @@ function SpotlightBanner({
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: 5,
+                gap: 6,
                 background: 'rgba(255,255,255,0.08)',
                 border: '1px solid rgba(255,255,255,0.12)',
                 borderRadius: 9999,
-                padding: isSmall ? '3px 8px' : '5px 11px',
-                fontSize: isSmall ? 10.5 : 11.5,
-                color: 'rgba(255,255,255,0.85)',
+                padding: isSmall ? '4px 10px' : '6px 12px',
+                fontSize: isSmall ? 11 : 12,
+                color: 'rgba(255,255,255,0.90)',
               }}
             >
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: current.modelColor }} />
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: current.modelColor }} />
               {current.model}
             </span>
           </div>
@@ -194,11 +195,11 @@ function SpotlightBanner({
           {/* Title */}
           <h2
             style={{
-              fontSize: isSmall ? 20 : isStacked ? 23 : 27,
+              fontSize: isSmall ? 22 : isStacked ? 25 : 29,
               fontWeight: 800,
               color: '#FFFFFF',
               letterSpacing: '-0.025em',
-              margin: 0,
+              margin: '2px 0 0',
               lineHeight: 1.25,
             }}
           >
@@ -208,14 +209,15 @@ function SpotlightBanner({
           {/* Description */}
           <p
             style={{
-              fontSize: 14,
-              color: 'rgba(237,233,254,0.82)',
+              fontSize: isSmall ? 13.5 : 14.5,
+              color: 'rgba(237,233,254,0.88)',
               margin: 0,
-              lineHeight: 1.65,
+              lineHeight: 1.7,
               display: '-webkit-box',
               WebkitLineClamp: isSmall ? 3 : 3,
               WebkitBoxOrient: 'vertical',
               overflow: 'hidden',
+              maxWidth: '98%',
             }}
           >
             {current.description}
@@ -223,14 +225,14 @@ function SpotlightBanner({
 
           {/* Tags */}
           {current.tags.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {current.tags.slice(0, 4).map((tag) => (
                 <span
                   key={tag}
                   style={{
-                    fontSize: isSmall ? 10.5 : 11.5,
+                    fontSize: isSmall ? 11 : 12,
                     fontWeight: 600,
-                    padding: isSmall ? '2px 8px' : '4px 11px',
+                    padding: isSmall ? '3px 10px' : '4px 12px',
                     borderRadius: 9999,
                     background: 'rgba(255,255,255,0.10)',
                     border: '1px solid rgba(255,255,255,0.14)',
@@ -244,7 +246,7 @@ function SpotlightBanner({
           )}
 
           {/* Action Row */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: isSmall ? 8 : 11, flexWrap: 'wrap', marginTop: 4 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: isSmall ? 10 : 12, flexWrap: 'wrap', marginTop: 6 }}>
             <button
               id="spotlight-use-btn"
               onClick={() => onUse(current)}
@@ -252,24 +254,25 @@ function SpotlightBanner({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: 7,
-                padding: isSmall ? '10px 16px' : '11px 22px',
+                gap: 8,
+                padding: isSmall ? '0 18px' : '0 24px',
+                height: isSmall ? 40 : 44,
                 borderRadius: 12,
-                fontSize: isSmall ? 12.5 : 13.5,
+                fontSize: isSmall ? 13 : 14,
                 fontWeight: 700,
                 border: 'none',
                 cursor: 'pointer',
                 background: 'linear-gradient(135deg, #8B5CF6, #EC4899)',
                 color: 'white',
-                boxShadow: '0 4px 20px rgba(139,92,246,0.45)',
+                boxShadow: '0 2px 10px rgba(139,92,246,0.28)',
                 transition: 'all 200ms ease',
                 flex: isSmall ? '1 1 auto' : undefined,
               }}
               className="hover:brightness-110 hover:translate-y-[-1px]"
             >
-              <Zap size={14} strokeWidth={2.2} />
+              <Zap size={15} strokeWidth={2.2} />
               <span>Use in Optimizer</span>
-              <ArrowUpRight size={13} />
+              <ArrowUpRight size={14} />
             </button>
 
             <button
@@ -279,10 +282,11 @@ function SpotlightBanner({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: 6,
-                padding: isSmall ? '10px 14px' : '11px 18px',
+                gap: 7,
+                padding: isSmall ? '0 16px' : '0 20px',
+                height: isSmall ? 40 : 44,
                 borderRadius: 12,
-                fontSize: isSmall ? 12.5 : 13.5,
+                fontSize: isSmall ? 13 : 14,
                 fontWeight: 600,
                 border: '1px solid rgba(255,255,255,0.22)',
                 background: 'rgba(255,255,255,0.10)',
@@ -294,7 +298,7 @@ function SpotlightBanner({
               }}
               className="hover:!bg-[rgba(255,255,255,0.18)]"
             >
-              <Eye size={14} />
+              <Eye size={15} />
               <span>Quick Look</span>
             </button>
 
@@ -302,8 +306,8 @@ function SpotlightBanner({
               id="spotlight-bookmark-btn"
               onClick={() => onToggleBookmark(current.id)}
               style={{
-                width: isSmall ? 38 : 42,
-                height: isSmall ? 38 : 42,
+                width: isSmall ? 40 : 44,
+                height: isSmall ? 40 : 44,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -324,7 +328,7 @@ function SpotlightBanner({
         </div>
 
         {/* RIGHT COLUMN: Visual Recipe Glass Preview Card + Carousel Navigation */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {/* Frosted Glass Recipe Card */}
           <div
             style={{
@@ -332,50 +336,54 @@ function SpotlightBanner({
               backdropFilter: 'blur(28px)',
               WebkitBackdropFilter: 'blur(28px)',
               border: '1px solid rgba(255, 255, 255, 0.18)',
-              borderRadius: 20,
-              padding: isSmall ? '16px 16px' : '22px 24px',
+              borderRadius: 22,
+              padding: isSmall ? '18px 16px' : '24px 26px',
               boxShadow: '0 20px 48px rgba(0, 0, 0, 0.30)',
               position: 'relative',
               overflow: 'hidden',
+              minHeight: 220,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
             }}
           >
             {/* Top window dots & status */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, paddingBottom: 10, borderBottom: '1px solid rgba(255,255,255,0.10)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.10)' }}>
               <div style={{ display: 'flex', gap: 6 }}>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#EF4444' }} />
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#F59E0B' }} />
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#10B981' }} />
+                <div style={{ width: 9, height: 9, borderRadius: '50%', background: '#EF4444' }} />
+                <div style={{ width: 9, height: 9, borderRadius: '50%', background: '#F59E0B' }} />
+                <div style={{ width: 9, height: 9, borderRadius: '50%', background: '#10B981' }} />
               </div>
-              <span style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.65)', textTransform: 'uppercase' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.70)', textTransform: 'uppercase' }}>
                 Prompt Architecture v2.4
               </span>
             </div>
 
             {/* Prompt Recipe Content Blueprint */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <div style={{ background: 'rgba(0,0,0,0.28)', borderRadius: 12, padding: '10px 12px', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <span style={{ fontSize: 10.5, fontWeight: 700, color: '#A78BFA', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Role Context</span>
-                  <span style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.5)' }}>98 PromptScore</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ background: 'rgba(0,0,0,0.32)', borderRadius: 14, padding: '12px 14px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#A78BFA', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Role Context</span>
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontWeight: 600 }}>98 PromptScore</span>
                 </div>
-                <p style={{ fontSize: isSmall ? 11.5 : 12, color: '#F3E8FF', margin: 0, lineHeight: 1.45, fontFamily: 'monospace', wordBreak: 'break-word' }}>
+                <p style={{ fontSize: isSmall ? 12 : 12.5, color: '#F3E8FF', margin: 0, lineHeight: 1.55, fontFamily: 'monospace', wordBreak: 'break-word' }}>
                   &ldquo;Act as a specialist in {current.category}. Structure findings with high clarity and depth.&rdquo;
                 </p>
               </div>
 
-              <div style={{ background: 'rgba(139,92,246,0.14)', borderRadius: 12, padding: '10px 12px', border: '1px solid rgba(139,92,246,0.30)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <span style={{ fontSize: 10.5, fontWeight: 700, color: '#F472B6', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Engine Specs</span>
-                  <span style={{ fontSize: 10.5, color: '#34D399', fontWeight: 600 }}>● Active</span>
+              <div style={{ background: 'rgba(139,92,246,0.16)', borderRadius: 14, padding: '12px 14px', border: '1px solid rgba(139,92,246,0.32)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#F472B6', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Engine Specs</span>
+                  <span style={{ fontSize: 11, color: '#34D399', fontWeight: 600 }}>● Active</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: isSmall ? 11 : 12, color: '#FFFFFF', flexWrap: 'wrap' }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                    <Cpu size={13} style={{ color: '#A78BFA' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: isSmall ? 11.5 : 12.5, color: '#FFFFFF', flexWrap: 'wrap' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                    <Cpu size={14} style={{ color: '#A78BFA' }} />
                     {current.model}
                   </span>
                   <span style={{ color: 'rgba(255,255,255,0.4)' }}>•</span>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                    <Award size={13} style={{ color: '#F59E0B' }} />
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                    <Award size={14} style={{ color: '#F59E0B' }} />
                     {current.useCount ?? 0} uses
                   </span>
                 </div>
@@ -1231,8 +1239,8 @@ export default function TemplatesPage() {
   const isSmall = useMediaQuery('(max-width: 420px)');
   const isStackedSpotlight = useMediaQuery('(max-width: 920px)');
 
-  // Expanded usable view area with device-calibrated padding
-  const pagePadX = isSmall ? 10 : isPhone ? 14 : isTablet ? 18 : 28;
+  // Calibrated page padding matching Vault & Optimizer workspace container
+  const pagePadX = isSmall ? 16 : isPhone ? 20 : isTablet ? 32 : 48;
 
   // Adaptive Grid columns: Desktop (3-col), Tablet (2-col grid), Phone (1-col)
   const gridColumns = isPhone ? '1fr' : isDesktop ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)';
@@ -1363,11 +1371,15 @@ export default function TemplatesPage() {
     return templates.filter((t) => t.isTrending).slice(0, 6);
   }, [templates]);
 
+  if (loading && templates.length === 0) {
+    return <TemplatesHubSkeleton />;
+  }
+
   return (
     <div
       id="templates-page"
       style={{
-        maxWidth: 1340,
+        maxWidth: 1100,
         margin: '0 auto',
         paddingLeft: pagePadX,
         paddingRight: pagePadX,
