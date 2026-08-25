@@ -486,7 +486,31 @@ export default function ComparisonBlock({
 
           {/* Enhancement Level Segmented Control */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '1.2px' }}>Enhancement Depth</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '1.2px' }}>
+                Enhancement Depth
+              </div>
+              {enhancementLevel === 'auto' && (
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: '#7C3AED',
+                    background: 'rgba(124, 58, 237, 0.08)',
+                    border: '1px solid rgba(124, 58, 237, 0.16)',
+                    padding: '2px 9px',
+                    borderRadius: 9999,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    lineHeight: 1.3,
+                  }}
+                >
+                  <Sparkles size={11} />
+                  AI will detect the right depth automatically
+                </span>
+              )}
+            </div>
             <div style={{
               display: narrowControls ? 'grid' : 'inline-flex',
               gridTemplateColumns: narrowControls ? '1fr 1fr' : undefined,
@@ -554,11 +578,6 @@ export default function ComparisonBlock({
                 );
               })}
             </div>
-            {enhancementLevel === 'auto' && (
-              <p style={{ fontSize: 11, color: 'var(--color-text-secondary)', margin: 0, lineHeight: 1.4 }}>
-                AI will detect the right depth automatically.
-              </p>
-            )}
           </div>
         </div>
 
