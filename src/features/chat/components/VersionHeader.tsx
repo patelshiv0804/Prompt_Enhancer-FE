@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { History, Star, ScrollText, Search, X } from 'lucide-react';
+import { History, Star, ScrollText, Search, X, Wand2, Sparkles } from 'lucide-react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 interface VersionHeaderProps {
-  versions: { versionNumber: number; overallScore: number; timestamp: string; originalIndex?: number }[];
+  versions: { versionNumber: number; overallScore: number; timestamp: string; originalIndex?: number; isGenerating?: boolean }[];
   activeIndex: number;
   bestIndex: number;
   hoveredIndex?: number | null;
@@ -196,12 +196,12 @@ export default function VersionHeader({
           border: '1px solid rgba(167, 139, 250, 0.25)',
         }}>
           v{bubble.versionNumber}
-          <span style={{ marginLeft: 4, color: '#A78BFA' }}>· {bubble.overallScore}</span>
+          <span style={{ marginLeft: 4, color: '#A78BFA' }}>· {bubble.isGenerating ? 'Generating…' : bubble.overallScore}</span>
           <span style={{ marginLeft: 6, color: 'rgba(255, 255, 255, 0.35)', fontWeight: 400 }}>{bubble.timestamp}</span>
         </div>
 
         {/* Best star */}
-        {isBest && (
+        {isBest && !bubble.isGenerating && (
           <span style={{ position: 'absolute', top: -6, right: -6, zIndex: 2 }}>
             <Star size={10} fill="#F59E0B" color="#F59E0B" />
           </span>
@@ -219,7 +219,11 @@ export default function VersionHeader({
           transform: isCurrent ? 'scale(1.18)' : 'scale(1)',
           transition: 'all 200ms ease',
         }}>
-          {bubble.overallScore}
+          {bubble.isGenerating ? (
+            <Wand2 size={16} style={{ animation: 'spin 1.5s linear infinite', color: '#FFFFFF' }} />
+          ) : (
+            bubble.overallScore
+          )}
         </div>
 
         {/* Version label below */}
@@ -233,8 +237,16 @@ export default function VersionHeader({
         }}>
           v{bubble.versionNumber}
         </span>
-        {isCurrent && <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', color: '#C4B5FD' }}>Current</span>}
-        {isBest && !isCurrent && <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', color: '#FCD34D' }}>Best</span>}
+        {isCurrent && (
+          <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', color: '#C4B5FD' }}>
+            {bubble.isGenerating ? 'Generating' : 'Current'}
+          </span>
+        )}
+        {isBest && !isCurrent && !bubble.isGenerating && (
+          <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', color: '#FCD34D' }}>
+            Best
+          </span>
+        )}
       </div>
     );
   });
