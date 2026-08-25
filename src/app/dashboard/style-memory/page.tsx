@@ -14,6 +14,7 @@ import {
   CATEGORY_COLORS
 } from '@/features/style-memory/services/styleMemoryService';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import StyleMemorySkeleton from '@/features/style-memory/components/StyleMemorySkeleton';
 
 /* ═══════════════════════════════════════════════════
    Types & Constants
@@ -853,6 +854,10 @@ export default function StyleMemoryPage() {
     setEditingProfile(null);
     setDrawerOpen(true);
   };
+
+  if (loading && profiles.length === 0) {
+    return <StyleMemorySkeleton />;
+  }
 
   return (
     <>
