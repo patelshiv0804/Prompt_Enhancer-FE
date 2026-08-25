@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Copy, RefreshCw, Bookmark, ArrowRightToLine,
   Sparkles, Code2, Search, Megaphone, GraduationCap, Briefcase,
@@ -184,6 +184,10 @@ interface ComparisonBlockProps {
   onReenhance?: () => Promise<void>;
   analysisResult?: any;
   optimizationResult?: any;
+  // Live raw token buffer while an SSE enhancement is streaming. When set and
+  // isOptimizing is true, the optimized panel renders these tokens (with a
+  // typing caret) in place of the loading skeleton.
+  streamingText?: string;
   // History fields
   versions?: any[];
   activeVersionNumber?: number | null;
@@ -196,7 +200,7 @@ interface ComparisonBlockProps {
 /* ── Main component ─────────────────────────────────────────────────────── */
 export default function ComparisonBlock({
   isAnalyzing, isAnalyzed, isOptimizing, isOptimized, onAnalyze, onOptimize, onReenhance,
-  analysisResult, optimizationResult, versions = [], activeVersionNumber = null, onRestoreVersion,
+  analysisResult, optimizationResult, streamingText = '', versions = [], activeVersionNumber = null, onRestoreVersion,
   initialOriginalPromptText = '', templateName = null, onClearTemplate,
 }: ComparisonBlockProps) {
   const [originalText, setOriginalText] = useState(
@@ -209,6 +213,15 @@ export default function ComparisonBlock({
   const [isReenhancing, setIsReenhancing] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [isVersionMenuOpen, setIsVersionMenuOpen] = useState(false);
+  // Scroll container for the live streaming view — kept pinned to the bottom
+  // as tokens arrive so the user follows the newest text.
+  const streamScrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isOptimizing && streamingText && streamScrollRef.current) {
+      streamScrollRef.current.scrollTop = streamScrollRef.current.scrollHeight;
+    }
+  }, [streamingText, isOptimizing]);
 
   useEffect(() => {
     if (initialOriginalPromptText) {
@@ -834,7 +847,43 @@ export default function ComparisonBlock({
                 </div>
 
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative', minHeight: 0 }}>
-                  {isOptimizing ? (
+                  {isOptimizing && streamingText ? (
+                    /* Live token stream — raw deltas cleaned on the fly, with a
+                       typing caret. Swapped for the fully formatted viewer once
+                       the `done` frame delivers the authoritative text. */
+                    <div
+                      ref={streamScrollRef}
+                      className="custom-scrollbar"
+                      style={{
+                        flex: 1,
+                        minHeight: 0,
+                        fontSize: 14,
+                        lineHeight: 1.6,
+                        overflowY: 'auto',
+                        paddingRight: 28,
+                        color: 'var(--color-text-primary)',
+                        letterSpacing: '0.01em',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word',
+                        animation: 'fadeInRise 300ms ease-out forwards',
+                      }}
+                    >
+                      {formatPromptText(streamingText)}
+                      <span
+                        aria-hidden="true"
+                        style={{
+                          display: 'inline-block',
+                          width: 7,
+                          height: 15,
+                          marginLeft: 2,
+                          borderRadius: 1,
+                          background: 'var(--color-primary)',
+                          verticalAlign: 'text-bottom',
+                          animation: 'streamCaretBlink 1s step-end infinite',
+                        }}
+                      />
+                    </div>
+                  ) : isOptimizing ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 24, marginTop: 8 }}>
                       {[['30%', '60%'], ['40%', '50%'], ['35%', '55%']].map(([w1, w2], gi) => (
                         <div key={gi} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

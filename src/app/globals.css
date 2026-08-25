@@ -539,6 +539,16 @@ button:focus-visible {
   }
 }
 
+/* Blinking caret for the live token-streaming view in the optimizer. */
+@keyframes streamCaretBlink {
+  0%, 45% {
+    opacity: 1;
+  }
+  55%, 100% {
+    opacity: 0;
+  }
+}
+
 /* ── Smooth nav group accordion ── */
 .nav-group-content {
   overflow: hidden;
