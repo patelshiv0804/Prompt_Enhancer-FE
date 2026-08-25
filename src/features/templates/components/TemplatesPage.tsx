@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Bookmark, BookmarkCheck, Sparkles, Code2, Megaphone, Palette,
   Video, BookOpen, Briefcase, TrendingUp, Star, ChevronRight, ChevronLeft,
@@ -82,15 +83,20 @@ function SpotlightBanner({
   isStacked: boolean;
   isSmall: boolean;
 }) {
+  const SLIDE_DURATION_MS = 3500;
+  const SLIDE_DURATION_SEC = 3.5;
+
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [progressKey, setProgressKey] = useState(0);
 
   useEffect(() => {
     if (templates.length <= 1) return;
     const timer = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % templates.length);
-    }, 8000);
+      setProgressKey((k) => k + 1);
+    }, SLIDE_DURATION_MS);
     return () => clearInterval(timer);
-  }, [templates.length]);
+  }, [templates.length, currentIndex]);
 
   if (templates.length === 0) return null;
   const current = templates[currentIndex] || templates[0];
@@ -109,10 +115,12 @@ function SpotlightBanner({
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04)',
         border: '1px solid rgba(167, 139, 250, 0.18)',
         color: '#FFFFFF',
-        minHeight: isStacked ? 'auto' : 395,
+        minHeight: isStacked ? 'auto' : 400,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
       }}
     >
-      {/* Ambient background glow & radial highlights */}
       <div
         style={{
           position: 'absolute',
@@ -127,125 +135,116 @@ function SpotlightBanner({
           position: 'relative',
           display: 'grid',
           gridTemplateColumns: isStacked ? '1fr' : '1.18fr 0.82fr',
-          alignItems: 'center',
-          padding: isSmall ? '22px 18px' : isStacked ? '32px 26px' : '42px 46px',
-          gap: isSmall ? 20 : isStacked ? 26 : 38,
+          alignItems: 'stretch',
+          padding: isSmall ? '24px 18px' : isStacked ? '32px 26px' : '38px 46px',
+          gap: isSmall ? 22 : isStacked ? 26 : 38,
+          minHeight: isStacked ? 'auto' : 340,
         }}
       >
-        {/* LEFT COLUMN: Metadata, Title, Description, Tags, Actions */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: isSmall ? 14 : 18, justifyContent: 'center' }}>
-          {/* Top Pill Badges */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-                background: 'linear-gradient(135deg, #7C3AED, #9333EA)',
-                borderRadius: 9999,
-                padding: isSmall ? '4px 11px' : '6px 14px',
-                fontSize: isSmall ? 11 : 11.5,
-                fontWeight: 700,
-                letterSpacing: '0.05em',
-                textTransform: 'uppercase',
-                boxShadow: '0 2px 10px rgba(124,58,237,0.35)',
-              }}
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: isStacked ? 'auto' : 290 }}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={current.id}
+              initial={{ opacity: 0, y: 8, filter: 'blur(3px)' }}
+              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, y: -8, filter: 'blur(3px)' }}
+              transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+              style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
             >
-              <Sparkles size={11} /> Spotlight
-            </span>
-
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-                background: 'rgba(255,255,255,0.12)',
-                backdropFilter: 'blur(10px)',
-                border: '1px solid rgba(255,255,255,0.18)',
-                borderRadius: 9999,
-                padding: isSmall ? '4px 11px' : '6px 14px',
-                fontSize: isSmall ? 11.5 : 12.5,
-                fontWeight: 600,
-                color: '#EDE9FE',
-              }}
-            >
-              <Icon size={13} strokeWidth={2} />
-              {categoryLabel(current.category)}
-            </span>
-
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                background: 'rgba(255,255,255,0.08)',
-                border: '1px solid rgba(255,255,255,0.12)',
-                borderRadius: 9999,
-                padding: isSmall ? '4px 10px' : '6px 12px',
-                fontSize: isSmall ? 11 : 12,
-                color: 'rgba(255,255,255,0.90)',
-              }}
-            >
-              <span style={{ width: 7, height: 7, borderRadius: '50%', background: current.modelColor }} />
-              {current.model}
-            </span>
-          </div>
-
-          {/* Title */}
-          <h2
-            style={{
-              fontSize: isSmall ? 22 : isStacked ? 25 : 29,
-              fontWeight: 800,
-              color: '#FFFFFF',
-              letterSpacing: '-0.025em',
-              margin: '2px 0 0',
-              lineHeight: 1.25,
-            }}
-          >
-            {current.title}
-          </h2>
-
-          {/* Description */}
-          <p
-            style={{
-              fontSize: isSmall ? 13.5 : 14.5,
-              color: 'rgba(237,233,254,0.88)',
-              margin: 0,
-              lineHeight: 1.7,
-              display: '-webkit-box',
-              WebkitLineClamp: isSmall ? 3 : 3,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-              maxWidth: '98%',
-            }}
-          >
-            {current.description}
-          </p>
-
-          {/* Tags */}
-          {current.tags.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {current.tags.slice(0, 4).map((tag) => (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 <span
-                  key={tag}
                   style={{
-                    fontSize: isSmall ? 11 : 12,
-                    fontWeight: 600,
-                    padding: isSmall ? '3px 10px' : '4px 12px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    background: 'linear-gradient(135deg, #7C3AED, #9333EA)',
                     borderRadius: 9999,
-                    background: 'rgba(255,255,255,0.10)',
-                    border: '1px solid rgba(255,255,255,0.14)',
-                    color: '#F3E8FF',
+                    padding: isSmall ? '4px 11px' : '5px 14px',
+                    fontSize: isSmall ? 11 : 11.5,
+                    fontWeight: 700,
+                    letterSpacing: '0.05em',
+                    textTransform: 'uppercase',
+                    boxShadow: '0 2px 10px rgba(124,58,237,0.35)',
                   }}
                 >
-                  #{tag}
+                  <Sparkles size={11} /> Spotlight
                 </span>
-              ))}
-            </div>
-          )}
 
-          {/* Action Row */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: isSmall ? 10 : 12, flexWrap: 'wrap', marginTop: 6 }}>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    background: 'rgba(255,255,255,0.12)',
+                    backdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(255,255,255,0.18)',
+                    borderRadius: 9999,
+                    padding: isSmall ? '4px 11px' : '5px 14px',
+                    fontSize: isSmall ? 11.5 : 12,
+                    fontWeight: 600,
+                    color: '#EDE9FE',
+                  }}
+                >
+                  <Icon size={13} strokeWidth={2} />
+                  {categoryLabel(current.category)}
+                </span>
+              </div>
+
+              <div style={{ minHeight: isSmall ? 52 : 64, display: 'flex', alignItems: 'center' }}>
+                <h2
+                  style={{
+                    fontSize: isSmall ? 22 : isStacked ? 25 : 28,
+                    fontWeight: 800,
+                    color: '#FFFFFF',
+                    letterSpacing: '-0.025em',
+                    margin: 0,
+                    lineHeight: 1.22,
+                  }}
+                >
+                  {current.title}
+                </h2>
+              </div>
+
+              <p
+                style={{
+                  fontSize: isSmall ? 13 : 14,
+                  color: 'rgba(237,233,254,0.85)',
+                  margin: 0,
+                  lineHeight: 1.6,
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  minHeight: 44,
+                  maxWidth: '98%',
+                }}
+              >
+                {current.description}
+              </p>
+
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, height: 26, overflow: 'hidden' }}>
+                {current.tags.slice(0, 4).map((tag) => (
+                  <span
+                    key={tag}
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      padding: '3px 10px',
+                      borderRadius: 9999,
+                      background: 'rgba(255,255,255,0.10)',
+                      border: '1px solid rgba(255,255,255,0.14)',
+                      color: '#F3E8FF',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            </motion.div>
+          </AnimatePresence>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: isSmall ? 10 : 12, flexWrap: 'wrap', marginTop: 18, paddingTop: 4 }}>
             <button
               id="spotlight-use-btn"
               onClick={() => onUse(current)}
@@ -326,9 +325,7 @@ function SpotlightBanner({
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Visual Recipe Glass Preview Card + Carousel Navigation */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {/* Frosted Glass Recipe Card */}
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 14 }}>
           <div
             style={{
               background: 'rgba(255, 255, 255, 0.08)',
@@ -336,18 +333,18 @@ function SpotlightBanner({
               WebkitBackdropFilter: 'blur(28px)',
               border: '1px solid rgba(255, 255, 255, 0.18)',
               borderRadius: 22,
-              padding: isSmall ? '18px 16px' : '24px 26px',
+              padding: isSmall ? '18px 16px' : '22px 24px',
               boxShadow: '0 20px 48px rgba(0, 0, 0, 0.30)',
               position: 'relative',
               overflow: 'hidden',
-              minHeight: 220,
+              flex: 1,
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
+              minHeight: 220,
             }}
           >
-            {/* Top window dots & status */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.10)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, paddingBottom: 10, borderBottom: '1px solid rgba(255,255,255,0.10)' }}>
               <div style={{ display: 'flex', gap: 6 }}>
                 <div style={{ width: 9, height: 9, borderRadius: '50%', background: '#EF4444' }} />
                 <div style={{ width: 9, height: 9, borderRadius: '50%', background: '#F59E0B' }} />
@@ -358,39 +355,46 @@ function SpotlightBanner({
               </span>
             </div>
 
-            {/* Prompt Recipe Content Blueprint */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div style={{ background: 'rgba(0,0,0,0.32)', borderRadius: 14, padding: '12px 14px', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: '#A78BFA', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Role Context</span>
-                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontWeight: 600 }}>98 PromptScore</span>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={current.id}
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.98 }}
+                transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
+              >
+                <div style={{ background: 'rgba(0,0,0,0.32)', borderRadius: 14, padding: '10px 14px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#A78BFA', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Role Context</span>
+                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontWeight: 600 }}>98 PromptScore</span>
+                  </div>
+                  <p style={{ fontSize: 12, color: '#F3E8FF', margin: 0, lineHeight: 1.5, fontFamily: 'monospace', wordBreak: 'break-word' }}>
+                    &ldquo;Act as a specialist in {current.category}. Structure findings with high clarity and depth.&rdquo;
+                  </p>
                 </div>
-                <p style={{ fontSize: isSmall ? 12 : 12.5, color: '#F3E8FF', margin: 0, lineHeight: 1.55, fontFamily: 'monospace', wordBreak: 'break-word' }}>
-                  &ldquo;Act as a specialist in {current.category}. Structure findings with high clarity and depth.&rdquo;
-                </p>
-              </div>
 
-              <div style={{ background: 'rgba(139,92,246,0.16)', borderRadius: 14, padding: '12px 14px', border: '1px solid rgba(139,92,246,0.32)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: '#F472B6', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Engine Specs</span>
-                  <span style={{ fontSize: 11, color: '#34D399', fontWeight: 600 }}>● Active</span>
+                <div style={{ background: 'rgba(139,92,246,0.16)', borderRadius: 14, padding: '10px 14px', border: '1px solid rgba(139,92,246,0.32)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#F472B6', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Engine Specs</span>
+                    <span style={{ fontSize: 11, color: '#34D399', fontWeight: 600 }}>● Active</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, color: '#FFFFFF', flexWrap: 'wrap' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      <Cpu size={13} style={{ color: '#A78BFA' }} />
+                      Universal Engine
+                    </span>
+                    <span style={{ color: 'rgba(255,255,255,0.4)' }}>•</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      <Award size={13} style={{ color: '#F59E0B' }} />
+                      {current.useCount ?? 0} uses
+                    </span>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: isSmall ? 11.5 : 12.5, color: '#FFFFFF', flexWrap: 'wrap' }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                    <Cpu size={14} style={{ color: '#A78BFA' }} />
-                    {current.model}
-                  </span>
-                  <span style={{ color: 'rgba(255,255,255,0.4)' }}>•</span>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                    <Award size={14} style={{ color: '#F59E0B' }} />
-                    {current.useCount ?? 0} uses
-                  </span>
-                </div>
-              </div>
-            </div>
+              </motion.div>
+            </AnimatePresence>
           </div>
 
-          {/* Carousel Navigation Toolbar */}
           {templates.length > 1 && (
             <div
               style={{
@@ -400,30 +404,53 @@ function SpotlightBanner({
                 padding: '2px 4px 0',
               }}
             >
-              {/* Indicator Dots */}
-              <div style={{ display: 'flex', gap: 7, alignItems: 'center' }}>
-                {templates.map((_, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setCurrentIndex(idx)}
-                    style={{
-                      width: idx === currentIndex ? 24 : 7,
-                      height: 7,
-                      borderRadius: 999,
-                      background: idx === currentIndex ? '#C084FC' : 'rgba(255,255,255,0.25)',
-                      border: 'none',
-                      padding: 0,
-                      cursor: 'pointer',
-                      transition: 'all 250ms ease',
-                    }}
-                  />
-                ))}
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                {templates.map((_, idx) => {
+                  const isActive = idx === currentIndex;
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        setCurrentIndex(idx);
+                        setProgressKey((k) => k + 1);
+                      }}
+                      style={{
+                        width: isActive ? 30 : 8,
+                        height: 8,
+                        borderRadius: 999,
+                        background: isActive ? 'rgba(192, 132, 252, 0.3)' : 'rgba(255,255,255,0.20)',
+                        border: 'none',
+                        padding: 0,
+                        cursor: 'pointer',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        transition: 'all 300ms ease',
+                      }}
+                    >
+                      {isActive && (
+                        <motion.div
+                          key={`prog-${progressKey}-${idx}`}
+                          initial={{ width: '0%' }}
+                          animate={{ width: '100%' }}
+                          transition={{ duration: SLIDE_DURATION_SEC, ease: 'linear' }}
+                          style={{
+                            height: '100%',
+                            background: 'linear-gradient(90deg, #A855F7, #EC4899)',
+                            borderRadius: 999,
+                          }}
+                        />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
 
-              {/* Prev / Next Arrows */}
               <div style={{ display: 'flex', gap: 7, alignItems: 'center' }}>
                 <button
-                  onClick={() => setCurrentIndex((prev) => (prev - 1 + templates.length) % templates.length)}
+                  onClick={() => {
+                    setCurrentIndex((prev) => (prev - 1 + templates.length) % templates.length);
+                    setProgressKey((k) => k + 1);
+                  }}
                   style={{
                     width: 34,
                     height: 34,
@@ -444,7 +471,10 @@ function SpotlightBanner({
                 </button>
 
                 <button
-                  onClick={() => setCurrentIndex((prev) => (prev + 1) % templates.length)}
+                  onClick={() => {
+                    setCurrentIndex((prev) => (prev + 1) % templates.length);
+                    setProgressKey((k) => k + 1);
+                  }}
                   style={{
                     width: 34,
                     height: 34,
@@ -512,7 +542,7 @@ function NotionTemplateCard({
       }}
       className="group hover:translate-y-[-3px] hover:shadow-[0_12px_32px_rgba(109,40,217,0.12)] hover:!border-[rgba(124,58,237,0.28)]"
     >
-      {/* Top row: Icon, Category Pill, AI Model badge, Bookmark */}
+      {/* Top row: Icon, Category Pill, Bookmark */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div
@@ -547,49 +577,30 @@ function NotionTemplateCard({
           </span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span
-            style={{
-              fontSize: 11,
-              fontWeight: 600,
-              color: 'var(--color-text-secondary)',
-              background: 'rgba(124,58,237,0.05)',
-              padding: '2px 8px',
-              borderRadius: 6,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-            }}
-          >
-            <span style={{ width: 5, height: 5, borderRadius: '50%', background: template.modelColor }} />
-            {template.model}
-          </span>
-
-          <button
-            id={`bookmark-${template.id}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleBookmark(template.id);
-            }}
-            style={{
-              width: 28,
-              height: 28,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: 7,
-              border: 'none',
-              cursor: 'pointer',
-              transition: 'all 180ms ease',
-              background: isBookmarked ? 'rgba(124,58,237,0.12)' : 'transparent',
-              color: isBookmarked ? 'var(--color-primary)' : 'rgba(107,107,138,0.45)',
-            }}
-            className={!isBookmarked ? 'hover:!bg-[rgba(124,58,237,0.08)] hover:!text-[var(--color-primary)]' : ''}
-            title={isBookmarked ? 'Saved in bookmarks' : 'Bookmark'}
-          >
-            {isBookmarked ? <BookmarkCheck size={14} strokeWidth={2.2} /> : <Bookmark size={14} strokeWidth={2} />}
-          </button>
-        </div>
+        <button
+          id={`bookmark-${template.id}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleBookmark(template.id);
+          }}
+          style={{
+            width: 28,
+            height: 28,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: 7,
+            border: 'none',
+            cursor: 'pointer',
+            transition: 'all 180ms ease',
+            background: isBookmarked ? 'rgba(124,58,237,0.12)' : 'transparent',
+            color: isBookmarked ? 'var(--color-primary)' : 'rgba(107,107,138,0.45)',
+          }}
+          className={!isBookmarked ? 'hover:!bg-[rgba(124,58,237,0.08)] hover:!text-[var(--color-primary)]' : ''}
+          title={isBookmarked ? 'Saved in bookmarks' : 'Bookmark'}
+        >
+          {isBookmarked ? <BookmarkCheck size={14} strokeWidth={2.2} /> : <Bookmark size={14} strokeWidth={2} />}
+        </button>
       </div>
 
       {/* Title & Description */}
@@ -625,7 +636,7 @@ function NotionTemplateCard({
 
       {/* Tags */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-        {template.tags.slice(0, 2).map((tag) => (
+        {template.tags.slice(0, 4).map((tag) => (
           <span
             key={tag}
             onClick={(e) => {
@@ -633,16 +644,16 @@ function NotionTemplateCard({
               onSelectTag(tag);
             }}
             style={{
-              fontSize: 11,
-              fontWeight: 600,
-              padding: '2px 8px',
-              borderRadius: 6,
+              fontSize: 11.5,
+              fontWeight: 500,
+              padding: '3px 10px',
+              borderRadius: 9999,
               background: 'rgba(124,58,237,0.06)',
-              color: 'var(--color-primary)',
+              color: 'var(--color-text-secondary)',
               cursor: 'pointer',
               transition: 'all 150ms ease',
             }}
-            className="hover:!bg-[rgba(124,58,237,0.14)]"
+            className="hover:!bg-[rgba(124,58,237,0.12)] hover:!text-[var(--color-primary)]"
           >
             #{tag}
           </span>
@@ -652,8 +663,8 @@ function NotionTemplateCard({
             style={{
               fontSize: 10,
               fontWeight: 700,
-              padding: '2px 7px',
-              borderRadius: 6,
+              padding: '3px 8px',
+              borderRadius: 9999,
               background: 'rgba(16,185,129,0.10)',
               color: '#059669',
               border: '1px solid rgba(16,185,129,0.20)',
@@ -852,25 +863,6 @@ function NotionListRow({
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: isSmall ? 6 : isPhone ? 8 : 14, flexShrink: 0 }}>
-        {!isPhone && (
-          <span
-            style={{
-              fontSize: 11,
-              fontWeight: 600,
-              color: 'var(--color-text-secondary)',
-              background: 'rgba(124,58,237,0.04)',
-              padding: '3px 8px',
-              borderRadius: 6,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-            }}
-          >
-            <span style={{ width: 5, height: 5, borderRadius: '50%', background: template.modelColor }} />
-            {template.model}
-          </span>
-        )}
-
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -1021,22 +1013,6 @@ function QuickLookModal({
                   >
                     {categoryLabel(template.category)}
                   </span>
-                  <span
-                    style={{
-                      fontSize: 10.5,
-                      fontWeight: 600,
-                      color: 'var(--color-text-secondary)',
-                      background: 'rgba(124,58,237,0.06)',
-                      padding: '2px 7px',
-                      borderRadius: 6,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 4,
-                    }}
-                  >
-                    <span style={{ width: 5, height: 5, borderRadius: '50%', background: template.modelColor }} />
-                    {template.model}
-                  </span>
                 </div>
                 <h2 style={{ fontSize: isSmall ? 18 : 20, fontWeight: 800, color: 'var(--color-text-primary)', margin: 0, letterSpacing: -0.3 }}>
                   {template.title}
@@ -1116,12 +1092,15 @@ function QuickLookModal({
                   key={tag}
                   style={{
                     fontSize: 11.5,
-                    fontWeight: 600,
-                    padding: '3px 9px',
-                    borderRadius: 7,
-                    background: 'rgba(124, 58, 237, 0.07)',
-                    color: 'var(--color-primary)',
+                    fontWeight: 500,
+                    padding: '3px 10px',
+                    borderRadius: 9999,
+                    background: 'rgba(124,58,237,0.06)',
+                    color: 'var(--color-text-secondary)',
+                    cursor: 'pointer',
+                    transition: 'all 150ms ease',
                   }}
+                  className="hover:!bg-[rgba(124,58,237,0.12)] hover:!text-[var(--color-primary)]"
                 >
                   #{tag}
                 </span>
@@ -1736,26 +1715,43 @@ export default function TemplatesPage() {
                     </button>
                   </div>
 
-                  <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: gridColumns,
-                      gap: 16,
-                    }}
-                  >
-                    {trendingTemplates.map((t) => (
-                      <NotionTemplateCard
-                        key={t.id}
-                        template={t}
-                        onUse={handleUse}
-                        onQuickLook={setQuickLookTemplate}
-                        isBookmarked={bookmarkedIds.has(t.id)}
-                        onToggleBookmark={handleToggleBookmark}
-                        onSelectTag={setSearchQuery}
-                        isSmall={isSmall}
-                      />
-                    ))}
-                  </div>
+                  {viewMode === 'grid' ? (
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: gridColumns,
+                        gap: 16,
+                      }}
+                    >
+                      {trendingTemplates.map((t) => (
+                        <NotionTemplateCard
+                          key={t.id}
+                          template={t}
+                          onUse={handleUse}
+                          onQuickLook={setQuickLookTemplate}
+                          isBookmarked={bookmarkedIds.has(t.id)}
+                          onToggleBookmark={handleToggleBookmark}
+                          onSelectTag={setSearchQuery}
+                          isSmall={isSmall}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {trendingTemplates.map((t) => (
+                        <NotionListRow
+                          key={t.id}
+                          template={t}
+                          onUse={handleUse}
+                          onQuickLook={setQuickLookTemplate}
+                          isBookmarked={bookmarkedIds.has(t.id)}
+                          onToggleBookmark={handleToggleBookmark}
+                          isPhone={isPhone}
+                          isSmall={isSmall}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </section>
               )}
 
@@ -1815,26 +1811,43 @@ export default function TemplatesPage() {
                           </button>
                         </div>
 
-                        <div
-                          style={{
-                            display: 'grid',
-                            gridTemplateColumns: gridColumns,
-                            gap: 14,
-                          }}
-                        >
-                          {list.slice(0, itemsToShow).map((t) => (
-                            <NotionTemplateCard
-                              key={t.id}
-                              template={t}
-                              onUse={handleUse}
-                              onQuickLook={setQuickLookTemplate}
-                              isBookmarked={bookmarkedIds.has(t.id)}
-                              onToggleBookmark={handleToggleBookmark}
-                              onSelectTag={setSearchQuery}
-                              isSmall={isSmall}
-                            />
-                          ))}
-                        </div>
+                        {viewMode === 'grid' ? (
+                          <div
+                            style={{
+                              display: 'grid',
+                              gridTemplateColumns: gridColumns,
+                              gap: 14,
+                            }}
+                          >
+                            {list.slice(0, itemsToShow).map((t) => (
+                              <NotionTemplateCard
+                                key={t.id}
+                                template={t}
+                                onUse={handleUse}
+                                onQuickLook={setQuickLookTemplate}
+                                isBookmarked={bookmarkedIds.has(t.id)}
+                                onToggleBookmark={handleToggleBookmark}
+                                onSelectTag={setSearchQuery}
+                                isSmall={isSmall}
+                              />
+                            ))}
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            {list.slice(0, itemsToShow).map((t) => (
+                              <NotionListRow
+                                key={t.id}
+                                template={t}
+                                onUse={handleUse}
+                                onQuickLook={setQuickLookTemplate}
+                                isBookmarked={bookmarkedIds.has(t.id)}
+                                onToggleBookmark={handleToggleBookmark}
+                                isPhone={isPhone}
+                                isSmall={isSmall}
+                              />
+                            ))}
+                          </div>
+                        )}
                       </div>
                     );
                   })}

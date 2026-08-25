@@ -259,11 +259,11 @@ export default function TemplatesHubSkeleton() {
                     boxShadow: '0 4px 20px rgba(109,40,217,0.04)',
                   }}
                 >
-                  {/* Card Header (Category + Model + Bookmark) */}
+                  {/* Card Header (Icon + Category + Bookmark) */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <div className="skeleton" style={{ width: 85, height: 22, borderRadius: 9999 }} />
-                      <div className="skeleton" style={{ width: 70, height: 22, borderRadius: 9999 }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div className="skeleton" style={{ width: 36, height: 36, borderRadius: 10 }} />
+                      <div className="skeleton" style={{ width: 75, height: 22, borderRadius: 6 }} />
                     </div>
                     <div className="skeleton" style={{ width: 26, height: 26, borderRadius: 8 }} />
                   </div>
