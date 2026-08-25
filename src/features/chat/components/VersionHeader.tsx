@@ -29,13 +29,13 @@ function scoreGradient(s: number) {
 export default function VersionHeader({
   versions, activeIndex, bestIndex, hoveredIndex, onOpenHistory, onSelectVersion, onHoverVersion,
 }: VersionHeaderProps) {
-  const scrollRef            = useRef<HTMLDivElement>(null);
-  const currentBubbleRef     = useRef<HTMLDivElement>(null);
-  const bubbleRefsMap        = useRef<Map<number, HTMLDivElement>>(new Map());
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const currentBubbleRef = useRef<HTMLDivElement>(null);
+  const bubbleRefsMap = useRef<Map<number, HTMLDivElement>>(new Map());
   const [atStart, setAtStart] = useState(true);
-  const [atEnd,   setAtEnd]   = useState(false);
-  const [searchQuery,    setSearchQuery]    = useState('');
-  const [searchMatch,    setSearchMatch]    = useState<number | null>(null);
+  const [atEnd, setAtEnd] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchMatch, setSearchMatch] = useState<number | null>(null);
   const [searchNotFound, setSearchNotFound] = useState(false);
   const isMobile = useMediaQuery('(max-width: 640px)');
 
@@ -104,9 +104,9 @@ export default function VersionHeader({
   /* Build strip bubbles */
   const stripElements: React.ReactNode[] = [];
   versions.forEach((bubble, idx) => {
-    const v         = bubble as typeof bubble & { originalIndex?: number };
+    const v = bubble as typeof bubble & { originalIndex?: number };
     const isCurrent = idx === activeIndex;
-    const isBest    = idx === bestIndex;
+    const isBest = idx === bestIndex;
     const isHovered = hoveredIndex !== null && idx === hoveredIndex;
     const isSearched = searchMatch === idx;
 
@@ -131,36 +131,36 @@ export default function VersionHeader({
     const dotColor = isCurrent
       ? 'white'
       : isBest
-      ? '#FBBF24'
-      : isHovered
-      ? '#ffffff'
-      : 'rgba(255, 255, 255, 0.9)';
+        ? '#FBBF24'
+        : isHovered
+          ? '#ffffff'
+          : 'rgba(255, 255, 255, 0.9)';
 
     const dotBg = isCurrent
       ? 'linear-gradient(135deg, #7C3AED, #A855F7)'
       : isBest
-      ? 'rgba(245, 158, 11, 0.1)'
-      : isHovered
-      ? 'rgba(167, 139, 250, 0.25)'
-      : 'rgba(167, 139, 250, 0.15)';
+        ? 'rgba(245, 158, 11, 0.1)'
+        : isHovered
+          ? 'rgba(167, 139, 250, 0.25)'
+          : 'rgba(167, 139, 250, 0.15)';
 
     const dotBorder = isCurrent
       ? '2px solid transparent'
       : isBest
-      ? '2px solid #F59E0B'
-      : isSearched
-      ? '2px solid #60D8FA'
-      : isHovered
-      ? '2px solid rgba(167, 139, 250, 0.7)'
-      : '2px solid rgba(167, 139, 250, 0.45)';
+        ? '2px solid #F59E0B'
+        : isSearched
+          ? '2px solid #60D8FA'
+          : isHovered
+            ? '2px solid rgba(167, 139, 250, 0.7)'
+            : '2px solid rgba(167, 139, 250, 0.45)';
 
     const dotBoxShadow = isCurrent
       ? '0 6px 24px rgba(124, 58, 237, 0.45)'
       : isSearched
-      ? '0 0 0 3px rgba(96, 216, 250, 0.20), 0 4px 20px rgba(96, 216, 250, 0.30)'
-      : isHovered
-      ? '0 4px 20px rgba(124, 58, 237, 0.4)'
-      : 'none';
+        ? '0 0 0 3px rgba(96, 216, 250, 0.20), 0 4px 20px rgba(96, 216, 250, 0.30)'
+        : isHovered
+          ? '0 4px 20px rgba(124, 58, 237, 0.4)'
+          : 'none';
 
     stripElements.push(
       <div
@@ -253,14 +253,14 @@ export default function VersionHeader({
 
   return (
     <div style={{
-      background: 'linear-gradient(135deg, #1E1035 0%, #2D1B69 40%, #1A0F2E 100%)',
-      borderRadius: 18, padding: isMobile ? '16px 14px 14px' : '20px 24px 18px', marginBottom: 16,
-      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(109, 40, 217, 0.15), inset 0 1px 0 rgba(167, 139, 250, 0.1)',
-      border: '1px solid rgba(167, 139, 250, 0.15)',
-      position: 'relative', overflow: 'visible',
+      background: 'linear-gradient(145deg, #0C0620 0%, #150D30 30%, #1A0E3A 55%, #0D0920 100%)',
+      borderRadius: isMobile ? 20 : 26, padding: isMobile ? '16px 14px 14px' : '20px 24px 18px', marginBottom: 16,
+      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04)',
+      border: '1px solid rgba(167, 139, 250, 0.18)',
+      position: 'relative', overflow: 'hidden',
     }}>
       {/* Ambient glow */}
-      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 0%, rgba(167, 139, 250, 0.15) 0%, transparent 70%)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 0%, rgba(124, 58, 237, 0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
       {/* Top Row */}
       <div style={{ position: 'relative', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12, marginBottom: 16 }}>

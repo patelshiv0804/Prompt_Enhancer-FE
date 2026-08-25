@@ -340,11 +340,23 @@ function InjectionFlowCard({ isMobile, isTablet }: { isMobile: boolean; isTablet
 
       <div style={{
         background: 'linear-gradient(145deg, #0C0620 0%, #150D30 30%, #1A0E3A 55%, #0D0920 100%)',
-        borderRadius: isMobile ? 19 : 27,
+        border: '1px solid rgba(167, 139, 250, 0.18)',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04)',
+        borderRadius: isMobile ? 22 : 30,
         padding: isMobile ? '28px 22px 30px' : isTablet ? '36px 32px 38px' : '40px 48px 44px',
         position: 'relative',
         overflow: 'hidden',
       }}>
+        {/* Ambient background glow */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'radial-gradient(ellipse at 50% 0%, rgba(124, 58, 237, 0.12) 0%, transparent 70%)',
+            pointerEvents: 'none',
+          }}
+        />
+
         <div style={{ position: 'relative', zIndex: 2 }}>
           {/* Header */}
           <div style={{ marginBottom: isMobile ? 24 : 36 }}>

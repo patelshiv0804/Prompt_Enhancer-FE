@@ -105,9 +105,9 @@ function SpotlightBanner({
         overflow: 'hidden',
         marginBottom: isStacked ? 26 : 40,
         position: 'relative',
-        background: 'linear-gradient(135deg, #09090D 0%, #150D2A 50%, #200E3E 100%)',
+        background: 'linear-gradient(145deg, #0C0620 0%, #150D30 30%, #1A0E3A 55%, #0D0920 100%)',
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04)',
-        border: '1px solid rgba(139,92,246,0.22)',
+        border: '1px solid rgba(167, 139, 250, 0.18)',
         color: '#FFFFFF',
         minHeight: isStacked ? 'auto' : 395,
       }}
@@ -117,8 +117,7 @@ function SpotlightBanner({
         style={{
           position: 'absolute',
           inset: 0,
-          background:
-            'radial-gradient(ellipse at 15% 25%, rgba(139,92,246,0.38) 0%, transparent 60%), radial-gradient(ellipse at 85% 70%, rgba(236,72,153,0.28) 0%, transparent 55%)',
+          background: 'radial-gradient(ellipse at 50% 0%, rgba(124, 58, 237, 0.12) 0%, transparent 70%)',
           pointerEvents: 'none',
         }}
       />
@@ -142,14 +141,14 @@ function SpotlightBanner({
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 5,
-                background: 'linear-gradient(135deg, #8B5CF6, #EC4899)',
+                background: 'linear-gradient(135deg, #7C3AED, #9333EA)',
                 borderRadius: 9999,
                 padding: isSmall ? '4px 11px' : '6px 14px',
                 fontSize: isSmall ? 11 : 11.5,
                 fontWeight: 700,
                 letterSpacing: '0.05em',
                 textTransform: 'uppercase',
-                boxShadow: '0 2px 10px rgba(139,92,246,0.45)',
+                boxShadow: '0 2px 10px rgba(124,58,237,0.35)',
               }}
             >
               <Sparkles size={11} /> Spotlight
@@ -262,9 +261,9 @@ function SpotlightBanner({
                 fontWeight: 700,
                 border: 'none',
                 cursor: 'pointer',
-                background: 'linear-gradient(135deg, #8B5CF6, #EC4899)',
+                background: 'linear-gradient(135deg, #7C3AED, #A855F7)',
                 color: 'white',
-                boxShadow: '0 2px 10px rgba(139,92,246,0.28)',
+                boxShadow: '0 2px 10px rgba(124,58,237,0.30)',
                 transition: 'all 200ms ease',
                 flex: isSmall ? '1 1 auto' : undefined,
               }}
