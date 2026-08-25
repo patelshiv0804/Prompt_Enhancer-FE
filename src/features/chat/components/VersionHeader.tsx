@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { History, Star, ScrollText, Search, X } from 'lucide-react';
+import { History, Star, ScrollText, Search, X, Wand2, Sparkles } from 'lucide-react';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 interface VersionHeaderProps {
-  versions: { versionNumber: number; overallScore: number; timestamp: string; originalIndex?: number }[];
+  versions: { versionNumber: number; overallScore: number; timestamp: string; originalIndex?: number; isGenerating?: boolean }[];
   activeIndex: number;
   bestIndex: number;
   hoveredIndex?: number | null;
@@ -28,14 +29,15 @@ function scoreGradient(s: number) {
 export default function VersionHeader({
   versions, activeIndex, bestIndex, hoveredIndex, onOpenHistory, onSelectVersion, onHoverVersion,
 }: VersionHeaderProps) {
-  const scrollRef            = useRef<HTMLDivElement>(null);
-  const currentBubbleRef     = useRef<HTMLDivElement>(null);
-  const bubbleRefsMap        = useRef<Map<number, HTMLDivElement>>(new Map());
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const currentBubbleRef = useRef<HTMLDivElement>(null);
+  const bubbleRefsMap = useRef<Map<number, HTMLDivElement>>(new Map());
   const [atStart, setAtStart] = useState(true);
-  const [atEnd,   setAtEnd]   = useState(false);
-  const [searchQuery,    setSearchQuery]    = useState('');
-  const [searchMatch,    setSearchMatch]    = useState<number | null>(null);
+  const [atEnd, setAtEnd] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchMatch, setSearchMatch] = useState<number | null>(null);
   const [searchNotFound, setSearchNotFound] = useState(false);
+  const isMobile = useMediaQuery('(max-width: 640px)');
 
   const activeVersion = versions[activeIndex];
   if (!activeVersion) return null;
@@ -102,9 +104,9 @@ export default function VersionHeader({
   /* Build strip bubbles */
   const stripElements: React.ReactNode[] = [];
   versions.forEach((bubble, idx) => {
-    const v         = bubble as typeof bubble & { originalIndex?: number };
+    const v = bubble as typeof bubble & { originalIndex?: number };
     const isCurrent = idx === activeIndex;
-    const isBest    = idx === bestIndex;
+    const isBest = idx === bestIndex;
     const isHovered = hoveredIndex !== null && idx === hoveredIndex;
     const isSearched = searchMatch === idx;
 
@@ -129,36 +131,36 @@ export default function VersionHeader({
     const dotColor = isCurrent
       ? 'white'
       : isBest
-      ? '#FBBF24'
-      : isHovered
-      ? '#ffffff'
-      : 'rgba(255, 255, 255, 0.9)';
+        ? '#FBBF24'
+        : isHovered
+          ? '#ffffff'
+          : 'rgba(255, 255, 255, 0.9)';
 
     const dotBg = isCurrent
       ? 'linear-gradient(135deg, #7C3AED, #A855F7)'
       : isBest
-      ? 'rgba(245, 158, 11, 0.1)'
-      : isHovered
-      ? 'rgba(167, 139, 250, 0.25)'
-      : 'rgba(167, 139, 250, 0.15)';
+        ? 'rgba(245, 158, 11, 0.1)'
+        : isHovered
+          ? 'rgba(167, 139, 250, 0.25)'
+          : 'rgba(167, 139, 250, 0.15)';
 
     const dotBorder = isCurrent
       ? '2px solid transparent'
       : isBest
-      ? '2px solid #F59E0B'
-      : isSearched
-      ? '2px solid #60D8FA'
-      : isHovered
-      ? '2px solid rgba(167, 139, 250, 0.7)'
-      : '2px solid rgba(167, 139, 250, 0.45)';
+        ? '2px solid #F59E0B'
+        : isSearched
+          ? '2px solid #60D8FA'
+          : isHovered
+            ? '2px solid rgba(167, 139, 250, 0.7)'
+            : '2px solid rgba(167, 139, 250, 0.45)';
 
     const dotBoxShadow = isCurrent
       ? '0 6px 24px rgba(124, 58, 237, 0.45)'
       : isSearched
-      ? '0 0 0 3px rgba(96, 216, 250, 0.20), 0 4px 20px rgba(96, 216, 250, 0.30)'
-      : isHovered
-      ? '0 4px 20px rgba(124, 58, 237, 0.4)'
-      : 'none';
+        ? '0 0 0 3px rgba(96, 216, 250, 0.20), 0 4px 20px rgba(96, 216, 250, 0.30)'
+        : isHovered
+          ? '0 4px 20px rgba(124, 58, 237, 0.4)'
+          : 'none';
 
     stripElements.push(
       <div
@@ -194,12 +196,12 @@ export default function VersionHeader({
           border: '1px solid rgba(167, 139, 250, 0.25)',
         }}>
           v{bubble.versionNumber}
-          <span style={{ marginLeft: 4, color: '#A78BFA' }}>· {bubble.overallScore}</span>
+          <span style={{ marginLeft: 4, color: '#A78BFA' }}>· {bubble.isGenerating ? 'Generating…' : bubble.overallScore}</span>
           <span style={{ marginLeft: 6, color: 'rgba(255, 255, 255, 0.35)', fontWeight: 400 }}>{bubble.timestamp}</span>
         </div>
 
         {/* Best star */}
-        {isBest && (
+        {isBest && !bubble.isGenerating && (
           <span style={{ position: 'absolute', top: -6, right: -6, zIndex: 2 }}>
             <Star size={10} fill="#F59E0B" color="#F59E0B" />
           </span>
@@ -217,7 +219,11 @@ export default function VersionHeader({
           transform: isCurrent ? 'scale(1.18)' : 'scale(1)',
           transition: 'all 200ms ease',
         }}>
-          {bubble.overallScore}
+          {bubble.isGenerating ? (
+            <Wand2 size={16} style={{ animation: 'spin 1.5s linear infinite', color: '#FFFFFF' }} />
+          ) : (
+            bubble.overallScore
+          )}
         </div>
 
         {/* Version label below */}
@@ -231,27 +237,35 @@ export default function VersionHeader({
         }}>
           v{bubble.versionNumber}
         </span>
-        {isCurrent && <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', color: '#C4B5FD' }}>Current</span>}
-        {isBest && !isCurrent && <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', color: '#FCD34D' }}>Best</span>}
+        {isCurrent && (
+          <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', color: '#C4B5FD' }}>
+            {bubble.isGenerating ? 'Generating' : 'Current'}
+          </span>
+        )}
+        {isBest && !isCurrent && !bubble.isGenerating && (
+          <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', color: '#FCD34D' }}>
+            Best
+          </span>
+        )}
       </div>
     );
   });
 
   return (
     <div style={{
-      background: 'linear-gradient(135deg, #1E1035 0%, #2D1B69 40%, #1A0F2E 100%)',
-      borderRadius: 18, padding: '20px 24px 18px', marginBottom: 16,
-      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(109, 40, 217, 0.15), inset 0 1px 0 rgba(167, 139, 250, 0.1)',
-      border: '1px solid rgba(167, 139, 250, 0.15)',
-      position: 'relative', overflow: 'visible',
+      background: 'linear-gradient(145deg, #0C0620 0%, #150D30 30%, #1A0E3A 55%, #0D0920 100%)',
+      borderRadius: isMobile ? 20 : 26, padding: isMobile ? '16px 14px 14px' : '20px 24px 18px', marginBottom: 16,
+      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04)',
+      border: '1px solid rgba(167, 139, 250, 0.18)',
+      position: 'relative', overflow: 'hidden',
     }}>
       {/* Ambient glow */}
-      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 0%, rgba(167, 139, 250, 0.15) 0%, transparent 70%)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 0%, rgba(124, 58, 237, 0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
       {/* Top Row */}
-      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+      <div style={{ position: 'relative', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12, marginBottom: 16 }}>
         {/* Badge group */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10, flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255, 255, 255, 0.08)', border: '1px solid rgba(167, 139, 250, 0.2)', borderRadius: 20, padding: '5px 14px', fontSize: 13, fontWeight: 600, color: 'rgba(255, 255, 255, 0.9)', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05)' }}>
             v{activeVersion.versionNumber} <span style={{ color: 'rgba(167, 139, 250, 0.5)' }}>·</span> Current
           </div>
@@ -266,7 +280,9 @@ export default function VersionHeader({
           position: 'relative', display: 'flex', alignItems: 'center',
           background: searchNotFound ? 'rgba(239, 68, 68, 0.12)' : searchMatch !== null ? 'rgba(96, 216, 250, 0.12)' : 'rgba(255, 255, 255, 0.07)',
           border: `1px solid ${searchNotFound ? 'rgba(239, 68, 68, 0.5)' : searchMatch !== null ? 'rgba(96, 216, 250, 0.5)' : 'rgba(167, 139, 250, 0.20)'}`,
-          borderRadius: 24, padding: '6px 12px', transition: 'all 250ms ease', width: 240,
+          borderRadius: 24, padding: '6px 12px', transition: 'all 250ms ease',
+          width: isMobile ? '100%' : 240,
+          order: isMobile ? 3 : undefined, flexBasis: isMobile ? '100%' : undefined, boxSizing: 'border-box',
         }}>
           <Search size={12} style={{ position: 'absolute', left: 12, color: searchNotFound ? 'rgba(239, 68, 68, 0.8)' : searchMatch !== null ? 'rgba(167, 139, 250, 1)' : 'rgba(196, 181, 253, 0.6)' }} />
           <input
@@ -292,6 +308,7 @@ export default function VersionHeader({
           background: 'rgba(255, 255, 255, 0.06)', border: '1px solid rgba(167, 139, 250, 0.15)',
           borderRadius: 10, fontSize: 13, fontWeight: 600, color: 'rgba(255, 255, 255, 0.7)', cursor: 'pointer',
           transition: 'all 250ms ease', whiteSpace: 'nowrap', boxShadow: '0 2px 6px rgba(0, 0, 0, 0.15)',
+          order: isMobile ? 2 : undefined,
         }} className="hover:!bg-[rgba(167,139,250,0.12)] hover:!text-[#A78BFA] hover:!border-[rgba(167,139,250,0.35)] hover:shadow-[0_4px_16px_rgba(124,58,237,0.2)] hover:translate-y-[-1px]">
           <ScrollText size={14} />
           <span>All Drafts ({versions.length})</span>

@@ -1,10 +1,16 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { LogOut, Menu, X } from "lucide-react";
+import { motion, AnimatePresence, Variants } from "framer-motion";
+import { LogOut, Menu, X, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+
+/* ── Brand tokens (mirrors the homepage / BentoFeatures) ── */
+const INK = "#09090B";
+const VIOLET = "#7C3AED";
+const MUTED = "#6B7280";
+const GRAD = "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 55%, #EC4899 100%)";
 
 interface NavItem {
   id: string;
@@ -12,23 +18,99 @@ interface NavItem {
   href: string;
 }
 
+/* Each `id` matches a real section id on the homepage, so every link
+   smooth-scrolls to a section that actually exists. */
 const navLinks: NavItem[] = [
   { id: "extension", label: "Extension", href: "#extension" },
   { id: "transformation-engine", label: "Optimizer", href: "#transformation-engine" },
-  { id: "examples", label: "Examples", href: "#examples" },
+  { id: "transformation-showcase", label: "Examples", href: "#transformation-showcase" },
   { id: "features", label: "Features", href: "#features" },
   { id: "faq", label: "FAQ", href: "#faq" },
 ];
 
+/* ═══════════════════════════════════════════════════════════════════
+ *  Premium CTA — ink pill matching the Hero button, with an Apple-style
+ *  lift + soft purple glow on hover. Driven by framer variants (NOT CSS
+ *  :hover) because inline styles win over hover classes in this project.
+ * ═══════════════════════════════════════════════════════════════════ */
+function PremiumCTA({
+  href,
+  label,
+  id,
+  onClick,
+}: {
+  href: string;
+  label: string;
+  id?: string;
+  onClick?: () => void;
+}) {
+  const glow: Variants = {
+    rest: { opacity: 0, scale: 0.8 },
+    hover: { opacity: 1, scale: 1 },
+  };
+  const lift: Variants = {
+    rest: { y: 0, scale: 1 },
+    hover: { y: -1.5, scale: 1.03 },
+    tap: { scale: 0.97 },
+  };
+
+  return (
+    <motion.div
+      className="relative"
+      initial="rest"
+      animate="rest"
+      whileHover="hover"
+      whileTap="tap"
+    >
+      {/* Soft purple glow that blooms behind the button on hover */}
+      <motion.span
+        aria-hidden
+        variants={glow}
+        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+        className="pointer-events-none absolute -inset-3 rounded-full"
+        style={{
+          background: "radial-gradient(circle, rgba(139,92,246,0.42) 0%, transparent 70%)",
+          filter: "blur(12px)",
+        }}
+      />
+      <motion.div
+        variants={lift}
+        transition={{ type: "spring", stiffness: 400, damping: 24 }}
+      >
+        <Link
+          href={href}
+          id={id}
+          onClick={onClick}
+          className="relative inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white"
+          style={{
+            background: INK,
+            boxShadow: "0 6px 22px rgba(13,13,26,0.22)",
+            letterSpacing: "-0.01em",
+            textDecoration: "none",
+          }}
+        >
+          {label}
+          <ArrowRight size={15} />
+        </Link>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeId, setActiveId] = useState<string>("extension");
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [scrolled, setScrolled] = useState(false);
   const isClickScrolling = useRef(false);
   const clickScrollTimer = useRef<NodeJS.Timeout | null>(null);
   const { isAuthenticated, loading, logout } = useAuth();
 
+  /* The pill rests on the active section, and glides to whatever the
+     cursor is hovering — so it doubles as both hover + active indicator. */
+  const highlightId = hoveredId ?? activeId;
+
   useEffect(() => {
-    // Check initial hash on load if present
     if (typeof window !== "undefined" && window.location.hash) {
       const hashId = window.location.hash.replace("#", "");
       if (navLinks.some((n) => n.id === hashId)) {
@@ -37,13 +119,14 @@ export default function Navbar() {
     }
 
     const handleScroll = () => {
+      setScrolled(window.scrollY > 8);
       if (isClickScrolling.current) return;
 
       const scrollPosition = window.scrollY + 120;
       const windowHeight = window.innerHeight;
       const documentHeight = document.documentElement.scrollHeight;
 
-      // If scrolled near bottom of page, activate last section (FAQ)
+      // Near the bottom → activate the last section (FAQ)
       if (window.scrollY + windowHeight >= documentHeight - 60) {
         setActiveId(navLinks[navLinks.length - 1].id);
         return;
@@ -74,31 +157,38 @@ export default function Navbar() {
     };
   }, []);
 
+  const smoothScrollTo = (id: string) => {
+    const targetEl = document.getElementById(id);
+    if (!targetEl) return;
+    const navOffset = 88;
+    const offsetPosition =
+      targetEl.getBoundingClientRect().top + window.pageYOffset - navOffset;
+    window.scrollTo({ top: offsetPosition, behavior: "smooth" });
+    window.history.pushState(null, "", `#${id}`);
+  };
+
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
     e.preventDefault();
     setMobileOpen(false);
     setActiveId(id);
     isClickScrolling.current = true;
-
     if (clickScrollTimer.current) clearTimeout(clickScrollTimer.current);
 
-    const targetEl = document.getElementById(id);
-    if (targetEl) {
-      const navOffset = 80;
-      const elementPosition = targetEl.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.pageYOffset - navOffset;
-
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: "smooth",
-      });
-
-      window.history.pushState(null, "", `#${id}`);
-    }
+    smoothScrollTo(id);
 
     clickScrollTimer.current = setTimeout(() => {
       isClickScrolling.current = false;
     }, 850);
+  };
+
+  const handleLogoClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    // On the landing page, glide to the top instead of a hard route change.
+    if (typeof window !== "undefined" && window.location.pathname === "/") {
+      e.preventDefault();
+      setMobileOpen(false);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.history.pushState(null, "", "/");
+    }
   };
 
   const renderDesktopAuth = () => {
@@ -122,13 +212,7 @@ export default function Navbar() {
             <LogOut size={16} />
             Log out
           </button>
-          <Link
-            href="/dashboard"
-            id="navbar-cta"
-            className="inline-flex items-center gap-2 rounded-full bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-gray-800 hover:shadow-md active:scale-[0.98]"
-          >
-            Open dashboard
-          </Link>
+          <PremiumCTA href="/dashboard" id="navbar-cta" label="Open dashboard" />
         </>
       );
     }
@@ -141,13 +225,7 @@ export default function Navbar() {
         >
           Log in
         </Link>
-        <Link
-          href="/auth"
-          id="navbar-cta"
-          className="inline-flex items-center gap-2 rounded-full bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-gray-800 hover:shadow-md active:scale-[0.98]"
-        >
-          Get started
-        </Link>
+        <PremiumCTA href="/auth" id="navbar-cta" label="Get started" />
       </>
     );
   };
@@ -167,7 +245,7 @@ export default function Navbar() {
         <>
           <button
             type="button"
-            className="rounded-lg px-4 py-2.5 text-center text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="rounded-xl px-4 py-2.5 text-center text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
             onClick={() => {
               setMobileOpen(false);
               logout();
@@ -177,10 +255,12 @@ export default function Navbar() {
           </button>
           <Link
             href="/dashboard"
-            className="inline-flex items-center justify-center rounded-full bg-gray-900 px-5 py-3 text-sm font-semibold text-white"
+            className="inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-white"
+            style={{ background: INK, boxShadow: "0 6px 22px rgba(13,13,26,0.22)" }}
             onClick={() => setMobileOpen(false)}
           >
             Open dashboard
+            <ArrowRight size={15} />
           </Link>
         </>
       );
@@ -190,17 +270,19 @@ export default function Navbar() {
       <>
         <Link
           href="/auth"
-          className="rounded-lg px-4 py-2.5 text-center text-sm font-medium text-gray-700 hover:bg-gray-50"
+          className="rounded-xl px-4 py-2.5 text-center text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
           onClick={() => setMobileOpen(false)}
         >
           Log in
         </Link>
         <Link
           href="/auth"
-          className="inline-flex items-center justify-center rounded-full bg-gray-900 px-5 py-3 text-sm font-semibold text-white"
+          className="inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-white"
+          style={{ background: INK, boxShadow: "0 6px 22px rgba(13,13,26,0.22)" }}
           onClick={() => setMobileOpen(false)}
         >
           Get started
+          <ArrowRight size={15} />
         </Link>
       </>
     );
@@ -211,49 +293,85 @@ export default function Navbar() {
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="sticky top-0 z-[1000] h-20 border-b border-gray-100/80 bg-white/80 backdrop-blur-xl"
+      className="sticky top-0 z-[1000] w-full"
+      style={{
+        backgroundColor: scrolled ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.65)",
+        backdropFilter: "blur(20px) saturate(180%)",
+        WebkitBackdropFilter: "blur(20px) saturate(180%)",
+        borderBottom: `1px solid ${scrolled ? "rgba(139,92,246,0.10)" : "rgba(9,9,11,0.05)"}`,
+        boxShadow: scrolled
+          ? "0 10px 30px -12px rgba(13,13,26,0.12)"
+          : "0 0 0 0 rgba(0,0,0,0)",
+        transition:
+          "background-color 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease",
+      }}
     >
-      <div className="mx-auto flex h-full max-w-[1440px] items-center justify-between px-6 lg:px-12">
+      <div className="mx-auto flex h-20 max-w-[1440px] items-center justify-between px-6 lg:px-12">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-1.5" id="navbar-logo">
-          <img src="/logo_1.svg" alt="AURE Logo" className="h-7 w-7 rounded-md object-contain" />
-          <span className="text-[17px] font-bold tracking-tight text-gray-900">AURE</span>
-        </Link>
+        <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="shrink-0">
+          <Link
+            href="/"
+            onClick={handleLogoClick}
+            className="flex items-center gap-1.5"
+            id="navbar-logo"
+          >
+            <img src="/logo_1.svg" alt="AURE Logo" className="h-7 w-7 rounded-md object-contain" />
+            <span className="text-[17px] font-bold tracking-tight" style={{ color: INK }}>
+              AURE
+            </span>
+          </Link>
+        </motion.div>
 
-        {/* Center Links — Desktop */}
-        <div className="hidden items-center gap-1 md:flex" id="navbar-links">
+        {/* Center Links — Desktop (magic sliding pill) */}
+        <div
+          className="absolute left-1/2 hidden -translate-x-1/2 items-center md:flex"
+          id="navbar-links"
+          onMouseLeave={() => setHoveredId(null)}
+        >
           {navLinks.map((link) => {
             const isActive = activeId === link.id;
+            const isHot = highlightId === link.id;
             return (
               <a
                 key={link.id}
                 href={link.href}
                 onClick={(e) => handleNavClick(e, link.id)}
-                className={`relative px-4 py-2 text-sm font-medium transition-colors duration-200 ${
-                  isActive ? "text-gray-900 font-semibold" : "text-gray-500 hover:text-gray-900"
-                }`}
+                onMouseEnter={() => setHoveredId(link.id)}
+                aria-current={isActive ? "page" : undefined}
+                className="relative px-4 py-2 text-sm font-medium"
+                style={{
+                  color: isActive ? VIOLET : isHot ? INK : MUTED,
+                  fontWeight: isActive ? 600 : 500,
+                  letterSpacing: "-0.01em",
+                  transition: "color 0.2s ease",
+                }}
               >
-                {link.label}
-                {isActive && (
-                  <motion.div
-                    layoutId="activeNavIndicator"
-                    className="absolute bottom-[-16px] left-3 right-3 h-[2px] bg-purple-600 rounded-full"
-                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                {/* The one sliding pill — framer animates it between items */}
+                {isHot && (
+                  <motion.span
+                    layoutId="navMagicPill"
+                    className="absolute inset-0 rounded-full"
+                    style={{
+                      background: "rgba(139,92,246,0.10)",
+                      boxShadow: "inset 0 0 0 1px rgba(139,92,246,0.12)",
+                    }}
+                    transition={{ type: "spring", stiffness: 420, damping: 34 }}
                   />
                 )}
+                <span className="relative z-10">{link.label}</span>
               </a>
             );
           })}
         </div>
 
         {/* Right side — Desktop */}
-        <div className="hidden items-center gap-4 md:flex">
+        <div className="hidden shrink-0 items-center gap-4 md:flex">
           {renderDesktopAuth()}
         </div>
 
         {/* Mobile Hamburger */}
         <button
-          className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-600 transition-colors hover:bg-gray-100 md:hidden"
+          className="flex h-10 w-10 items-center justify-center rounded-xl text-gray-600 transition-colors hover:bg-purple-50 hover:text-purple-700 md:hidden"
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label="Toggle menu"
           id="navbar-mobile-toggle"
@@ -280,17 +398,26 @@ export default function Navbar() {
                     key={link.id}
                     href={link.href}
                     onClick={(e) => handleNavClick(e, link.id)}
-                    className={`rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
-                      isActive
-                        ? "bg-purple-50 text-purple-700 font-semibold"
-                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                    }`}
+                    aria-current={isActive ? "page" : undefined}
+                    className="relative rounded-xl px-4 py-3 text-sm font-medium transition-colors"
+                    style={{
+                      color: isActive ? VIOLET : "#4B5563",
+                      fontWeight: isActive ? 600 : 500,
+                      background: isActive ? "rgba(139,92,246,0.08)" : "transparent",
+                    }}
                   >
+                    {isActive && (
+                      <span
+                        aria-hidden
+                        className="absolute left-1 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-full"
+                        style={{ background: GRAD }}
+                      />
+                    )}
                     {link.label}
                   </a>
                 );
               })}
-              <div className="mt-2 flex flex-col gap-2 pt-2 border-t border-gray-100">
+              <div className="mt-2 flex flex-col gap-2 border-t border-gray-100 pt-3">
                 {renderMobileAuth()}
               </div>
             </div>

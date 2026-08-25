@@ -115,6 +115,31 @@ button:focus-visible {
   }
 }
 
+/* ── Landing Hero sizing ──
+   `100vh` on mobile browsers measures the *large* viewport (address bar
+   hidden), so the bottom of the hero sits under the browser chrome on first
+   paint. `100svh` measures the small viewport, which always fits. The plain
+   `vh` rule stays first as the fallback for browsers without svh support. */
+.hero-shell {
+  height: 100vh;
+  min-height: 640px;
+}
+
+@supports (height: 100svh) {
+  .hero-shell {
+    height: 100svh;
+  }
+}
+
+@media (max-width: 767px) {
+  /* Phones: let the copy define the height instead of forcing a tall
+     viewport box, so nothing is ever clipped on short screens. */
+  .hero-shell {
+    height: auto;
+    min-height: 560px;
+  }
+}
+
 /* ── Gradient text utility ── */
 .gradient-text {
   background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 40%, #EC4899 100%);
@@ -127,6 +152,36 @@ button:focus-visible {
   padding-right: 0.15em;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
+}
+
+/* ── Animated 3-color repeating gradient text ── */
+@keyframes text-gradient-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animated-remarkable-gradient {
+  background: linear-gradient(
+    115deg,
+    #6366F1 0%,
+    #8B5CF6 25%,
+    #EC4899 50%,
+    #8B5CF6 75%,
+    #6366F1 100%
+  );
+  background-size: 250% 250%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: text-gradient-flow 5s ease-in-out infinite;
+  display: inline-block;
 }
 
 /* ── Floating animation ── */
@@ -484,6 +539,16 @@ button:focus-visible {
   }
 }
 
+/* Blinking caret for the live token-streaming view in the optimizer. */
+@keyframes streamCaretBlink {
+  0%, 45% {
+    opacity: 1;
+  }
+  55%, 100% {
+    opacity: 0;
+  }
+}
+
 /* ── Smooth nav group accordion ── */
 .nav-group-content {
   overflow: hidden;
@@ -509,6 +574,7 @@ button:focus-visible {
 }
 
 /* Skeleton shimmer utility */
+.skeleton,
 .dashboard-root .skeleton {
   background: linear-gradient(90deg, rgba(124, 58, 237, 0.04) 25%, rgba(124, 58, 237, 0.10) 50%, rgba(124, 58, 237, 0.04) 75%);
   background-size: 200% 100%;

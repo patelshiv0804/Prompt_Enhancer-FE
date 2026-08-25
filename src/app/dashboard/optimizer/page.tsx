@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ComparisonBlock } from '@/features/optimizer';
 import ScoreSection from '@/features/optimizer/components/ScoreSection';
-import { apiClient } from '@/utils/apiClient';
+import { apiClient, streamEnhance, type ReenhanceStreamDone } from '@/utils/apiClient';
 import { useAuth } from '@/context/AuthContext';
 
 const MODE_MAPPING: Record<string, { role: string; mode: string }> = {
@@ -23,6 +23,16 @@ function OptimizerPageContent() {
   const { activeStyle } = useAuth();
   const searchParams = useSearchParams();
   const promptId = searchParams.get('prompt_id');
+  // Template picked from the library "Use" button. The title is shown to the
+  // user; the id tells the backend to enhance with THIS template. The prompt
+  // body (the proprietary "recipe") is never exposed to the client.
+  const activeTemplateName = searchParams.get('template');
+  const activeTemplateId = searchParams.get('template_id');
+  const [templateDismissed, setTemplateDismissed] = useState(false);
+  // Effective applied template — cleared once the user dismisses the chip so
+  // enhancement reverts to the normal automatic-retrieval flow.
+  const appliedTemplateId = !templateDismissed ? activeTemplateId : null;
+  const appliedTemplateName = !templateDismissed ? activeTemplateName : null;
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isAnalyzed, setIsAnalyzed] = useState(false);
@@ -31,6 +41,9 @@ function OptimizerPageContent() {
 
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [optimizationResult, setOptimizationResult] = useState<any>(null);
+  // Live token buffer while an SSE enhancement is streaming. Cleared once the
+  // authoritative result lands in optimizationResult (on the `done` frame).
+  const [streamingText, setStreamingText] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   // Prompt history and versioning states
@@ -136,6 +149,12 @@ function OptimizerPageContent() {
     }
   }, [promptId]);
 
+  // Re-show the "template in use" banner whenever a different template is
+  // opened from the library (a previous dismissal shouldn't hide the new one).
+  useEffect(() => {
+    setTemplateDismissed(false);
+  }, [activeTemplateName]);
+
   const handleRestoreVersion = async (versionNumber: number) => {
     if (!loadedPromptId) return;
     setError(null);
@@ -174,6 +193,78 @@ function OptimizerPageContent() {
     }
   };
 
+  // Poll the prompt record for the background quality analysis (scores + tool
+  // recommendations) the backend computes asynchronously after enhancement.
+  // Shared by the streaming and blocking optimize paths (2.5s, max 10 tries).
+  const startBackgroundScorePolling = (pId: string) => {
+    let attempts = 0;
+    const pollTimer = setInterval(async () => {
+      attempts++;
+      try {
+        const detailRes = await apiClient.get<any>(`/api/v1/prompts/${pId}`);
+        if (detailRes?.data) {
+          const detail = detailRes.data;
+          const currentVer = detail.current_version;
+          const oldAna = currentVer?.old_analysis || detail.old_analysis;
+          const newAna = currentVer?.new_analysis || detail.new_analysis;
+          const toolRecs = currentVer?.tool_recommendations || detail.tool_recommendations;
+
+          if (oldAna && newAna) {
+            clearInterval(pollTimer);
+            setOptimizationResult((prev: any) => ({
+              ...prev,
+              original_analysis: oldAna,
+              enhanced_analysis: newAna,
+              tool_recommendations: toolRecs || prev?.tool_recommendations,
+            }));
+            // ⚡ Refresh Sidebar and Vault history list with updated scores!
+            window.dispatchEvent(new Event('promptiq:history-updated'));
+          }
+        }
+      } catch (pollErr) {
+        console.error('Polling background analysis failed:', pollErr);
+      }
+      if (attempts >= 10) {
+        clearInterval(pollTimer);
+      }
+    }, 2500);
+  };
+
+  // Blocking fallback: the original non-streaming enhance flow, used when the
+  // SSE stream can't be established or fails mid-flight so the user still gets
+  // a correct result.
+  const runBlockingOptimize = async (payload: any, promptText: string) => {
+    const response = await apiClient.post('/api/v1/enhance', payload);
+    if (response.success && response.data) {
+      const optData = response.data;
+      setOptimizationResult({
+        ...optData,
+        detected_level: optData.detected_level,
+        level_reason: optData.level_reason,
+      });
+      setIsOptimized(true);
+      // ⚡ Unlock the UI immediately — show enhanced prompt right away
+      setIsOptimizing(false);
+      setStreamingText('');
+      window.dispatchEvent(new Event('promptiq:history-updated'));
+
+      if (response.data.version && response.data.version.prompt_id) {
+        const pId = response.data.version.prompt_id;
+        setLoadedPromptId(pId);
+        // Fire-and-forget: load version history without blocking UI
+        loadVersionHistory(pId).catch((vErr) => {
+          console.error('Failed to fetch versions list:', vErr);
+        });
+        // If analysis is processing in background, poll for completion
+        if (!optData.original_analysis || !optData.enhanced_analysis) {
+          startBackgroundScorePolling(pId);
+        }
+      }
+    } else {
+      throw new Error(response.message || 'Optimization failed.');
+    }
+  };
+
   const handleOptimize = async (promptText: string, activeRole: string, activeMode?: string, enhancementLevel?: string) => {
     if (!promptText.trim()) return;
     if (promptText.length > 12000) {
@@ -181,90 +272,115 @@ function OptimizerPageContent() {
       return;
     }
     setIsOptimizing(true);
+    setIsOptimized(false);
+    setStreamingText('');
     setError(null);
 
-    try {
-      const selectedRole = activeRole.toLowerCase();
-      const selectedMode = activeMode && activeMode.trim() ? activeMode : selectedRole;
-      const applyStyle = activeStyle.id !== null;
-      // Send enhancement_level only when the user explicitly forced a level.
-      // Omitting it (or sending undefined) tells the backend to auto-detect.
-      const forcedLevel =
-        enhancementLevel && enhancementLevel !== 'auto' ? enhancementLevel : undefined;
+    const selectedRole = activeRole.toLowerCase();
+    const selectedMode = activeMode && activeMode.trim() ? activeMode : selectedRole;
+    const applyStyle = activeStyle.id !== null;
+    // Send enhancement_level only when the user explicitly forced a level.
+    // Omitting it (or sending undefined) tells the backend to auto-detect.
+    const forcedLevel =
+      enhancementLevel && enhancementLevel !== 'auto' ? enhancementLevel : undefined;
 
-      const payload = {
-        prompt: promptText,
-        role: selectedRole,
-        mode: selectedMode,
-        apply_style: applyStyle,
-        style_profile_id: activeStyle.id || undefined,
-        ...(forcedLevel ? { enhancement_level: forcedLevel } : {}),
-      };
+    const payload = {
+      prompt: promptText,
+      role: selectedRole,
+      mode: selectedMode,
+      apply_style: applyStyle,
+      style_profile_id: activeStyle.id || undefined,
+      ...(forcedLevel ? { enhancement_level: forcedLevel } : {}),
+      // When a library template is applied (and not dismissed), tell the
+      // backend to enhance using THAT template instead of auto-retrieval.
+      // Absent → the backend runs its normal semantic-retrieval flow.
+      ...(appliedTemplateId ? { template_id: appliedTemplateId } : {}),
+    };
 
-      const response = await apiClient.post('/api/v1/enhance', payload);
-      if (response.success && response.data) {
-        const optData = response.data;
+    // Carry meta (detected depth) from the `meta` frame to `done` as a
+    // safety net, in case the done payload ever omits it.
+    let metaLevel: string | undefined;
+    let metaReason: string | undefined;
+
+    // ⚡ Stream tokens via SSE for instant first-token feedback; fall back to
+    // the blocking endpoint on any stream failure.
+    await streamEnhance('/api/v1/enhance/stream', payload, {
+      onMeta: (meta) => {
+        metaLevel = meta.detected_level;
+        metaReason = meta.level_reason;
+      },
+      onToken: (text) => {
+        setStreamingText((prev) => prev + text);
+      },
+      onDone: (data) => {
         setOptimizationResult({
-          ...optData,
-          detected_level: optData.detected_level,
-          level_reason: optData.level_reason,
+          enhanced_prompt: data.enhanced_prompt,
+          original_prompt: data.original_prompt ?? promptText,
+          original_analysis: null,
+          enhanced_analysis: null,
+          tool_recommendations: null,
+          detected_level: data.detected_level ?? metaLevel,
+          level_reason: data.level_reason ?? metaReason,
         });
         setIsOptimized(true);
-        // ⚡ Unlock the UI immediately — show enhanced prompt right away
+        // ⚡ Final authoritative text now lives in optimizationResult —
+        // drop the raw live buffer so the formatted viewer takes over.
+        setStreamingText('');
         setIsOptimizing(false);
         window.dispatchEvent(new Event('promptiq:history-updated'));
 
-        if (response.data.version && response.data.version.prompt_id) {
-          const pId = response.data.version.prompt_id;
+        const pId = data.version?.prompt_id;
+        if (pId) {
           setLoadedPromptId(pId);
-
-          // Fire-and-forget: load version history without blocking UI
           loadVersionHistory(pId).catch((vErr) => {
             console.error('Failed to fetch versions list:', vErr);
           });
-
-          // If analysis is processing in background, poll for completion
-          if (!optData.original_analysis || !optData.enhanced_analysis) {
-            let attempts = 0;
-            const pollTimer = setInterval(async () => {
-              attempts++;
-              try {
-                const detailRes = await apiClient.get<any>(`/api/v1/prompts/${pId}`);
-                if (detailRes?.data) {
-                  const detail = detailRes.data;
-                  const currentVer = detail.current_version;
-                  const oldAna = currentVer?.old_analysis || detail.old_analysis;
-                  const newAna = currentVer?.new_analysis || detail.new_analysis;
-                  const toolRecs = currentVer?.tool_recommendations || detail.tool_recommendations;
-
-                  if (oldAna && newAna) {
-                    clearInterval(pollTimer);
-                    setOptimizationResult((prev: any) => ({
-                      ...prev,
-                      original_analysis: oldAna,
-                      enhanced_analysis: newAna,
-                      tool_recommendations: toolRecs || prev?.tool_recommendations,
-                    }));
-                    // ⚡ Refresh Sidebar and Vault history list with updated scores!
-                    window.dispatchEvent(new Event('promptiq:history-updated'));
-                  }
-                }
-              } catch (pollErr) {
-                console.error('Polling background analysis failed:', pollErr);
-              }
-              if (attempts >= 10) {
-                clearInterval(pollTimer);
-              }
-            }, 2500);
-          }
+          startBackgroundScorePolling(pId);
         }
-      } else {
-        throw new Error(response.message || 'Optimization failed.');
+      },
+      onError: async (streamErr) => {
+        console.error('Streaming enhance failed; falling back to /enhance:', streamErr);
+        // Discard any partial stream and re-run through the reliable path.
+        setStreamingText('');
+        try {
+          await runBlockingOptimize(payload, promptText);
+        } catch (fbErr: any) {
+          console.error(fbErr);
+          setError(fbErr.message || 'Failed to optimize prompt. Please try again.');
+          setIsOptimizing(false);
+        }
+      },
+    });
+  };
+
+  // Blocking fallback for re-enhance: the original non-streaming flow, used
+  // when the SSE stream can't be established or fails mid-flight so the user
+  // still gets a correct result. Manages only the result state — the caller
+  // owns the isOptimizing / in-flight flags.
+  const runBlockingReenhance = async (pId: string) => {
+    // POST /api/v1/prompts/{prompt_id}/reenhance
+    const res = await apiClient.post<any>(`/api/v1/prompts/${pId}/reenhance`, {});
+    if (res?.success && res.data) {
+      const { enhanced_prompt, original_prompt, old_analysis, new_analysis, tool_recommendations, version_number } = res.data;
+      // No extra /analyze calls needed — the backend already computed and
+      // stored the per-version scores.
+      setOptimizationResult((prev: any) => ({
+        enhanced_prompt,
+        original_prompt: original_prompt || prev?.original_prompt || originalPromptText,
+        original_analysis: old_analysis || prev?.original_analysis,
+        enhanced_analysis: new_analysis,
+        tool_recommendations: tool_recommendations || prev?.tool_recommendations,
+      }));
+      if (version_number != null) setActiveVersionNumber(version_number);
+      setIsOptimized(true);
+      window.dispatchEvent(new Event('promptiq:history-updated'));
+      try {
+        await loadVersionHistory(pId);
+      } catch (vErr) {
+        console.error('Failed to refresh versions list after re-enhance:', vErr);
       }
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message || 'Failed to optimize prompt. Please try again.');
-      setIsOptimizing(false);
+    } else {
+      throw new Error(res?.message || 'Failed to re-enhance prompt. Please try again.');
     }
   };
 
@@ -272,50 +388,64 @@ function OptimizerPageContent() {
     if (!loadedPromptId || reenhanceInFlight.current) return;
     reenhanceInFlight.current = true;
     setIsOptimizing(true);
+    setStreamingText('');
     setError(null);
-    try {
-      // Explicitly call the backend re-enhance endpoint ONLY:
-      // POST /api/v1/prompts/{prompt_id}/reenhance
-      const res = await apiClient.post<any>(`/api/v1/prompts/${loadedPromptId}/reenhance`, {});
 
-      if (res?.success && res.data) {
-        const { enhanced_prompt, original_prompt, old_analysis, new_analysis, tool_recommendations, version_number } = res.data;
+    const pId = loadedPromptId;
+    // Track whether a terminal frame (done/error) settled the stream, so the
+    // in-flight lock is always released even if the stream ends unexpectedly.
+    let settledLocally = false;
 
-        // Update the optimizer result directly from the reenhance response —
-        // same pattern as handleOptimize. No extra /analyze calls needed because
-        // the backend already computed and stored the scores.
-        setOptimizationResult({
-          enhanced_prompt: enhanced_prompt,
-          original_prompt: original_prompt || optimizationResult?.original_prompt || originalPromptText,
-          original_analysis: old_analysis || optimizationResult?.original_analysis,
-          enhanced_analysis: new_analysis,
-          tool_recommendations: tool_recommendations || optimizationResult?.tool_recommendations,
-        });
-
-        // Mark the new version as current
-        if (version_number != null) {
-          setActiveVersionNumber(version_number);
-        }
-
+    // ⚡ Stream the re-enhanced prompt token-by-token via SSE for instant
+    // first-token feedback; fall back to the blocking /reenhance on any failure.
+    await streamEnhance<ReenhanceStreamDone>(`/api/v1/prompts/${pId}/reenhance/stream`, {}, {
+      onToken: (text) => {
+        setStreamingText((prev) => prev + text);
+      },
+      onDone: (data) => {
+        settledLocally = true;
+        // The backend persisted the new version AND computed per-version scores
+        // synchronously — everything the UI needs is in this frame, so (unlike
+        // the initial enhancement) no background score polling is required.
+        setOptimizationResult((prev: any) => ({
+          enhanced_prompt: data.enhanced_prompt,
+          original_prompt: prev?.original_prompt || originalPromptText,
+          original_analysis: data.old_analysis ?? prev?.original_analysis,
+          enhanced_analysis: data.new_analysis,
+          tool_recommendations: data.tool_recommendations ?? prev?.tool_recommendations,
+        }));
+        if (data.version_number != null) setActiveVersionNumber(data.version_number);
         setIsOptimized(true);
-
-        // Sync the Vault / History sidebar (same as handleOptimize)
+        // Final authoritative text now lives in optimizationResult — drop the
+        // raw live buffer so the formatted viewer takes over.
+        setStreamingText('');
+        setIsOptimizing(false);
+        reenhanceInFlight.current = false;
         window.dispatchEvent(new Event('promptiq:history-updated'));
-
-        // Refresh the version list so the version dropdown is up to date.
-        // This is a lightweight GET — no analyze calls.
-        try {
-          await loadVersionHistory(loadedPromptId);
-        } catch (vErr) {
+        loadVersionHistory(pId).catch((vErr) => {
           console.error('Failed to refresh versions list after re-enhance:', vErr);
+        });
+      },
+      onError: async (streamErr) => {
+        settledLocally = true;
+        console.error('Streaming re-enhance failed; falling back to blocking /reenhance:', streamErr);
+        // Discard any partial stream and re-run through the reliable path.
+        setStreamingText('');
+        try {
+          await runBlockingReenhance(pId);
+        } catch (fbErr: any) {
+          console.error('Failed to re-enhance prompt:', fbErr);
+          setError(fbErr.message || 'Failed to re-enhance prompt. Please try again.');
+        } finally {
+          reenhanceInFlight.current = false;
+          setIsOptimizing(false);
         }
-      } else {
-        throw new Error(res?.message || 'Failed to re-enhance prompt. Please try again.');
-      }
-    } catch (err: any) {
-      console.error('Failed to re-enhance prompt:', err);
-      setError(err.message || 'Failed to re-enhance prompt. Please try again.');
-    } finally {
+      },
+    });
+
+    // Safety net: if the stream somehow ended without a done/error frame, still
+    // release the in-flight lock so the button isn't stuck disabled.
+    if (!settledLocally) {
       reenhanceInFlight.current = false;
       setIsOptimizing(false);
     }
@@ -350,10 +480,13 @@ function OptimizerPageContent() {
         onReenhance={loadedPromptId ? handleReenhance : undefined}
         analysisResult={analysisResult}
         optimizationResult={optimizationResult}
+        streamingText={streamingText}
         versions={versionsList}
         activeVersionNumber={activeVersionNumber}
         onRestoreVersion={handleRestoreVersion}
         initialOriginalPromptText={originalPromptText}
+        templateName={appliedTemplateName}
+        onClearTemplate={() => setTemplateDismissed(true)}
       />
       {(isAnalyzed || isOptimized) && (
         <ScoreSection

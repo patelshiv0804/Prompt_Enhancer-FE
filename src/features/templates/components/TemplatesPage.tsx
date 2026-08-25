@@ -1,258 +1,2000 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Bookmark, BookmarkCheck, Sparkles, Code2, Megaphone, Palette,
-  Video, Wand2, BookOpen, Briefcase, TrendingUp, Star, ChevronRight,
-  Zap, Film,
+  Video, BookOpen, Briefcase, TrendingUp, Star, ChevronRight, ChevronLeft,
+  Zap, Film, Mail, Database, FileText, Loader2, AlertCircle, RefreshCw,
+  Rocket, GraduationCap, Microscope, PenLine, LayoutGrid, List,
+  X, Copy, Check, Eye, Compass, Flame, ArrowUpRight, CheckCircle2,
+  Cpu, Award,
 } from 'lucide-react';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { loadTemplates, type Template } from '../services/templatesService';
+import TemplatesHubSkeleton from './TemplatesHubSkeleton';
 
-interface Template {
-  id: string; title: string; description: string; category: string; tags: string[];
-  model: string; modelColor: string; promptPreview: string;
-  isFeatured?: boolean; isTrending?: boolean; isNew?: boolean; useCount?: number;
-}
-
-interface Category { id: string; label: string; icon: React.ElementType; }
-
-const DUMMY_TEMPLATES: Template[] = [
-  { id: 'tmpl-001', title: 'Cinematic Establishing Shot', description: 'A highly structured prompt template designed to generate photorealistic, sweeping landscape introductions with specific camera movement and lighting parameters for VEO.', category: 'veo', tags: ['VEO', 'Cinematic', 'Landscape'], model: 'VEO Video Model', modelColor: '#8B5CF6', promptPreview: 'Generate a [time of day] cinematic establishing shot of a [environment]. Camera movement: [slow pan/drone sweep]. Lighting: [volumetric/high-key]. Mood: [epic/serene].', isFeatured: true, isTrending: true, useCount: 4821 },
-  { id: 'tmpl-002', title: 'React Component Generator', description: 'Strictly typed React functional component with props interface, hooks, and accessibility attributes auto-generated.', category: 'coding', tags: ['Coding', 'React'], model: 'Claude Sonnet', modelColor: '#0EA5E9', promptPreview: 'Create a fully typed React component called [ComponentName] that [functionality]. Include: TypeScript interface, hooks, aria labels.', isTrending: true, useCount: 3102 },
-  { id: 'tmpl-003', title: 'SaaS Landing Hero Copy', description: 'High-converting Hero section copy with headline, sub-headline, CTA and social-proof block for SaaS products.', category: 'marketing', tags: ['Marketing', 'Copywriting'], model: 'ChatGPT', modelColor: '#10B981', promptPreview: 'Write a SaaS hero section for [product] targeting [ICP]. Tone: [confident/approachable]. Include headline, sub-headline, CTA, and 3 social-proof lines.', isTrending: true, useCount: 2780 },
-  { id: 'tmpl-004', title: 'Midjourney Product Shoot', description: 'Studio lighting setup for modern electronics, generating clean product photography prompts with controlled depth of field.', category: 'ai-art', tags: ['AI Art', 'Midjourney'], model: 'Midjourney', modelColor: '#F59E0B', promptPreview: '[Product] on [surface], studio lighting, shallow depth of field, [color] background, commercial photography, 8k --ar 4:3 --style raw', isTrending: true, useCount: 2310 },
-  { id: 'tmpl-005', title: 'YouTube Hook Generator', description: 'Generate first 30-second retention-optimized hooks with pattern interrupt, curiosity gap, and payoff structure.', category: 'youtube', tags: ['YouTube', 'Video'], model: 'GPT-4o', modelColor: '#EF4444', promptPreview: 'Write a 30-second YouTube hook for a video about [topic]. Use pattern interrupt, open a curiosity gap, and tease the payoff. Channel voice: [casual/authoritative].', isTrending: true, useCount: 1955 },
-  { id: 'tmpl-006', title: 'API Documentation Writer', description: 'Generate clean, developer-friendly REST API documentation with request/response examples and error codes.', category: 'coding', tags: ['Coding', 'Documentation'], model: 'Claude Sonnet', modelColor: '#0EA5E9', promptPreview: 'Document this API endpoint: [endpoint]. Include: description, params table, request/response JSON, status codes, example in [language].', isNew: true, useCount: 890 },
-  { id: 'tmpl-007', title: 'Storytelling Narrative Arc', description: 'Craft compelling narrative arcs using the 3-act structure with character development and emotional beats.', category: 'storytelling', tags: ['Storytelling', 'Creative'], model: 'Claude Sonnet', modelColor: '#0EA5E9', promptPreview: 'Write a [genre] short story about [character] who must [conflict]. Use 3-act structure. Tone: [dark/hopeful]. Word count: [500/1000].', useCount: 1420 },
-  { id: 'tmpl-008', title: 'Investor Pitch Deck Script', description: 'Create slide-by-slide pitch deck scripts for Series A/B startups with problem, solution, market, and traction narrative.', category: 'business', tags: ['Business', 'Startup'], model: 'GPT-4o', modelColor: '#EF4444', promptPreview: 'Write a 10-slide pitch deck for [startup] in [industry]. Stage: [Seed/Series A]. Include: problem, solution, TAM, traction, team, ask.', useCount: 1135 },
-  { id: 'tmpl-009', title: 'Brand Identity Prompt Pack', description: 'Generate consistent visual identity prompts for logos, color palettes, and brand guidelines across AI art tools.', category: 'ai-art', tags: ['AI Art', 'Branding'], model: 'DALL-E 3', modelColor: '#F59E0B', promptPreview: 'Logo for [brand] in [industry]. Style: [minimalist/bold]. Colors: [palette]. Format: vector-flat, white background, centered composition.', isNew: true, useCount: 678 },
-  { id: 'tmpl-010', title: 'Cold Email Sequence', description: 'Write a 5-email cold outreach sequence with subject line variants, personalization hooks, and follow-up cadence.', category: 'marketing', tags: ['Marketing', 'Email'], model: 'ChatGPT', modelColor: '#10B981', promptPreview: 'Write 5-email cold sequence targeting [persona] at [company size]. Product: [description]. Pain point: [X]. CTA: [meeting/demo]. Tone: [direct/consultative].', useCount: 2100 },
-  { id: 'tmpl-011', title: 'Short-Form Video Script', description: 'TikTok & Reels script generator with hook, value delivery, and viral CTA structure built in.', category: 'youtube', tags: ['YouTube', 'TikTok'], model: 'GPT-4o', modelColor: '#EF4444', promptPreview: 'Write a 60-second script for [platform] about [topic]. Hook in first 3s, deliver [main value] in middle, end with [CTA]. Tone: [energetic/calm].', useCount: 1750 },
-  { id: 'tmpl-012', title: 'VEO B-Roll Scene Pack', description: 'Generate sets of complementary B-roll footage descriptions for documentary and brand video production.', category: 'veo', tags: ['VEO', 'B-Roll'], model: 'VEO Video Model', modelColor: '#8B5CF6', promptPreview: 'Generate 5 B-roll shots for a [brand/doc] video about [topic]. Each shot: camera angle, subject action, lighting, duration. Mood: [corporate/editorial].', isNew: true, useCount: 540 },
-];
-
-const CATEGORIES: Category[] = [
-  { id: 'all', label: 'All', icon: Sparkles }, { id: 'youtube', label: 'YouTube', icon: Video },
-  { id: 'coding', label: 'Coding', icon: Code2 }, { id: 'marketing', label: 'Marketing', icon: Megaphone },
-  { id: 'ai-art', label: 'AI Art', icon: Palette }, { id: 'veo', label: 'VEO', icon: Film },
-  { id: 'storytelling', label: 'Storytelling', icon: BookOpen }, { id: 'business', label: 'Business', icon: Briefcase },
-];
-
+/* ── Category & Role Icon Taxonomy ── */
 const CATEGORY_ICON_MAP: Record<string, React.ElementType> = {
-  coding: Code2, marketing: Megaphone, 'ai-art': Palette, veo: Film, youtube: Video, storytelling: BookOpen, business: Briefcase,
+  developer: Code2,
+  marketer: Megaphone,
+  researcher: Microscope,
+  consultant: Briefcase,
+  entrepreneur: Rocket,
+  educator: GraduationCap,
+  student: BookOpen,
+  writer: PenLine,
+  general: Sparkles,
+  development: Code2,
+  content: FileText,
+  documentation: BookOpen,
+  email: Mail,
+  data: Database,
+  coding: Code2,
+  marketing: Megaphone,
+  'ai-art': Palette,
+  veo: Film,
+  youtube: Video,
+  storytelling: BookOpen,
+  business: Briefcase,
 };
 
-/* ── Template Card ── */
-function TemplateCard({ template }: { template: Template }) {
-  const [bookmarked, setBookmarked] = useState(false);
-  const Icon = CATEGORY_ICON_MAP[template.category] || Sparkles;
+const CATEGORY_COLOR_MAP: Record<string, { bg: string; text: string; border: string }> = {
+  developer: { bg: 'rgba(59, 130, 246, 0.08)', text: '#2563EB', border: 'rgba(59, 130, 246, 0.20)' },
+  marketer: { bg: 'rgba(236, 72, 153, 0.08)', text: '#DB2777', border: 'rgba(236, 72, 153, 0.20)' },
+  researcher: { bg: 'rgba(139, 92, 246, 0.08)', text: '#7C3AED', border: 'rgba(139, 92, 246, 0.20)' },
+  consultant: { bg: 'rgba(16, 185, 129, 0.08)', text: '#059669', border: 'rgba(16, 185, 129, 0.20)' },
+  entrepreneur: { bg: 'rgba(245, 158, 11, 0.08)', text: '#D97706', border: 'rgba(245, 158, 11, 0.20)' },
+  educator: { bg: 'rgba(14, 165, 233, 0.08)', text: '#0284C7', border: 'rgba(14, 165, 233, 0.20)' },
+  writer: { bg: 'rgba(168, 85, 247, 0.08)', text: '#9333EA', border: 'rgba(168, 85, 247, 0.20)' },
+  student: { bg: 'rgba(20, 184, 166, 0.08)', text: '#0D9488', border: 'rgba(20, 184, 166, 0.20)' },
+  general: { bg: 'rgba(124, 58, 237, 0.08)', text: '#7C3AED', border: 'rgba(124, 58, 237, 0.20)' },
+};
+
+function getCategoryColor(category: string) {
+  return CATEGORY_COLOR_MAP[category.toLowerCase()] || CATEGORY_COLOR_MAP.general;
+}
+
+function categoryLabel(id: string): string {
+  if (id === 'all') return 'All';
+  if (id === 'ai-art') return 'AI Art';
+  if (id === 'veo') return 'VEO';
+  return id.charAt(0).toUpperCase() + id.slice(1);
+}
+
+const BOOKMARKS_STORAGE_KEY = 'aure_template_bookmarks';
+
+/* ── Apple-Grade Grand Showcase Poster Banner ── */
+function SpotlightBanner({
+  templates,
+  onUse,
+  onQuickLook,
+  bookmarkedIds,
+  onToggleBookmark,
+  isStacked,
+  isSmall,
+}: {
+  templates: Template[];
+  onUse: (t: Template) => void;
+  onQuickLook: (t: Template) => void;
+  bookmarkedIds: Set<string>;
+  onToggleBookmark: (id: string) => void;
+  isStacked: boolean;
+  isSmall: boolean;
+}) {
+  const SLIDE_DURATION_MS = 3500;
+  const SLIDE_DURATION_SEC = 3.5;
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [progressKey, setProgressKey] = useState(0);
+
+  useEffect(() => {
+    if (templates.length <= 1) return;
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % templates.length);
+      setProgressKey((k) => k + 1);
+    }, SLIDE_DURATION_MS);
+    return () => clearInterval(timer);
+  }, [templates.length, currentIndex]);
+
+  if (templates.length === 0) return null;
+  const current = templates[currentIndex] || templates[0];
+  const Icon = CATEGORY_ICON_MAP[current.category] || Sparkles;
+  const isBookmarked = bookmarkedIds.has(current.id);
 
   return (
-    <div id={`template-card-${template.id}`} style={{
-      background: '#FFFFFF', border: '1px solid rgba(124,58,237,0.10)', borderRadius: 20, padding: 24,
-      display: 'flex', flexDirection: 'column', gap: 12, position: 'relative', overflow: 'hidden',
-      boxShadow: '0 2px 10px rgba(109,40,217,0.05)', transition: 'transform 250ms ease, box-shadow 250ms ease, border-color 250ms ease',
-    }}
-      className="hover:translate-y-[-3px] hover:shadow-[0_8px_28px_rgba(109,40,217,0.10)] hover:!border-[rgba(124,58,237,0.18)]"
+    <div
+      id="spotlight-carousel-banner"
+      style={{
+        borderRadius: isSmall ? 22 : 30,
+        overflow: 'hidden',
+        marginBottom: isStacked ? 26 : 40,
+        position: 'relative',
+        background: 'linear-gradient(145deg, #0C0620 0%, #150D30 30%, #1A0E3A 55%, #0D0920 100%)',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04)',
+        border: '1px solid rgba(167, 139, 250, 0.18)',
+        color: '#FFFFFF',
+        minHeight: isStacked ? 'auto' : 400,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+      }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{
-          width: 40, height: 40, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: `${template.modelColor}18`, color: template.modelColor, border: `1px solid ${template.modelColor}25`,
-        }}>
-          <Icon size={17} strokeWidth={1.5} />
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'radial-gradient(ellipse at 50% 0%, rgba(124, 58, 237, 0.12) 0%, transparent 70%)',
+          pointerEvents: 'none',
+        }}
+      />
+
+      <div
+        style={{
+          position: 'relative',
+          display: 'grid',
+          gridTemplateColumns: isStacked ? '1fr' : '1.18fr 0.82fr',
+          alignItems: 'stretch',
+          padding: isSmall ? '24px 18px' : isStacked ? '32px 26px' : '38px 46px',
+          gap: isSmall ? 22 : isStacked ? 26 : 38,
+          minHeight: isStacked ? 'auto' : 340,
+        }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: isStacked ? 'auto' : 290 }}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={current.id}
+              initial={{ opacity: 0, y: 8, filter: 'blur(3px)' }}
+              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, y: -8, filter: 'blur(3px)' }}
+              transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+              style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    background: 'linear-gradient(135deg, #7C3AED, #9333EA)',
+                    borderRadius: 9999,
+                    padding: isSmall ? '4px 11px' : '5px 14px',
+                    fontSize: isSmall ? 11 : 11.5,
+                    fontWeight: 700,
+                    letterSpacing: '0.05em',
+                    textTransform: 'uppercase',
+                    boxShadow: '0 2px 10px rgba(124,58,237,0.35)',
+                  }}
+                >
+                  <Sparkles size={11} /> Spotlight
+                </span>
+
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    background: 'rgba(255,255,255,0.12)',
+                    backdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(255,255,255,0.18)',
+                    borderRadius: 9999,
+                    padding: isSmall ? '4px 11px' : '5px 14px',
+                    fontSize: isSmall ? 11.5 : 12,
+                    fontWeight: 600,
+                    color: '#EDE9FE',
+                  }}
+                >
+                  <Icon size={13} strokeWidth={2} />
+                  {categoryLabel(current.category)}
+                </span>
+              </div>
+
+              <div style={{ minHeight: isSmall ? 52 : 64, display: 'flex', alignItems: 'center' }}>
+                <h2
+                  style={{
+                    fontSize: isSmall ? 22 : isStacked ? 25 : 28,
+                    fontWeight: 800,
+                    color: '#FFFFFF',
+                    letterSpacing: '-0.025em',
+                    margin: 0,
+                    lineHeight: 1.22,
+                  }}
+                >
+                  {current.title}
+                </h2>
+              </div>
+
+              <p
+                style={{
+                  fontSize: isSmall ? 13 : 14,
+                  color: 'rgba(237,233,254,0.85)',
+                  margin: 0,
+                  lineHeight: 1.6,
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  minHeight: 44,
+                  maxWidth: '98%',
+                }}
+              >
+                {current.description}
+              </p>
+
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, height: 26, overflow: 'hidden' }}>
+                {current.tags.slice(0, 4).map((tag) => (
+                  <span
+                    key={tag}
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      padding: '3px 10px',
+                      borderRadius: 9999,
+                      background: 'rgba(255,255,255,0.10)',
+                      border: '1px solid rgba(255,255,255,0.14)',
+                      color: '#F3E8FF',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            </motion.div>
+          </AnimatePresence>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: isSmall ? 10 : 12, flexWrap: 'wrap', marginTop: 18, paddingTop: 4 }}>
+            <button
+              id="spotlight-use-btn"
+              onClick={() => onUse(current)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                padding: isSmall ? '0 18px' : '0 24px',
+                height: isSmall ? 40 : 44,
+                borderRadius: 12,
+                fontSize: isSmall ? 13 : 14,
+                fontWeight: 700,
+                border: 'none',
+                cursor: 'pointer',
+                background: 'linear-gradient(135deg, #7C3AED, #A855F7)',
+                color: 'white',
+                boxShadow: '0 2px 10px rgba(124,58,237,0.30)',
+                transition: 'all 200ms ease',
+                flex: isSmall ? '1 1 auto' : undefined,
+              }}
+              className="hover:brightness-110 hover:translate-y-[-1px]"
+            >
+              <Zap size={15} strokeWidth={2.2} />
+              <span>Use in Optimizer</span>
+              <ArrowUpRight size={14} />
+            </button>
+
+            <button
+              id="spotlight-quicklook-btn"
+              onClick={() => onQuickLook(current)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 7,
+                padding: isSmall ? '0 16px' : '0 20px',
+                height: isSmall ? 40 : 44,
+                borderRadius: 12,
+                fontSize: isSmall ? 13 : 14,
+                fontWeight: 600,
+                border: '1px solid rgba(255,255,255,0.22)',
+                background: 'rgba(255,255,255,0.10)',
+                color: '#FFFFFF',
+                cursor: 'pointer',
+                backdropFilter: 'blur(8px)',
+                transition: 'all 200ms ease',
+                flex: isSmall ? '1 1 auto' : undefined,
+              }}
+              className="hover:!bg-[rgba(255,255,255,0.18)]"
+            >
+              <Eye size={15} />
+              <span>Quick Look</span>
+            </button>
+
+            <button
+              id="spotlight-bookmark-btn"
+              onClick={() => onToggleBookmark(current.id)}
+              style={{
+                width: isSmall ? 40 : 44,
+                height: isSmall ? 40 : 44,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 12,
+                cursor: 'pointer',
+                border: '1px solid rgba(255,255,255,0.20)',
+                background: isBookmarked ? 'rgba(139,92,246,0.40)' : 'rgba(255,255,255,0.08)',
+                color: isBookmarked ? '#F472B6' : '#EDE9FE',
+                transition: 'all 200ms ease',
+                flexShrink: 0,
+              }}
+              className="hover:!bg-[rgba(255,255,255,0.18)]"
+              title={isBookmarked ? 'Remove bookmark' : 'Bookmark template'}
+            >
+              {isBookmarked ? <BookmarkCheck size={18} strokeWidth={2.2} /> : <Bookmark size={18} strokeWidth={2} />}
+            </button>
+          </div>
         </div>
-        <button id={`bookmark-${template.id}`} onClick={e => { e.stopPropagation(); setBookmarked(!bookmarked); }}
-          style={{
-            width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            borderRadius: 8, border: 'none', cursor: 'pointer', transition: 'all 200ms ease',
-            background: bookmarked ? 'rgba(124,58,237,0.12)' : 'transparent',
-            color: bookmarked ? 'var(--color-primary)' : 'rgba(107,107,138,0.45)',
+
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 14 }}>
+          <div
+            style={{
+              background: 'rgba(255, 255, 255, 0.08)',
+              backdropFilter: 'blur(28px)',
+              WebkitBackdropFilter: 'blur(28px)',
+              border: '1px solid rgba(255, 255, 255, 0.18)',
+              borderRadius: 22,
+              padding: isSmall ? '18px 16px' : '22px 24px',
+              boxShadow: '0 20px 48px rgba(0, 0, 0, 0.30)',
+              position: 'relative',
+              overflow: 'hidden',
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              minHeight: 220,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, paddingBottom: 10, borderBottom: '1px solid rgba(255,255,255,0.10)' }}>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <div style={{ width: 9, height: 9, borderRadius: '50%', background: '#EF4444' }} />
+                <div style={{ width: 9, height: 9, borderRadius: '50%', background: '#F59E0B' }} />
+                <div style={{ width: 9, height: 9, borderRadius: '50%', background: '#10B981' }} />
+              </div>
+              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.70)', textTransform: 'uppercase' }}>
+                Prompt Architecture v2.4
+              </span>
+            </div>
+
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={current.id}
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.98 }}
+                transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
+              >
+                <div style={{ background: 'rgba(0,0,0,0.32)', borderRadius: 14, padding: '10px 14px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#A78BFA', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Role Context</span>
+                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontWeight: 600 }}>98 PromptScore</span>
+                  </div>
+                  <p style={{ fontSize: 12, color: '#F3E8FF', margin: 0, lineHeight: 1.5, fontFamily: 'monospace', wordBreak: 'break-word' }}>
+                    &ldquo;Act as a specialist in {current.category}. Structure findings with high clarity and depth.&rdquo;
+                  </p>
+                </div>
+
+                <div style={{ background: 'rgba(139,92,246,0.16)', borderRadius: 14, padding: '10px 14px', border: '1px solid rgba(139,92,246,0.32)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#F472B6', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Engine Specs</span>
+                    <span style={{ fontSize: 11, color: '#34D399', fontWeight: 600 }}>● Active</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, color: '#FFFFFF', flexWrap: 'wrap' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      <Cpu size={13} style={{ color: '#A78BFA' }} />
+                      Universal Engine
+                    </span>
+                    <span style={{ color: 'rgba(255,255,255,0.4)' }}>•</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      <Award size={13} style={{ color: '#F59E0B' }} />
+                      {current.useCount ?? 0} uses
+                    </span>
+                  </div>
+                </div>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          {templates.length > 1 && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '2px 4px 0',
+              }}
+            >
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                {templates.map((_, idx) => {
+                  const isActive = idx === currentIndex;
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        setCurrentIndex(idx);
+                        setProgressKey((k) => k + 1);
+                      }}
+                      style={{
+                        width: isActive ? 30 : 8,
+                        height: 8,
+                        borderRadius: 999,
+                        background: isActive ? 'rgba(192, 132, 252, 0.3)' : 'rgba(255,255,255,0.20)',
+                        border: 'none',
+                        padding: 0,
+                        cursor: 'pointer',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        transition: 'all 300ms ease',
+                      }}
+                    >
+                      {isActive && (
+                        <motion.div
+                          key={`prog-${progressKey}-${idx}`}
+                          initial={{ width: '0%' }}
+                          animate={{ width: '100%' }}
+                          transition={{ duration: SLIDE_DURATION_SEC, ease: 'linear' }}
+                          style={{
+                            height: '100%',
+                            background: 'linear-gradient(90deg, #A855F7, #EC4899)',
+                            borderRadius: 999,
+                          }}
+                        />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div style={{ display: 'flex', gap: 7, alignItems: 'center' }}>
+                <button
+                  onClick={() => {
+                    setCurrentIndex((prev) => (prev - 1 + templates.length) % templates.length);
+                    setProgressKey((k) => k + 1);
+                  }}
+                  style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: 10,
+                    border: '1px solid rgba(255,255,255,0.18)',
+                    background: 'rgba(255,255,255,0.10)',
+                    color: '#FFF',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 180ms ease',
+                  }}
+                  className="hover:!bg-[rgba(255,255,255,0.22)]"
+                  title="Previous template"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+
+                <button
+                  onClick={() => {
+                    setCurrentIndex((prev) => (prev + 1) % templates.length);
+                    setProgressKey((k) => k + 1);
+                  }}
+                  style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: 10,
+                    border: '1px solid rgba(255,255,255,0.18)',
+                    background: 'rgba(255,255,255,0.10)',
+                    color: '#FFF',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 180ms ease',
+                  }}
+                  className="hover:!bg-[rgba(255,255,255,0.22)]"
+                  title="Next template"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Notion / Apple Style Template Grid Card ── */
+function NotionTemplateCard({
+  template,
+  onUse,
+  onQuickLook,
+  isBookmarked,
+  onToggleBookmark,
+  onSelectTag,
+  isSmall,
+}: {
+  template: Template;
+  onUse: (t: Template) => void;
+  onQuickLook: (t: Template) => void;
+  isBookmarked: boolean;
+  onToggleBookmark: (id: string) => void;
+  onSelectTag: (tag: string) => void;
+  isSmall: boolean;
+}) {
+  const Icon = CATEGORY_ICON_MAP[template.category] || Sparkles;
+  const categoryStyle = getCategoryColor(template.category);
+
+  return (
+    <div
+      id={`template-card-${template.id}`}
+      onClick={() => onQuickLook(template)}
+      style={{
+        background: '#FFFFFF',
+        border: '1px solid rgba(124,58,237,0.10)',
+        borderRadius: 20,
+        padding: isSmall ? '16px 16px' : '18px 20px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 12,
+        position: 'relative',
+        cursor: 'pointer',
+        boxShadow: '0 2px 8px rgba(109,40,217,0.03)',
+        transition: 'all 220ms cubic-bezier(0.16, 1, 0.3, 1)',
+      }}
+      className="group hover:translate-y-[-3px] hover:shadow-[0_12px_32px_rgba(109,40,217,0.12)] hover:!border-[rgba(124,58,237,0.28)]"
+    >
+      {/* Top row: Icon, Category Pill, Bookmark */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 10,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: categoryStyle.bg,
+              color: categoryStyle.text,
+              border: `1px solid ${categoryStyle.border}`,
+              flexShrink: 0,
+            }}
+          >
+            <Icon size={17} strokeWidth={1.8} />
+          </div>
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              padding: '3px 8px',
+              borderRadius: 6,
+              background: categoryStyle.bg,
+              color: categoryStyle.text,
+              letterSpacing: '0.02em',
+              textTransform: 'uppercase',
+            }}
+          >
+            {categoryLabel(template.category)}
+          </span>
+        </div>
+
+        <button
+          id={`bookmark-${template.id}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleBookmark(template.id);
           }}
-          className={!bookmarked ? 'hover:!bg-[rgba(124,58,237,0.08)] hover:!text-[var(--color-primary)]' : ''}
+          style={{
+            width: 28,
+            height: 28,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: 7,
+            border: 'none',
+            cursor: 'pointer',
+            transition: 'all 180ms ease',
+            background: isBookmarked ? 'rgba(124,58,237,0.12)' : 'transparent',
+            color: isBookmarked ? 'var(--color-primary)' : 'rgba(107,107,138,0.45)',
+          }}
+          className={!isBookmarked ? 'hover:!bg-[rgba(124,58,237,0.08)] hover:!text-[var(--color-primary)]' : ''}
+          title={isBookmarked ? 'Saved in bookmarks' : 'Bookmark'}
         >
-          {bookmarked ? <BookmarkCheck size={14} strokeWidth={2} /> : <Bookmark size={14} strokeWidth={2} />}
+          {isBookmarked ? <BookmarkCheck size={14} strokeWidth={2.2} /> : <Bookmark size={14} strokeWidth={2} />}
         </button>
       </div>
 
+      {/* Title & Description */}
       <div>
-        <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)', margin: '0 0 6px', letterSpacing: -0.2 }}>{template.title}</h3>
-        <p style={{ fontSize: 13, color: 'var(--color-text-secondary)', lineHeight: 1.5, margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{template.description}</p>
+        <h3
+          style={{
+            fontSize: 15,
+            fontWeight: 700,
+            color: 'var(--color-text-primary)',
+            margin: '0 0 6px',
+            letterSpacing: -0.2,
+            lineHeight: 1.35,
+          }}
+          className="group-hover:text-[var(--color-primary)] transition-colors"
+        >
+          {template.title}
+        </h3>
+        <p
+          style={{
+            fontSize: 13,
+            color: 'var(--color-text-secondary)',
+            lineHeight: 1.5,
+            margin: 0,
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+          }}
+        >
+          {template.description}
+        </p>
       </div>
 
+      {/* Tags */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-        {template.tags.slice(0, 2).map(tag => (
-          <span key={tag} style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 9999, background: 'rgba(124,58,237,0.08)', color: 'var(--color-primary)' }}>{tag}</span>
+        {template.tags.slice(0, 4).map((tag) => (
+          <span
+            key={tag}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelectTag(tag);
+            }}
+            style={{
+              fontSize: 11.5,
+              fontWeight: 500,
+              padding: '3px 10px',
+              borderRadius: 9999,
+              background: 'rgba(124,58,237,0.06)',
+              color: 'var(--color-text-secondary)',
+              cursor: 'pointer',
+              transition: 'all 150ms ease',
+            }}
+            className="hover:!bg-[rgba(124,58,237,0.12)] hover:!text-[var(--color-primary)]"
+          >
+            #{tag}
+          </span>
         ))}
-        {template.isNew && <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 9999, background: 'rgba(16,185,129,0.10)', color: '#059669', border: '1px solid rgba(16,185,129,0.20)' }}>New</span>}
+        {template.isNew && (
+          <span
+            style={{
+              fontSize: 10,
+              fontWeight: 700,
+              padding: '3px 8px',
+              borderRadius: 9999,
+              background: 'rgba(16,185,129,0.10)',
+              color: '#059669',
+              border: '1px solid rgba(16,185,129,0.20)',
+              textTransform: 'uppercase',
+            }}
+          >
+            New
+          </span>
+        )}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto', paddingTop: 8, borderTop: '1px solid rgba(124,58,237,0.07)' }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--color-text-secondary)' }}>
-          <Star size={10} strokeWidth={2} />{template.useCount?.toLocaleString() ?? '0'}
+      {/* Footer bar */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginTop: 'auto',
+          paddingTop: 10,
+          borderTop: '1px solid rgba(124,58,237,0.07)',
+          flexWrap: 'wrap',
+          gap: 6,
+        }}
+      >
+        <span
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            fontSize: 12,
+            fontWeight: 500,
+            color: 'var(--color-text-secondary)',
+          }}
+        >
+          <Star size={11} strokeWidth={2} style={{ color: '#F59E0B' }} />
+          {template.useCount?.toLocaleString() ?? '0'} uses
         </span>
-        <div style={{ display: 'flex', gap: 6 }}>
-          <button id={`use-${template.id}`}
-            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 7, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #7C3AED, #A855F7)', color: 'white', boxShadow: '0 3px 10px rgba(124,58,237,0.28)', transition: 'all 180ms ease' }}
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <button
+            id={`quicklook-btn-${template.id}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onQuickLook(template);
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              padding: '5px 10px',
+              borderRadius: 8,
+              fontSize: 12,
+              fontWeight: 600,
+              border: '1px solid rgba(124,58,237,0.14)',
+              background: '#FFFFFF',
+              color: 'var(--color-text-secondary)',
+              cursor: 'pointer',
+              transition: 'all 150ms ease',
+            }}
+            className="hover:!text-[var(--color-primary)] hover:!border-[rgba(124,58,237,0.30)] hover:!bg-[rgba(124,58,237,0.04)]"
+          >
+            <Eye size={12} />
+            <span>Preview</span>
+          </button>
+
+          <button
+            id={`use-${template.id}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onUse(template);
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+              padding: '5px 12px',
+              borderRadius: 8,
+              fontSize: 12,
+              fontWeight: 700,
+              border: 'none',
+              cursor: 'pointer',
+              background: 'linear-gradient(135deg, #7C3AED, #A855F7)',
+              color: 'white',
+              boxShadow: '0 2px 8px rgba(124,58,237,0.25)',
+              transition: 'all 180ms ease',
+            }}
             className="hover:translate-y-[-1px] hover:brightness-105"
-          ><Zap size={12} strokeWidth={2} />Use</button>
+          >
+            <Zap size={12} strokeWidth={2} />
+            <span>Use</span>
+          </button>
         </div>
       </div>
     </div>
   );
 }
 
-/* ── Featured Hero ── */
-function FeaturedHero({ template }: { template: Template }) {
-  const [bookmarked, setBookmarked] = useState(false);
+/* ── Notion / Linear Compact List Row ── */
+function NotionListRow({
+  template,
+  onUse,
+  onQuickLook,
+  isBookmarked,
+  onToggleBookmark,
+  isPhone,
+  isSmall,
+}: {
+  template: Template;
+  onUse: (t: Template) => void;
+  onQuickLook: (t: Template) => void;
+  isBookmarked: boolean;
+  onToggleBookmark: (id: string) => void;
+  isPhone: boolean;
+  isSmall: boolean;
+}) {
+  const Icon = CATEGORY_ICON_MAP[template.category] || Sparkles;
+  const categoryStyle = getCategoryColor(template.category);
+
   return (
-    <div id="featured-template-hero" style={{
-      borderRadius: 24, overflow: 'hidden', marginBottom: 40, position: 'relative',
-      background: 'linear-gradient(135deg, #1a0a3d 0%, #2D1B69 40%, #0E0B18 100%)',
-      boxShadow: '0 8px 32px rgba(109,40,217,0.22), 0 2px 8px rgba(0,0,0,0.12)',
-      minHeight: 240,
-    }}>
-      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 30% 50%, rgba(167,139,250,0.18) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(124,58,237,0.15) 0%, transparent 50%)' }} />
-      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', padding: '40px 48px', gap: 40 }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 9999, padding: '4px 12px', fontSize: 12, fontWeight: 600, color: '#EDE9FE', marginBottom: 16 }}>
-            <Film size={13} strokeWidth={2} /><span>{template.model}</span>
-          </div>
-          <h2 style={{ fontSize: 26, fontWeight: 800, color: '#EDE9FE', letterSpacing: -0.5, margin: '0 0 10px', lineHeight: 1.2 }}>{template.title}</h2>
-          <p style={{ fontSize: 14, color: 'rgba(221,214,254,0.60)', margin: '0 0 20px', lineHeight: 1.5 }}>{template.description}</p>
-          <div style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '14px 18px', fontSize: 13, color: 'rgba(221,214,254,0.75)', fontFamily: 'monospace', lineHeight: 1.5, marginBottom: 24 }}>
-            {template.promptPreview}
-          </div>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button id="hero-use-optimizer-btn" style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 20px', borderRadius: 10, fontSize: 14, fontWeight: 700, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #7C3AED, #A855F7)', color: 'white', boxShadow: '0 4px 16px rgba(124,58,237,0.45)', transition: 'all 200ms ease' }} className="hover:brightness-110 hover:translate-y-[-1px]">
-              <Zap size={15} strokeWidth={2} />Use in Optimizer
-            </button>
-            <button id="hero-bookmark-btn" onClick={() => setBookmarked(!bookmarked)}
-              style={{ width: 42, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 10, cursor: 'pointer', border: '1px solid rgba(255,255,255,0.20)', background: bookmarked ? 'rgba(124,58,237,0.40)' : 'rgba(255,255,255,0.10)', color: '#EDE9FE', transition: 'all 200ms ease' }}>
-              {bookmarked ? <BookmarkCheck size={16} strokeWidth={2} /> : <Bookmark size={16} strokeWidth={2} />}
-            </button>
-          </div>
+    <div
+      onClick={() => onQuickLook(template)}
+      style={{
+        background: '#FFFFFF',
+        border: '1px solid rgba(124,58,237,0.08)',
+        borderRadius: 14,
+        padding: isSmall ? '10px 12px' : isPhone ? '12px 14px' : '14px 20px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: isSmall ? 8 : 14,
+        cursor: 'pointer',
+        transition: 'all 160ms ease',
+      }}
+      className="hover:!border-[rgba(124,58,237,0.22)] hover:!bg-[rgba(124,58,237,0.02)] hover:shadow-sm"
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: isSmall ? 9 : 14, minWidth: 0, flex: 1 }}>
+        <div
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: 9,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: categoryStyle.bg,
+            color: categoryStyle.text,
+            flexShrink: 0,
+          }}
+        >
+          <Icon size={15} strokeWidth={1.8} />
         </div>
-        <div style={{ flex: '0 0 280px', position: 'relative' }}>
-          <div style={{ borderRadius: 16, overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.30)', border: '1px solid rgba(255,255,255,0.10)' }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/cinematic-hero.png" alt="Cinematic establishing shot" style={{ width: '100%', height: 160, objectFit: 'cover', display: 'block' }} />
-            <div style={{ position: 'absolute', bottom: 10, left: 10, display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(0,0,0,0.60)', backdropFilter: 'blur(8px)', borderRadius: 8, padding: '5px 10px', fontSize: 11, fontWeight: 600, color: 'white' }}>
-              <Film size={12} /><span>VEO</span>
+
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <h4
+              style={{
+                fontSize: isSmall ? 13 : 14,
+                fontWeight: 700,
+                color: 'var(--color-text-primary)',
+                margin: 0,
+                letterSpacing: -0.1,
+              }}
+            >
+              {template.title}
+            </h4>
+            <span
+              style={{
+                fontSize: 9.5,
+                fontWeight: 700,
+                padding: '2px 5px',
+                borderRadius: 4,
+                background: categoryStyle.bg,
+                color: categoryStyle.text,
+                textTransform: 'uppercase',
+              }}
+            >
+              {categoryLabel(template.category)}
+            </span>
+          </div>
+
+          {!isPhone && (
+            <p
+              style={{
+                fontSize: 12,
+                color: 'var(--color-text-secondary)',
+                margin: '2px 0 0',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {template.description}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: isSmall ? 6 : isPhone ? 8 : 14, flexShrink: 0 }}>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleBookmark(template.id);
+          }}
+          style={{
+            width: 28,
+            height: 28,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: 7,
+            border: 'none',
+            cursor: 'pointer',
+            background: isBookmarked ? 'rgba(124,58,237,0.12)' : 'transparent',
+            color: isBookmarked ? 'var(--color-primary)' : 'rgba(107,107,138,0.45)',
+          }}
+        >
+          {isBookmarked ? <BookmarkCheck size={14} strokeWidth={2.2} /> : <Bookmark size={14} strokeWidth={2} />}
+        </button>
+
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onUse(template);
+          }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            padding: '5px 11px',
+            borderRadius: 7,
+            fontSize: 11.5,
+            fontWeight: 700,
+            border: 'none',
+            cursor: 'pointer',
+            background: 'linear-gradient(135deg, #7C3AED, #A855F7)',
+            color: 'white',
+            boxShadow: '0 2px 6px rgba(124,58,237,0.2)',
+          }}
+        >
+          <Zap size={11} strokeWidth={2} />
+          <span>Use</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Apple-Grade "Quick Look" Modal Sheet ── */
+function QuickLookModal({
+  template,
+  onClose,
+  onUse,
+  isBookmarked,
+  onToggleBookmark,
+  isSmall,
+}: {
+  template: Template | null;
+  onClose: () => void;
+  onUse: (t: Template) => void;
+  isBookmarked: boolean;
+  onToggleBookmark: (id: string) => void;
+  isSmall: boolean;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  if (!template) return null;
+  const Icon = CATEGORY_ICON_MAP[template.category] || Sparkles;
+  const categoryStyle = getCategoryColor(template.category);
+
+  const handleCopyTitle = () => {
+    navigator.clipboard.writeText(`${template.title} — ${template.description}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9999,
+        background: 'rgba(9, 9, 11, 0.50)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: isSmall ? 12 : 20,
+      }}
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: '#FFFFFF',
+          borderRadius: isSmall ? 20 : 24,
+          maxWidth: 580,
+          width: '100%',
+          maxHeight: '92vh',
+          overflowY: 'auto',
+          boxShadow: '0 25px 60px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(124, 58, 237, 0.15)',
+          position: 'relative',
+        }}
+      >
+        {/* Top Gradient Header Accent */}
+        <div
+          style={{
+            height: 8,
+            width: '100%',
+            background: 'linear-gradient(90deg, #6366F1, #8B5CF6, #EC4899)',
+          }}
+        />
+
+        <div style={{ padding: isSmall ? '20px 16px' : '28px 32px' }}>
+          {/* Header Row */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 14, marginBottom: 18 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div
+                style={{
+                  width: isSmall ? 40 : 48,
+                  height: isSmall ? 40 : 48,
+                  borderRadius: 14,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: categoryStyle.bg,
+                  color: categoryStyle.text,
+                  border: `1px solid ${categoryStyle.border}`,
+                  flexShrink: 0,
+                }}
+              >
+                <Icon size={isSmall ? 18 : 22} strokeWidth={1.8} />
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
+                  <span
+                    style={{
+                      fontSize: 10.5,
+                      fontWeight: 700,
+                      padding: '2px 7px',
+                      borderRadius: 6,
+                      background: categoryStyle.bg,
+                      color: categoryStyle.text,
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    {categoryLabel(template.category)}
+                  </span>
+                </div>
+                <h2 style={{ fontSize: isSmall ? 18 : 20, fontWeight: 800, color: 'var(--color-text-primary)', margin: 0, letterSpacing: -0.3 }}>
+                  {template.title}
+                </h2>
+              </div>
+            </div>
+
+            <button
+              onClick={onClose}
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 8,
+                border: 'none',
+                background: 'rgba(0,0,0,0.05)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--color-text-secondary)',
+                flexShrink: 0,
+              }}
+              className="hover:!bg-[rgba(0,0,0,0.10)]"
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          {/* Description Block */}
+          <div
+            style={{
+              padding: '14px 16px',
+              borderRadius: 14,
+              background: 'rgba(124, 58, 237, 0.03)',
+              border: '1px solid rgba(124, 58, 237, 0.08)',
+              marginBottom: 18,
+            }}
+          >
+            <h4 style={{ fontSize: 11.5, fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-primary)', letterSpacing: '0.05em', margin: '0 0 6px' }}>
+              About this Template
+            </h4>
+            <p style={{ fontSize: 13.5, lineHeight: 1.6, color: 'var(--color-text-primary)', margin: 0 }}>
+              {template.description}
+            </p>
+          </div>
+
+          {/* Highlights / Best For */}
+          <div style={{ marginBottom: 18 }}>
+            <h4 style={{ fontSize: 11.5, fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-secondary)', letterSpacing: '0.05em', margin: '0 0 10px' }}>
+              Included Capabilities
+            </h4>
+            <div style={{ display: 'grid', gridTemplateColumns: isSmall ? '1fr' : '1fr 1fr', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: 'var(--color-text-secondary)' }}>
+                <CheckCircle2 size={15} style={{ color: '#10B981', flexShrink: 0 }} />
+                <span>Multi-turn prompt guidance</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: 'var(--color-text-secondary)' }}>
+                <CheckCircle2 size={15} style={{ color: '#10B981', flexShrink: 0 }} />
+                <span>Zero-shot precision tuning</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: 'var(--color-text-secondary)' }}>
+                <CheckCircle2 size={15} style={{ color: '#10B981', flexShrink: 0 }} />
+                <span>Role-specialized context</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: 'var(--color-text-secondary)' }}>
+                <CheckCircle2 size={15} style={{ color: '#10B981', flexShrink: 0 }} />
+                <span>High token efficiency</span>
+              </div>
             </div>
           </div>
+
+          {/* Tags */}
+          {template.tags.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 22 }}>
+              {template.tags.map((tag) => (
+                <span
+                  key={tag}
+                  style={{
+                    fontSize: 11.5,
+                    fontWeight: 500,
+                    padding: '3px 10px',
+                    borderRadius: 9999,
+                    background: 'rgba(124,58,237,0.06)',
+                    color: 'var(--color-text-secondary)',
+                    cursor: 'pointer',
+                    transition: 'all 150ms ease',
+                  }}
+                  className="hover:!bg-[rgba(124,58,237,0.12)] hover:!text-[var(--color-primary)]"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, borderTop: '1px solid rgba(0,0,0,0.07)', paddingTop: 18, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 7, flex: isSmall ? '1 1 100%' : '0 0 auto' }}>
+              <button
+                onClick={handleCopyTitle}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  padding: '9px 13px',
+                  borderRadius: 10,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  border: '1px solid rgba(0,0,0,0.12)',
+                  background: '#FFFFFF',
+                  color: 'var(--color-text-secondary)',
+                  cursor: 'pointer',
+                  flex: isSmall ? '1 1 auto' : undefined,
+                }}
+                className="hover:!bg-gray-50"
+              >
+                {copied ? <Check size={14} color="#10B981" /> : <Copy size={14} />}
+                <span>{copied ? 'Copied' : 'Copy'}</span>
+              </button>
+
+              <button
+                onClick={() => onToggleBookmark(template.id)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  padding: '9px 13px',
+                  borderRadius: 10,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  border: '1px solid rgba(124,58,237,0.20)',
+                  background: isBookmarked ? 'rgba(124,58,237,0.10)' : 'transparent',
+                  color: isBookmarked ? 'var(--color-primary)' : 'var(--color-text-secondary)',
+                  cursor: 'pointer',
+                  flex: isSmall ? '1 1 auto' : undefined,
+                }}
+              >
+                {isBookmarked ? <BookmarkCheck size={14} /> : <Bookmark size={14} />}
+                <span>{isBookmarked ? 'Saved' : 'Save'}</span>
+              </button>
+            </div>
+
+            <button
+              onClick={() => {
+                onClose();
+                onUse(template);
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 7,
+                padding: '10px 20px',
+                borderRadius: 10,
+                fontSize: 13,
+                fontWeight: 700,
+                border: 'none',
+                cursor: 'pointer',
+                background: 'linear-gradient(135deg, #7C3AED, #A855F7)',
+                color: 'white',
+                boxShadow: '0 4px 16px rgba(124,58,237,0.35)',
+                flex: isSmall ? '1 1 100%' : '0 0 auto',
+              }}
+              className="hover:brightness-105 hover:translate-y-[-1px]"
+            >
+              <Zap size={14} strokeWidth={2.2} />
+              <span>Launch in Optimizer</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-/* ── Main Page ── */
+/* ── Main Templates Page Component ── */
 export default function TemplatesPage() {
+  const router = useRouter();
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Navigation & View state
+  const [navTab, setNavTab] = useState<'curated' | 'categories' | 'popular' | 'saved'>('curated');
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [sortBy, setSortBy] = useState<'popular' | 'newest' | 'name'>('popular');
 
-  const featuredTemplate = DUMMY_TEMPLATES.find(t => t.isFeatured)!;
-  const filteredTemplates = useMemo(() => {
-    let list = DUMMY_TEMPLATES.filter(t => !t.isFeatured);
-    if (activeCategory !== 'all') list = list.filter(t => t.category === activeCategory);
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      list = list.filter(t => t.title.toLowerCase().includes(q) || t.description.toLowerCase().includes(q) || t.tags.some(tag => tag.toLowerCase().includes(q)));
+  // Quick look modal state
+  const [quickLookTemplate, setQuickLookTemplate] = useState<Template | null>(null);
+
+  // Bookmarks persisted in localStorage
+  const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
+
+  // Calibrated breakpoints across all devices
+  const isDesktop = useMediaQuery('(min-width: 1081px)');
+  const isTablet = useMediaQuery('(max-width: 1080px) and (min-width: 621px)');
+  const isPhone = useMediaQuery('(max-width: 620px)');
+  const isSmall = useMediaQuery('(max-width: 420px)');
+  const isStackedSpotlight = useMediaQuery('(max-width: 920px)');
+
+  // Calibrated page padding matching Vault & Optimizer workspace container
+  const pagePadX = isSmall ? 16 : isPhone ? 20 : isTablet ? 32 : 48;
+
+  // Adaptive Grid columns: Desktop (3-col), Tablet (2-col grid), Phone (1-col)
+  const gridColumns = isPhone ? '1fr' : isDesktop ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)';
+
+  // Load bookmarks on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(BOOKMARKS_STORAGE_KEY);
+      if (stored) {
+        setBookmarkedIds(new Set(JSON.parse(stored)));
+      }
+    } catch (e) {
+      console.warn('Could not read bookmarks from localStorage', e);
     }
+  }, []);
+
+  const handleToggleBookmark = useCallback((id: string) => {
+    setBookmarkedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      try {
+        localStorage.setItem(BOOKMARKS_STORAGE_KEY, JSON.stringify(Array.from(next)));
+      } catch (e) {
+        console.warn('Could not save bookmarks to localStorage', e);
+      }
+      return next;
+    });
+  }, []);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await loadTemplates();
+      setTemplates(data);
+    } catch (err: any) {
+      console.error('Failed to load templates:', err);
+      setError(err?.message || 'Failed to load templates. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const handleUse = useCallback(
+    (template: Template) => {
+      router.push(
+        `/dashboard/optimizer?template_id=${encodeURIComponent(template.id)}&template=${encodeURIComponent(template.title)}`
+      );
+    },
+    [router]
+  );
+
+  // Category facets
+  const categories = useMemo(() => {
+    const seen: string[] = [];
+    for (const t of templates) {
+      if (t.category && !seen.includes(t.category)) seen.push(t.category);
+    }
+    seen.sort();
+    return ['all', ...seen];
+  }, [templates]);
+
+  // Spotlight templates for the top carousel
+  const spotlightTemplates = useMemo(() => {
+    const featured = templates.filter((t) => t.isFeatured);
+    if (featured.length > 0) return featured.slice(0, 5);
+    return [...templates].sort((a, b) => (b.useCount ?? 0) - (a.useCount ?? 0)).slice(0, 4);
+  }, [templates]);
+
+  // Filtered & Sorted Templates
+  const processedTemplates = useMemo(() => {
+    let list = [...templates];
+
+    // Filter by tab
+    if (navTab === 'saved') {
+      list = list.filter((t) => bookmarkedIds.has(t.id));
+    } else if (navTab === 'popular') {
+      list.sort((a, b) => (b.useCount ?? 0) - (a.useCount ?? 0));
+    }
+
+    // Filter by category
+    if (activeCategory !== 'all') {
+      list = list.filter((t) => t.category === activeCategory);
+    }
+
+    // Search query
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      list = list.filter(
+        (t) =>
+          t.title.toLowerCase().includes(q) ||
+          t.description.toLowerCase().includes(q) ||
+          t.tags.some((tag) => tag.toLowerCase().includes(q)) ||
+          t.model.toLowerCase().includes(q) ||
+          t.category.toLowerCase().includes(q)
+      );
+    }
+
+    // Sort order
+    if (sortBy === 'popular') {
+      list.sort((a, b) => (b.useCount ?? 0) - (a.useCount ?? 0));
+    } else if (sortBy === 'newest') {
+      list.sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0));
+    } else if (sortBy === 'name') {
+      list.sort((a, b) => a.title.localeCompare(b.title));
+    }
+
     return list;
-  }, [activeCategory, searchQuery]);
+  }, [templates, navTab, activeCategory, searchQuery, sortBy, bookmarkedIds]);
 
-  const trendingTemplates = filteredTemplates.filter(t => t.isTrending);
-  const allOtherTemplates = filteredTemplates.filter(t => !t.isTrending);
+  // Grouped by Category for Curated / Categories View
+  const groupedByCategory = useMemo(() => {
+    const map = new Map<string, Template[]>();
+    for (const t of templates) {
+      const cat = t.category || 'general';
+      if (!map.has(cat)) map.set(cat, []);
+      map.get(cat)!.push(t);
+    }
+    return map;
+  }, [templates]);
 
-  const sectionTitle: React.CSSProperties = { fontSize: 16, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 };
+  const trendingTemplates = useMemo(() => {
+    return templates.filter((t) => t.isTrending).slice(0, 6);
+  }, [templates]);
+
+  if (loading && templates.length === 0) {
+    return <TemplatesHubSkeleton />;
+  }
 
   return (
-    <div id="templates-page" style={{ maxWidth: 1100, margin: '0 auto', padding: '0 48px 64px', paddingTop: 8, width: '100%', display: 'flex', flexDirection: 'column' }}>
-
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '32px 0 24px' }}>
+    <div
+      id="templates-page"
+      style={{
+        maxWidth: 1100,
+        margin: '0 auto',
+        paddingLeft: pagePadX,
+        paddingRight: pagePadX,
+        paddingTop: 8,
+        paddingBottom: 64,
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      {/* ── Top Header & Notion/Apple Style Search ── */}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: isPhone ? 'column' : 'row',
+          alignItems: isPhone ? 'flex-start' : 'center',
+          justifyContent: 'space-between',
+          padding: isPhone ? '18px 0 14px' : '26px 0 22px',
+          gap: 14,
+        }}
+      >
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: -0.3, margin: '0 0 4px' }}>Templates Library</h1>
-          <p style={{ fontSize: 14, color: 'var(--color-text-secondary)', margin: 0 }}>Discover curated, high-performance prompts optimized for precision and scale</p>
-        </div>
-        <div style={{ position: 'relative' }}>
-          <Search size={15} strokeWidth={1.8} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-secondary)', pointerEvents: 'none' }} />
-          <input id="templates-search-input" type="text" placeholder="Search templates..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-            style={{ padding: '9px 16px 9px 36px', fontSize: 13, background: '#FFFFFF', border: '1px solid rgba(124,58,237,0.12)', borderRadius: 10, outline: 'none', color: 'var(--color-text-primary)', width: 240, transition: 'border-color 200ms ease, box-shadow 200ms ease' }}
-            className="focus:!border-[rgba(124,58,237,0.35)] focus:shadow-[0_0_0_3px_rgba(124,58,237,0.08)]"
-          />
-        </div>
-      </div>
-
-      {/* Category Chips */}
-      <div id="categories-row" style={{ display: 'flex', gap: 8, marginBottom: 32, flexWrap: 'wrap' }}>
-        {CATEGORIES.map(cat => {
-          const Icon = cat.icon;
-          const active = activeCategory === cat.id;
-          return (
-            <button key={cat.id} id={`category-chip-${cat.id}`} onClick={() => setActiveCategory(cat.id)}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <h1
               style={{
-                display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 9999, fontSize: 13, fontWeight: active ? 700 : 500, cursor: 'pointer', transition: 'all 200ms ease',
-                background: active ? 'linear-gradient(135deg, #7C3AED, #A855F7)' : 'rgba(124,58,237,0.06)',
-                color: active ? 'white' : 'var(--color-text-secondary)',
-                border: active ? 'none' : '1px solid rgba(124,58,237,0.10)',
-                boxShadow: active ? '0 4px 12px rgba(124,58,237,0.28)' : 'none',
+                fontSize: isSmall ? 20 : isPhone ? 22 : 25,
+                fontWeight: 800,
+                color: 'var(--color-text-primary)',
+                letterSpacing: -0.4,
+                margin: 0,
               }}
-              className={!active ? 'hover:!bg-[rgba(124,58,237,0.10)] hover:!text-[var(--color-text-primary)]' : ''}
             >
-              <Icon size={14} strokeWidth={1.8} /><span>{cat.label}</span>
+              Templates Hub
+            </h1>
+            <span
+              style={{
+                fontSize: 10.5,
+                fontWeight: 700,
+                background: 'rgba(124,58,237,0.08)',
+                color: 'var(--color-primary)',
+                padding: '3px 8px',
+                borderRadius: 9999,
+                border: '1px solid rgba(124,58,237,0.18)',
+              }}
+            >
+              {templates.length} Curated
+            </span>
+          </div>
+          <p style={{ fontSize: isSmall ? 12.5 : 13.5, color: 'var(--color-text-secondary)', margin: 0 }}>
+            Masterfully engineered prompt recipes for industry-leading AI models
+          </p>
+        </div>
+
+        {/* Search & View Mode Switcher */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: isPhone ? '100%' : 'auto' }}>
+          <div style={{ position: 'relative', flex: isPhone ? 1 : '0 0 280px' }}>
+            <Search
+              size={15}
+              strokeWidth={1.8}
+              style={{
+                position: 'absolute',
+                left: 12,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: 'var(--color-text-secondary)',
+                pointerEvents: 'none',
+              }}
+            />
+            <input
+              id="templates-search-input"
+              type="text"
+              placeholder="Search by role, task, model..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              disabled={loading || !!error}
+              style={{
+                width: '100%',
+                padding: '9px 32px 9px 36px',
+                fontSize: 13,
+                background: '#FFFFFF',
+                border: '1px solid rgba(124,58,237,0.14)',
+                borderRadius: 10,
+                outline: 'none',
+                color: 'var(--color-text-primary)',
+                transition: 'all 200ms ease',
+              }}
+              className="focus:!border-[rgba(124,58,237,0.4)] focus:shadow-[0_0_0_3px_rgba(124,58,237,0.08)]"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                style={{
+                  position: 'absolute',
+                  right: 10,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'var(--color-text-secondary)',
+                  padding: 2,
+                }}
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
+          {/* View Switcher: Grid vs List */}
+          <div
+            style={{
+              display: 'flex',
+              background: 'rgba(124,58,237,0.06)',
+              padding: 3,
+              borderRadius: 10,
+              border: '1px solid rgba(124,58,237,0.10)',
+              flexShrink: 0,
+            }}
+          >
+            <button
+              onClick={() => setViewMode('grid')}
+              style={{
+                padding: '6px 9px',
+                borderRadius: 7,
+                border: 'none',
+                cursor: 'pointer',
+                background: viewMode === 'grid' ? '#FFFFFF' : 'transparent',
+                color: viewMode === 'grid' ? 'var(--color-primary)' : 'var(--color-text-secondary)',
+                boxShadow: viewMode === 'grid' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+              title="Grid View"
+            >
+              <LayoutGrid size={15} />
             </button>
-          );
-        })}
+            <button
+              onClick={() => setViewMode('list')}
+              style={{
+                padding: '6px 9px',
+                borderRadius: 7,
+                border: 'none',
+                cursor: 'pointer',
+                background: viewMode === 'list' ? '#FFFFFF' : 'transparent',
+                color: viewMode === 'list' ? 'var(--color-primary)' : 'var(--color-text-secondary)',
+                boxShadow: viewMode === 'list' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+              title="Compact List View"
+            >
+              <List size={15} />
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* Featured Hero */}
-      {(activeCategory === 'all' || activeCategory === 'veo') && !searchQuery && <FeaturedHero template={featuredTemplate} />}
-
-      {/* Trending */}
-      {trendingTemplates.length > 0 && (
-        <section id="trending-section" style={{ marginBottom: 40 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <TrendingUp size={16} strokeWidth={2} style={{ color: 'var(--color-primary)' }} />
-              <h2 style={sectionTitle}>Trending Templates</h2>
-            </div>
-            <button id="view-all-trending-btn" style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 600, color: 'var(--color-primary)', background: 'none', border: 'none', cursor: 'pointer' }} className="hover:underline">
-              View all <ChevronRight size={14} />
-            </button>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
-            {trendingTemplates.map(t => <TemplateCard key={t.id} template={t} />)}
-          </div>
-        </section>
-      )}
-
-      {/* All others */}
-      {allOtherTemplates.length > 0 && (
-        <section id="all-templates-section">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
-            <Sparkles size={16} strokeWidth={2} style={{ color: 'var(--color-primary)' }} />
-            <h2 style={sectionTitle}>{activeCategory === 'all' ? 'More Templates' : 'Templates'}</h2>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
-            {allOtherTemplates.map(t => <TemplateCard key={t.id} template={t} />)}
-          </div>
-        </section>
-      )}
-
-      {/* Empty */}
-      {filteredTemplates.length === 0 && (
-        <div id="templates-empty-state" style={{ textAlign: 'center', padding: '64px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 60, height: 60, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(124,58,237,0.08)', color: 'var(--color-primary)' }}><Search size={32} strokeWidth={1.2} /></div>
-          <h3 style={{ fontSize: 16, fontWeight: 600, color: 'var(--color-text-primary)', margin: 0 }}>No templates found</h3>
-          <p style={{ fontSize: 14, color: 'var(--color-text-secondary)', margin: 0 }}>Try adjusting your search or switching categories.</p>
-          <button id="templates-reset-btn" onClick={() => { setSearchQuery(''); setActiveCategory('all'); }}
-            style={{ marginTop: 8, padding: '8px 20px', borderRadius: 9, fontSize: 13, fontWeight: 600, border: '1px solid rgba(124,58,237,0.20)', cursor: 'pointer', background: 'transparent', color: 'var(--color-primary)' }}
-            className="hover:bg-[rgba(124,58,237,0.06)]"
-          >Clear filters</button>
+      {/* ── Notion / Apple Style Segmented Tab Navigation ── */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderBottom: '1px solid rgba(124,58,237,0.10)',
+          marginBottom: 22,
+          flexWrap: 'wrap',
+          gap: 10,
+        }}
+      >
+        <div style={{ display: 'flex', gap: 4, overflowX: 'auto', paddingBottom: 2, scrollbarWidth: 'none' }}>
+          {[
+            { id: 'curated', label: 'Curated Showcase', icon: Compass },
+            { id: 'categories', label: 'All Categories', icon: LayoutGrid },
+            { id: 'popular', label: 'Popular & Top Rated', icon: Flame },
+            { id: 'saved', label: `Saved (${bookmarkedIds.size})`, icon: Bookmark },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const active = navTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setNavTab(tab.id as any);
+                  if (tab.id === 'curated') setActiveCategory('all');
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: isSmall ? '8px 10px' : '9px 14px',
+                  borderRadius: '10px 10px 0 0',
+                  border: 'none',
+                  borderBottom: active ? '2px solid var(--color-primary)' : '2px solid transparent',
+                  background: 'transparent',
+                  color: active ? 'var(--color-primary)' : 'var(--color-text-secondary)',
+                  fontWeight: active ? 700 : 500,
+                  fontSize: isSmall ? 12 : 13,
+                  cursor: 'pointer',
+                  transition: 'all 160ms ease',
+                  whiteSpace: 'nowrap',
+                }}
+                className={!active ? 'hover:!text-[var(--color-text-primary)]' : ''}
+              >
+                <Icon size={14} strokeWidth={active ? 2.2 : 1.8} />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
+
+        {/* Category Pills & Sort Dropdown */}
+        {(navTab === 'categories' || navTab === 'curated' || searchQuery) && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingBottom: 6, overflowX: 'auto', width: isPhone ? '100%' : 'auto', scrollbarWidth: 'none' }}>
+            <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none', flexWrap: isPhone ? 'nowrap' : 'wrap' }}>
+              {categories.map((cat) => {
+                const active = activeCategory === cat;
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => setActiveCategory(cat)}
+                    style={{
+                      padding: '4px 11px',
+                      borderRadius: 999,
+                      fontSize: 11.5,
+                      fontWeight: active ? 700 : 500,
+                      border: active ? '1px solid var(--color-primary)' : '1px solid rgba(124,58,237,0.10)',
+                      background: active ? 'var(--color-primary)' : '#FFFFFF',
+                      color: active ? '#FFFFFF' : 'var(--color-text-secondary)',
+                      cursor: 'pointer',
+                      transition: 'all 150ms ease',
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0,
+                    }}
+                    className={!active ? 'hover:!border-[rgba(124,58,237,0.25)] hover:!text-[var(--color-text-primary)]' : ''}
+                  >
+                    {categoryLabel(cat)}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── Loading / Error / Empty States ── */}
+      {loading ? (
+        <div
+          id="templates-loading-state"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 14,
+            padding: '80px 0',
+            color: 'var(--color-text-secondary)',
+          }}
+        >
+          <Loader2 size={32} strokeWidth={2} className="animate-spin" style={{ color: 'var(--color-primary)' }} />
+          <p style={{ fontSize: 14, fontWeight: 500, margin: 0 }}>Loading curated template library…</p>
+        </div>
+      ) : error ? (
+        <div
+          id="templates-error-state"
+          style={{
+            textAlign: 'center',
+            padding: '64px 0',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 12,
+          }}
+        >
+          <div
+            style={{
+              width: 60,
+              height: 60,
+              borderRadius: 16,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'rgba(239,68,68,0.08)',
+              color: '#dc2626',
+            }}
+          >
+            <AlertCircle size={30} strokeWidth={1.5} />
+          </div>
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>
+            Unable to load templates
+          </h3>
+          <p style={{ fontSize: 14, color: 'var(--color-text-secondary)', margin: 0, maxWidth: 420 }}>{error}</p>
+          <button
+            id="templates-retry-btn"
+            onClick={fetchData}
+            style={{
+              marginTop: 8,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '9px 20px',
+              borderRadius: 10,
+              fontSize: 13,
+              fontWeight: 600,
+              border: '1px solid rgba(124,58,237,0.20)',
+              cursor: 'pointer',
+              background: '#FFFFFF',
+              color: 'var(--color-primary)',
+            }}
+          >
+            <RefreshCw size={14} /> Retry
+          </button>
+        </div>
+      ) : (
+        <>
+          {/* ── TAB 1: CURATED SHOWCASE (Spotlight + Trending Shelf + Role Collections) ── */}
+          {navTab === 'curated' && !searchQuery && activeCategory === 'all' && (
+            <>
+              {/* Spotlight Carousel */}
+              <SpotlightBanner
+                templates={spotlightTemplates}
+                onUse={handleUse}
+                onQuickLook={setQuickLookTemplate}
+                bookmarkedIds={bookmarkedIds}
+                onToggleBookmark={handleToggleBookmark}
+                isStacked={isStackedSpotlight}
+                isSmall={isSmall}
+              />
+
+              {/* Trending Now Shelf */}
+              {trendingTemplates.length > 0 && (
+                <section style={{ marginBottom: 36 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <TrendingUp size={18} strokeWidth={2.2} style={{ color: '#F59E0B' }} />
+                      <h2 style={{ fontSize: isSmall ? 16 : 17, fontWeight: 800, color: 'var(--color-text-primary)', margin: 0 }}>
+                        Trending Prompt Recipes
+                      </h2>
+                    </div>
+                    <button
+                      onClick={() => setNavTab('popular')}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        fontSize: 12.5,
+                        fontWeight: 600,
+                        color: 'var(--color-primary)',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                      }}
+                      className="hover:underline"
+                    >
+                      <span>Explore all</span>
+                      <ChevronRight size={14} />
+                    </button>
+                  </div>
+
+                  {viewMode === 'grid' ? (
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: gridColumns,
+                        gap: 16,
+                      }}
+                    >
+                      {trendingTemplates.map((t) => (
+                        <NotionTemplateCard
+                          key={t.id}
+                          template={t}
+                          onUse={handleUse}
+                          onQuickLook={setQuickLookTemplate}
+                          isBookmarked={bookmarkedIds.has(t.id)}
+                          onToggleBookmark={handleToggleBookmark}
+                          onSelectTag={setSearchQuery}
+                          isSmall={isSmall}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {trendingTemplates.map((t) => (
+                        <NotionListRow
+                          key={t.id}
+                          template={t}
+                          onUse={handleUse}
+                          onQuickLook={setQuickLookTemplate}
+                          isBookmarked={bookmarkedIds.has(t.id)}
+                          onToggleBookmark={handleToggleBookmark}
+                          isPhone={isPhone}
+                          isSmall={isSmall}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </section>
+              )}
+
+              {/* Browse by Domain / Roles Shelves */}
+              <section style={{ marginBottom: 40 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Sparkles size={18} strokeWidth={2.2} style={{ color: 'var(--color-primary)' }} />
+                    <h2 style={{ fontSize: isSmall ? 16 : 17, fontWeight: 800, color: 'var(--color-text-primary)', margin: 0 }}>
+                      Role & Workflow Collections
+                    </h2>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: isSmall ? 20 : 32 }}>
+                  {Array.from(groupedByCategory.entries()).map(([cat, list]) => {
+                    const Icon = CATEGORY_ICON_MAP[cat] || Sparkles;
+                    const style = getCategoryColor(cat);
+                    const itemsToShow = isTablet ? 4 : isPhone ? 3 : 6;
+                    return (
+                      <div key={cat} style={{ background: 'rgba(250,250,252,0.6)', borderRadius: isSmall ? 16 : 20, padding: isSmall ? 14 : isPhone ? 18 : 24, border: '1px solid rgba(124,58,237,0.06)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                            <div style={{ width: 30, height: 30, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: style.bg, color: style.text, flexShrink: 0 }}>
+                              <Icon size={15} strokeWidth={2} />
+                            </div>
+                            <div>
+                              <h3 style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>
+                                {categoryLabel(cat)} Specialists
+                              </h3>
+                            </div>
+                            <span style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--color-text-secondary)', background: '#FFFFFF', padding: '2px 7px', borderRadius: 99, border: '1px solid rgba(0,0,0,0.06)' }}>
+                              {list.length}
+                            </span>
+                          </div>
+
+                          <button
+                            onClick={() => {
+                              setActiveCategory(cat);
+                              setNavTab('categories');
+                            }}
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 600,
+                              color: 'var(--color-primary)',
+                              background: 'none',
+                              border: 'none',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 3,
+                            }}
+                            className="hover:underline"
+                          >
+                            <span>View all</span>
+                            <ChevronRight size={13} />
+                          </button>
+                        </div>
+
+                        {viewMode === 'grid' ? (
+                          <div
+                            style={{
+                              display: 'grid',
+                              gridTemplateColumns: gridColumns,
+                              gap: 14,
+                            }}
+                          >
+                            {list.slice(0, itemsToShow).map((t) => (
+                              <NotionTemplateCard
+                                key={t.id}
+                                template={t}
+                                onUse={handleUse}
+                                onQuickLook={setQuickLookTemplate}
+                                isBookmarked={bookmarkedIds.has(t.id)}
+                                onToggleBookmark={handleToggleBookmark}
+                                onSelectTag={setSearchQuery}
+                                isSmall={isSmall}
+                              />
+                            ))}
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            {list.slice(0, itemsToShow).map((t) => (
+                              <NotionListRow
+                                key={t.id}
+                                template={t}
+                                onUse={handleUse}
+                                onQuickLook={setQuickLookTemplate}
+                                isBookmarked={bookmarkedIds.has(t.id)}
+                                onToggleBookmark={handleToggleBookmark}
+                                isPhone={isPhone}
+                                isSmall={isSmall}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            </>
+          )}
+
+          {/* ── TAB 2 / FILTERED / SEARCH / LIST VIEW ── */}
+          {(navTab !== 'curated' || searchQuery || activeCategory !== 'all') && (
+            <div>
+              {/* Header result counter */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-secondary)' }}>
+                  Showing {processedTemplates.length} {processedTemplates.length === 1 ? 'template' : 'templates'}
+                  {activeCategory !== 'all' && ` in ${categoryLabel(activeCategory)}`}
+                  {searchQuery && ` matching "${searchQuery}"`}
+                </span>
+
+                {navTab === 'saved' && bookmarkedIds.size > 0 && (
+                  <button
+                    onClick={() => {
+                      setBookmarkedIds(new Set());
+                      localStorage.removeItem(BOOKMARKS_STORAGE_KEY);
+                    }}
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: '#EF4444',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                    }}
+                    className="hover:underline"
+                  >
+                    Clear all saved
+                  </button>
+                )}
+              </div>
+
+              {/* Results Grid / List */}
+              {processedTemplates.length === 0 ? (
+                <div
+                  id="templates-empty-state"
+                  style={{
+                    textAlign: 'center',
+                    padding: '64px 0',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 12,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 60,
+                      height: 60,
+                      borderRadius: 16,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: 'rgba(124,58,237,0.08)',
+                      color: 'var(--color-primary)',
+                    }}
+                  >
+                    <Search size={28} strokeWidth={1.5} />
+                  </div>
+                  <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>
+                    {navTab === 'saved' ? 'No saved templates yet' : 'No templates match your filter'}
+                  </h3>
+                  <p style={{ fontSize: 14, color: 'var(--color-text-secondary)', margin: 0 }}>
+                    {navTab === 'saved'
+                      ? 'Click the bookmark icon on any template card to save it for quick access.'
+                      : 'Try resetting your search or choosing a different category.'}
+                  </p>
+                  <button
+                    onClick={() => {
+                      setSearchQuery('');
+                      setActiveCategory('all');
+                      if (navTab === 'saved') setNavTab('curated');
+                    }}
+                    style={{
+                      marginTop: 8,
+                      padding: '8px 18px',
+                      borderRadius: 10,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      border: '1px solid rgba(124,58,237,0.20)',
+                      cursor: 'pointer',
+                      background: '#FFFFFF',
+                      color: 'var(--color-primary)',
+                    }}
+                  >
+                    Reset filters
+                  </button>
+                </div>
+              ) : viewMode === 'grid' ? (
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: gridColumns,
+                    gap: 16,
+                  }}
+                >
+                  {processedTemplates.map((t) => (
+                    <NotionTemplateCard
+                      key={t.id}
+                      template={t}
+                      onUse={handleUse}
+                      onQuickLook={setQuickLookTemplate}
+                      isBookmarked={bookmarkedIds.has(t.id)}
+                      onToggleBookmark={handleToggleBookmark}
+                      onSelectTag={setSearchQuery}
+                      isSmall={isSmall}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {processedTemplates.map((t) => (
+                    <NotionListRow
+                      key={t.id}
+                      template={t}
+                      onUse={handleUse}
+                      onQuickLook={setQuickLookTemplate}
+                      isBookmarked={bookmarkedIds.has(t.id)}
+                      onToggleBookmark={handleToggleBookmark}
+                      isPhone={isPhone}
+                      isSmall={isSmall}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </>
       )}
+
+      {/* ── Apple Quick Look Modal ── */}
+      <QuickLookModal
+        template={quickLookTemplate}
+        onClose={() => setQuickLookTemplate(null)}
+        onUse={handleUse}
+        isBookmarked={quickLookTemplate ? bookmarkedIds.has(quickLookTemplate.id) : false}
+        onToggleBookmark={handleToggleBookmark}
+        isSmall={isSmall}
+      />
     </div>
   );
 }

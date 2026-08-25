@@ -40,7 +40,7 @@ const OptimizedForCard = React.memo(function OptimizedForCard() {
         </div>
 
         {/* Single row of icons */}
-        <div className="flex items-center justify-between gap-2">
+        <div className="te-opt-row flex items-center justify-between gap-2">
           {apps.map((app) => (
             <div
               key={app.name}

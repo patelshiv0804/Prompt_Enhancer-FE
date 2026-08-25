@@ -10,8 +10,37 @@ import {
 import VersionHeader from './VersionHeader';
 import VersionHistoryDrawer from './VersionHistoryDrawer';
 import { useEnabledStyleOptions } from '@/features/style-memory/services/styleMemoryService';
-import { apiClient } from '@/utils/apiClient';
+import { apiClient, streamEnhance, type ReenhanceStreamDone } from '@/utils/apiClient';
 import FormattedPromptViewer from '../../optimizer/components/FormattedPromptViewer';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+
+// ── Streaming prompt formatter ──────────────────────────────────────────────
+function formatPromptText(text: string): string {
+  let cleaned = text.trim();
+  const markers = ['ENHANCED PROMPT:', 'ENHANCED PROMPT', 'Enhanced Prompt:'];
+  for (const m of markers) {
+    const idx = cleaned.indexOf(m);
+    if (idx !== -1) {
+      cleaned = cleaned.substring(idx + m.length).trim();
+      break;
+    }
+  }
+  if (cleaned.includes('DIAGNOSED MODE:') || cleaned.includes('DIAGNOSIS NOTES:')) {
+    const actIdx = cleaned.search(/(Act as|You are|Your task|System Prompt|# )/i);
+    if (actIdx !== -1) {
+      cleaned = cleaned.substring(actIdx).trim();
+    }
+  }
+  return cleaned;
+}
+
+function cleanTweakNote(note?: string): string | undefined {
+  if (!note) return undefined;
+  return note
+    .replace(/\s+using\s+template\s+['"][^'"]*['"]\.?/gi, '.')
+    .replace(/\s+using\s+template\s+[^\.]*\.?/gi, '.')
+    .trim();
+}
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface Dimension {
@@ -37,6 +66,7 @@ interface PromptVersion {
   isStarred?: boolean;
   versionType?: string;
   toolRecommendations?: any;
+  isGenerating?: boolean;
 }
 
 interface OptimizationSession {
@@ -764,7 +794,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
               wordsAfter: optText.split(/\s+/).filter(Boolean).length,
               tokensAfter: Math.round(optText.length / 4),
               timestamp: v.created_at ? new Date(v.created_at).toLocaleDateString() : 'Just now',
-              tweakNote: v.change_summary || undefined,
+              tweakNote: cleanTweakNote(v.change_summary),
               // Store version-level tool recs so the UI can show them per-version
               ...(vToolRecs && { toolRecommendations: vToolRecs }),
             };
@@ -889,80 +919,190 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
   const [sessionVersions, setSessionVersions] = useState(currentSession.versions);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isReenhancing, setIsReenhancing] = useState(false);
+  const [streamingText, setStreamingText] = useState('');
+  const streamScrollRef = useRef<HTMLDivElement>(null);
+  const reenhanceInFlight = useRef(false);
 
-  // ── Re-enhance handler ───────────────────────────────────────────────────────
+  // Auto-scroll stream viewer when new tokens arrive
+  useEffect(() => {
+    if (isReenhancing && streamingText && streamScrollRef.current) {
+      streamScrollRef.current.scrollTop = streamScrollRef.current.scrollHeight;
+    }
+  }, [streamingText, isReenhancing]);
+
+  // ── Responsive breakpoints ─────────────────────────────────────────────────
+  // Inline styles win over CSS @media (specificity), so layout decisions are
+  // driven from JS. `isDrawer` mirrors the Sidebar's 768px drawer breakpoint
+  // (the floating hamburger overlays the top-left, so we clear space for it).
+  const isCompact = useMediaQuery('(max-width: 1000px)'); // stack side-by-side blocks
+  const isDrawer = useMediaQuery('(max-width: 768px)');   // sidebar is an overlay drawer
+  const isMobile = useMediaQuery('(max-width: 640px)');   // phone-sized tightening
+
+  const normalizeScoreLocal = (val: any, fallback: number = 0): number => {
+    if (typeof val !== 'number' || isNaN(val)) return fallback;
+    return Math.max(0, Math.min(100, Math.round(val)));
+  };
+
+  // Build dimension array from new_analysis
+  const getDimScore = (anal: any, key: string, altKey?: string): number | undefined => {
+    if (!anal?.dimensions) return undefined;
+    const item = anal.dimensions[key] ?? (altKey ? anal.dimensions[altKey] : undefined);
+    if (item && typeof item.score === 'number') return item.score;
+    if (typeof item === 'number') return item;
+    return undefined;
+  };
+  const getDimDesc = (anal: any, key: string, altKey?: string, def = ''): string => {
+    if (!anal?.dimensions) return def;
+    const item = anal.dimensions[key] ?? (altKey ? anal.dimensions[altKey] : undefined);
+    if (item && typeof item.explanation === 'string') return item.explanation;
+    return def;
+  };
+  const getDimStatusLocal = (s: number | undefined): 'good' | 'warning' | 'neutral' => {
+    if (s === undefined) return 'neutral';
+    if (s >= 80) return 'good';
+    if (s >= 55) return 'warning';
+    return 'neutral';
+  };
+  const makeDimsLocal = (oldA: any, newA: any): Dimension[] => {
+    const scClarity = getDimScore(newA, 'clarity') ?? 80;
+    const scContext = getDimScore(newA, 'context') ?? 75;
+    const scRole = getDimScore(newA, 'role_definition', 'role') ?? 70;
+    const scFormat = getDimScore(newA, 'output_format', 'format') ?? 75;
+    const scConstraints = getDimScore(newA, 'constraints') ?? 65;
+    const scExamples = getDimScore(newA, 'examples') ?? 60;
+    return [
+      { id: 'clarity', label: 'Clarity', status: getDimStatusLocal(scClarity), icon: CheckCircle2, desc: getDimDesc(newA, 'clarity', undefined, 'Direct and unambiguous task instructions.'), score: scClarity, beforeScore: getDimScore(oldA, 'clarity') },
+      { id: 'context', label: 'Context', status: getDimStatusLocal(scContext), icon: CheckCircle2, desc: getDimDesc(newA, 'context', undefined, 'Clear background information and domain scope.'), score: scContext, beforeScore: getDimScore(oldA, 'context') },
+      { id: 'role', label: 'Role', status: getDimStatusLocal(scRole), icon: CheckCircle2, desc: getDimDesc(newA, 'role_definition', 'role', 'Explicit AI persona and domain expertise.'), score: scRole, beforeScore: getDimScore(oldA, 'role_definition', 'role') },
+      { id: 'format', label: 'Format', status: getDimStatusLocal(scFormat), icon: CheckCircle2, desc: getDimDesc(newA, 'output_format', 'format', 'Well-defined structure and layout directives.'), score: scFormat, beforeScore: getDimScore(oldA, 'output_format', 'format') },
+      { id: 'constraints', label: 'Constraints', status: getDimStatusLocal(scConstraints), icon: AlertTriangle, desc: getDimDesc(newA, 'constraints', undefined, 'Explicit guardrails and negative boundaries.'), score: scConstraints, beforeScore: getDimScore(oldA, 'constraints') },
+      { id: 'examples', label: 'Examples', status: getDimStatusLocal(scExamples), icon: Minus, desc: getDimDesc(newA, 'examples', undefined, 'Targeted demonstration and input/output structure.'), score: scExamples, beforeScore: getDimScore(oldA, 'examples') },
+    ];
+  };
+
+  const runBlockingReenhance = async (pId: string, nextVerNum: number, prevScore: number) => {
+    const res = await apiClient.post<any>(`/api/v1/prompts/${pId}/reenhance`);
+    if (!res?.data) throw new Error('No data returned from re-enhance');
+    const d = res.data;
+    const vNewAnal = d.new_analysis || null;
+    const vOldAnal = d.old_analysis || null;
+    const vScore = vNewAnal?.overall_score ?? 0;
+    const vScoreScaled = normalizeScoreLocal(vScore, 0);
+
+    const completedVer: PromptVersion = {
+      versionNumber: d.version_number ?? nextVerNum,
+      optimizedPrompt: d.enhanced_prompt || '',
+      overallScore: vScoreScaled,
+      beforeOverallScore: normalizeScoreLocal(vOldAnal?.overall_score ?? prevScore, 0),
+      dimensions: makeDimsLocal(vOldAnal, vNewAnal),
+      wordsAfter: (d.enhanced_prompt || '').split(/\s+/).filter(Boolean).length,
+      tokensAfter: Math.round((d.enhanced_prompt || '').length / 4),
+      timestamp: 'Just now',
+      tweakNote: `Re-enhanced v${d.version_number ?? nextVerNum}`,
+      versionType: 'reenhancement',
+      toolRecommendations: d.tool_recommendations,
+      isGenerating: false,
+    };
+
+    setSessionVersions(prev => {
+      const copy = [...prev];
+      copy[copy.length - 1] = completedVer;
+      return copy;
+    });
+    window.dispatchEvent(new Event('promptiq:history-updated'));
+  };
+
+  // ── Re-enhance handler with instant new version window & token streaming ──
   const handleReenhance = async () => {
-    if (!chatId || MOCK_SESSIONS[chatId]) return; // skip for mock sessions
+    if (!chatId || MOCK_SESSIONS[chatId] || reenhanceInFlight.current) return;
+    reenhanceInFlight.current = true;
     setIsReenhancing(true);
-    try {
-      const res = await apiClient.post<any>(`/api/v1/prompts/${chatId}/reenhance`);
-      if (!res?.data) return;
-      const d = res.data;
-      const vNewAnal = d.new_analysis || null;
-      const vOldAnal = d.old_analysis || null;
-      const normalizeScoreLocal = (val: any, fallback: number = 0): number => {
-        if (typeof val !== 'number' || isNaN(val)) return fallback;
-        return Math.max(0, Math.min(100, Math.round(val)));
-      };
-      const vScore = vNewAnal?.overall_score ?? 0;
-      const vScoreScaled = normalizeScoreLocal(vScore, 0);
+    setStreamingText('');
+    setCompareMode(false);
 
-      // Build dimension array from new_analysis
-      const getDimScore = (anal: any, key: string, altKey?: string): number | undefined => {
-        if (!anal?.dimensions) return undefined;
-        const item = anal.dimensions[key] ?? (altKey ? anal.dimensions[altKey] : undefined);
-        if (item && typeof item.score === 'number') return item.score;
-        if (typeof item === 'number') return item;
-        return undefined;
-      };
-      const getDimDesc = (anal: any, key: string, altKey?: string, def = ''): string => {
-        if (!anal?.dimensions) return def;
-        const item = anal.dimensions[key] ?? (altKey ? anal.dimensions[altKey] : undefined);
-        if (item && typeof item.explanation === 'string') return item.explanation;
-        return def;
-      };
-      const getDimStatusLocal = (s: number | undefined): 'good' | 'warning' | 'neutral' => {
-        if (s === undefined) return 'neutral';
-        if (s >= 80) return 'good';
-        if (s >= 55) return 'warning';
-        return 'neutral';
-      };
-      const makeDimsLocal = (oldA: any, newA: any): any[] => {
-        const scClarity = getDimScore(newA, 'clarity') ?? 80;
-        const scContext = getDimScore(newA, 'context') ?? 75;
-        const scRole = getDimScore(newA, 'role_definition', 'role') ?? 70;
-        const scFormat = getDimScore(newA, 'output_format', 'format') ?? 75;
-        const scConstraints = getDimScore(newA, 'constraints') ?? 65;
-        const scExamples = getDimScore(newA, 'examples') ?? 60;
-        return [
-          { id: 'clarity', label: 'Clarity', status: getDimStatusLocal(scClarity), icon: CheckCircle2, desc: getDimDesc(newA, 'clarity'), score: scClarity, beforeScore: getDimScore(oldA, 'clarity') },
-          { id: 'context', label: 'Context', status: getDimStatusLocal(scContext), icon: CheckCircle2, desc: getDimDesc(newA, 'context'), score: scContext, beforeScore: getDimScore(oldA, 'context') },
-          { id: 'role', label: 'Role', status: getDimStatusLocal(scRole), icon: CheckCircle2, desc: getDimDesc(newA, 'role_definition', 'role'), score: scRole, beforeScore: getDimScore(oldA, 'role_definition', 'role') },
-          { id: 'format', label: 'Format', status: getDimStatusLocal(scFormat), icon: CheckCircle2, desc: getDimDesc(newA, 'output_format', 'format'), score: scFormat, beforeScore: getDimScore(oldA, 'output_format', 'format') },
-          { id: 'constraints', label: 'Constraints', status: getDimStatusLocal(scConstraints), icon: AlertTriangle, desc: getDimDesc(newA, 'constraints'), score: scConstraints, beforeScore: getDimScore(oldA, 'constraints') },
-          { id: 'examples', label: 'Examples', status: getDimStatusLocal(scExamples), icon: Minus, desc: getDimDesc(newA, 'examples'), score: scExamples, beforeScore: getDimScore(oldA, 'examples') },
-        ];
-      };
+    const lastVer = sessionVersions[sessionVersions.length - 1];
+    const nextVerNum = (lastVer?.versionNumber ?? sessionVersions.length) + 1;
+    const prevScore = lastVer?.overallScore ?? session.originalScore ?? 0;
 
-      const newVer: PromptVersion = {
-        versionNumber: d.version_number,
-        optimizedPrompt: d.enhanced_prompt,
-        overallScore: vScoreScaled,
-        beforeOverallScore: normalizeScoreLocal(vOldAnal?.overall_score ?? sessionVersions[sessionVersions.length - 1]?.overallScore, 0),
-        dimensions: makeDimsLocal(vOldAnal, vNewAnal),
-        wordsAfter: d.enhanced_prompt.split(/\s+/).filter(Boolean).length,
-        tokensAfter: Math.round(d.enhanced_prompt.length / 4),
-        timestamp: 'Just now',
-        tweakNote: `Re-enhanced v${sessionVersions.length}`,
-        versionType: 'reenhancement',
-      };
+    const pendingVer: PromptVersion = {
+      versionNumber: nextVerNum,
+      optimizedPrompt: '',
+      overallScore: 0,
+      beforeOverallScore: prevScore,
+      dimensions: [],
+      wordsAfter: 0,
+      tokensAfter: 0,
+      timestamp: 'Just now',
+      tweakNote: `Re-enhancing v${nextVerNum} in progress…`,
+      versionType: 'reenhancement',
+      isGenerating: true,
+    };
 
-      setSessionVersions(prev => [...prev, newVer]);
-      setActiveVersionIndex(sessionVersions.length); // switch to new version
-    } catch (err) {
-      console.error('Re-enhance failed:', err);
-    } finally {
+    // Immediately push new version and select it so user sees the new window
+    setSessionVersions(prev => [...prev, pendingVer]);
+    setActiveVersionIndex(sessionVersions.length);
+
+    const pId = chatId;
+    let settledLocally = false;
+
+    await streamEnhance<ReenhanceStreamDone>(`/api/v1/prompts/${pId}/reenhance/stream`, {}, {
+      onToken: (text) => {
+        setStreamingText(prev => prev + text);
+      },
+      onDone: (data) => {
+        settledLocally = true;
+        const vNewAnal = data.new_analysis || null;
+        const vOldAnal = data.old_analysis || null;
+        const vScore = vNewAnal?.overall_score ?? 0;
+        const vScoreScaled = normalizeScoreLocal(vScore, 0);
+        const finalPrompt = data.enhanced_prompt || '';
+
+        const finalVer: PromptVersion = {
+          versionNumber: data.version_number ?? nextVerNum,
+          optimizedPrompt: finalPrompt,
+          overallScore: vScoreScaled,
+          beforeOverallScore: normalizeScoreLocal(vOldAnal?.overall_score ?? prevScore, 0),
+          dimensions: makeDimsLocal(vOldAnal, vNewAnal),
+          wordsAfter: finalPrompt.split(/\s+/).filter(Boolean).length,
+          tokensAfter: Math.round(finalPrompt.length / 4),
+          timestamp: 'Just now',
+          tweakNote: `Re-enhanced v${data.version_number ?? nextVerNum}`,
+          versionType: 'reenhancement',
+          toolRecommendations: data.tool_recommendations,
+          isGenerating: false,
+        };
+
+        setSessionVersions(prev => {
+          const copy = [...prev];
+          copy[copy.length - 1] = finalVer;
+          return copy;
+        });
+        setStreamingText('');
+        setIsReenhancing(false);
+        reenhanceInFlight.current = false;
+        window.dispatchEvent(new Event('promptiq:history-updated'));
+      },
+      onError: async (streamErr) => {
+        settledLocally = true;
+        console.warn('Streaming re-enhance failed; attempting blocking fallback:', streamErr);
+        setStreamingText('');
+        try {
+          await runBlockingReenhance(pId, nextVerNum, prevScore);
+        } catch (fbErr) {
+          console.error('Blocking fallback failed:', fbErr);
+          // Rollback pending version
+          setSessionVersions(prev => prev.slice(0, -1));
+          setActiveVersionIndex(prev => Math.max(0, prev - 1));
+        } finally {
+          setIsReenhancing(false);
+          reenhanceInFlight.current = false;
+        }
+      },
+    });
+
+    if (!settledLocally) {
       setIsReenhancing(false);
+      reenhanceInFlight.current = false;
     }
   };
 
@@ -1010,9 +1150,10 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
     if (!selected) return null;
 
     return (
-      <div style={{ position: 'relative' }}>
+      <div style={{ position: 'relative', width: isMobile ? '100%' : undefined }}>
         <button type="button" aria-haspopup="menu" aria-expanded={isOpen} onClick={() => setIsOpen(!isOpen)} style={{
-          minWidth: 214, height: 46, padding: '0 14px 0 18px', borderRadius: 999,
+          minWidth: isMobile ? 0 : 214, width: isMobile ? '100%' : undefined,
+          height: 46, padding: '0 14px 0 18px', borderRadius: 999,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
           background: 'linear-gradient(180deg, #FFFFFF 0%, #FAF7FF 100%)', border: '1px solid rgba(124,58,237,0.22)',
           color: '#241144', fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 14px rgba(124,58,237,0.10), inset 0 1px 0 rgba(255,255,255,0.9)',
@@ -1047,49 +1188,122 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
   if (isLoadingSession) {
     return <ChatDetailSkeleton />;
   }
+  const renderOptimizedPanel = (v: PromptVersion, label: string) => {
+    const isGenerating = !!v.isGenerating;
+    return (
+      <div style={{
+        flex: 1, background: '#FFFFFF', borderRadius: 20, padding: isMobile ? '18px 6px 18px 18px' : '24px 8px 24px 24px',
+        boxShadow: '0 4px 20px rgba(109,40,217,0.06), 0 1px 3px rgba(0,0,0,0.03)',
+        border: '1px solid rgba(124,58,237,0.12)', display: 'flex', flexDirection: 'column',
+        position: 'relative', overflow: 'hidden', minWidth: 0, height: isMobile ? 340 : 420, maxHeight: isMobile ? 340 : 420, boxSizing: 'border-box',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, paddingRight: 16 }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 9999,
+            fontSize: 12, fontWeight: 700, letterSpacing: '0.3px',
+            background: 'linear-gradient(135deg, rgba(124,58,237,0.12), rgba(168,85,247,0.15))',
+            color: '#6D28D9', border: '1px solid rgba(124,58,237,0.18)',
+          }}>
+            <Wand2 size={13} style={{ animation: isGenerating ? 'spin 1.5s linear infinite' : 'none' }} />
+            <span>{isGenerating ? `Optimized · v${v.versionNumber} (Generating…)` : label}</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {!isGenerating && <CopyPromptButton text={v.optimizedPrompt} />}
+            {isGenerating ? (
+              <span style={{
+                fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 9999,
+                background: 'rgba(124,58,237,0.10)', color: '#7C3AED',
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+              }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#7C3AED', animation: 'pulse 1.5s infinite' }} />
+                Generating
+              </span>
+            ) : (
+              <span style={{ fontSize: 20, fontWeight: 800, color: scoreColor(v.overallScore) }}>
+                {v.overallScore}
+              </span>
+            )}
+          </div>
+        </div>
 
-  // Render a prompt panel
-  const renderOptimizedPanel = (v: PromptVersion, label: string) => (
-    <div style={{
-      flex: 1, background: '#FFFFFF', borderRadius: 20, padding: '24px 8px 24px 24px',
-      boxShadow: '0 4px 20px rgba(109,40,217,0.06), 0 1px 3px rgba(0,0,0,0.03)',
-      border: '1px solid rgba(124,58,237,0.12)', display: 'flex', flexDirection: 'column',
-      position: 'relative', overflow: 'hidden', minWidth: 0, height: 420, maxHeight: 420, boxSizing: 'border-box',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, paddingRight: 16 }}>
-        <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 9999,
-          fontSize: 12, fontWeight: 700, letterSpacing: '0.3px',
-          background: 'linear-gradient(135deg, rgba(124,58,237,0.12), rgba(168,85,247,0.15))',
-          color: '#6D28D9', border: '1px solid rgba(124,58,237,0.18)',
-        }}>
-          <Wand2 size={13} />
-          <span>{label}</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <CopyPromptButton text={v.optimizedPrompt} />
-          <span style={{ fontSize: 20, fontWeight: 800, color: scoreColor(v.overallScore) }}>
-            {v.overallScore}
-          </span>
-        </div>
+        {isGenerating ? (
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative', minHeight: 0 }}>
+            {streamingText ? (
+              <div
+                ref={streamScrollRef}
+                className="custom-scrollbar"
+                style={{
+                  flex: 1,
+                  minHeight: 0,
+                  fontSize: 14,
+                  lineHeight: 1.6,
+                  overflowY: 'auto',
+                  paddingRight: 16,
+                  color: '#1E293B',
+                  letterSpacing: '0.01em',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                }}
+              >
+                {formatPromptText(streamingText)}
+                <span
+                  aria-hidden="true"
+                  style={{
+                    display: 'inline-block',
+                    width: 7,
+                    height: 15,
+                    marginLeft: 2,
+                    borderRadius: 1,
+                    background: '#7C3AED',
+                    verticalAlign: 'text-bottom',
+                    animation: 'streamCaretBlink 1s step-end infinite',
+                  }}
+                />
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 12, color: '#6D28D9' }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: '50%',
+                  background: 'linear-gradient(135deg, rgba(124,58,237,0.12), rgba(168,85,247,0.18))',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Wand2 size={22} style={{ animation: 'spin 2s linear infinite', color: '#7C3AED' }} />
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <p style={{ margin: 0, fontSize: 13.5, fontWeight: 700, color: '#241144' }}>Re-enhancing prompt…</p>
+                  <p style={{ margin: '4px 0 0', fontSize: 12, color: '#64748B' }}>Synthesizing higher quality prompt version in real-time</p>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="custom-scrollbar" style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 16 }}>
+            <FormattedPromptViewer content={v.optimizedPrompt} />
+          </div>
+        )}
+
+        {isGenerating ? (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, paddingTop: 14,
+            borderTop: '1px dashed rgba(124,58,237,0.16)', fontSize: 12, color: '#6D28D9', fontWeight: 600,
+            paddingRight: 16,
+          }}>
+            <Wand2 size={13} style={{ flexShrink: 0, animation: 'spin 1.5s linear infinite' }} />
+            <span>Streaming enhanced prompt live…</span>
+          </div>
+        ) : v.tweakNote ? (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, paddingTop: 14,
+            borderTop: '1px dashed rgba(124,58,237,0.16)', fontSize: 12, color: '#6D28D9', fontWeight: 600,
+            paddingRight: 16,
+          }}>
+            <Wand2 size={13} style={{ flexShrink: 0 }} />
+            <span>{cleanTweakNote(v.tweakNote)}</span>
+          </div>
+        ) : null}
       </div>
-
-      <div className="custom-scrollbar" style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 16 }}>
-        <FormattedPromptViewer content={v.optimizedPrompt} />
-      </div>
-
-      {v.tweakNote && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, paddingTop: 14,
-          borderTop: '1px dashed rgba(124,58,237,0.16)', fontSize: 12, color: '#6D28D9', fontWeight: 600,
-          paddingRight: 16,
-        }}>
-          <Wand2 size={13} style={{ flexShrink: 0 }} />
-          <span>{v.tweakNote}</span>
-        </div>
-      )}
-    </div>
-  );
+    );
+  };
 
   return (
     <div style={{
@@ -1097,13 +1311,15 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
       background: 'transparent',
     }}>
       <div style={{
-        maxWidth: 1100, margin: '0 auto', width: '100%', padding: '20px 48px',
-        display: 'flex', flexDirection: 'column', gap: 28, flex: 1,
+        maxWidth: 1100, margin: '0 auto', width: '100%',
+        padding: `${isDrawer ? 62 : 20}px ${isMobile ? 14 : isCompact ? 28 : 48}px ${isMobile ? 28 : 20}px`,
+        display: 'flex', flexDirection: 'column', gap: isMobile ? 18 : 28, flex: 1,
       }}>
         {/* Header Bar */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '12px 20px', background: 'rgba(255,255,255,0.85)', borderRadius: 16,
+          flexWrap: 'wrap', gap: 12,
+          padding: isMobile ? '10px 14px' : '12px 20px', background: 'rgba(255,255,255,0.85)', borderRadius: 16,
           border: '1px solid rgba(124,58,237,0.10)', boxShadow: '0 2px 12px rgba(109,40,217,0.04)',
           backdropFilter: 'blur(12px)',
           width: '100%', boxSizing: 'border-box',
@@ -1164,7 +1380,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
         </div>
 
         {/* Main Content */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 28, width: '100%' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 18 : 28, width: '100%' }}>
           {/* Version Header Timeline */}
           {!compareMode && (
             <VersionHeader
@@ -1172,7 +1388,8 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                 versionNumber: v.versionNumber,
                 overallScore: v.overallScore,
                 timestamp: v.timestamp,
-                originalIndex: idx
+                originalIndex: idx,
+                isGenerating: v.isGenerating,
               }))}
               activeIndex={activeVersionIndex}
               bestIndex={bestIndex}
@@ -1186,7 +1403,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
           {/* Compare vs Normal */}
           {compareMode ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14 }}>
+              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: isMobile ? 10 : 14 }}>
                 {renderComparisonSelector(compareIndex, isLeftCompareMenuOpen, setIsLeftCompareMenuOpen, setCompareIndex)}
                 <select
                   value={compareIndex} onChange={e => setCompareIndex(Number(e.target.value))}
@@ -1208,7 +1425,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                 </select>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isCompact ? '1fr' : '1fr 1fr', gap: 20 }}>
                 {renderOptimizedPanel(sessionVersions[compareIndex], `v${sessionVersions[compareIndex].versionNumber}`)}
                 {renderOptimizedPanel(sessionVersions[activeVersionIndex], `v${sessionVersions[activeVersionIndex].versionNumber}`)}
               </div>
@@ -1216,12 +1433,12 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
           ) : (
             <>
               {/* ── Side-by-side prompt comparison ── */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isCompact ? '1fr' : '1fr 1fr', gap: 20 }}>
                 {/* Input / Original panel */}
                 <div style={{
-                  background: '#FFFFFF', borderRadius: 20, padding: '24px 8px 24px 24px',
+                  background: '#FFFFFF', borderRadius: 20, padding: isMobile ? '18px 6px 18px 18px' : '24px 8px 24px 24px',
                   boxShadow: '0 4px 20px rgba(109,40,217,0.04)', border: '1px solid rgba(124,58,237,0.10)',
-                  display: 'flex', flexDirection: 'column', height: 420, maxHeight: 420, boxSizing: 'border-box', overflow: 'hidden', minWidth: 0,
+                  display: 'flex', flexDirection: 'column', height: isMobile ? 340 : 420, maxHeight: isMobile ? 340 : 420, boxSizing: 'border-box', overflow: 'hidden', minWidth: 0,
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, paddingRight: 16 }}>
                     <div style={{
@@ -1251,47 +1468,81 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                 boxShadow: '0 4px 20px rgba(109,40,217,0.05)',
                 overflow: 'hidden',
                 display: 'flex',
+                flexDirection: isCompact ? 'column' : 'row',
               }}>
                 {/* LEFT COLUMN — ring + label + pts + before/after */}
                 <div style={{
-                  width: 190, flexShrink: 0,
+                  width: isCompact ? '100%' : 190, flexShrink: 0, boxSizing: 'border-box',
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                   padding: '28px 20px', gap: 12,
-                  borderRight: '1px solid rgba(124,58,237,0.08)',
+                  borderRight: isCompact ? 'none' : '1px solid rgba(124,58,237,0.08)',
+                  borderBottom: isCompact ? '1px solid rgba(124,58,237,0.08)' : 'none',
                   background: '#FDFCFF',
                 }}>
                   {/* Ring */}
                   <div style={{ position: 'relative', width: 110, height: 110 }}>
-                    <svg width="110" height="110" viewBox="0 0 110 110" style={{ transform: 'rotate(-90deg)' }}>
-                      <defs>
-                        <linearGradient id="scoreRingGrad" x1="0" y1="0" x2="1" y2="1">
-                          <stop offset="0%" stopColor="#7C3AED" />
-                          <stop offset="100%" stopColor="#A855F7" />
-                        </linearGradient>
-                      </defs>
-                      <circle cx="55" cy="55" r="46" fill="none" stroke="rgba(124,58,237,0.10)" strokeWidth="7" />
-                      <circle
-                        cx="55" cy="55" r="46" fill="none" stroke="url(#scoreRingGrad)" strokeWidth="7"
-                        strokeLinecap="round"
-                        strokeDasharray={String(2 * Math.PI * 46)}
-                        strokeDashoffset={String(2 * Math.PI * 46 - (animatedScore / 100) * 2 * Math.PI * 46)}
-                        style={{ transition: 'stroke-dashoffset 1.4s ease-out' }}
-                      />
-                    </svg>
-                    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <span style={{ fontSize: 30, fontWeight: 900, color: '#1E293B' }}>{animatedScore}</span>
-                    </div>
+                    {version.isGenerating ? (
+                      <div style={{ width: 110, height: 110, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                        <svg width="110" height="110" viewBox="0 0 110 110" style={{ transform: 'rotate(-90deg)', animation: 'spin 2s linear infinite' }}>
+                          <defs>
+                            <linearGradient id="scoreRingGrad" x1="0" y1="0" x2="1" y2="1">
+                              <stop offset="0%" stopColor="#7C3AED" />
+                              <stop offset="100%" stopColor="#A855F7" />
+                            </linearGradient>
+                          </defs>
+                          <circle cx="55" cy="55" r="46" fill="none" stroke="rgba(124,58,237,0.10)" strokeWidth="7" />
+                          <circle
+                            cx="55" cy="55" r="46" fill="none" stroke="url(#scoreRingGrad)" strokeWidth="7"
+                            strokeLinecap="round" strokeDasharray="90 200"
+                          />
+                        </svg>
+                        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Wand2 size={24} style={{ color: '#7C3AED', animation: 'spin 3s linear infinite' }} />
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ position: 'relative', width: 110, height: 110 }}>
+                        <svg width="110" height="110" viewBox="0 0 110 110" style={{ transform: 'rotate(-90deg)' }}>
+                          <defs>
+                            <linearGradient id="scoreRingGrad" x1="0" y1="0" x2="1" y2="1">
+                              <stop offset="0%" stopColor="#7C3AED" />
+                              <stop offset="100%" stopColor="#A855F7" />
+                            </linearGradient>
+                          </defs>
+                          <circle cx="55" cy="55" r="46" fill="none" stroke="rgba(124,58,237,0.10)" strokeWidth="7" />
+                          <circle
+                            cx="55" cy="55" r="46" fill="none" stroke="url(#scoreRingGrad)" strokeWidth="7"
+                            strokeLinecap="round"
+                            strokeDasharray={String(2 * Math.PI * 46)}
+                            strokeDashoffset={String(2 * Math.PI * 46 - (animatedScore / 100) * 2 * Math.PI * 46)}
+                            style={{ transition: 'stroke-dashoffset 1.4s ease-out' }}
+                          />
+                        </svg>
+                        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ fontSize: 30, fontWeight: 900, color: '#1E293B' }}>{animatedScore}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Label */}
                   <span style={{ fontSize: 16, fontWeight: 800, color: '#7C3AED', letterSpacing: '-0.01em' }}>
-                    {scoreLabel(version.overallScore)}
+                    {version.isGenerating ? 'Evaluating…' : scoreLabel(version.overallScore)}
                   </span>
 
                   {/* Pts badge */}
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 12px', background: 'rgba(16,185,129,0.10)', color: '#059669', borderRadius: 9999, fontSize: 12, fontWeight: 700 }}>
-                    <TrendingUp size={12} />
-                    <span>{version.overallScore - (version.beforeOverallScore ?? session.originalScore ?? sessionVersions[0].overallScore) >= 0 ? '+' : ''}{version.overallScore - (version.beforeOverallScore ?? session.originalScore ?? sessionVersions[0].overallScore)} pts</span>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 12px', background: version.isGenerating ? 'rgba(124,58,237,0.10)' : 'rgba(16,185,129,0.10)', color: version.isGenerating ? '#7C3AED' : '#059669', borderRadius: 9999, fontSize: 12, fontWeight: 700 }}>
+                    {version.isGenerating ? (
+                      <>
+                        <Sparkles size={12} />
+                        <span>In Progress</span>
+                      </>
+                    ) : (
+                      <>
+                        <TrendingUp size={12} />
+                        <span>{version.overallScore - (version.beforeOverallScore ?? session.originalScore ?? sessionVersions[0].overallScore) >= 0 ? '+' : ''}{version.overallScore - (version.beforeOverallScore ?? session.originalScore ?? sessionVersions[0].overallScore)} pts</span>
+                      </>
+                    )}
                   </div>
 
                   {/* Before / After — use per-version old_analysis when available */}
@@ -1304,7 +1555,9 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#64748B', fontWeight: 600 }}>
                       <span>After</span>
-                      <span style={{ fontWeight: 900, color: scoreColor(version.overallScore), fontSize: 14 }}>{version.overallScore}</span>
+                      <span style={{ fontWeight: 900, color: version.isGenerating ? '#7C3AED' : scoreColor(version.overallScore), fontSize: 14 }}>
+                        {version.isGenerating ? '—' : version.overallScore}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -1313,88 +1566,136 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                 <div style={{
                   flex: 1,
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(3, 1fr)',
-                  gap: 16,
-                  padding: 20,
+                  gridTemplateColumns: isCompact ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
+                  gap: isMobile ? 10 : 16,
+                  padding: isMobile ? 12 : 20,
                   background: '#F8FAFC',
                 }}>
-                  {version.dimensions.map((dim) => {
-                    const Icon = dim.icon;
-                    const score = dim.score;
-                    const barColor = score >= 80 ? '#10B981' : score >= 55 ? '#7C3AED' : '#F59E0B';
-                    return (
+                  {version.isGenerating || !version.dimensions || version.dimensions.length === 0 ? (
+                    [
+                      { label: 'Clarity', desc: 'Evaluating instruction precision & ambiguity…' },
+                      { label: 'Context', desc: 'Assessing background information & domain scope…' },
+                      { label: 'Role', desc: 'Analyzing persona definition and tone…' },
+                      { label: 'Format', desc: 'Checking structure and output constraints…' },
+                      { label: 'Constraints', desc: 'Evaluating guardrails and negative rules…' },
+                      { label: 'Examples', desc: 'Reviewing demonstration and few-shot patterns…' },
+                    ].map((d, i) => (
                       <div
-                        key={dim.id}
+                        key={i}
                         style={{
                           display: 'flex',
                           flexDirection: 'column',
-                          gap: 12,
-                          padding: 16,
+                          gap: isMobile ? 10 : 12,
+                          padding: isMobile ? 13 : 16,
+                          minWidth: 0,
                           background: '#FFFFFF',
                           borderRadius: 12,
                           border: '1px solid #E2E8F0',
-                          borderLeft: `4px solid ${barColor}`,
+                          borderLeft: '4px solid #7C3AED',
                           boxShadow: '0 4px 12px rgba(15, 23, 42, 0.03)',
-                          transition: 'transform 180ms ease, box-shadow 180ms ease',
-                        }}
-                        onMouseEnter={e => {
-                          e.currentTarget.style.transform = 'translateY(-2px)';
-                          e.currentTarget.style.boxShadow = '0 6px 18px rgba(15, 23, 42, 0.05)';
-                        }}
-                        onMouseLeave={e => {
-                          e.currentTarget.style.transform = 'none';
-                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(15, 23, 42, 0.03)';
                         }}
                       >
-                        {/* Top row: icon + name + score */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <div style={{
                               width: 24, height: 24, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              background: dim.status === 'good' ? 'rgba(16,185,129,0.10)' : dim.status === 'warning' ? 'rgba(245,158,11,0.10)' : 'rgba(148,163,184,0.10)',
-                              color: dim.status === 'good' ? '#10B981' : dim.status === 'warning' ? '#F59E0B' : '#94A3B8',
+                              background: 'rgba(124,58,237,0.10)', color: '#7C3AED',
                             }}>
-                              <Icon size={13} strokeWidth={2.3} />
+                              <Sparkles size={13} style={{ animation: 'spin 2s linear infinite' }} />
                             </div>
-                            <span style={{ fontSize: 13, fontWeight: 700, color: '#1E293B' }}>{dim.label}</span>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: '#1E293B' }}>{d.label}</span>
                           </div>
-                          {/* Score: show beforeScore → score if beforeScore exists */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700 }}>
-                            {dim.beforeScore !== undefined && (
-                              <>
-                                <span style={{ color: '#94A3B8' }}>{dim.beforeScore}</span>
-                                <span style={{ color: '#CBD5E1', fontSize: 10 }}>→</span>
-                              </>
-                            )}
-                            <span style={{ fontSize: 15, fontWeight: 900, color: barColor }}>{score}</span>
-                          </div>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: '#7C3AED' }}>Analyzing…</span>
                         </div>
-
-                        {/* Progress bar */}
                         <div style={{ height: 4, background: '#F1F5F9', borderRadius: 99, overflow: 'hidden' }}>
                           <div style={{
-                            height: '100%', width: `${score}%`, background: barColor,
-                            borderRadius: 99, transition: 'width 0.9s ease-out',
+                            height: '100%', width: '60%', background: 'linear-gradient(90deg, #7C3AED, #A855F7)',
+                            borderRadius: 99, animation: 'pulse 1.5s infinite',
                           }} />
                         </div>
-
-                        {/* Description */}
-                        <p style={{ fontSize: 11.5, color: '#64748B', margin: 0, lineHeight: 1.45, fontWeight: 500 }}>{dim.desc}</p>
+                        <p style={{ fontSize: 11.5, color: '#64748B', margin: 0, lineHeight: 1.45, fontWeight: 500 }}>{d.desc}</p>
                       </div>
-                    );
-                  })}
+                    ))
+                  ) : (
+                    version.dimensions.map((dim) => {
+                      const Icon = dim.icon;
+                      const score = dim.score;
+                      const barColor = score >= 80 ? '#10B981' : score >= 55 ? '#7C3AED' : '#F59E0B';
+                      return (
+                        <div
+                          key={dim.id}
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: isMobile ? 10 : 12,
+                            padding: isMobile ? 13 : 16,
+                            minWidth: 0,
+                            background: '#FFFFFF',
+                            borderRadius: 12,
+                            border: '1px solid #E2E8F0',
+                            borderLeft: `4px solid ${barColor}`,
+                            boxShadow: '0 4px 12px rgba(15, 23, 42, 0.03)',
+                            transition: 'transform 180ms ease, box-shadow 180ms ease',
+                          }}
+                          onMouseEnter={e => {
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow = '0 6px 18px rgba(15, 23, 42, 0.05)';
+                          }}
+                          onMouseLeave={e => {
+                            e.currentTarget.style.transform = 'none';
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(15, 23, 42, 0.03)';
+                          }}
+                        >
+                          {/* Top row: icon + name + score */}
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 8, minWidth: 0 }}>
+                              <div style={{
+                                width: isMobile ? 22 : 24, height: isMobile ? 22 : 24, flexShrink: 0, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                background: dim.status === 'good' ? 'rgba(16,185,129,0.10)' : dim.status === 'warning' ? 'rgba(245,158,11,0.10)' : 'rgba(148,163,184,0.10)',
+                                color: dim.status === 'good' ? '#10B981' : dim.status === 'warning' ? '#F59E0B' : '#94A3B8',
+                              }}>
+                                <Icon size={13} strokeWidth={2.3} />
+                              </div>
+                              <span style={{ fontSize: isMobile ? 12 : 13, fontWeight: 700, color: '#1E293B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{dim.label}</span>
+                            </div>
+                            {/* Score: show beforeScore → score if beforeScore exists */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700, flexShrink: 0 }}>
+                              {dim.beforeScore !== undefined && (
+                                <>
+                                  <span style={{ color: '#94A3B8' }}>{dim.beforeScore}</span>
+                                  <span style={{ color: '#CBD5E1', fontSize: 10 }}>→</span>
+                                </>
+                              )}
+                              <span style={{ fontSize: isMobile ? 14 : 15, fontWeight: 900, color: barColor }}>{score}</span>
+                            </div>
+                          </div>
+
+                          {/* Progress bar */}
+                          <div style={{ height: 4, background: '#F1F5F9', borderRadius: 99, overflow: 'hidden' }}>
+                            <div style={{
+                              height: '100%', width: `${score}%`, background: barColor,
+                              borderRadius: 99, transition: 'width 0.9s ease-out',
+                            }} />
+                          </div>
+
+                          {/* Description */}
+                          <p style={{ fontSize: 11.5, color: '#64748B', margin: 0, lineHeight: 1.45, fontWeight: 500 }}>{dim.desc}</p>
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               </div>
 
               {/* Recommended AI Tools */}
               {session.toolRecommendations && session.toolRecommendations.tools && session.toolRecommendations.tools.length > 0 && (
                 <div style={{
-                  background: '#FFFFFF', borderRadius: 20, padding: '24px 28px',
+                  background: '#FFFFFF', borderRadius: 20, padding: isMobile ? '18px 16px' : '24px 28px',
                   border: '1px solid rgba(124,58,237,0.12)', boxShadow: '0 4px 20px rgba(109,40,217,0.06)',
                   display: 'flex', flexDirection: 'column', gap: 16, marginTop: 8
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <Sparkles size={18} style={{ color: '#7C3AED' }} />
                       <h3 style={{ fontSize: 16, fontWeight: 800, color: '#1E293B', margin: 0 }}>
                         Recommended AI Tools for Best Execution

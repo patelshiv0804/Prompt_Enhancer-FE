@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { CheckCircle2, AlertTriangle, Minus, TrendingUp, Sparkles } from 'lucide-react';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 function useCountUp(target: number, active: boolean, duration = 1200): number {
   const [value, setValue] = useState(0);
@@ -42,6 +43,7 @@ interface ScoreSectionProps {
 
 export default function ScoreSection({ isAnalyzed, isOptimized, originalAnalysis, enhancedAnalysis, toolRecommendations }: ScoreSectionProps) {
   const [ready, setReady] = useState(false);
+  const isMobile = useMediaQuery('(max-width: 768px)');
 
   useEffect(() => {
     if (isAnalyzed || isOptimized) {
@@ -171,19 +173,20 @@ export default function ScoreSection({ isAnalyzed, isOptimized, originalAnalysis
       <div
         style={{
           display: 'flex', flexDirection: 'column', background: '#FFFFFF', border: '1px solid rgba(124,58,237,0.10)',
-          borderRadius: 28, boxShadow: '0 4px 24px rgba(109,40,217,0.07), 0 1px 4px rgba(0,0,0,0.04)',
-          padding: 32, position: 'relative', overflow: 'hidden',
+          borderRadius: isMobile ? 20 : 28, boxShadow: '0 4px 24px rgba(109,40,217,0.07), 0 1px 4px rgba(0,0,0,0.04)',
+          padding: isMobile ? 20 : 32, position: 'relative', overflow: 'hidden',
           transition: 'transform 300ms ease-in-out, box-shadow 300ms ease-in-out',
         }}
         className="hover:translate-y-[-3px] hover:shadow-[0_12px_48px_rgba(109,40,217,0.10),0_4px_12px_rgba(0,0,0,0.05)]"
       >
         {/* Top score ring and 6 dimension cards — rendered only during Optimize mode */}
         {isOptimized && (
-          <div style={{ display: 'flex', gap: 40, flexWrap: 'wrap', width: '100%', marginBottom: 8 }}>
+          <div style={{ display: 'flex', gap: isMobile ? 24 : 40, flexWrap: 'wrap', width: '100%', marginBottom: 8 }}>
             {/* Left: Ring */}
             <div style={{
-              flex: '0 0 200px', display: 'flex', flexDirection: 'column', alignItems: 'center',
-              borderRight: '1px solid rgba(0,0,0,0.07)', paddingRight: 40,
+              flex: isMobile ? '1 1 100%' : '0 0 200px', display: 'flex', flexDirection: 'column', alignItems: 'center',
+              borderRight: isMobile ? 'none' : '1px solid rgba(0,0,0,0.07)', paddingRight: isMobile ? 0 : 40,
+              borderBottom: isMobile ? '1px solid rgba(0,0,0,0.07)' : 'none', paddingBottom: isMobile ? 24 : 0,
             }}>
               <div style={{ position: 'relative', width: 120, height: 120, marginBottom: 16 }}>
                 <svg style={{ transform: 'rotate(-90deg)' }} width="120" height="120">
@@ -228,7 +231,7 @@ export default function ScoreSection({ isAnalyzed, isOptimized, originalAnalysis
             </div>
 
             {/* Right: Dimensions grid */}
-            <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, alignContent: 'start', minWidth: 280 }}>
+            <div style={{ flex: 1, display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: 16, alignContent: 'start', minWidth: isMobile ? 0 : 280 }}>
               {dimensions.map(dim => {
                 const Icon = dim.icon;
                 const displayed = dim.scoreAfter;

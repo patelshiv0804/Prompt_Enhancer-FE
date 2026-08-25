@@ -221,11 +221,11 @@ function CardChaining() { ... }
  * ═══════════════════════════════════════════════════════════════════ */
 /* Model data — palette strictly purple/lavender/pink per brand rules */
 const MODELS = [
-  { ab: "GP", name: "ChatGPT", c: P.purple, bg: "rgba(139,92,246,0.10)", pos: { x: 52, y: 68 }, size: 58 },
-  { ab: "Cl", name: "Claude", c: P.lav, bg: "rgba(167,139,250,0.10)", pos: { x: 168, y: 32 }, size: 52 },
-  { ab: "Ge", name: "Gemini", c: P.violet, bg: "rgba(124,58,237,0.10)", pos: { x: 295, y: 48 }, size: 60 },
-  { ab: "Mj", name: "Midjourney", c: P.pink, bg: "rgba(236,72,153,0.10)", pos: { x: 390, y: 22 }, size: 50 },
-  { ab: "Ve", name: "VEO", c: "#C084FC", bg: "rgba(192,132,252,0.10)", pos: { x: 80, y: 178 }, size: 46 },
+  { name: "ChatGPT", icon: "/chatgpt-icon.svg", c: P.purple, bg: "rgba(139,92,246,0.10)", pos: { x: 52, y: 68 }, size: 60 },
+  { name: "Claude", icon: "/claude-ai-icon.svg", c: P.lav, bg: "rgba(167,139,250,0.10)", pos: { x: 168, y: 32 }, size: 54 },
+  { name: "Gemini", icon: "/google-gemini-icon.svg", c: P.violet, bg: "rgba(124,58,237,0.10)", pos: { x: 295, y: 48 }, size: 58 },
+  { name: "Midjourney", icon: "/midjourney-color-icon.svg", c: P.pink, bg: "rgba(236,72,153,0.10)", pos: { x: 388, y: 22 }, size: 68 },
+  { name: "VEO", icon: "/veo-icon.svg", c: "#C084FC", bg: "rgba(192,132,252,0.10)", pos: { x: 80, y: 178 }, size: 46 },
 ];
 /* Central prompt node in SVG coordinates */
 const MODEL_CENTER = { x: 230, y: 230 };
@@ -256,7 +256,7 @@ function CardMultiModel() {
       </p>
 
       {/* ── Hero Visual: floating model cards connected to central node ── */}
-      <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
+      <div className="bento-svg-model" style={{ flex: 1, minHeight: 0, position: "relative" }}>
         <svg
           viewBox="0 0 460 280"
           width="100%" height="100%"
@@ -302,7 +302,7 @@ function CardMultiModel() {
 
           {/* Floating model cards */}
           {MODELS.map((m, i) => {
-            const cardW = m.size + 36;
+            const cardW = m.size + 38;
             const cardH = 36;
             return (
               <motion.g
@@ -332,18 +332,21 @@ function CardMultiModel() {
                 {/* avatar circle */}
                 <circle
                   cx={m.pos.x - cardW / 2 + 18} cy={m.pos.y}
-                  r={9} fill={m.bg}
+                  r={10} fill="rgba(255,255,255,0.95)"
+                  stroke={`${m.c}20`} strokeWidth={0.8}
                 />
-                {/* abbrev */}
-                <text
-                  x={m.pos.x - cardW / 2 + 18} y={m.pos.y + 1}
-                  fontSize={8} fontWeight="700" fill={m.c}
-                  textAnchor="middle" dominantBaseline="middle"
-                  fontFamily="system-ui,-apple-system,sans-serif"
-                >{m.ab}</text>
+                {/* AI logo image */}
+                <image
+                  href={m.icon}
+                  x={m.pos.x - cardW / 2 + 18 - 6.5}
+                  y={m.pos.y - 6.5}
+                  width={13}
+                  height={13}
+                  preserveAspectRatio="xMidYMid meet"
+                />
                 {/* name */}
                 <text
-                  x={m.pos.x - cardW / 2 + 32} y={m.pos.y + 1}
+                  x={m.pos.x - cardW / 2 + 33} y={m.pos.y + 1}
                   fontSize={9.5} fontWeight="580" fill="#374151"
                   dominantBaseline="middle"
                   fontFamily="system-ui,-apple-system,sans-serif"
@@ -616,7 +619,7 @@ function CardAnalytics() {
       </div>
 
       {/* 4-column metric cards grid */}
-      <div style={{
+      <div className="bento-metrics" style={{
         display: "grid",
         gridTemplateColumns: "repeat(4, 1fr)",
         gap: 12,
@@ -971,7 +974,7 @@ function CardExport() {
       <p style={{ fontSize: 11.5, color: P.g500, margin: "0 0 6px", lineHeight: 1.5 }}>Your format, always.</p>
 
       {/* ── Hero SVG: orbital node network ── */}
-      <div style={{ flex: 1, minHeight: 0 }}>
+      <div className="bento-svg-export" style={{ flex: 1, minHeight: 0 }}>
         <svg viewBox="0 0 220 190" width="100%" height="100%" fill="none" style={{ overflow: "visible", display: "block" }}>
           <defs>
             <radialGradient id="aureGlow" cx="50%" cy="50%" r="50%">
@@ -1513,7 +1516,7 @@ function CardTemplates() {
       </div>
 
       {/* Template cards grid */}
-      <div style={{
+      <div className="bento-tmpl-grid" style={{
         display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, flex: 1,
       }}>
         {TEMPLATES.map((t, i) => (
@@ -1606,7 +1609,61 @@ function CardTemplates() {
  * ═══════════════════════════════════════════════════════════════════ */
 export default function BentoFeatures() {
   return (
-    <section id="features" style={{ background: P.bg, padding: "120px 0 100px", position: "relative", overflow: "hidden" }}>
+    <section id="features" className="bento-section" style={{ background: P.bg, padding: "120px 0 100px", position: "relative", overflow: "hidden" }}>
+
+      <style>{`
+        /* ─── Responsive ───────────────────────────────────────────────
+           Every rule lives inside a media query, so the desktop layout is
+           untouched. !important is needed because the markup sizes these
+           elements with inline style={{}}, which outranks a class. ────── */
+
+        /* The 12-column grid cannot work on a phone: 11 x 16px gaps consume
+           176px, so at a 327px container each 1fr track gets ~12.6px. Tracks
+           bottom out at min-content, the grid overflows, and
+           body{overflow-x:hidden} clips it. Separately, the fixed
+           grid-template-rows (460/480/260/510px) combined with
+           CARD{overflow:hidden} clips content *inside* the cards once it
+           reflows taller. Both are fixed by flowing one card per row at
+           auto height. DOM order already matches the visual reading order
+           of the named areas, so the sequence is unchanged.
+
+           900px is the threshold: above it the container is wide enough that
+           every card still fits its fixed row height; below it they clip. */
+        @media (max-width: 899px) {
+          .bento-section { padding: 72px 0 64px !important; }
+          .bento-inner   { padding: 0 16px !important; }
+          .bento-head    { margin-bottom: 48px !important; }
+
+          .bento-grid {
+            grid-template-areas: none !important;
+            grid-template-columns: minmax(0, 1fr) !important;
+            grid-template-rows: auto !important;
+            gap: 14px !important;
+          }
+          /* Clears the inline gridArea ("role", "model", ...) on each child
+             so they flow in DOM order down the single column. */
+          .bento-grid > * { grid-area: auto !important; }
+
+          /* These two wrappers hold an SVG sized height="100%". Their inline
+             flex:1 means flex-basis:0, so in an auto-height card they would
+             collapse to zero and the visual would disappear. flex:none hands
+             sizing back to aspect-ratio, which derives a definite height from
+             the (definite) width. Ratios match each SVG's own viewBox. */
+          .bento-svg-model,
+          .bento-svg-export { flex: none !important; width: 100%; }
+          .bento-svg-model  { aspect-ratio: 460 / 280; }
+          .bento-svg-export { aspect-ratio: 220 / 190; }
+        }
+
+        @media (max-width: 639px) {
+          /* 4 metric columns leave 32.75px of content width, but MiniSpark is
+             a fixed width="60" SVG and cannot fit. */
+          .bento-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+          /* Each template card's header needs ~139px min-content (icon +
+             category pill + usage count) against ~106px available. */
+          .bento-tmpl-grid { grid-template-columns: minmax(0, 1fr) !important; }
+        }
+      `}</style>
 
       {/* Section ambient glows */}
       <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
@@ -1615,7 +1672,7 @@ export default function BentoFeatures() {
         <div style={{ position: "absolute", top: "44%", right: "20%", width: 400, height: 400, borderRadius: "50%", background: "radial-gradient(circle, rgba(139,92,246,0.03) 0%, transparent 65%)" }} />
       </div>
 
-      <div style={{ maxWidth: 1000, margin: "0 auto", padding: "0 24px", position: "relative", zIndex: 1 }}>
+      <div className="bento-inner" style={{ maxWidth: 1000, margin: "0 auto", padding: "0 24px", position: "relative", zIndex: 1 }}>
 
         {/* ── Section Header ── */}
         <motion.div
@@ -1623,6 +1680,7 @@ export default function BentoFeatures() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.4 }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
+          className="bento-head"
           style={{ textAlign: "center", marginBottom: 80 }}
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 22 }}>
@@ -1659,7 +1717,7 @@ export default function BentoFeatures() {
             Row 4: History (6 cols) | Templates (6 cols)
             Row 5: CTA Bar (12 cols)
             ══════════════════════════════════════════════════════════ */}
-        <div style={{
+        <div className="bento-grid" style={{
           display: "grid",
           gridTemplateAreas: `
             "role  role  role  role  role  role  model model model model model model"

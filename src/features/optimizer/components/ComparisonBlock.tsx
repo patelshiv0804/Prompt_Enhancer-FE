@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Copy, RefreshCw, Bookmark, ArrowRightToLine,
   Sparkles, Code2, Search, Megaphone, GraduationCap, Briefcase,
@@ -8,12 +8,13 @@ import {
   CheckCircle2, AlertTriangle, Minus, FileText, Layers, Monitor,
   Smartphone, Server, Database, ShieldCheck, Globe, Cpu, Terminal,
   Lightbulb, DollarSign, Scale, ShoppingCart, Users, Mail, Radio,
-  Activity, PieChart, TrendingUp, BookOpen, Building2, Layout, Award, Zap, GitBranch, ChevronDown, Feather,
+  Activity, PieChart, TrendingUp, BookOpen, Building2, Layout, LayoutTemplate, Award, Zap, GitBranch, ChevronDown, Feather, X,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import FormattedPromptViewer from './FormattedPromptViewer';
 
 import { ROLES, ROLE_MODES, getModeIcon } from '@/constants/roles';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 function scoreColor(s: number) {
   if (s >= 80) return 'var(--color-success)';
@@ -183,18 +184,24 @@ interface ComparisonBlockProps {
   onReenhance?: () => Promise<void>;
   analysisResult?: any;
   optimizationResult?: any;
+  // Live raw token buffer while an SSE enhancement is streaming. When set and
+  // isOptimizing is true, the optimized panel renders these tokens (with a
+  // typing caret) in place of the loading skeleton.
+  streamingText?: string;
   // History fields
   versions?: any[];
   activeVersionNumber?: number | null;
   onRestoreVersion?: (versionNumber: number) => void;
   initialOriginalPromptText?: string;
+  templateName?: string | null;
+  onClearTemplate?: () => void;
 }
 
 /* ── Main component ─────────────────────────────────────────────────────── */
 export default function ComparisonBlock({
   isAnalyzing, isAnalyzed, isOptimizing, isOptimized, onAnalyze, onOptimize, onReenhance,
-  analysisResult, optimizationResult, versions = [], activeVersionNumber = null, onRestoreVersion,
-  initialOriginalPromptText = '',
+  analysisResult, optimizationResult, streamingText = '', versions = [], activeVersionNumber = null, onRestoreVersion,
+  initialOriginalPromptText = '', templateName = null, onClearTemplate,
 }: ComparisonBlockProps) {
   const [originalText, setOriginalText] = useState(
     'write a cinematic short about an astronaut who discovers a garden on mars. make it emotional.'
@@ -206,6 +213,15 @@ export default function ComparisonBlock({
   const [isReenhancing, setIsReenhancing] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [isVersionMenuOpen, setIsVersionMenuOpen] = useState(false);
+  // Scroll container for the live streaming view — kept pinned to the bottom
+  // as tokens arrive so the user follows the newest text.
+  const streamScrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isOptimizing && streamingText && streamScrollRef.current) {
+      streamScrollRef.current.scrollTop = streamScrollRef.current.scrollHeight;
+    }
+  }, [streamingText, isOptimizing]);
 
   useEffect(() => {
     if (initialOriginalPromptText) {
@@ -245,13 +261,32 @@ export default function ComparisonBlock({
 
   const currentAnalysis = optimizationResult?.original_analysis || analysisResult;
 
+  const stackCards = useMediaQuery('(max-width: 1024px)');
+  const isMobile = useMediaQuery('(max-width: 768px)');
+  // Below ~560px a single row of 4 depth pills no longer fits, so the segmented
+  // control becomes a tidy 2×2 grid instead of wrapping one pill onto its own line.
+  const narrowControls = useMediaQuery('(max-width: 560px)');
+
+  // The two comparison cards are locked to 780px tall side-by-side on desktop.
+  // When they stack (≤1024px) they must go fluid-height; on phones (≤768px)
+  // they also shrink their padding/radius. Spread over `cardStyle` per use-site.
+  const responsiveCard: React.CSSProperties = {
+    flex: stackCards ? 'none' : 1,
+    padding: isMobile ? 20 : 36,
+    borderRadius: isMobile ? 20 : 28,
+    height: stackCards ? 'auto' : 780,
+    maxHeight: stackCards ? 'none' : 780,
+    minHeight: stackCards ? 460 : undefined,
+  };
+
   return (
-    <div style={{ display: 'flex', width: '100%', marginBottom: 32 }}>
+    <div style={{ display: 'flex', flexDirection: stackCards ? 'column' : 'row', gap: stackCards ? 20 : 0, width: '100%', marginBottom: 32 }}>
 
       {/* ── Left Card: Original Prompt ── */}
       <motion.div
         style={{
           ...cardStyle,
+          ...responsiveCard,
           overflowY: 'auto',
           scrollbarWidth: 'thin',
           scrollbarColor: 'rgba(124,58,237,0.2) transparent',
@@ -260,12 +295,49 @@ export default function ComparisonBlock({
         transition={{ type: 'spring', bounce: 0, duration: 0.6 }}
         className="hover:translate-y-[-3px] hover:shadow-[0_12px_48px_rgba(109,40,217,0.10),0_4px_12px_rgba(0,0,0,0.05)]"
       >
-        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', letterSpacing: '1.2px', textTransform: 'uppercase', marginBottom: 8 }}>
-          Your Prompt
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap', marginBottom: 24 }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', letterSpacing: '1.2px', textTransform: 'uppercase', marginBottom: 8 }}>
+              Your Prompt
+            </div>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0, letterSpacing: -0.3 }}>
+              Paste or write below
+            </h2>
+          </div>
+
+          {/* Applied-template chip — shows which library template will drive the
+              enhancement. Dismissing it reverts to the normal (auto-retrieval) flow. */}
+          {templateName && (
+            <div
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '7px 8px', maxWidth: 240, borderRadius: 14,
+                background: 'linear-gradient(160deg, rgba(167,139,250,0.20) 0%, rgba(196,181,253,0.10) 100%)',
+                border: '1px solid rgba(124,58,237,0.28)',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6), 0 3px 12px rgba(124,58,237,0.12)',
+                flexShrink: 0,
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 30, height: 30, borderRadius: 9, background: 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)', color: '#fff', flexShrink: 0, boxShadow: '0 2px 8px rgba(124,58,237,0.35)' }}>
+                <LayoutTemplate size={15} strokeWidth={2.2} />
+              </span>
+              <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: 'var(--color-primary)', lineHeight: 1 }}>Template in use</span>
+                <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.25 }} title={templateName}>{templateName}</span>
+              </div>
+              {onClearTemplate && (
+                <button
+                  onClick={onClearTemplate}
+                  aria-label="Stop using template"
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, borderRadius: 7, border: 'none', background: 'transparent', color: 'var(--color-text-secondary)', cursor: 'pointer', flexShrink: 0, transition: 'all 180ms ease' }}
+                  className="hover:!bg-[rgba(124,58,237,0.14)] hover:!text-[var(--color-primary)]"
+                >
+                  <X size={13} strokeWidth={2.4} />
+                </button>
+              )}
+            </div>
+          )}
         </div>
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)', margin: '0 0 24px', letterSpacing: -0.3 }}>
-          Paste, drop, or write below
-        </h2>
 
         {/* Textarea */}
         <div
@@ -288,7 +360,7 @@ export default function ComparisonBlock({
             value={originalText}
             onChange={e => setOriginalText(e.target.value)}
             disabled={isOptimizing || isAnalyzing}
-            placeholder="Paste, drop, or write below..."
+            placeholder="Paste or write below..."
             style={{
               width: '100%', flex: 1, fontSize: 14, lineHeight: 1.6, color: 'var(--color-text-primary)',
               background: 'transparent', border: 'none', resize: 'none', outline: 'none', letterSpacing: '0.01em',
@@ -318,7 +390,7 @@ export default function ComparisonBlock({
         }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '1.2px' }}>Role</div>
           <div style={{ paddingBottom: 4 }}>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, padding: '4px 6px 8px 4px' }}>
               {ROLES.map(role => {
                 const Icon = role.icon;
                 const active = activeRole === role.id;
@@ -363,15 +435,20 @@ export default function ComparisonBlock({
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.3 }}
-                style={{ display: 'flex', flexDirection: 'column', gap: 10, overflow: 'hidden', marginTop: 4 }}
+                style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 2 }}
               >
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#7C3AED', textTransform: 'uppercase', letterSpacing: '1.2px', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span>Select Mode</span>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '1.2px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span>Mode</span>
                   <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--color-text-secondary)', textTransform: 'none' }}>
                     for {ROLES.find(r => r.id === activeRole)?.label}
                   </span>
                 </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, maxHeight: 180, overflowY: 'auto', paddingRight: 4 }}>
+                <div style={{
+                  display: 'flex', flexWrap: 'wrap', gap: 8,
+                  maxHeight: 190, overflowY: 'auto',
+                  padding: '6px 8px 12px 6px',
+                  scrollbarWidth: 'thin',
+                }}>
                   {ROLE_MODES[activeRole].map(m => {
                     const active = activeMode === m;
                     const ModeIcon = getModeIcon(m);
@@ -384,16 +461,18 @@ export default function ComparisonBlock({
                           setActiveMode(m);
                         }}
                         style={{
-                          padding: '6px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: active ? 600 : 500,
-                          cursor: (isOptimizing || isAnalyzing) ? 'not-allowed' : 'pointer', transition: 'all 180ms ease', display: 'flex', alignItems: 'center', gap: 6,
-                          color: active ? '#FFFFFF' : 'var(--color-text-primary)',
+                          padding: '7px 15px', borderRadius: 9999, fontSize: 12.5, fontWeight: active ? 600 : 500,
+                          cursor: (isOptimizing || isAnalyzing) ? 'not-allowed' : 'pointer', transition: 'all 250ms ease', display: 'flex', alignItems: 'center', gap: 6,
+                          color: active ? '#6D28D9' : '#6B6B8A',
                           background: active
-                            ? 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)'
-                            : 'rgba(124,58,237,0.05)',
-                          border: active ? 'none' : '1px solid rgba(124,58,237,0.10)',
-                          boxShadow: active ? '0 3px 10px rgba(124,58,237,0.25)' : 'none',
+                            ? 'linear-gradient(160deg, rgba(167,139,250,0.22) 0%, rgba(196,181,253,0.12) 100%)'
+                            : 'linear-gradient(160deg, rgba(109,40,217,0.07) 0%, rgba(124,58,237,0.03) 100%)',
+                          border: `1px solid ${active ? 'rgba(124,58,237,0.30)' : 'rgba(124,58,237,0.12)'}`,
+                          boxShadow: active
+                            ? 'inset 0 1px 0 rgba(255,255,255,0.70), 0 4px 14px rgba(124,58,237,0.18), 0 1px 4px rgba(0,0,0,0.08), 0 0 0 1px rgba(124,58,237,0.18)'
+                            : 'inset 0 2px 4px rgba(80,20,180,0.10), inset 0 1px 2px rgba(0,0,0,0.06), 0 1px 0 rgba(255,255,255,0.80)',
+                          transform: active ? 'translateY(-1px)' : 'none',
                         }}
-                        className={!active ? 'hover:!bg-[rgba(124,58,237,0.10)]' : ''}
                       >
                         <ModeIcon size={13} style={{ opacity: active ? 1 : 0.75 }} />
                         {m}
@@ -407,13 +486,41 @@ export default function ComparisonBlock({
 
           {/* Enhancement Level Segmented Control */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '1.2px' }}>Enhancement Depth</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '1.2px' }}>
+                Enhancement Depth
+              </div>
+              {enhancementLevel === 'auto' && (
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: '#7C3AED',
+                    background: 'rgba(124, 58, 237, 0.08)',
+                    border: '1px solid rgba(124, 58, 237, 0.16)',
+                    padding: '2px 9px',
+                    borderRadius: 9999,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    lineHeight: 1.3,
+                  }}
+                >
+                  <Sparkles size={11} />
+                  AI will detect the right depth automatically
+                </span>
+              )}
+            </div>
             <div style={{
-              display: 'inline-flex', position: 'relative',
+              display: narrowControls ? 'grid' : 'inline-flex',
+              gridTemplateColumns: narrowControls ? '1fr 1fr' : undefined,
+              position: 'relative',
               background: 'linear-gradient(160deg, rgba(109,40,217,0.09) 0%, rgba(124,58,237,0.04) 100%)',
-              border: '1px solid rgba(124,58,237,0.13)', borderRadius: 9999, padding: 4,
+              border: '1px solid rgba(124,58,237,0.13)', borderRadius: narrowControls ? 16 : 9999, padding: 4,
               boxShadow: 'inset 0 2px 5px rgba(80,20,180,0.13), inset 0 1px 2px rgba(0,0,0,0.07), 0 1px 0 rgba(255,255,255,0.80)',
-              alignSelf: 'flex-start', gap: 2,
+              alignSelf: narrowControls ? 'stretch' : 'flex-start',
+              width: narrowControls ? '100%' : undefined,
+              gap: narrowControls ? 4 : 2,
             }}>
               {[
                 { id: 'auto' as const, label: 'Auto', icon: Zap },
@@ -471,16 +578,11 @@ export default function ComparisonBlock({
                 );
               })}
             </div>
-            {enhancementLevel === 'auto' && (
-              <p style={{ fontSize: 11, color: 'var(--color-text-secondary)', margin: 0, lineHeight: 1.4 }}>
-                AI will detect the right depth automatically.
-              </p>
-            )}
           </div>
         </div>
 
           {/* Action buttons */}
-          <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 16 }}>
             <button
               id="analyze-btn"
               onClick={() => {
@@ -489,7 +591,8 @@ export default function ComparisonBlock({
               }}
               disabled={isAnalyzing || isOptimizing || originalText.length > 12000}
               style={{
-                display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 32px',
+                display: 'inline-flex', justifyContent: 'center', alignItems: 'center', gap: 7, padding: '8px 32px',
+                flex: narrowControls ? 1 : undefined,
                 borderRadius: 11, fontSize: 14, fontWeight: 600, border: 'none',
                 cursor: (isAnalyzing || isOptimizing || originalText.length > 12000) ? 'not-allowed' : 'pointer',
                 background: originalText.length > 12000 ? 'rgba(107,107,138,0.20)' : 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)',
@@ -511,7 +614,8 @@ export default function ComparisonBlock({
               }}
               disabled={isOptimizing || isAnalyzing || originalText.length > 12000}
               style={{
-                display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 32px',
+                display: 'inline-flex', justifyContent: 'center', alignItems: 'center', gap: 7, padding: '8px 32px',
+                flex: narrowControls ? 1 : undefined,
                 borderRadius: 11, fontSize: 14, fontWeight: 600,
                 cursor: (isOptimizing || isAnalyzing || originalText.length > 12000) ? 'not-allowed' : 'pointer',
                 background: (!isOptimizing && !isAnalyzing && originalText.length <= 12000)
@@ -537,15 +641,22 @@ export default function ComparisonBlock({
           <motion.div
             key={showScorePanel ? 'score' : 'optimized'}
             layout
-            initial={{ opacity: 0, flex: 0, paddingLeft: 0, minWidth: 0, width: 0 }}
-            animate={{ opacity: 1, flex: 0.818, paddingLeft: 24, minWidth: 0, width: 'auto' }}
-            exit={{ opacity: 0, flex: 0, paddingLeft: 0, minWidth: 0, width: 0 }}
+            initial={stackCards ? { opacity: 0, y: 12 } : { opacity: 0, flex: 0, paddingLeft: 0, minWidth: 0, width: 0 }}
+            animate={stackCards ? { opacity: 1, y: 0 } : { opacity: 1, flex: 0.818, paddingLeft: 24, minWidth: 0, width: 'auto' }}
+            exit={stackCards ? { opacity: 0, y: 8 } : { opacity: 0, flex: 0, paddingLeft: 0, minWidth: 0, width: 0 }}
             transition={{ type: 'spring', bounce: 0, duration: 0.6 }}
-            style={{ overflow: 'hidden', display: 'flex', height: 780, maxHeight: 780 }}
+            style={{
+              overflow: 'hidden',
+              display: 'flex',
+              width: stackCards ? '100%' : undefined,
+              flex: stackCards ? 'none' : undefined,
+              height: stackCards ? 'auto' : 780,
+              maxHeight: stackCards ? 'none' : 780,
+            }}
           >
             {/* Score panel */}
             {showScorePanel && (
-              <div style={{ ...cardStyle, width: '100%', flex: 'none', height: '100%', overflowY: 'auto' }}>
+              <div style={{ ...cardStyle, ...responsiveCard, width: '100%', flex: 'none', height: stackCards ? 'auto' : '100%', overflowY: 'auto' }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', letterSpacing: '1.2px', textTransform: 'uppercase', marginBottom: 8 }}>
                   Analysis
                 </div>
@@ -576,7 +687,7 @@ export default function ComparisonBlock({
 
             {/* Optimized panel */}
             {showOptimizedPanel && (
-              <div style={{ ...cardStyle, width: '100%', flex: 'none', height: '100%', padding: '36px 8px 36px 36px', overflow: 'hidden' }}>
+              <div style={{ ...cardStyle, ...responsiveCard, width: '100%', flex: 'none', height: stackCards ? 'auto' : '100%', padding: isMobile ? '20px 6px 20px 20px' : '36px 8px 36px 36px', overflow: 'hidden' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 24, height: 36, paddingRight: 28 }}>
                   <h2 style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', opacity: isOptimizing ? 0.6 : 1 }}>
                     Optimized Prompt
@@ -755,7 +866,43 @@ export default function ComparisonBlock({
                 </div>
 
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative', minHeight: 0 }}>
-                  {isOptimizing ? (
+                  {isOptimizing && streamingText ? (
+                    /* Live token stream — raw deltas cleaned on the fly, with a
+                       typing caret. Swapped for the fully formatted viewer once
+                       the `done` frame delivers the authoritative text. */
+                    <div
+                      ref={streamScrollRef}
+                      className="custom-scrollbar"
+                      style={{
+                        flex: 1,
+                        minHeight: 0,
+                        fontSize: 14,
+                        lineHeight: 1.6,
+                        overflowY: 'auto',
+                        paddingRight: 28,
+                        color: 'var(--color-text-primary)',
+                        letterSpacing: '0.01em',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word',
+                        animation: 'fadeInRise 300ms ease-out forwards',
+                      }}
+                    >
+                      {formatPromptText(streamingText)}
+                      <span
+                        aria-hidden="true"
+                        style={{
+                          display: 'inline-block',
+                          width: 7,
+                          height: 15,
+                          marginLeft: 2,
+                          borderRadius: 1,
+                          background: 'var(--color-primary)',
+                          verticalAlign: 'text-bottom',
+                          animation: 'streamCaretBlink 1s step-end infinite',
+                        }}
+                      />
+                    </div>
+                  ) : isOptimizing ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 24, marginTop: 8 }}>
                       {[['30%', '60%'], ['40%', '50%'], ['35%', '55%']].map(([w1, w2], gi) => (
                         <div key={gi} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

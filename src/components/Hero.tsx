@@ -9,15 +9,17 @@ export default function Hero() {
   return (
     <section
       id="hero"
-      className="relative overflow-hidden bg-white"
-      style={{ height: "100vh", minHeight: 640 }}
+      className="hero-shell relative overflow-hidden bg-white"
     >
       {/* ── Full-screen 3D canvas (absolute, fills whole hero) ── */}
       <PromptIQUniverse />
 
-      {/* ── Centered text overlay ── */}
+      {/* ── Centered text overlay ──
+           Absolute on md+ (overlays the canvas, unchanged). On phones it sits
+           in normal flow so the section grows with the copy and the CTAs can
+           never be pushed under the browser chrome. */}
       <div
-        className="absolute inset-0 z-10 flex flex-col items-center justify-start pointer-events-none"
+        className="relative z-10 flex flex-col items-center justify-start pointer-events-none pb-14 md:absolute md:inset-0 md:pb-0"
         style={{ paddingTop: "clamp(64px, 8vh, 90px)" }}
       >
         {/* Badge */}
@@ -53,30 +55,25 @@ export default function Hero() {
           From rough ideas
           <br />
           to{" "}
-          <span style={{
-            background: "linear-gradient(135deg, #6366F1 0%, #8B5CF6 40%, #EC4899 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text",
-          }}>
+          <span className="animated-remarkable-gradient">
             remarkable
           </span>{" "}results.
         </motion.h1>
 
-        {/* CTAs */}
+        {/* CTAs — stacked full-width on phones, inline row from sm up */}
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.5 }}
-          className="flex flex-wrap items-center justify-center gap-4 pointer-events-auto"
+          className="flex w-full max-w-[360px] flex-col items-center gap-3 px-6 pointer-events-auto sm:w-auto sm:max-w-none sm:flex-row sm:flex-wrap sm:justify-center sm:gap-4 sm:px-0"
           style={{ marginTop: 34 }}
         >
           <a
             href="#get-started"
             id="hero-cta-primary"
-            className="group"
+            className="group w-full sm:w-auto"
             style={{
-              display: "inline-flex", alignItems: "center", gap: 10,
+              display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 10,
               background: "#0D0D1A", color: "#fff",
               borderRadius: 999, padding: "14px 28px",
               fontSize: 15, fontWeight: 600,
@@ -91,8 +88,9 @@ export default function Hero() {
           <a
             href="#how-it-works"
             id="hero-cta-secondary"
+            className="w-full py-2 sm:w-auto sm:py-0"
             style={{
-              display: "inline-flex", alignItems: "center", gap: 10,
+              display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 10,
               color: "#374151", fontSize: 15, fontWeight: 500,
               textDecoration: "none",
             }}
