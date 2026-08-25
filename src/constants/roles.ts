@@ -120,10 +120,7 @@ export const ROLE_MODES: Record<string, string[]> = {
     'Competitive Programming', 'Productivity', 'Certifications',
     'Interview Preparation', 'Career',
   ],
-  general: [
-    'Creative', 'Technical', 'Academic', 'Professional', 'Concise',
-    'Detailed', 'Brainstorming', 'Problem Solving',
-  ],
+  general: [],
 };
 
 export function getModeIcon(mode: string): React.ElementType {
