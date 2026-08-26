@@ -12,6 +12,7 @@ import {
   Sliders, Shield, Activity, HelpCircle, LogOut
 } from 'lucide-react';
 import { apiClient } from '@/utils/apiClient';
+import { useAuth } from '@/context/AuthContext';
 import { ROLES, ROLE_MODES, getModeIcon } from '@/constants/roles';
 import { presetAvatarGradients, getInitials, renderPresetAvatar } from '@/constants/avatars';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
@@ -89,15 +90,13 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
     else if (queryTab === 'settings') setActiveTab('settings');
   }, [queryTab]);
 
-  /* ═══════════════════════════════════════════════════
-     State Definitions
-     ═══════════════════════════════════════════════════ */
-  const [displayName, setDisplayName] = useState<string>('');
-  const [email, setEmail] = useState<string>('');
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const { user, refreshUserProfile } = useAuth();
+  const [displayName, setDisplayName] = useState<string>(() => user?.display_name || '');
+  const [email, setEmail] = useState<string>(() => user?.email || '');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(() => user?.avatar_url || null);
   const [avatarPreset, setAvatarPreset] = useState<number>(4);
   const [userRole, setUserRole] = useState<string>('Creator');
-  const [plan, setPlan] = useState<string>('Free');
+  const [plan, setPlan] = useState<string>(() => user?.plan || 'Free');
   const [createdAt, setCreatedAt] = useState<string>('');
   const [updatedAt, setUpdatedAt] = useState<string>('');
   const [stats, setStats] = useState<{ prompts: number; avgScore: number; dayStreak: number }>({
@@ -160,9 +159,9 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
         let loadedRole = 'Creator';
         const profileData = await apiClient.get('/api/v1/profile/me');
         if (profileData) {
-          setDisplayName(profileData.display_name || profileData.email?.split('@')[0] || 'User');
-          setEmail(profileData.email || '');
-          setAvatarUrl(profileData.avatar_url || null);
+          setDisplayName(profileData.display_name || user?.display_name || profileData.email?.split('@')[0] || 'User');
+          setEmail(profileData.email || user?.email || '');
+          setAvatarUrl(profileData.avatar_url || user?.avatar_url || null);
           if (profileData.role) {
             const r = profileData.role;
             loadedRole = r.charAt(0).toUpperCase() + r.slice(1);
@@ -262,6 +261,9 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
         if (updated?.avatar_url) {
           setAvatarUrl(updated.avatar_url);
         }
+        if (refreshUserProfile) {
+          await refreshUserProfile();
+        }
         triggerSavedFeedback('profile_card');
         triggerToast('Profile avatar updated successfully!');
       } catch {
@@ -276,6 +278,16 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
     setAvatarUrl(null);
     setShowAvatarPicker(false);
     triggerSavedFeedback('profile_card');
+    try {
+      const formData = new FormData();
+      formData.append('avatar_preset', String(presetIdx));
+      await apiClient.patch('/api/v1/profile/me', formData);
+      if (refreshUserProfile) {
+        await refreshUserProfile();
+      }
+    } catch {
+      // fallback
+    }
     triggerToast('Avatar preset applied!');
   };
 
@@ -291,6 +303,9 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
       const updated = await apiClient.patch('/api/v1/profile/me', formData);
       if (updated?.display_name) {
         setDisplayName(updated.display_name);
+      }
+      if (refreshUserProfile) {
+        await refreshUserProfile();
       }
       triggerToast('Display name updated!');
     } catch {
@@ -318,6 +333,9 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
       formData.append('role', newRole.toLowerCase());
       await apiClient.patch('/api/v1/profile/me', formData);
       await apiClient.patch('/api/v1/settings/default-mode', { default_mode: updatedMode.toLowerCase() });
+      if (refreshUserProfile) {
+        await refreshUserProfile();
+      }
       triggerToast(`Default role set to ${newRole}`);
     } catch (err) {
       console.error('Failed to update role in backend:', err);

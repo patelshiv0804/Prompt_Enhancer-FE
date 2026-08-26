@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { apiClient } from '@/utils/apiClient';
+import { getUserMessage } from '@/utils/errorMessages';
 import { ONBOARDING_STEPS } from '../config/stepsConfig';
 import { OnboardingProgress } from './OnboardingProgress';
 import { DisplayNameStep } from './steps/DisplayNameStep';
@@ -196,7 +197,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
       onClose();
     } catch (err: any) {
       console.error('Skip onboarding error:', err);
-      setErrorMessage(err?.detail || err?.message || 'Failed to skip onboarding. Please try again.');
+      setErrorMessage(getUserMessage(err, 'Failed to skip onboarding. Please try again.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -251,7 +252,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
       onClose();
     } catch (err: any) {
       console.error('Onboarding completion error:', err);
-      setErrorMessage(err?.detail || err?.message || 'Failed to complete setup. Please try again.');
+      setErrorMessage(getUserMessage(err, 'Failed to complete setup. Please try again.'));
     } finally {
       setIsSubmitting(false);
     }

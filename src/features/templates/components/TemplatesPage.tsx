@@ -72,7 +72,8 @@ function SpotlightBanner({
   onQuickLook,
   bookmarkedIds,
   onToggleBookmark,
-  isStacked,
+  isPhone,
+  isTablet,
   isSmall,
 }: {
   templates: Template[];
@@ -80,7 +81,8 @@ function SpotlightBanner({
   onQuickLook: (t: Template) => void;
   bookmarkedIds: Set<string>;
   onToggleBookmark: (id: string) => void;
-  isStacked: boolean;
+  isPhone: boolean;
+  isTablet: boolean;
   isSmall: boolean;
 }) {
   const SLIDE_DURATION_MS = 3500;
@@ -107,93 +109,223 @@ function SpotlightBanner({
     <div
       id="spotlight-carousel-banner"
       style={{
-        borderRadius: isSmall ? 22 : 30,
+        borderRadius: isSmall ? 18 : isPhone ? 22 : 28,
         overflow: 'hidden',
-        marginBottom: isStacked ? 26 : 40,
+        marginBottom: isPhone ? 24 : 32,
         position: 'relative',
         background: 'linear-gradient(145deg, #0C0620 0%, #150D30 30%, #1A0E3A 55%, #0D0920 100%)',
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04)',
+        boxShadow: '0 8px 32px rgba(109, 40, 217, 0.14), 0 2px 8px rgba(0, 0, 0, 0.08)',
         border: '1px solid rgba(167, 139, 250, 0.18)',
         color: '#FFFFFF',
-        minHeight: isStacked ? 'auto' : 400,
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'center',
       }}
     >
       <div
         style={{
           position: 'absolute',
           inset: 0,
-          background: 'radial-gradient(ellipse at 50% 0%, rgba(124, 58, 237, 0.12) 0%, transparent 70%)',
+          background: 'radial-gradient(ellipse at 50% 0%, rgba(124, 58, 237, 0.15) 0%, transparent 70%)',
           pointerEvents: 'none',
         }}
       />
 
-      <div
-        style={{
-          position: 'relative',
-          display: 'grid',
-          gridTemplateColumns: isStacked ? '1fr' : '1.18fr 0.82fr',
-          alignItems: 'stretch',
-          padding: isSmall ? '24px 18px' : isStacked ? '32px 26px' : '38px 46px',
-          gap: isSmall ? 22 : isStacked ? 26 : 38,
-          minHeight: isStacked ? 'auto' : 340,
-        }}
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: isStacked ? 'auto' : 290 }}>
+      {isPhone ? (
+        /* ── Compact Phone Layout (Only ~300px tall) ── */
+        <div style={{ position: 'relative', padding: isSmall ? '16px 14px 14px' : '20px 18px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {/* Top row: Badges on left, Mini Slider Controls on right */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+              <span
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  background: 'linear-gradient(135deg, #7C3AED, #9333EA)',
+                  borderRadius: 9999, padding: '3px 9px', fontSize: 10.5, fontWeight: 700,
+                  letterSpacing: '0.04em', textTransform: 'uppercase', color: '#FFF',
+                  boxShadow: '0 2px 8px rgba(124,58,237,0.3)',
+                }}
+              >
+                <Sparkles size={10} /> Spotlight
+              </span>
+              <span
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)',
+                  borderRadius: 9999, padding: '3px 9px', fontSize: 11, fontWeight: 600, color: '#EDE9FE',
+                }}
+              >
+                <Icon size={12} strokeWidth={2} />
+                {categoryLabel(current.category)}
+              </span>
+            </div>
+
+            {/* Slider Dots + Arrows */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              {templates.slice(0, 5).map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => { setCurrentIndex(idx); setProgressKey(k => k + 1); }}
+                  style={{
+                    width: idx === currentIndex ? 14 : 5,
+                    height: 5,
+                    borderRadius: 99,
+                    background: idx === currentIndex ? '#A855F7' : 'rgba(255,255,255,0.25)',
+                    border: 'none',
+                    padding: 0,
+                    cursor: 'pointer',
+                    transition: 'all 200ms ease',
+                  }}
+                />
+              ))}
+              <button
+                onClick={() => { setCurrentIndex(prev => (prev - 1 + templates.length) % templates.length); setProgressKey(k => k + 1); }}
+                style={{ width: 24, height: 24, borderRadius: 6, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.08)', color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }}
+              >
+                <ChevronLeft size={13} />
+              </button>
+              <button
+                onClick={() => { setCurrentIndex(prev => (prev + 1) % templates.length); setProgressKey(k => k + 1); }}
+                style={{ width: 24, height: 24, borderRadius: 6, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.08)', color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }}
+              >
+                <ChevronRight size={13} />
+              </button>
+            </div>
+          </div>
+
+          {/* Title & Description */}
           <AnimatePresence mode="wait">
             <motion.div
               key={current.id}
-              initial={{ opacity: 0, y: 8, filter: 'blur(3px)' }}
-              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-              exit={{ opacity: 0, y: -8, filter: 'blur(3px)' }}
-              transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-              style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -5 }}
+              transition={{ duration: 0.22 }}
+              style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                <span
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 5,
-                    background: 'linear-gradient(135deg, #7C3AED, #9333EA)',
-                    borderRadius: 9999,
-                    padding: isSmall ? '4px 11px' : '5px 14px',
-                    fontSize: isSmall ? 11 : 11.5,
-                    fontWeight: 700,
-                    letterSpacing: '0.05em',
-                    textTransform: 'uppercase',
-                    boxShadow: '0 2px 10px rgba(124,58,237,0.35)',
-                  }}
-                >
-                  <Sparkles size={11} /> Spotlight
-                </span>
+              <h2 style={{ fontSize: isSmall ? 18 : 20, fontWeight: 800, color: '#FFF', letterSpacing: '-0.02em', margin: 0, lineHeight: 1.25 }}>
+                {current.title}
+              </h2>
+              <p style={{ fontSize: 12.5, color: 'rgba(237,233,254,0.85)', margin: 0, lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                {current.description}
+              </p>
 
-                <span
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 5,
-                    background: 'rgba(255,255,255,0.12)',
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(255,255,255,0.18)',
-                    borderRadius: 9999,
-                    padding: isSmall ? '4px 11px' : '5px 14px',
-                    fontSize: isSmall ? 11.5 : 12,
-                    fontWeight: 600,
-                    color: '#EDE9FE',
-                  }}
-                >
-                  <Icon size={13} strokeWidth={2} />
-                  {categoryLabel(current.category)}
+              {/* Mini Architecture Specs Capsule */}
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '6px 10px', borderRadius: 9,
+                background: 'rgba(0,0,0,0.32)', border: '1px solid rgba(255,255,255,0.10)',
+                fontSize: 11, color: '#EDE9FE',
+              }}>
+                <span style={{ fontFamily: 'monospace', color: '#A78BFA', fontWeight: 600 }}>
+                  Role: {categoryLabel(current.category)}
+                </span>
+                <span style={{ color: '#34D399', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                  ★ 98 Score • {current.useCount ?? 0} uses
                 </span>
               </div>
+            </motion.div>
+          </AnimatePresence>
 
-              <div style={{ minHeight: isSmall ? 52 : 64, display: 'flex', alignItems: 'center' }}>
+          {/* Buttons Row */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
+            <button
+              id="spotlight-use-btn"
+              onClick={() => onUse(current)}
+              style={{
+                flex: 1,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                height: 38, borderRadius: 10, fontSize: 12.5, fontWeight: 700,
+                border: 'none', cursor: 'pointer',
+                background: 'linear-gradient(135deg, #7C3AED, #A855F7)', color: 'white',
+                boxShadow: '0 2px 10px rgba(124,58,237,0.30)',
+              }}
+              className="hover:brightness-110 active:scale-[0.98]"
+            >
+              <Zap size={14} strokeWidth={2.2} />
+              <span>Use in Optimizer</span>
+            </button>
+            <button
+              id="spotlight-quicklook-btn"
+              onClick={() => onQuickLook(current)}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+                height: 38, padding: '0 12px', borderRadius: 10, fontSize: 12, fontWeight: 600,
+                border: '1px solid rgba(255,255,255,0.22)', background: 'rgba(255,255,255,0.10)',
+                color: '#FFF', cursor: 'pointer',
+              }}
+              className="hover:!bg-[rgba(255,255,255,0.18)] active:scale-[0.98]"
+            >
+              <Eye size={13} />
+              <span>Preview</span>
+            </button>
+            <button
+              id="spotlight-bookmark-btn"
+              onClick={() => onToggleBookmark(current.id)}
+              style={{
+                width: 38, height: 38, borderRadius: 10,
+                border: '1px solid rgba(255,255,255,0.20)',
+                background: isBookmarked ? 'rgba(139,92,246,0.40)' : 'rgba(255,255,255,0.08)',
+                color: isBookmarked ? '#F472B6' : '#EDE9FE',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0,
+              }}
+              className="hover:!bg-[rgba(255,255,255,0.18)] active:scale-[0.98]"
+            >
+              {isBookmarked ? <BookmarkCheck size={16} strokeWidth={2.2} /> : <Bookmark size={16} strokeWidth={2} />}
+            </button>
+          </div>
+        </div>
+      ) : (
+        /* ── Tablet & Desktop 2-Column Showcase (~300px - 340px tall) ── */
+        <div
+          style={{
+            position: 'relative',
+            display: 'grid',
+            gridTemplateColumns: isTablet ? '1.14fr 0.86fr' : '1.18fr 0.82fr',
+            alignItems: 'stretch',
+            padding: isTablet ? '26px 28px 22px' : '36px 44px 28px',
+            gap: isTablet ? 24 : 36,
+            minHeight: isTablet ? 280 : 320,
+          }}
+        >
+          {/* Left info column */}
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: isTablet ? 240 : 270 }}>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={current.id}
+                initial={{ opacity: 0, y: 8, filter: 'blur(3px)' }}
+                animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                exit={{ opacity: 0, y: -8, filter: 'blur(3px)' }}
+                transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 5,
+                      background: 'linear-gradient(135deg, #7C3AED, #9333EA)',
+                      borderRadius: 9999, padding: '4px 12px', fontSize: 11, fontWeight: 700,
+                      letterSpacing: '0.05em', textTransform: 'uppercase',
+                      boxShadow: '0 2px 10px rgba(124,58,237,0.35)',
+                    }}
+                  >
+                    <Sparkles size={11} /> Spotlight
+                  </span>
+                  <span
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 5,
+                      background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(10px)',
+                      border: '1px solid rgba(255,255,255,0.18)',
+                      borderRadius: 9999, padding: '4px 12px', fontSize: 11.5, fontWeight: 600, color: '#EDE9FE',
+                    }}
+                  >
+                    <Icon size={13} strokeWidth={2} />
+                    {categoryLabel(current.category)}
+                  </span>
+                </div>
+
                 <h2
                   style={{
-                    fontSize: isSmall ? 22 : isStacked ? 25 : 28,
+                    fontSize: isTablet ? 22 : 26,
                     fontWeight: 800,
                     color: '#FFFFFF',
                     letterSpacing: '-0.025em',
@@ -203,301 +335,222 @@ function SpotlightBanner({
                 >
                   {current.title}
                 </h2>
-              </div>
 
-              <p
-                style={{
-                  fontSize: isSmall ? 13 : 14,
-                  color: 'rgba(237,233,254,0.85)',
-                  margin: 0,
-                  lineHeight: 1.6,
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden',
-                  minHeight: 44,
-                  maxWidth: '98%',
-                }}
-              >
-                {current.description}
-              </p>
+                <p
+                  style={{
+                    fontSize: 13,
+                    color: 'rgba(237,233,254,0.85)',
+                    margin: 0,
+                    lineHeight: 1.55,
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {current.description}
+                </p>
 
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, height: 26, overflow: 'hidden' }}>
-                {current.tags.slice(0, 4).map((tag) => (
-                  <span
-                    key={tag}
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 600,
-                      padding: '3px 10px',
-                      borderRadius: 9999,
-                      background: 'rgba(255,255,255,0.10)',
-                      border: '1px solid rgba(255,255,255,0.14)',
-                      color: '#F3E8FF',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    #{tag}
-                  </span>
-                ))}
-              </div>
-            </motion.div>
-          </AnimatePresence>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: isSmall ? 10 : 12, flexWrap: 'wrap', marginTop: 18, paddingTop: 4 }}>
-            <button
-              id="spotlight-use-btn"
-              onClick={() => onUse(current)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                padding: isSmall ? '0 18px' : '0 24px',
-                height: isSmall ? 40 : 44,
-                borderRadius: 12,
-                fontSize: isSmall ? 13 : 14,
-                fontWeight: 700,
-                border: 'none',
-                cursor: 'pointer',
-                background: 'linear-gradient(135deg, #7C3AED, #A855F7)',
-                color: 'white',
-                boxShadow: '0 2px 10px rgba(124,58,237,0.30)',
-                transition: 'all 200ms ease',
-                flex: isSmall ? '1 1 auto' : undefined,
-              }}
-              className="hover:brightness-110 hover:translate-y-[-1px]"
-            >
-              <Zap size={15} strokeWidth={2.2} />
-              <span>Use in Optimizer</span>
-              <ArrowUpRight size={14} />
-            </button>
-
-            <button
-              id="spotlight-quicklook-btn"
-              onClick={() => onQuickLook(current)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 7,
-                padding: isSmall ? '0 16px' : '0 20px',
-                height: isSmall ? 40 : 44,
-                borderRadius: 12,
-                fontSize: isSmall ? 13 : 14,
-                fontWeight: 600,
-                border: '1px solid rgba(255,255,255,0.22)',
-                background: 'rgba(255,255,255,0.10)',
-                color: '#FFFFFF',
-                cursor: 'pointer',
-                backdropFilter: 'blur(8px)',
-                transition: 'all 200ms ease',
-                flex: isSmall ? '1 1 auto' : undefined,
-              }}
-              className="hover:!bg-[rgba(255,255,255,0.18)]"
-            >
-              <Eye size={15} />
-              <span>Quick Look</span>
-            </button>
-
-            <button
-              id="spotlight-bookmark-btn"
-              onClick={() => onToggleBookmark(current.id)}
-              style={{
-                width: isSmall ? 40 : 44,
-                height: isSmall ? 40 : 44,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: 12,
-                cursor: 'pointer',
-                border: '1px solid rgba(255,255,255,0.20)',
-                background: isBookmarked ? 'rgba(139,92,246,0.40)' : 'rgba(255,255,255,0.08)',
-                color: isBookmarked ? '#F472B6' : '#EDE9FE',
-                transition: 'all 200ms ease',
-                flexShrink: 0,
-              }}
-              className="hover:!bg-[rgba(255,255,255,0.18)]"
-              title={isBookmarked ? 'Remove bookmark' : 'Bookmark template'}
-            >
-              {isBookmarked ? <BookmarkCheck size={18} strokeWidth={2.2} /> : <Bookmark size={18} strokeWidth={2} />}
-            </button>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 14 }}>
-          <div
-            style={{
-              background: 'rgba(255, 255, 255, 0.08)',
-              backdropFilter: 'blur(28px)',
-              WebkitBackdropFilter: 'blur(28px)',
-              border: '1px solid rgba(255, 255, 255, 0.18)',
-              borderRadius: 22,
-              padding: isSmall ? '18px 16px' : '22px 24px',
-              boxShadow: '0 20px 48px rgba(0, 0, 0, 0.30)',
-              position: 'relative',
-              overflow: 'hidden',
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              minHeight: 220,
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, paddingBottom: 10, borderBottom: '1px solid rgba(255,255,255,0.10)' }}>
-              <div style={{ display: 'flex', gap: 6 }}>
-                <div style={{ width: 9, height: 9, borderRadius: '50%', background: '#EF4444' }} />
-                <div style={{ width: 9, height: 9, borderRadius: '50%', background: '#F59E0B' }} />
-                <div style={{ width: 9, height: 9, borderRadius: '50%', background: '#10B981' }} />
-              </div>
-              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.70)', textTransform: 'uppercase' }}>
-                Prompt Architecture v2.4
-              </span>
-            </div>
-
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={current.id}
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.98 }}
-                transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-                style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
-              >
-                <div style={{ background: 'rgba(0,0,0,0.32)', borderRadius: 14, padding: '10px 14px', border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: '#A78BFA', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Role Context</span>
-                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontWeight: 600 }}>98 PromptScore</span>
-                  </div>
-                  <p style={{ fontSize: 12, color: '#F3E8FF', margin: 0, lineHeight: 1.5, fontFamily: 'monospace', wordBreak: 'break-word' }}>
-                    &ldquo;Act as a specialist in {current.category}. Structure findings with high clarity and depth.&rdquo;
-                  </p>
-                </div>
-
-                <div style={{ background: 'rgba(139,92,246,0.16)', borderRadius: 14, padding: '10px 14px', border: '1px solid rgba(139,92,246,0.32)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: '#F472B6', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Engine Specs</span>
-                    <span style={{ fontSize: 11, color: '#34D399', fontWeight: 600 }}>● Active</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, color: '#FFFFFF', flexWrap: 'wrap' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                      <Cpu size={13} style={{ color: '#A78BFA' }} />
-                      Universal Engine
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, height: 24, overflow: 'hidden' }}>
+                  {current.tags.slice(0, 4).map((tag) => (
+                    <span
+                      key={tag}
+                      style={{
+                        fontSize: 10.5,
+                        fontWeight: 600,
+                        padding: '2px 9px',
+                        borderRadius: 9999,
+                        background: 'rgba(255,255,255,0.10)',
+                        border: '1px solid rgba(255,255,255,0.14)',
+                        color: '#F3E8FF',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      #{tag}
                     </span>
-                    <span style={{ color: 'rgba(255,255,255,0.4)' }}>•</span>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                      <Award size={13} style={{ color: '#F59E0B' }} />
-                      {current.useCount ?? 0} uses
-                    </span>
-                  </div>
+                  ))}
                 </div>
               </motion.div>
             </AnimatePresence>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginTop: 14, paddingTop: 2 }}>
+              <button
+                id="spotlight-use-btn"
+                onClick={() => onUse(current)}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                  padding: '0 20px', height: 40, borderRadius: 10, fontSize: 13, fontWeight: 700,
+                  border: 'none', cursor: 'pointer',
+                  background: 'linear-gradient(135deg, #7C3AED, #A855F7)', color: 'white',
+                  boxShadow: '0 2px 10px rgba(124,58,237,0.30)',
+                  transition: 'all 200ms ease',
+                }}
+                className="hover:brightness-110 hover:translate-y-[-1px]"
+              >
+                <Zap size={14} strokeWidth={2.2} />
+                <span>Use in Optimizer</span>
+                <ArrowUpRight size={13} />
+              </button>
+
+              <button
+                id="spotlight-quicklook-btn"
+                onClick={() => onQuickLook(current)}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  padding: '0 16px', height: 40, borderRadius: 10, fontSize: 12.5, fontWeight: 600,
+                  border: '1px solid rgba(255,255,255,0.22)', background: 'rgba(255,255,255,0.10)',
+                  color: '#FFFFFF', cursor: 'pointer', backdropFilter: 'blur(8px)',
+                  transition: 'all 200ms ease',
+                }}
+                className="hover:!bg-[rgba(255,255,255,0.18)]"
+              >
+                <Eye size={14} />
+                <span>Quick Look</span>
+              </button>
+
+              <button
+                id="spotlight-bookmark-btn"
+                onClick={() => onToggleBookmark(current.id)}
+                style={{
+                  width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  borderRadius: 10, cursor: 'pointer',
+                  border: '1px solid rgba(255,255,255,0.20)',
+                  background: isBookmarked ? 'rgba(139,92,246,0.40)' : 'rgba(255,255,255,0.08)',
+                  color: isBookmarked ? '#F472B6' : '#EDE9FE',
+                  transition: 'all 200ms ease', flexShrink: 0,
+                }}
+                className="hover:!bg-[rgba(255,255,255,0.18)]"
+                title={isBookmarked ? 'Remove bookmark' : 'Bookmark template'}
+              >
+                {isBookmarked ? <BookmarkCheck size={16} strokeWidth={2.2} /> : <Bookmark size={16} strokeWidth={2} />}
+              </button>
+            </div>
           </div>
 
-          {templates.length > 1 && (
+          {/* Right preview column */}
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 12 }}>
             <div
               style={{
+                background: 'rgba(255, 255, 255, 0.08)',
+                backdropFilter: 'blur(28px)',
+                WebkitBackdropFilter: 'blur(28px)',
+                border: '1px solid rgba(255, 255, 255, 0.18)',
+                borderRadius: 18,
+                padding: isTablet ? '16px 18px' : '20px 22px',
+                boxShadow: '0 16px 40px rgba(0, 0, 0, 0.28)',
+                position: 'relative',
+                overflow: 'hidden',
+                flex: 1,
                 display: 'flex',
-                alignItems: 'center',
+                flexDirection: 'column',
                 justifyContent: 'space-between',
-                padding: '2px 4px 0',
               }}
             >
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                {templates.map((_, idx) => {
-                  const isActive = idx === currentIndex;
-                  return (
-                    <button
-                      key={idx}
-                      onClick={() => {
-                        setCurrentIndex(idx);
-                        setProgressKey((k) => k + 1);
-                      }}
-                      style={{
-                        width: isActive ? 30 : 8,
-                        height: 8,
-                        borderRadius: 999,
-                        background: isActive ? 'rgba(192, 132, 252, 0.3)' : 'rgba(255,255,255,0.20)',
-                        border: 'none',
-                        padding: 0,
-                        cursor: 'pointer',
-                        position: 'relative',
-                        overflow: 'hidden',
-                        transition: 'all 300ms ease',
-                      }}
-                    >
-                      {isActive && (
-                        <motion.div
-                          key={`prog-${progressKey}-${idx}`}
-                          initial={{ width: '0%' }}
-                          animate={{ width: '100%' }}
-                          transition={{ duration: SLIDE_DURATION_SEC, ease: 'linear' }}
-                          style={{
-                            height: '100%',
-                            background: 'linear-gradient(90deg, #A855F7, #EC4899)',
-                            borderRadius: 999,
-                          }}
-                        />
-                      )}
-                    </button>
-                  );
-                })}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, paddingBottom: 8, borderBottom: '1px solid rgba(255,255,255,0.10)' }}>
+                <div style={{ display: 'flex', gap: 5 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#EF4444' }} />
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#F59E0B' }} />
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#10B981' }} />
+                </div>
+                <span style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.70)', textTransform: 'uppercase' }}>
+                  Prompt Architecture v2.4
+                </span>
               </div>
 
-              <div style={{ display: 'flex', gap: 7, alignItems: 'center' }}>
-                <button
-                  onClick={() => {
-                    setCurrentIndex((prev) => (prev - 1 + templates.length) % templates.length);
-                    setProgressKey((k) => k + 1);
-                  }}
-                  style={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: 10,
-                    border: '1px solid rgba(255,255,255,0.18)',
-                    background: 'rgba(255,255,255,0.10)',
-                    color: '#FFF',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    transition: 'all 180ms ease',
-                  }}
-                  className="hover:!bg-[rgba(255,255,255,0.22)]"
-                  title="Previous template"
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={current.id}
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.98 }}
+                  transition={{ duration: 0.25 }}
+                  style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
                 >
-                  <ChevronLeft size={16} />
-                </button>
+                  <div style={{ background: 'rgba(0,0,0,0.32)', borderRadius: 12, padding: '9px 12px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 }}>
+                      <span style={{ fontSize: 10.5, fontWeight: 700, color: '#A78BFA', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Role Context</span>
+                      <span style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.55)', fontWeight: 600 }}>98 PromptScore</span>
+                    </div>
+                    <p style={{ fontSize: 11.5, color: '#F3E8FF', margin: 0, lineHeight: 1.45, fontFamily: 'monospace', wordBreak: 'break-word' }}>
+                      &ldquo;Act as a specialist in {current.category}. Structure findings with high clarity and depth.&rdquo;
+                    </p>
+                  </div>
 
-                <button
-                  onClick={() => {
-                    setCurrentIndex((prev) => (prev + 1) % templates.length);
-                    setProgressKey((k) => k + 1);
-                  }}
-                  style={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: 10,
-                    border: '1px solid rgba(255,255,255,0.18)',
-                    background: 'rgba(255,255,255,0.10)',
-                    color: '#FFF',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    transition: 'all 180ms ease',
-                  }}
-                  className="hover:!bg-[rgba(255,255,255,0.22)]"
-                  title="Next template"
-                >
-                  <ChevronRight size={16} />
-                </button>
-              </div>
+                  <div style={{ background: 'rgba(139,92,246,0.16)', borderRadius: 12, padding: '9px 12px', border: '1px solid rgba(139,92,246,0.32)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 }}>
+                      <span style={{ fontSize: 10.5, fontWeight: 700, color: '#F472B6', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Engine Specs</span>
+                      <span style={{ fontSize: 10.5, color: '#34D399', fontWeight: 600 }}>● Active</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11.5, color: '#FFFFFF', flexWrap: 'wrap' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <Cpu size={12} style={{ color: '#A78BFA' }} />
+                        Universal Engine
+                      </span>
+                      <span style={{ color: 'rgba(255,255,255,0.4)' }}>•</span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <Award size={12} style={{ color: '#F59E0B' }} />
+                        {current.useCount ?? 0} uses
+                      </span>
+                    </div>
+                  </div>
+                </motion.div>
+              </AnimatePresence>
             </div>
-          )}
+
+            {/* Slider bar */}
+            {templates.length > 1 && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 2px' }}>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  {templates.map((_, idx) => {
+                    const isActive = idx === currentIndex;
+                    return (
+                      <button
+                        key={idx}
+                        onClick={() => { setCurrentIndex(idx); setProgressKey(k => k + 1); }}
+                        style={{
+                          width: isActive ? 26 : 7,
+                          height: 6,
+                          borderRadius: 999,
+                          background: isActive ? 'rgba(192, 132, 252, 0.3)' : 'rgba(255,255,255,0.20)',
+                          border: 'none', padding: 0, cursor: 'pointer', position: 'relative', overflow: 'hidden',
+                          transition: 'all 300ms ease',
+                        }}
+                      >
+                        {isActive && (
+                          <motion.div
+                            key={`prog-${progressKey}-${idx}`}
+                            initial={{ width: '0%' }}
+                            animate={{ width: '100%' }}
+                            transition={{ duration: SLIDE_DURATION_SEC, ease: 'linear' }}
+                            style={{ height: '100%', background: 'linear-gradient(90deg, #A855F7, #EC4899)', borderRadius: 999 }}
+                          />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <button
+                    onClick={() => { setCurrentIndex(prev => (prev - 1 + templates.length) % templates.length); setProgressKey(k => k + 1); }}
+                    style={{ width: 30, height: 30, borderRadius: 8, border: '1px solid rgba(255,255,255,0.18)', background: 'rgba(255,255,255,0.10)', color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                    className="hover:!bg-[rgba(255,255,255,0.22)]"
+                  >
+                    <ChevronLeft size={14} />
+                  </button>
+                  <button
+                    onClick={() => { setCurrentIndex(prev => (prev + 1) % templates.length); setProgressKey(k => k + 1); }}
+                    style={{ width: 30, height: 30, borderRadius: 8, border: '1px solid rgba(255,255,255,0.18)', background: 'rgba(255,255,255,0.10)', color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                    className="hover:!bg-[rgba(255,255,255,0.22)]"
+                  >
+                    <ChevronRight size={14} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -685,25 +738,26 @@ function NotionTemplateCard({
           marginTop: 'auto',
           paddingTop: 10,
           borderTop: '1px solid rgba(124,58,237,0.07)',
-          flexWrap: 'wrap',
+          flexWrap: 'nowrap',
           gap: 6,
         }}
       >
         <span
           style={{
-            display: 'flex',
+            display: 'inline-flex',
             alignItems: 'center',
             gap: 4,
-            fontSize: 12,
+            fontSize: 11.5,
             fontWeight: 500,
             color: 'var(--color-text-secondary)',
+            whiteSpace: 'nowrap',
           }}
         >
           <Star size={11} strokeWidth={2} style={{ color: '#F59E0B' }} />
-          {template.useCount?.toLocaleString() ?? '0'} uses
+          {template.useCount?.toLocaleString() ?? '0'}
         </span>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
           <button
             id={`quicklook-btn-${template.id}`}
             onClick={(e) => {
@@ -714,9 +768,9 @@ function NotionTemplateCard({
               display: 'flex',
               alignItems: 'center',
               gap: 4,
-              padding: '5px 10px',
+              padding: '4px 9px',
               borderRadius: 8,
-              fontSize: 12,
+              fontSize: 11.5,
               fontWeight: 600,
               border: '1px solid rgba(124,58,237,0.14)',
               background: '#FFFFFF',
@@ -739,21 +793,21 @@ function NotionTemplateCard({
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 5,
-              padding: '5px 12px',
+              gap: 4,
+              padding: '4px 11px',
               borderRadius: 8,
-              fontSize: 12,
+              fontSize: 11.5,
               fontWeight: 700,
               border: 'none',
               cursor: 'pointer',
               background: 'linear-gradient(135deg, #7C3AED, #A855F7)',
               color: 'white',
               boxShadow: '0 2px 8px rgba(124,58,237,0.25)',
-              transition: 'all 180ms ease',
+              transition: 'all 150ms ease',
             }}
-            className="hover:translate-y-[-1px] hover:brightness-105"
+            className="hover:brightness-110 active:scale-[0.98]"
           >
-            <Zap size={12} strokeWidth={2} />
+            <Zap size={12} strokeWidth={2.2} />
             <span>Use</span>
           </button>
         </div>
@@ -1681,17 +1735,18 @@ export default function TemplatesPage() {
                 onQuickLook={setQuickLookTemplate}
                 bookmarkedIds={bookmarkedIds}
                 onToggleBookmark={handleToggleBookmark}
-                isStacked={isStackedSpotlight}
+                isPhone={isPhone}
+                isTablet={isTablet}
                 isSmall={isSmall}
               />
 
               {/* Trending Now Shelf */}
               {trendingTemplates.length > 0 && (
-                <section style={{ marginBottom: 36 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                <section style={{ marginBottom: isPhone ? 28 : 36 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <TrendingUp size={18} strokeWidth={2.2} style={{ color: '#F59E0B' }} />
-                      <h2 style={{ fontSize: isSmall ? 16 : 17, fontWeight: 800, color: 'var(--color-text-primary)', margin: 0 }}>
+                      <h2 style={{ fontSize: isSmall ? 15 : 17, fontWeight: 800, color: 'var(--color-text-primary)', margin: 0 }}>
                         Trending Prompt Recipes
                       </h2>
                     </div>
@@ -1716,26 +1771,54 @@ export default function TemplatesPage() {
                   </div>
 
                   {viewMode === 'grid' ? (
-                    <div
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: gridColumns,
-                        gap: 16,
-                      }}
-                    >
-                      {trendingTemplates.map((t) => (
-                        <NotionTemplateCard
-                          key={t.id}
-                          template={t}
-                          onUse={handleUse}
-                          onQuickLook={setQuickLookTemplate}
-                          isBookmarked={bookmarkedIds.has(t.id)}
-                          onToggleBookmark={handleToggleBookmark}
-                          onSelectTag={setSearchQuery}
-                          isSmall={isSmall}
-                        />
-                      ))}
-                    </div>
+                    isPhone ? (
+                      <div
+                        style={{
+                          display: 'flex',
+                          gap: 12,
+                          overflowX: 'auto',
+                          paddingBottom: 6,
+                          scrollbarWidth: 'none',
+                          scrollSnapType: 'x mandatory',
+                          WebkitOverflowScrolling: 'touch',
+                        }}
+                      >
+                        {trendingTemplates.slice(0, 6).map((t) => (
+                          <div key={t.id} style={{ width: 'min(82vw, 290px)', flexShrink: 0, scrollSnapAlign: 'start' }}>
+                            <NotionTemplateCard
+                              template={t}
+                              onUse={handleUse}
+                              onQuickLook={setQuickLookTemplate}
+                              isBookmarked={bookmarkedIds.has(t.id)}
+                              onToggleBookmark={handleToggleBookmark}
+                              onSelectTag={setSearchQuery}
+                              isSmall={isSmall}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: isTablet ? 'repeat(2, 1fr)' : gridColumns,
+                          gap: 16,
+                        }}
+                      >
+                        {trendingTemplates.map((t) => (
+                          <NotionTemplateCard
+                            key={t.id}
+                            template={t}
+                            onUse={handleUse}
+                            onQuickLook={setQuickLookTemplate}
+                            isBookmarked={bookmarkedIds.has(t.id)}
+                            onToggleBookmark={handleToggleBookmark}
+                            onSelectTag={setSearchQuery}
+                            isSmall={isSmall}
+                          />
+                        ))}
+                      </div>
+                    )
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       {trendingTemplates.map((t) => (
@@ -1757,29 +1840,34 @@ export default function TemplatesPage() {
 
               {/* Browse by Domain / Roles Shelves */}
               <section style={{ marginBottom: 40 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <Sparkles size={18} strokeWidth={2.2} style={{ color: 'var(--color-primary)' }} />
-                    <h2 style={{ fontSize: isSmall ? 16 : 17, fontWeight: 800, color: 'var(--color-text-primary)', margin: 0 }}>
+                    <h2 style={{ fontSize: isSmall ? 15 : 17, fontWeight: 800, color: 'var(--color-text-primary)', margin: 0 }}>
                       Role & Workflow Collections
                     </h2>
                   </div>
+                  {isPhone && (
+                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-secondary)' }}>
+                      Swipe →
+                    </span>
+                  )}
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: isSmall ? 20 : 32 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: isSmall ? 18 : isPhone ? 22 : 30 }}>
                   {Array.from(groupedByCategory.entries()).map(([cat, list]) => {
                     const Icon = CATEGORY_ICON_MAP[cat] || Sparkles;
                     const style = getCategoryColor(cat);
-                    const itemsToShow = isTablet ? 4 : isPhone ? 3 : 6;
+                    const itemsToShow = isTablet ? 4 : isPhone ? 6 : 6;
                     return (
-                      <div key={cat} style={{ background: 'rgba(250,250,252,0.6)', borderRadius: isSmall ? 16 : 20, padding: isSmall ? 14 : isPhone ? 18 : 24, border: '1px solid rgba(124,58,237,0.06)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                            <div style={{ width: 30, height: 30, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: style.bg, color: style.text, flexShrink: 0 }}>
-                              <Icon size={15} strokeWidth={2} />
+                      <div key={cat} style={{ background: 'rgba(250,250,252,0.6)', borderRadius: isSmall ? 16 : 20, padding: isSmall ? 12 : isPhone ? 16 : 22, border: '1px solid rgba(124,58,237,0.06)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: style.bg, color: style.text, flexShrink: 0 }}>
+                              <Icon size={14} strokeWidth={2} />
                             </div>
                             <div>
-                              <h3 style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>
+                              <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>
                                 {categoryLabel(cat)} Specialists
                               </h3>
                             </div>
@@ -1812,26 +1900,54 @@ export default function TemplatesPage() {
                         </div>
 
                         {viewMode === 'grid' ? (
-                          <div
-                            style={{
-                              display: 'grid',
-                              gridTemplateColumns: gridColumns,
-                              gap: 14,
-                            }}
-                          >
-                            {list.slice(0, itemsToShow).map((t) => (
-                              <NotionTemplateCard
-                                key={t.id}
-                                template={t}
-                                onUse={handleUse}
-                                onQuickLook={setQuickLookTemplate}
-                                isBookmarked={bookmarkedIds.has(t.id)}
-                                onToggleBookmark={handleToggleBookmark}
-                                onSelectTag={setSearchQuery}
-                                isSmall={isSmall}
-                              />
-                            ))}
-                          </div>
+                          isPhone ? (
+                            <div
+                              style={{
+                                display: 'flex',
+                                gap: 12,
+                                overflowX: 'auto',
+                                paddingBottom: 6,
+                                scrollbarWidth: 'none',
+                                scrollSnapType: 'x mandatory',
+                                WebkitOverflowScrolling: 'touch',
+                              }}
+                            >
+                              {list.slice(0, 6).map((t) => (
+                                <div key={t.id} style={{ width: 'min(82vw, 290px)', flexShrink: 0, scrollSnapAlign: 'start' }}>
+                                  <NotionTemplateCard
+                                    template={t}
+                                    onUse={handleUse}
+                                    onQuickLook={setQuickLookTemplate}
+                                    isBookmarked={bookmarkedIds.has(t.id)}
+                                    onToggleBookmark={handleToggleBookmark}
+                                    onSelectTag={setSearchQuery}
+                                    isSmall={isSmall}
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div
+                              style={{
+                                display: 'grid',
+                                gridTemplateColumns: isTablet ? 'repeat(2, 1fr)' : gridColumns,
+                                gap: 14,
+                              }}
+                            >
+                              {list.slice(0, itemsToShow).map((t) => (
+                                <NotionTemplateCard
+                                  key={t.id}
+                                  template={t}
+                                  onUse={handleUse}
+                                  onQuickLook={setQuickLookTemplate}
+                                  isBookmarked={bookmarkedIds.has(t.id)}
+                                  onToggleBookmark={handleToggleBookmark}
+                                  onSelectTag={setSearchQuery}
+                                  isSmall={isSmall}
+                                />
+                              ))}
+                            </div>
+                          )
                         ) : (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                             {list.slice(0, itemsToShow).map((t) => (

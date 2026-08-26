@@ -324,7 +324,7 @@ export default function Navbar() {
 
         {/* Center Links — Desktop (magic sliding pill) */}
         <div
-          className="absolute left-1/2 hidden -translate-x-1/2 items-center md:flex"
+          className="absolute left-1/2 hidden -translate-x-1/2 items-center lg:flex"
           id="navbar-links"
           onMouseLeave={() => setHoveredId(null)}
         >
@@ -338,7 +338,7 @@ export default function Navbar() {
                 onClick={(e) => handleNavClick(e, link.id)}
                 onMouseEnter={() => setHoveredId(link.id)}
                 aria-current={isActive ? "page" : undefined}
-                className="relative px-4 py-2 text-sm font-medium"
+                className="relative px-3.5 py-1.5 xl:px-4 xl:py-2 text-sm font-medium"
                 style={{
                   color: isActive ? VIOLET : isHot ? INK : MUTED,
                   fontWeight: isActive ? 600 : 500,
@@ -365,13 +365,13 @@ export default function Navbar() {
         </div>
 
         {/* Right side — Desktop */}
-        <div className="hidden shrink-0 items-center gap-4 md:flex">
+        <div className="hidden shrink-0 items-center gap-3 xl:gap-4 lg:flex">
           {renderDesktopAuth()}
         </div>
 
-        {/* Mobile Hamburger */}
+        {/* Mobile & Tablet Hamburger Toggle */}
         <button
-          className="flex h-10 w-10 items-center justify-center rounded-xl text-gray-600 transition-colors hover:bg-purple-50 hover:text-purple-700 md:hidden"
+          className="flex h-10 w-10 items-center justify-center rounded-xl text-gray-600 transition-colors hover:bg-purple-50 hover:text-purple-700 lg:hidden"
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label="Toggle menu"
           id="navbar-mobile-toggle"
@@ -380,7 +380,7 @@ export default function Navbar() {
         </button>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile & Tablet Dropdown Menu */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
@@ -388,7 +388,7 @@ export default function Navbar() {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="overflow-hidden border-b border-gray-100 bg-white/95 backdrop-blur-xl md:hidden"
+            className="overflow-hidden border-b border-gray-100 bg-white/95 backdrop-blur-xl lg:hidden"
           >
             <div className="flex flex-col gap-1 px-6 py-4">
               {navLinks.map((link) => {

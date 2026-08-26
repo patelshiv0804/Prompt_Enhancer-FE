@@ -72,11 +72,11 @@ const FAQ_ITEMS: FAQItem[] = [
 ];
 
 const CATEGORIES = [
-  { id: "all", label: "All Questions" },
-  { id: "general", label: "General" },
-  { id: "extension", label: "Extension" },
-  { id: "features", label: "Features & Memory" },
-  { id: "privacy", label: "Privacy & Security" },
+  { id: "all", label: "All", icon: Layers },
+  { id: "general", label: "General", icon: HelpCircle },
+  { id: "extension", label: "Extension", icon: Zap },
+  { id: "features", label: "Features & Memory", icon: Sparkles },
+  { id: "privacy", label: "Privacy & Security", icon: ShieldCheck },
 ];
 
 export default function FAQSection() {
@@ -86,6 +86,11 @@ export default function FAQSection() {
 
   const toggleFAQ = (id: string) => {
     setOpenId(openId === id ? null : id);
+  };
+
+  const getCategoryCount = (catId: string) => {
+    if (catId === "all") return FAQ_ITEMS.length;
+    return FAQ_ITEMS.filter((item) => item.category === catId).length;
   };
 
   const filteredFAQs = FAQ_ITEMS.filter((item) => {
@@ -134,7 +139,15 @@ export default function FAQSection() {
             className="mt-4 text-[clamp(36px,4.5vw,54px)] font-extrabold leading-[1.12] tracking-tight text-gray-900"
           >
             Everything you need to know <br className="hidden sm:inline" />
-            about <span className="bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 bg-clip-text text-transparent">AURE</span>
+            about{" "}
+            <span
+              className="bg-clip-text text-transparent"
+              style={{
+                backgroundImage: "linear-gradient(135deg, #6366F1 0%, #8B5CF6 45%, #EC4899 100%)",
+              }}
+            >
+              AURE
+            </span>
           </motion.h2>
 
           <motion.p
@@ -154,35 +167,68 @@ export default function FAQSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.3 }}
-          className="mt-10 flex flex-col items-center justify-between gap-4 md:flex-row md:gap-6"
+          className="mt-10 flex flex-col items-stretch gap-4 lg:flex-row lg:items-center lg:justify-between"
         >
           {/* Search bar */}
-          <div className="relative w-full md:w-80">
+          <div className="relative w-full lg:w-72 shrink-0">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               placeholder="Search questions..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-full border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-base text-gray-800 shadow-sm transition-all placeholder:text-gray-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 lg:text-sm"
+              className="w-full rounded-2xl lg:rounded-full border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm text-gray-800 shadow-sm transition-all placeholder:text-gray-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
             />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            )}
           </div>
 
-          {/* Category Tabs */}
-          <div className="flex flex-wrap items-center justify-center gap-1.5 rounded-full border border-gray-200/80 bg-white p-1 shadow-sm">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setActiveCategory(cat.id)}
-                className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all duration-200 ${
-                  activeCategory === cat.id
-                    ? "bg-purple-600 text-white shadow-sm"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                }`}
-              >
-                {cat.label}
-              </button>
-            ))}
+          {/* Category Tabs (Horizontal Scroll on Mobile/Tablet with Smooth Spring Active Pill) */}
+          <div className="w-full lg:w-auto overflow-x-auto pb-1 lg:pb-0 scrollbar-none">
+            <div className="inline-flex items-center gap-1.5 rounded-2xl lg:rounded-full border border-gray-200/90 bg-white/95 p-1.5 shadow-sm backdrop-blur-md min-w-full lg:min-w-0 justify-start sm:justify-center">
+              {CATEGORIES.map((cat) => {
+                const isActive = activeCategory === cat.id;
+                const count = getCategoryCount(cat.id);
+                const IconComponent = cat.icon;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => setActiveCategory(cat.id)}
+                    className="relative flex items-center gap-1.5 rounded-xl lg:rounded-full px-3 sm:px-3.5 py-1.5 text-xs font-semibold transition-colors duration-150 select-none whitespace-nowrap cursor-pointer"
+                    style={{
+                      color: isActive ? "#FFFFFF" : "#4B5563",
+                    }}
+                  >
+                    {isActive && (
+                      <motion.div
+                        layoutId="activeCategoryPill"
+                        className="absolute inset-0 rounded-xl lg:rounded-full bg-[#7C3AED] shadow-sm shadow-[#7C3AED]/35"
+                        transition={{ type: "spring", stiffness: 480, damping: 32 }}
+                      />
+                    )}
+                    <span className="relative z-10 flex items-center gap-1.5">
+                      <IconComponent size={13} className={isActive ? "text-white" : "text-gray-400"} />
+                      <span>{cat.label}</span>
+                      <span
+                        className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
+                          isActive
+                            ? "bg-white/20 text-white"
+                            : "bg-gray-100 text-gray-500"
+                        }`}
+                      >
+                        {count}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </motion.div>
 
@@ -198,11 +244,10 @@ export default function FAQSection() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: index * 0.05 }}
-                  className={`overflow-hidden rounded-2xl border transition-all duration-200 ${
-                    isOpen
-                      ? "border-purple-200 bg-white shadow-md shadow-purple-500/5 ring-1 ring-purple-500/20"
-                      : "border-gray-200/80 bg-white hover:border-purple-200 hover:shadow-sm"
-                  }`}
+                  className={`overflow-hidden rounded-2xl border transition-all duration-200 ${isOpen
+                      ? "border-[#7C3AED]/30 bg-white shadow-md shadow-purple-500/5 ring-1 ring-[#7C3AED]/20"
+                      : "border-gray-200/80 bg-white hover:border-[#7C3AED]/30 hover:shadow-sm"
+                    }`}
                 >
                   <button
                     onClick={() => toggleFAQ(item.id)}
@@ -213,9 +258,8 @@ export default function FAQSection() {
                       {item.question}
                     </span>
                     <div
-                      className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full transition-transform duration-200 ${
-                        isOpen ? "rotate-180 bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-500"
-                      }`}
+                      className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full transition-transform duration-200 ${isOpen ? "rotate-180 bg-purple-100 text-[#7C3AED]" : "bg-gray-100 text-gray-500"
+                        }`}
                     >
                       <ChevronDown size={18} />
                     </div>
@@ -246,7 +290,7 @@ export default function FAQSection() {
                   setSearchQuery("");
                   setActiveCategory("all");
                 }}
-                className="mt-3 text-xs font-semibold text-purple-600 hover:underline"
+                className="mt-3 text-xs font-semibold text-[#7C3AED] hover:underline"
               >
                 Reset filters
               </button>
@@ -254,28 +298,45 @@ export default function FAQSection() {
           )}
         </div>
 
-        {/* Bottom Call to Action Card */}
+        {/* Bottom Call to Action Card — Obsidian Theme with Ambient Violet Glow */}
         <motion.div
           initial={{ opacity: 0, y: 25 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.4 }}
-          className="mt-14 rounded-3xl border border-purple-100 bg-gradient-to-r from-purple-900 via-indigo-900 to-purple-950 p-8 text-white shadow-xl md:p-10 flex flex-col md:flex-row items-center justify-between gap-6"
+          className="relative mt-14 overflow-hidden rounded-[24px] sm:rounded-[28px] bg-[#05050A] border border-white/[0.08] p-6 sm:p-8 md:p-9 lg:p-10 shadow-[0_20px_60px_rgba(0,0,0,0.4)] flex flex-col sm:flex-row items-center justify-between gap-6 sm:gap-8"
         >
-          <div className="flex flex-col gap-2 text-center md:text-left">
-            <h3 className="text-xl font-bold md:text-2xl">Still have questions?</h3>
-            <p className="text-sm text-purple-200/90 max-w-md">
+          {/* Ambient radial violet illumination */}
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(circle at 75% 50%, rgba(124, 58, 237, 0.22) 0%, rgba(167, 139, 250, 0.06) 45%, transparent 75%)",
+            }}
+          />
+
+          <div className="relative z-10 flex flex-1 flex-col gap-2 text-center sm:text-left min-w-0">
+            <div className="flex items-center justify-center sm:justify-start gap-2 mb-0.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-violet-400 animate-pulse" />
+              <span className="text-[10px] font-bold tracking-[0.2em] text-white/40 uppercase">
+                GET IN TOUCH
+              </span>
+            </div>
+            <h3 className="text-2xl font-bold text-white tracking-tight sm:text-[26px] lg:text-[28px]">
+              Still have questions?
+            </h3>
+            <p className="text-sm text-gray-400 max-w-lg leading-relaxed">
               Start optimizing your AI prompts today with AURE. Free to use, no credit card required.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="relative z-10 shrink-0">
             <Link
               href="/auth"
-              className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-gray-900 shadow-md transition-all hover:bg-gray-100 hover:scale-[1.02] active:scale-[0.98]"
+              className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-white px-6 py-3 sm:px-7 sm:py-3.5 text-sm font-semibold text-gray-900 shadow-[0_4px_24px_rgba(255,255,255,0.18)] transition-all hover:bg-gray-50 hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
             >
               Get started for free
-              <ArrowRight size={16} />
+              <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
             </Link>
           </div>
         </motion.div>

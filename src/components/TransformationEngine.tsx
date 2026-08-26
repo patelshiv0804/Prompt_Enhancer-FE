@@ -9,18 +9,18 @@ import AnimatedParticleFlow, {
   FLOW_WIDTH,
   FLOW_HEIGHT,
 } from "./AnimatedParticleFlow";
+import { MobileTopFlow, MobileBottomFlow } from "./MobileParticleFlow";
 import OptimizedForCard from "./OptimizedForCard";
 
 /* ─────────────────────────────────────────────
  * TransformationEngine — The second "page" section.
  *
  * Layout:
- *   - Left column: section badge + heading (overlaid)
- *   - Full-width pipeline visualization
- *     Raw Prompt Card → AI Engine → Optimized For Card
- *   - Engine position is derived from the path convergence
- *     point so the hexagon always sits exactly where all
- *     incoming and outgoing particle paths meet.
+ *   - Desktop (>= 1024px): Full-width pipeline visualization
+ *     with canvas particle paths converging at exact coordinates.
+ *   - Mobile & Tablet (< 1024px): Apple/Notion-grade vertical
+ *     energy pipeline with converging and fanning bezier particle
+ *     curves, frosted glass cards, and symmetrical model grid.
  * ───────────────────────────────────────────── */
 
 /* Convert SVG-space coordinates to CSS % within the container */
@@ -75,18 +75,6 @@ export default function TransformationEngine({
            is untouched. !important is needed where the markup positions
            an element with inline style={{}}, which outranks a class. ──── */
 
-        /* The pipeline is a fixed 1060x780 coordinate space: the engine sits
-           at the particle paths' convergence point (530,415) and both cards
-           are absolutely positioned against it. Below lg the box is wider
-           than its column and the section's overflow:hidden clips it with no
-           scrollbar — at 375px only the middle 327px of 1060px is visible,
-           and RawPromptCard alone is a fixed 420px.
-
-           Scaling the box down (as WorksEverywhere does for its orbit) would
-           leave the 14px prompt text at ~4px, so instead the three stages are
-           unstacked into a plain vertical column at full size. DOM order is
-           already raw -> engine -> optimized, which is the pipeline's own
-           reading order, so nothing needs reordering. */
         @media (max-width: 1023px) {
           .te-flow {
             width: 100% !important;
@@ -94,46 +82,23 @@ export default function TransformationEngine({
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 28px;
+            gap: 0px;
           }
-          /* position:static drops each stage back into normal flow.
-             Two separate resets are needed: .te-engine centres itself with an
-             inline transform:translate(-50%,-50%), while the cards use
-             Tailwind's -translate-x-1/2 — and Tailwind v4 compiles that to the
-             standalone 'translate' property, which transform:none does NOT
-             cancel. Without the translate reset the cards render 163px
-             off-screen to the left. */
           .te-card-raw,
           .te-engine,
           .te-card-opt {
             position: static !important;
             transform: none !important;
             translate: none !important;
+            width: 100% !important;
+            display: flex;
+            justify-content: center;
           }
-          .te-card-raw,
-          .te-card-opt { width: 100%; }
-          /* Overrides RawPromptCard's own w-[420px] on the inner card div. */
           .te-card-raw > *,
           .te-card-raw > * > * { width: 100% !important; }
 
-          /* The canvas draws bezier paths through the 1060x780 space; once the
-             stages are stacked those curves connect nothing. Hiding the
-             wrapper also collapses the canvas to no box, so the component's
-             own IntersectionObserver stops reporting it as intersecting and
-             its requestAnimationFrame loop shuts down. */
           .te-particles { display: none !important; }
-          /* A dashed arrow annotation anchored to the engine's absolute
-             position — it points at empty space in a stacked column. */
           .te-engine-label { display: none !important; }
-
-          /* 10 platform tiles in one justify-between row need ~872px of
-             min-content (56px icon + 24px padding each, plus 9x8px gaps);
-             a 375px screen leaves 263px inside the card. */
-          .te-opt-row {
-            flex-wrap: wrap !important;
-            justify-content: center !important;
-            row-gap: 4px;
-          }
         }
       `}</style>
 
@@ -162,18 +127,18 @@ export default function TransformationEngine({
         />
       </div>
 
-      <div className="relative z-10 mx-auto w-full max-w-[1440px] px-6 py-12 lg:px-12 lg:py-16 flex flex-col items-center">
+      <div className="relative z-10 mx-auto w-full max-w-[1440px] px-4 sm:px-6 py-12 lg:px-12 lg:py-16 flex flex-col items-center">
         {/* ── Centered Header: Section Label + Heading ── */}
         <motion.div
-          className="relative z-20 flex flex-col items-center text-center mb-12 max-w-2xl"
+          className="relative z-20 flex flex-col items-center text-center mb-8 sm:mb-12 max-w-2xl px-2"
           initial={{ opacity: 0, y: -25 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
         >
           {/* Section badge */}
-          <div className="mb-4 flex items-center gap-2.5">
-            <div className="flex h-5 w-5 items-center justify-center rounded-[5px] bg-gradient-to-br from-violet-500 to-purple-600">
+          <div className="mb-3 sm:mb-4 flex items-center gap-2 sm:gap-2.5">
+            <div className="flex h-5 w-5 items-center justify-center rounded-[6px] bg-gradient-to-br from-violet-500 to-purple-600 shadow-[0_2px_8px_rgba(124,58,237,0.3)]">
               <svg
                 width="10"
                 height="10"
@@ -184,13 +149,13 @@ export default function TransformationEngine({
                 <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" />
               </svg>
             </div>
-            <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">
+            <span className="text-[10.5px] sm:text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">
               The Transformation Engine
             </span>
           </div>
 
           {/* Heading */}
-          <h2 className="text-[clamp(32px,3.8vw,46px)] font-extrabold leading-[1.2] tracking-tight text-gray-900">
+          <h2 className="text-[28px] sm:text-[36px] lg:text-[clamp(32px,3.8vw,46px)] font-extrabold leading-[1.2] tracking-tight text-gray-900">
             One prompt.{" "}
             <span className="gradient-text italic">Optimized everywhere.</span>
           </h2>
@@ -206,16 +171,14 @@ export default function TransformationEngine({
         >
           {/*
            * The container dimensions match the SVG viewBox exactly (1060×780).
-           * All child elements are absolutely positioned so the engine can be
-           * placed at the exact convergence point of the path system.
+           * All child elements are absolutely positioned on desktop so the engine
+           * sits at the convergence point of particle paths.
            */}
           <div
             className="te-flow relative"
             style={{ width: FLOW_WIDTH, height: FLOW_HEIGHT }}
           >
-            {/* Particle flow (SVG overlay — covers full container).
-                Wrapper is static, so the child's `absolute inset-0` still
-                resolves against .te-flow exactly as before. */}
+            {/* Particle flow (SVG overlay — covers full container on desktop). */}
             <div className="te-particles">
               {isVisible && <AnimatedParticleFlow />}
             </div>
@@ -228,6 +191,11 @@ export default function TransformationEngine({
                 onSubmit={onSubmit}
                 isEnhancing={isEnhancing}
               />
+            </div>
+
+            {/* ── Mobile & Tablet: Converging Bezier Particle Flow (Input -> Engine) ── */}
+            <div className="te-connector-top lg:hidden w-full flex justify-center z-0">
+              <MobileTopFlow />
             </div>
 
             {/* Center: AI Engine — placed at the exact convergence node.
@@ -243,7 +211,12 @@ export default function TransformationEngine({
               <AIEngine />
             </div>
 
-            {/* "AI Enhancement Engine" label — positioned to the right of the engine */}
+            {/* ── Mobile & Tablet: Fanning Bezier Particle Flow (Engine -> Models) ── */}
+            <div className="te-connector-bottom lg:hidden w-full flex justify-center z-0">
+              <MobileBottomFlow />
+            </div>
+
+            {/* "AI Enhancement Engine" label — positioned to the right of the engine on desktop */}
             <motion.div
               className="te-engine-label absolute z-10 flex items-center gap-2"
               style={{

@@ -377,6 +377,122 @@ export default function Sidebar() {
           )}
         </div>
 
+        {/* Mobile View Only: Top Profile & Logout card */}
+        {isMobile && (
+          <div
+            style={{
+              margin: '8px 10px 4px',
+              padding: '8px 10px',
+              background: 'rgba(124, 58, 237, 0.06)',
+              border: '1px solid rgba(124, 58, 237, 0.14)',
+              borderRadius: 12,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 8,
+              flexShrink: 0,
+            }}
+          >
+            <button
+              id="mobile-user-profile-btn"
+              onClick={() => {
+                setIsMobileOpen(false);
+                router.push('/dashboard/profile');
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                background: 'transparent',
+                border: 'none',
+                padding: 0,
+                minWidth: 0,
+                flex: 1,
+                textAlign: 'left',
+                cursor: 'pointer',
+              }}
+            >
+              <div
+                style={{
+                  background: '#2D1B69',
+                  color: '#FFFFFF',
+                  width: 32,
+                  height: 32,
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  overflow: 'hidden',
+                  boxShadow: '0 2px 6px rgba(45,27,105,0.25)',
+                }}
+              >
+                {user?.avatar_url ? (
+                  <img
+                    src={user.avatar_url}
+                    alt={user.display_name || user.email || 'User avatar'}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <span style={{ fontSize: 11, fontWeight: 700 }}>
+                    {(user?.display_name || user?.email || 'A').slice(0, 2).toUpperCase()}
+                  </span>
+                )}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0, flex: 1 }}>
+                <span
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: '#2D1B69',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {user?.display_name || user?.email || 'Dev Patel'}
+                </span>
+                <span
+                  style={{
+                    fontSize: 9.5,
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    color: '#7C3AED',
+                    letterSpacing: '0.4px',
+                  }}
+                >
+                  {user?.plan || 'Free'} Plan
+                </span>
+              </div>
+            </button>
+
+            <button
+              id="mobile-logout-btn"
+              onClick={() => setShowLogoutConfirm(true)}
+              title="Log out"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                padding: '5px 9px',
+                borderRadius: 8,
+                background: 'rgba(239, 68, 68, 0.08)',
+                border: '1px solid rgba(239, 68, 68, 0.18)',
+                color: '#DC2626',
+                fontSize: 11.5,
+                fontWeight: 600,
+                cursor: 'pointer',
+                flexShrink: 0,
+                transition: 'all 150ms ease',
+              }}
+              className="active:scale-95 hover:!bg-[rgba(239,68,68,0.15)]"
+            >
+              <LogOut size={12} strokeWidth={2} />
+              <span>Logout</span>
+            </button>
+          </div>
+        )}
+
         {/* Scrollable body */}
         <div
           style={{
@@ -796,67 +912,35 @@ export default function Sidebar() {
           )}
         </div>
 
-        {/* Footer (ChatGPT style) */}
-        <div style={{ flexShrink: 0, padding: showCollapsed ? '0 6px 10px' : '0 8px 10px' }}>
-          <div style={{ height: 1, background: 'rgba(124,58,237,0.06)', margin: '0 0 8px' }} />
-          {showCollapsed ? (
-            /* Collapsed Footer: Avatar circular button (Matching Image 2 SH avatar) */
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-              <button
-                id="user-profile-collapsed-btn"
-                onClick={() => router.push('/dashboard/profile')}
-                onMouseEnter={(e) => handleMouseEnterIcon(e, user?.display_name || user?.email || 'Profile', user?.plan || 'Free')}
-                onMouseLeave={handleMouseLeaveIcon}
-                aria-label="Profile"
-                style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  background: '#2D1B69',
-                  color: '#FFFFFF',
-                  border: 'none',
-                  cursor: 'pointer',
-                  transition: 'transform 260ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 260ms cubic-bezier(0.22, 1, 0.36, 1)',
-                  overflow: 'hidden',
-                }}
-                className="hover:scale-105 hover:shadow-[0_6px_16px_rgba(45,27,105,0.28)]"
-              >
-                {user?.avatar_url ? (
-                  <img
-                    src={user.avatar_url}
-                    alt={user.display_name || user.email || 'User avatar'}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                ) : (
-                  <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.5px' }}>
-                    {(user?.display_name || user?.email || 'A').slice(0, 2).toUpperCase()}
-                  </span>
-                )}
-              </button>
-            </div>
-          ) : (
-            /* Expanded Footer: User row + Logout (Matching Image 1) */
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '2px 4px' }}>
-              <button
-                id="user-profile-btn"
-                onClick={() => router.push('/dashboard/profile')}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 9, padding: '6px 8px',
-                  borderRadius: 8, flex: 1, border: 'none',
-                  background: 'transparent', textAlign: 'left',
-                  minWidth: 0, cursor: 'pointer',
-                }}
-                className="aure-soft-btn"
-              >
-                <div style={{
-                  background: '#2D1B69', color: '#FFFFFF',
-                  width: 28, height: 28, borderRadius: '50%',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  flexShrink: 0, overflow: 'hidden',
-                }}>
+        {/* Footer (Desktop & Tablet only — mobile profile is at the top) */}
+        {!isMobile && (
+          <div style={{ flexShrink: 0, padding: showCollapsed ? '0 6px 10px' : '0 8px 10px' }}>
+            <div style={{ height: 1, background: 'rgba(124,58,237,0.06)', margin: '0 0 8px' }} />
+            {showCollapsed ? (
+              /* Collapsed Footer: Avatar circular button (Matching Image 2 SH avatar) */
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                <button
+                  id="user-profile-collapsed-btn"
+                  onClick={() => router.push('/dashboard/profile')}
+                  onMouseEnter={(e) => handleMouseEnterIcon(e, user?.display_name || user?.email || 'Profile', user?.plan || 'Free')}
+                  onMouseLeave={handleMouseLeaveIcon}
+                  aria-label="Profile"
+                  style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: '#2D1B69',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'transform 260ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 260ms cubic-bezier(0.22, 1, 0.36, 1)',
+                    overflow: 'hidden',
+                  }}
+                  className="hover:scale-105 hover:shadow-[0_6px_16px_rgba(45,27,105,0.28)]"
+                >
                   {user?.avatar_url ? (
                     <img
                       src={user.avatar_url}
@@ -864,38 +948,72 @@ export default function Sidebar() {
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
                   ) : (
-                    <span style={{ fontSize: 10.5, fontWeight: 700 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.5px' }}>
                       {(user?.display_name || user?.email || 'A').slice(0, 2).toUpperCase()}
                     </span>
                   )}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: '#2D1B69', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {user?.display_name || user?.email || 'Dev Patel'}
-                  </span>
-                  <span style={{
-                    fontSize: 9, fontWeight: 700, textTransform: 'uppercase',
-                    background: 'rgba(124,58,237,0.12)', color: '#7C3AED',
-                    padding: '1px 6px', borderRadius: 4, flexShrink: 0,
-                  }}>{user?.plan || 'Free'}</span>
-                </div>
-              </button>
-              <button
-                onClick={() => setShowLogoutConfirm(true)}
-                title="Log out"
-                style={{
-                  width: 28, height: 28, borderRadius: 6, display: 'flex', alignItems: 'center',
-                  justifyContent: 'center', cursor: 'pointer', background: 'transparent',
-                  border: 'none', color: 'rgba(45,27,105,0.50)',
-                  transition: 'all 200ms cubic-bezier(0.22, 1, 0.36, 1)',
-                }}
-                className="hover:!bg-[rgba(239,68,68,0.10)] hover:!text-[#DC2626]"
-              >
-                <LogOut size={15} strokeWidth={1.8} />
-              </button>
-            </div>
-          )}
-        </div>
+                </button>
+              </div>
+            ) : (
+              /* Expanded Footer: User row + Logout (Matching Image 1) */
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '2px 4px' }}>
+                <button
+                  id="user-profile-btn"
+                  onClick={() => router.push('/dashboard/profile')}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 9, padding: '6px 8px',
+                    borderRadius: 8, flex: 1, border: 'none',
+                    background: 'transparent', textAlign: 'left',
+                    minWidth: 0, cursor: 'pointer',
+                  }}
+                  className="aure-soft-btn"
+                >
+                  <div style={{
+                    background: '#2D1B69', color: '#FFFFFF',
+                    width: 28, height: 28, borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0, overflow: 'hidden',
+                  }}>
+                    {user?.avatar_url ? (
+                      <img
+                        src={user.avatar_url}
+                        alt={user.display_name || user.email || 'User avatar'}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      <span style={{ fontSize: 10.5, fontWeight: 700 }}>
+                        {(user?.display_name || user?.email || 'A').slice(0, 2).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#2D1B69', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {user?.display_name || user?.email || 'Dev Patel'}
+                    </span>
+                    <span style={{
+                      fontSize: 9, fontWeight: 700, textTransform: 'uppercase',
+                      background: 'rgba(124,58,237,0.12)', color: '#7C3AED',
+                      padding: '1px 6px', borderRadius: 4, flexShrink: 0,
+                    }}>{user?.plan || 'Free'}</span>
+                  </div>
+                </button>
+                <button
+                  onClick={() => setShowLogoutConfirm(true)}
+                  title="Log out"
+                  style={{
+                    width: 28, height: 28, borderRadius: 6, display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', cursor: 'pointer', background: 'transparent',
+                    border: 'none', color: 'rgba(45,27,105,0.50)',
+                    transition: 'all 200ms cubic-bezier(0.22, 1, 0.36, 1)',
+                  }}
+                  className="hover:!bg-[rgba(239,68,68,0.10)] hover:!text-[#DC2626]"
+                >
+                  <LogOut size={15} strokeWidth={1.8} />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </aside>
 
       {/* Mobile: floating hamburger to open the drawer (hidden while open) */}
