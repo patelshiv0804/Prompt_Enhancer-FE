@@ -174,11 +174,10 @@ export default function FAQSection() {
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
-                className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all duration-200 ${
-                  activeCategory === cat.id
+                className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all duration-200 ${activeCategory === cat.id
                     ? "bg-purple-600 text-white shadow-sm"
                     : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                }`}
+                  }`}
               >
                 {cat.label}
               </button>
@@ -198,11 +197,10 @@ export default function FAQSection() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: index * 0.05 }}
-                  className={`overflow-hidden rounded-2xl border transition-all duration-200 ${
-                    isOpen
+                  className={`overflow-hidden rounded-2xl border transition-all duration-200 ${isOpen
                       ? "border-purple-200 bg-white shadow-md shadow-purple-500/5 ring-1 ring-purple-500/20"
                       : "border-gray-200/80 bg-white hover:border-purple-200 hover:shadow-sm"
-                  }`}
+                    }`}
                 >
                   <button
                     onClick={() => toggleFAQ(item.id)}
@@ -213,9 +211,8 @@ export default function FAQSection() {
                       {item.question}
                     </span>
                     <div
-                      className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full transition-transform duration-200 ${
-                        isOpen ? "rotate-180 bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-500"
-                      }`}
+                      className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full transition-transform duration-200 ${isOpen ? "rotate-180 bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-500"
+                        }`}
                     >
                       <ChevronDown size={18} />
                     </div>

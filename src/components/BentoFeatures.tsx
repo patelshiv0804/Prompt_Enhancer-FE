@@ -1642,7 +1642,7 @@ function CardTemplates() {
  * ═══════════════════════════════════════════════════════════════════ */
 export default function BentoFeatures() {
   return (
-    <section id="features" className="bento-section" style={{ background: P.bg, padding: "120px 0 100px", position: "relative", overflow: "hidden" }}>
+    <section id="features" className="bento-section" style={{ background: P.bg, padding: "100px 0 90px", position: "relative", overflow: "hidden" }}>
 
       <style>{`
         /* ─── Responsive ───────────────────────────────────────────────
@@ -1663,9 +1663,9 @@ export default function BentoFeatures() {
            900px is the threshold: above it the container is wide enough that
            every card still fits its fixed row height; below it they clip. */
         @media (max-width: 899px) {
-          .bento-section { padding: 72px 0 64px !important; }
+          .bento-section { padding: 64px 0 56px !important; }
           .bento-inner   { padding: 0 16px !important; }
-          .bento-head    { margin-bottom: 48px !important; }
+          .bento-head    { margin-bottom: 40px !important; }
 
           .bento-grid {
             grid-template-areas: none !important;
@@ -1714,7 +1714,7 @@ export default function BentoFeatures() {
           viewport={{ once: true, amount: 0.4 }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
           className="bento-head"
-          style={{ textAlign: "center", marginBottom: 80 }}
+          style={{ textAlign: "center", marginBottom: 64 }}
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 22 }}>
             <div style={{ width: 22, height: 22, borderRadius: 7, background: GRAD, display: "flex", alignItems: "center", justifyContent: "center" }}>
