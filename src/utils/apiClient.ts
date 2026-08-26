@@ -20,6 +20,11 @@ export async function apiRequest<T = any>(
   // Build headers
   const defaultHeaders: Record<string, string> = {};
 
+  const token = typeof window !== 'undefined' ? (localStorage.getItem('token') || localStorage.getItem('promptiq_access_token')) : null;
+  if (token) {
+    defaultHeaders['Authorization'] = `Bearer ${token}`;
+  }
+
   // Don't set Content-Type if we're sending URL-encoded form data or FormData
   // (fetch will automatically set correct boundaries/Content-Type for FormData)
   if (!(restOptions.body instanceof FormData) && !(restOptions.body instanceof URLSearchParams)) {
