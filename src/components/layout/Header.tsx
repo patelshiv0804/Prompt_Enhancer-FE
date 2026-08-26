@@ -24,9 +24,10 @@ export default function Header({ activeTab = 'Draft', onTabChange }: HeaderProps
   const [showStyleDropdown, setShowStyleDropdown] = useState(false);
   const [showTargetDropdown, setShowTargetDropdown] = useState(false);
 
-  // Below 768px the shared shell has a floating hamburger at top-left; the
-  // header wraps and reserves left space so its title clears that button.
+  // Below 768px the shared shell has a floating hamburger at top-left.
+  // We distinguish phones (<640px) vs tablets (640px-1024px) so tablet retains the toggle.
   const isMobile = useMediaQuery('(max-width: 768px)');
+  const isPhone  = useMediaQuery('(max-width: 639px)');
 
   const styleDropdownRef  = useRef<HTMLDivElement>(null);
   const targetDropdownRef = useRef<HTMLDivElement>(null);
@@ -69,98 +70,136 @@ export default function Header({ activeTab = 'Draft', onTabChange }: HeaderProps
 
   /* ── Shared inline styles as objects for readability ── */
   const pillBase: React.CSSProperties = {
-    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '7px 12px',
-    borderRadius: 9999, fontSize: 13, fontWeight: 500, cursor: 'pointer',
-    whiteSpace: 'nowrap', transition: 'all 250ms ease',
-    width: isMobile ? '100%' : undefined,
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: isPhone ? 4 : 6,
+    height: isPhone ? 28 : 36, padding: isPhone ? '0 8px' : '0 14px',
+    borderRadius: 9999, fontSize: isPhone ? 11 : 13, fontWeight: 500, cursor: 'pointer',
+    whiteSpace: 'nowrap', transition: 'all 200ms ease',
+    background: 'rgba(255, 255, 255, 0.95)',
+    border: '1px solid rgba(124, 58, 237, 0.16)',
+    color: 'var(--color-text-primary)',
+    boxShadow: '0 1px 3px rgba(109, 40, 217, 0.05), inset 0 1px 0 rgba(255, 255, 255, 1)',
   };
 
   return (
     <header style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: isMobile ? '16px 16px 14px' : '32px 48px 24px',
-      gap: 16, rowGap: 12, flexWrap: isMobile ? 'wrap' : 'nowrap', flexShrink: 0,
-      maxWidth: 1100, margin: '0 auto', width: '100%',
+      padding: isPhone ? '14px 16px 10px' : (isMobile ? '18px 24px 14px' : '28px 36px 20px'),
+      marginBottom: isPhone ? 18 : (isMobile ? 22 : 12),
+      gap: isPhone ? 6 : 12, flexWrap: 'nowrap', flexShrink: 0,
+      maxWidth: 1100, margin: isPhone ? '0 auto 18px' : (isMobile ? '0 auto 22px' : '0 auto 12px'), width: '100%',
     }}>
       {/* Left: Title + Tabs */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 20, paddingLeft: isMobile ? 44 : 0 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: '-0.02em' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: isPhone ? 8 : 14, paddingLeft: isMobile ? 40 : 0, minWidth: 0, flexShrink: 0 }}>
+        <h1 style={{ fontSize: isPhone ? 17 : (isMobile ? 20 : 22), fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: '-0.02em', margin: 0, whiteSpace: 'nowrap' }}>
           {activeTab === 'Vault' ? 'Vault' : 'Optimizer'}
         </h1>
 
-        {/* Recessed tab trough */}
-        <div style={{
-          display: 'flex', alignItems: 'center',
-          background: 'linear-gradient(160deg, rgba(109,40,217,0.10) 0%, rgba(124,58,237,0.04) 100%)',
-          border: '1px solid rgba(124,58,237,0.13)', borderRadius: 9999, padding: 3, gap: 2,
-          boxShadow: 'inset 0 2px 5px rgba(80,20,180,0.14), inset 0 1px 2px rgba(0,0,0,0.08), 0 1px 0 rgba(255,255,255,0.75)',
-        }}>
-          {['Draft', 'Vault'].map(tab => (
-            <button
-              key={tab}
-              onClick={() => onTabChange?.(tab)}
-              style={{
-                fontSize: 13, fontWeight: tab === activeTab ? 600 : 500,
-                color: tab === activeTab ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
-                padding: '5px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer',
-                background: tab === activeTab ? '#ffffff' : 'transparent',
-                boxShadow: tab === activeTab
-                  ? 'inset 0 1px 0 rgba(255,255,255,0.90), 0 4px 8px rgba(80,20,180,0.12), 0 1px 3px rgba(0,0,0,0.10), 0 0 0 1px rgba(124,58,237,0.07)'
-                  : 'none',
-                transform: tab === activeTab ? 'translateY(-0.5px)' : 'none',
-                transition: 'all 250ms ease',
-              }}
-            >{tab}</button>
-          ))}
-        </div>
+        {/* Recessed tab trough — hidden ONLY on phones (<640px), visible on tablet & desktop */}
+        {!isPhone && (
+          <div style={{
+            display: 'flex', alignItems: 'center',
+            background: 'linear-gradient(160deg, rgba(109,40,217,0.10) 0%, rgba(124,58,237,0.04) 100%)',
+            border: '1px solid rgba(124,58,237,0.13)', borderRadius: 9999, padding: 3, gap: 2,
+            boxShadow: 'inset 0 2px 5px rgba(80,20,180,0.14), inset 0 1px 2px rgba(0,0,0,0.08), 0 1px 0 rgba(255,255,255,0.75)',
+          }}>
+            {['Draft', 'Vault'].map(tab => (
+              <button
+                key={tab}
+                onClick={() => onTabChange?.(tab)}
+                style={{
+                  fontSize: 12.5, fontWeight: tab === activeTab ? 600 : 500,
+                  color: tab === activeTab ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+                  padding: '4px 13px', borderRadius: 9999, border: 'none', cursor: 'pointer',
+                  background: tab === activeTab ? '#ffffff' : 'transparent',
+                  boxShadow: tab === activeTab
+                    ? 'inset 0 1px 0 rgba(255,255,255,0.90), 0 4px 8px rgba(80,20,180,0.12), 0 1px 3px rgba(0,0,0,0.10), 0 0 0 1px rgba(124,58,237,0.07)'
+                    : 'none',
+                  transform: tab === activeTab ? 'translateY(-0.5px)' : 'none',
+                  transition: 'all 250ms ease',
+                }}
+              >{tab}</button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Right: Style + Target pills (only shown when not in Vault) */}
       {activeTab !== 'Vault' && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: isMobile ? '100%' : undefined }}>
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: isPhone ? 5 : 8,
+          flexShrink: 0,
+          marginLeft: 'auto',
+        }}>
 
         {/* Style dropdown */}
-        <div style={{ position: 'relative', flex: isMobile ? 1 : undefined }} ref={styleDropdownRef}>
+        <div style={{ position: 'relative', flexShrink: 0 }} ref={styleDropdownRef}>
           <button
             onClick={() => { setShowStyleDropdown(!showStyleDropdown); setShowTargetDropdown(false); }}
-            style={{
-              ...pillBase,
-              background: 'linear-gradient(160deg, rgba(109,40,217,0.07) 0%, rgba(255,255,255,0.80) 100%)',
-              border: '1px solid rgba(124,58,237,0.13)', color: 'var(--color-text-primary)',
-              boxShadow: 'inset 0 2px 4px rgba(80,20,180,0.10), inset 0 1px 2px rgba(0,0,0,0.06), 0 1px 0 rgba(255,255,255,0.90)',
-            }}
-            className="hover:translate-y-[-1px] hover:border-[rgba(124,58,237,0.22)] hover:shadow-[inset_0_1px_3px_rgba(80,20,180,0.08),0_3px_10px_rgba(124,58,237,0.10),0_1px_0_rgba(255,255,255,1)]"
+            style={pillBase}
+            className="hover:translate-y-[-1px] hover:border-[rgba(124,58,237,0.30)] hover:shadow-[0_3px_10px_rgba(124,58,237,0.10)] active:scale-[0.98]"
           >
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: activeStyleObj.color, display: 'inline-block', flexShrink: 0 }} />
-            <span style={{ opacity: 0.6 }}>Style</span>
-            <span style={{ opacity: 0.3 }}>|</span>
-            <span style={{ fontWeight: 600 }}>{activeStyle.name}</span>
-            <ChevronDown size={13} style={{ opacity: 0.5 }} />
+            <span style={{
+              position: 'relative',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: isPhone ? 6 : 8,
+              height: isPhone ? 6 : 8,
+              flexShrink: 0,
+            }}>
+              {activeStyleObj.id && (
+                <span
+                  style={{
+                    position: 'absolute',
+                    inset: -2,
+                    borderRadius: '50%',
+                    background: activeStyleObj.color,
+                    opacity: 0.4,
+                  }}
+                  className="animate-ping"
+                />
+              )}
+              <span style={{ width: isPhone ? 6 : 8, height: isPhone ? 6 : 8, borderRadius: '50%', background: activeStyleObj.color, display: 'inline-block' }} />
+            </span>
+            <span style={{ fontSize: isPhone ? 9.5 : 11, fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Style</span>
+            <span style={{ opacity: 0.3, fontSize: isPhone ? 9.5 : 11 }}>|</span>
+            <span style={{ fontWeight: 600, fontSize: isPhone ? 11 : 12.5, color: '#111', maxWidth: isPhone ? 65 : 110, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {activeStyle.name}
+            </span>
+            <ChevronDown size={isPhone ? 10 : 13} style={{ opacity: 0.5, flexShrink: 0 }} />
           </button>
 
           {showStyleDropdown && (
             <div style={{
-              position: 'absolute', top: 'calc(100% + 8px)', right: isMobile ? 'auto' : 0, left: isMobile ? 0 : 'auto', background: 'white',
-              border: '1px solid rgba(124,58,237,0.10)', borderRadius: 12, minWidth: 200,
+              position: 'absolute', top: 'calc(100% + 8px)', right: 0, background: 'rgba(255,255,255,0.98)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(124,58,237,0.15)', borderRadius: 16, minWidth: 200,
               overflow: 'hidden', zIndex: 100,
-              boxShadow: '0 8px 24px rgba(109,40,217,0.10), 0 2px 8px rgba(0,0,0,0.06)',
+              boxShadow: '0 12px 36px rgba(109,40,217,0.14), 0 4px 12px rgba(0,0,0,0.06)',
               animation: 'dropdownFadeIn 150ms ease',
             }}>
-              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-secondary)', padding: '10px 12px 6px' }}>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-secondary)', padding: '10px 14px 6px' }}>
                 Style Memory
               </div>
-              <div style={{ padding: 4, display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <div style={{ padding: '4px 6px 8px', display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {styles.map(style => (
                   <button key={style.name} onClick={() => { setActiveStyle({ id: style.id, name: style.name }); setShowStyleDropdown(false); }}
                     style={{
                       display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 10px',
-                      fontSize: 13, fontWeight: 500, color: 'var(--color-text-primary)',
-                      borderRadius: 8, textAlign: 'left', border: 'none', cursor: 'pointer', background: 'transparent',
+                      fontSize: 13, fontWeight: activeStyle.name === style.name ? 650 : 500,
+                      color: activeStyle.name === style.name ? 'var(--color-primary)' : 'var(--color-text-primary)',
+                      background: activeStyle.name === style.name ? 'rgba(124,58,237,0.08)' : 'transparent',
+                      borderRadius: 10, textAlign: 'left', border: 'none', cursor: 'pointer',
                     }}
-                    className="hover:bg-[rgba(124,58,237,0.05)]"
+                    className="hover:bg-[rgba(124,58,237,0.05)] transition-colors"
                   >
-                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: style.color, display: 'inline-block' }} />
-                    {style.name}
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: style.color, display: 'inline-block', flexShrink: 0 }} />
+                    <span style={{ flex: 1 }}>{style.name}</span>
+                    {activeStyle.name === style.name && (
+                      <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-primary)' }}>Active</span>
+                    )}
                   </button>
                 ))}
               </div>
@@ -169,64 +208,71 @@ export default function Header({ activeTab = 'Draft', onTabChange }: HeaderProps
         </div>
 
         {/* Target dropdown */}
-        <div style={{ position: 'relative', flex: isMobile ? 1 : undefined }} ref={targetDropdownRef}>
+        <div style={{ position: 'relative', flexShrink: 0 }} ref={targetDropdownRef}>
           <button
             onClick={() => { setShowTargetDropdown(!showTargetDropdown); setShowStyleDropdown(false); }}
-            style={{
-              ...pillBase,
-              background: 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)', color: 'white',
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.22), 0 5px 16px rgba(124,58,237,0.38), 0 2px 5px rgba(0,0,0,0.14), 0 0 0 1px rgba(124,58,237,0.20)',
-            }}
-            className="hover:translate-y-[-2px] hover:brightness-105 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.28),0_8px_24px_rgba(124,58,237,0.48),0_3px_8px_rgba(0,0,0,0.16),0_0_0_1px_rgba(124,58,237,0.25)]"
+            style={pillBase}
+            className="hover:translate-y-[-1px] hover:border-[rgba(124,58,237,0.30)] hover:shadow-[0_3px_10px_rgba(124,58,237,0.10)] active:scale-[0.98]"
           >
-            <span style={{ opacity: 0.75 }}>Target</span>
-            <span style={{ opacity: 0.4 }}>|</span>
-            <span style={{ fontWeight: 600 }}>{activeTarget}</span>
-            <ChevronDown size={13} style={{ opacity: 0.6 }} />
+            <span style={{ width: isPhone ? 6 : 7, height: isPhone ? 6 : 7, borderRadius: '50%', background: '#7C3AED', display: 'inline-block', flexShrink: 0 }} />
+            <span style={{ fontSize: isPhone ? 9.5 : 11, fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Target</span>
+            <span style={{ opacity: 0.3, fontSize: isPhone ? 9.5 : 11 }}>|</span>
+            <span style={{ fontWeight: 650, fontSize: isPhone ? 11 : 12.5, color: '#7C3AED', maxWidth: isPhone ? 65 : 110, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {activeTarget}
+            </span>
+            <ChevronDown size={isPhone ? 10 : 13} style={{ opacity: 0.5, flexShrink: 0 }} />
           </button>
 
           {showTargetDropdown && (
             <div style={{
-              position: 'absolute', top: 'calc(100% + 8px)', right: 0, background: 'white',
-              border: '1px solid rgba(124,58,237,0.10)', borderRadius: 12, minWidth: 220,
+              position: 'absolute', top: 'calc(100% + 8px)', right: 0, background: 'rgba(255,255,255,0.98)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(124,58,237,0.15)', borderRadius: 16, minWidth: 220,
               overflow: 'hidden', zIndex: 100,
-              boxShadow: '0 8px 24px rgba(109,40,217,0.10), 0 2px 8px rgba(0,0,0,0.06)',
+              boxShadow: '0 12px 36px rgba(109,40,217,0.14), 0 4px 12px rgba(0,0,0,0.06)',
               animation: 'dropdownFadeIn 150ms ease',
             }}>
-              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-secondary)', padding: '10px 12px 6px' }}>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-secondary)', padding: '10px 14px 6px' }}>
                 Target AI model
               </div>
-              <div style={{ padding: 4, display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <div style={{ padding: '4px 6px', display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {models.map(model => (
                   <button key={model} onClick={() => { setActiveTarget(model); setShowTargetDropdown(false); }}
                     style={{
                       display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 10px',
-                      fontSize: 13, fontWeight: 500, color: 'var(--color-text-primary)',
-                      borderRadius: 8, textAlign: 'left', border: 'none', cursor: 'pointer', background: 'transparent',
+                      fontSize: 13, fontWeight: activeTarget === model ? 650 : 500,
+                      color: activeTarget === model ? 'var(--color-primary)' : 'var(--color-text-primary)',
+                      background: activeTarget === model ? 'rgba(124,58,237,0.08)' : 'transparent',
+                      borderRadius: 10, textAlign: 'left', border: 'none', cursor: 'pointer',
                     }}
-                    className="hover:bg-[rgba(124,58,237,0.05)]"
+                    className="hover:bg-[rgba(124,58,237,0.05)] transition-colors"
                   >
                     <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--color-primary)', flexShrink: 0, opacity: activeTarget === model ? 1 : 0 }} />
-                    {model}
+                    <span style={{ flex: 1 }}>{model}</span>
+                    {activeTarget === model && (
+                      <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-primary)' }}>Selected</span>
+                    )}
                   </button>
                 ))}
               </div>
-              <div style={{ height: 1, background: 'rgba(124,58,237,0.08)', margin: '4px 0' }} />
-              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-secondary)', padding: '6px 12px' }}>
+              <div style={{ height: 1, background: 'rgba(124,58,237,0.08)', margin: '4px 8px' }} />
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-secondary)', padding: '6px 14px' }}>
                 Optimizer Engine
               </div>
-              <div style={{ padding: 4, display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <div style={{ padding: '4px 6px 8px', display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {engines.map(engine => (
                   <button key={engine} onClick={() => { setActiveEngine(engine); setShowTargetDropdown(false); }}
                     style={{
                       display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 10px',
-                      fontSize: 13, fontWeight: 500, color: 'var(--color-text-primary)',
-                      borderRadius: 8, textAlign: 'left', border: 'none', cursor: 'pointer', background: 'transparent',
+                      fontSize: 13, fontWeight: activeEngine === engine ? 650 : 500,
+                      color: activeEngine === engine ? 'var(--color-primary)' : 'var(--color-text-primary)',
+                      background: activeEngine === engine ? 'rgba(124,58,237,0.08)' : 'transparent',
+                      borderRadius: 10, textAlign: 'left', border: 'none', cursor: 'pointer',
                     }}
-                    className="hover:bg-[rgba(124,58,237,0.05)]"
+                    className="hover:bg-[rgba(124,58,237,0.05)] transition-colors"
                   >
                     <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--color-primary)', flexShrink: 0, opacity: activeEngine === engine ? 1 : 0 }} />
-                    {engine}
+                    <span style={{ flex: 1 }}>{engine}</span>
                   </button>
                 ))}
               </div>
