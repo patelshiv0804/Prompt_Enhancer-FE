@@ -1318,40 +1318,65 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
         {/* Header Bar */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          flexWrap: 'wrap', gap: 12,
-          padding: isMobile ? '10px 14px' : '12px 20px', background: 'rgba(255,255,255,0.85)', borderRadius: 16,
-          border: '1px solid rgba(124,58,237,0.10)', boxShadow: '0 2px 12px rgba(109,40,217,0.04)',
+          flexWrap: 'nowrap', gap: isMobile ? 8 : 12,
+          padding: isMobile ? '8px 12px' : '10px 18px',
+          background: 'rgba(255,255,255,0.90)',
+          borderRadius: isMobile ? 12 : 16,
+          border: '1px solid rgba(124,58,237,0.10)',
+          boxShadow: '0 2px 12px rgba(109,40,217,0.04)',
           backdropFilter: 'blur(12px)',
           width: '100%', boxSizing: 'border-box',
           position: 'relative', zIndex: 10,
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 12, minWidth: 0, overflow: 'hidden' }}>
             <div style={{
-              display: 'flex', alignItems: 'center', gap: 7, padding: '6px 14px', borderRadius: 9999,
-              fontSize: 12.5, fontWeight: 700, background: 'rgba(124,58,237,0.11)', color: '#6D28D9',
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: isMobile ? '4px 10px' : '6px 12px',
+              borderRadius: 9999,
+              fontSize: isMobile ? 11.5 : 12.5,
+              fontWeight: 700,
+              background: 'rgba(124,58,237,0.11)',
+              color: '#6D28D9',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
             }}>
-              <ModeIcon size={14} />
+              <ModeIcon size={13} />
               <span>{session.mode}</span>
             </div>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#64748B', fontWeight: 500 }}>
-              <Clock size={13} />
-              {session.createdAt}
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              fontSize: isMobile ? 11 : 12,
+              color: '#64748B',
+              fontWeight: 500,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}>
+              <Clock size={12} style={{ flexShrink: 0 }} />
+              <span>{session.createdAt}</span>
             </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 10, flexShrink: 0, marginLeft: 'auto' }}>
             {sessionVersions.length > 1 && (
               <button
                 onClick={() => { setCompareMode(!compareMode); if (!compareMode) setCompareIndex(0); }}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 10,
-                  fontSize: 12.5, fontWeight: 600, cursor: 'pointer', transition: 'all 160ms ease',
+                  display: 'inline-flex', alignItems: 'center', gap: 5,
+                  padding: isMobile ? '5px 10px' : '6px 14px',
+                  borderRadius: 8,
+                  fontSize: isMobile ? 11.5 : 12.5,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 160ms ease',
                   background: compareMode ? 'linear-gradient(135deg, #6D28D9, #7C3AED)' : 'rgba(124,58,237,0.07)',
-                  color: compareMode ? 'white' : '#6D28D9', border: '1px solid rgba(124,58,237,0.15)',
+                  color: compareMode ? 'white' : '#6D28D9',
+                  border: '1px solid rgba(124,58,237,0.15)',
+                  whiteSpace: 'nowrap',
                 }}
               >
-                <GitCompareArrows size={14} />
-                <span>{compareMode ? 'Exit Compare' : 'Compare'}</span>
+                <GitCompareArrows size={13} />
+                <span>{compareMode ? 'Exit' : 'Compare'}</span>
               </button>
             )}
 
@@ -1362,20 +1387,25 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                 disabled={isReenhancing}
                 onClick={handleReenhance}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 10,
-                  fontSize: 12.5, fontWeight: 700, cursor: isReenhancing ? 'not-allowed' : 'pointer',
-                  transition: 'all 160ms ease', opacity: isReenhancing ? 0.7 : 1,
+                  display: 'inline-flex', alignItems: 'center', gap: 5,
+                  padding: isMobile ? '5px 12px' : '6px 14px',
+                  borderRadius: 8,
+                  fontSize: isMobile ? 11.5 : 12.5,
+                  fontWeight: 700,
+                  cursor: isReenhancing ? 'not-allowed' : 'pointer',
+                  transition: 'all 160ms ease',
+                  opacity: isReenhancing ? 0.7 : 1,
                   background: 'linear-gradient(135deg, rgba(124,58,237,0.14), rgba(168,85,247,0.10))',
-                  color: '#6D28D9', border: '1px solid rgba(124,58,237,0.22)',
-                  boxShadow: isReenhancing ? 'none' : '0 2px 8px rgba(124,58,237,0.12)',
+                  color: '#6D28D9',
+                  border: '1px solid rgba(124,58,237,0.22)',
+                  boxShadow: isReenhancing ? 'none' : '0 2px 8px rgba(124,58,237,0.10)',
+                  whiteSpace: 'nowrap',
                 }}
               >
-                <Wand2 size={14} style={{ animation: isReenhancing ? 'spin 1s linear infinite' : 'none' }} />
+                <Wand2 size={13} style={{ animation: isReenhancing ? 'spin 1s linear infinite' : 'none' }} />
                 <span>{isReenhancing ? 'Re-enhancing…' : 'Re-enhance'}</span>
               </button>
             )}
-
-            {/* Style dropdown and Target dropdown removed from top */}
           </div>
         </div>
 

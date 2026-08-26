@@ -263,26 +263,46 @@ export default function VersionHeader({
       <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 0%, rgba(124, 58, 237, 0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
       {/* Top Row */}
-      <div style={{ position: 'relative', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+      <div style={{ position: 'relative', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: isMobile ? 8 : 12, marginBottom: isMobile ? 12 : 16 }}>
         {/* Badge group */}
-        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10, flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255, 255, 255, 0.08)', border: '1px solid rgba(167, 139, 250, 0.2)', borderRadius: 20, padding: '5px 14px', fontSize: 13, fontWeight: 600, color: 'rgba(255, 255, 255, 0.9)', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 10, flex: isMobile ? '1 1 auto' : undefined }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            background: 'rgba(255, 255, 255, 0.08)', border: '1px solid rgba(167, 139, 250, 0.2)',
+            borderRadius: 20, padding: isMobile ? '4px 10px' : '5px 14px',
+            fontSize: isMobile ? 12 : 13, fontWeight: 600, color: 'rgba(255, 255, 255, 0.9)',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+            whiteSpace: 'nowrap',
+          }}>
             v{activeVersion.versionNumber} <span style={{ color: 'rgba(167, 139, 250, 0.5)' }}>·</span> Current
           </div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: activeColor, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ fontSize: isMobile ? 12 : 13, fontWeight: 700, color: activeColor, display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor', boxShadow: '0 0 6px currentColor' }} />
             Score: {activeVersion.overallScore}
           </div>
         </div>
+
+        {/* All Drafts button */}
+        <button onClick={onOpenHistory} style={{
+          display: 'inline-flex', alignItems: 'center', gap: 5,
+          padding: isMobile ? '5px 12px' : '7px 16px',
+          background: 'rgba(255, 255, 255, 0.06)', border: '1px solid rgba(167, 139, 250, 0.15)',
+          borderRadius: 10, fontSize: isMobile ? 12 : 13, fontWeight: 600, color: 'rgba(255, 255, 255, 0.7)',
+          cursor: 'pointer', transition: 'all 250ms ease', whiteSpace: 'nowrap', boxShadow: '0 2px 6px rgba(0, 0, 0, 0.15)',
+          marginLeft: isMobile ? 'auto' : undefined,
+        }} className="hover:!bg-[rgba(167,139,250,0.12)] hover:!text-[#A78BFA] hover:!border-[rgba(167,139,250,0.35)] hover:shadow-[0_4px_16px_rgba(124,58,237,0.2)] hover:translate-y-[-1px]">
+          <ScrollText size={13} />
+          <span>All Drafts ({versions.length})</span>
+        </button>
 
         {/* Version search */}
         <div style={{
           position: 'relative', display: 'flex', alignItems: 'center',
           background: searchNotFound ? 'rgba(239, 68, 68, 0.12)' : searchMatch !== null ? 'rgba(96, 216, 250, 0.12)' : 'rgba(255, 255, 255, 0.07)',
           border: `1px solid ${searchNotFound ? 'rgba(239, 68, 68, 0.5)' : searchMatch !== null ? 'rgba(96, 216, 250, 0.5)' : 'rgba(167, 139, 250, 0.20)'}`,
-          borderRadius: 24, padding: '6px 12px', transition: 'all 250ms ease',
-          width: isMobile ? '100%' : 240,
-          order: isMobile ? 3 : undefined, flexBasis: isMobile ? '100%' : undefined, boxSizing: 'border-box',
+          borderRadius: 24, padding: isMobile ? '5px 10px' : '6px 12px', transition: 'all 250ms ease',
+          width: isMobile ? '100%' : 220,
+          flexBasis: isMobile ? '100%' : undefined, boxSizing: 'border-box',
         }}>
           <Search size={12} style={{ position: 'absolute', left: 12, color: searchNotFound ? 'rgba(239, 68, 68, 0.8)' : searchMatch !== null ? 'rgba(167, 139, 250, 1)' : 'rgba(196, 181, 253, 0.6)' }} />
           <input
@@ -301,18 +321,6 @@ export default function VersionHeader({
             </button>
           )}
         </div>
-
-        {/* All Drafts button */}
-        <button onClick={onOpenHistory} style={{
-          display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px',
-          background: 'rgba(255, 255, 255, 0.06)', border: '1px solid rgba(167, 139, 250, 0.15)',
-          borderRadius: 10, fontSize: 13, fontWeight: 600, color: 'rgba(255, 255, 255, 0.7)', cursor: 'pointer',
-          transition: 'all 250ms ease', whiteSpace: 'nowrap', boxShadow: '0 2px 6px rgba(0, 0, 0, 0.15)',
-          order: isMobile ? 2 : undefined,
-        }} className="hover:!bg-[rgba(167,139,250,0.12)] hover:!text-[#A78BFA] hover:!border-[rgba(167,139,250,0.35)] hover:shadow-[0_4px_16px_rgba(124,58,237,0.2)] hover:translate-y-[-1px]">
-          <ScrollText size={14} />
-          <span>All Drafts ({versions.length})</span>
-        </button>
       </div>
 
       {/* Journey strip */}
