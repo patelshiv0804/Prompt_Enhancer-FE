@@ -15,6 +15,7 @@ import {
 } from '@/features/style-memory/services/styleMemoryService';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import StyleMemorySkeleton from '@/features/style-memory/components/StyleMemorySkeleton';
+import { getUserMessage } from '@/utils/errorMessages';
 
 /* ═══════════════════════════════════════════════════
    Types & Constants
@@ -554,6 +555,7 @@ function ProfileModal({
   const [category, setCategory] = useState<StyleCategory>('character');
   const [injection, setInjection] = useState('');
   const [tagsInput, setTagsInput] = useState('');
+  const [modalError, setModalError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const isEditing = !!editingProfile;
@@ -564,14 +566,17 @@ function ProfileModal({
       setCategory(editingProfile.category);
       setInjection(editingProfile.injectionPrompt);
       setTagsInput(editingProfile.tags.map(t => t.replace(/^#/, '')).join(', '));
+      setModalError(null);
     } else if (open) {
       setName(''); setCategory('character'); setInjection(''); setTagsInput('');
+      setModalError(null);
     }
   }, [open, editingProfile]);
 
   const handleSave = async () => {
     if (!name.trim() || submitting) return;
     setSubmitting(true);
+    setModalError(null);
     try {
       const tags = tagsInput.split(',').map(t => t.trim()).filter(Boolean).map(t => t.startsWith('#') ? t : `#${t}`);
       await onSave({
@@ -583,8 +588,9 @@ function ProfileModal({
         enabled: editingProfile?.enabled ?? false
       });
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to save profile:', err);
+      setModalError(getUserMessage(err, 'Failed to save style profile. Please try again.'));
     } finally {
       setSubmitting(false);
     }
@@ -663,6 +669,15 @@ function ProfileModal({
 
         {/* Body */}
         <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '20px 18px' : '24px 28px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {modalError && (
+            <div style={{
+              padding: '10px 14px', borderRadius: 10,
+              background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.18)',
+              color: '#DC2626', fontSize: 13, fontWeight: 500,
+            }}>
+              {modalError}
+            </div>
+          )}
           {/* Profile Name */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-primary)', letterSpacing: '0.02em' }}>

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, CheckCircle, Eye, EyeOff, KeyRound, Lock, Mail, RefreshCw, Sparkles, User, Zap } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { getUserMessage } from '@/utils/errorMessages';
 
 declare global {
   interface Window {
@@ -76,7 +77,7 @@ export default function AuthPage() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const getErrorMessage = (value: unknown) =>
-    value instanceof Error ? value.message : 'Authentication failed. Please try again.';
+    getUserMessage(value, 'Authentication failed. Please try again.');
 
   const startOtpTimer = () => {
     if (timerRef.current) clearInterval(timerRef.current);
