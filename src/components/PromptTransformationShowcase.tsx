@@ -199,13 +199,13 @@ export default function PromptTransformationShowcase({
 
 
   return (
-    <section className="w-full bg-[#FAFBFC] pb-20 px-6 md:px-12 lg:px-16" id="transformation-showcase">
+    <section className="w-full bg-[#FAFBFC] pb-16 sm:pb-20 px-4 sm:px-6 md:px-12 lg:px-16" id="transformation-showcase">
       <motion.div
         variants={containerVariants}
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, amount: 0.25 }}
-        className="mx-auto max-w-[1320px] rounded-[32px] bg-[#05050A] border border-white/[0.06] overflow-hidden relative p-8 md:p-14 lg:p-20 shadow-[0_24px_80px_rgba(0,0,0,0.5)]"
+        className="mx-auto max-w-[1320px] rounded-[24px] sm:rounded-[32px] bg-[#05050A] border border-white/[0.06] overflow-hidden relative p-5 sm:p-8 md:p-14 lg:p-20 shadow-[0_24px_80px_rgba(0,0,0,0.5)]"
       >
         {/* Subtle noise/grain texture */}
         <div className="absolute inset-0 pointer-events-none opacity-[0.015] mix-blend-overlay">
@@ -231,29 +231,32 @@ export default function PromptTransformationShowcase({
           }}
         />
 
-        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-[4fr_6fr] gap-12 lg:gap-16 items-center">
+        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-[4fr_6fr] gap-8 sm:gap-12 lg:gap-16 items-center">
           {/* LEFT COLUMN */}
           <motion.div variants={leftContentVariants} className="flex flex-col items-start">
-            <span className="text-[11px] font-bold tracking-[0.22em] text-white/40 uppercase">
-              SEE THE TRANSFORMATION
-            </span>
-            <h2 className="text-[clamp(32px,4.5vw,46px)] font-semibold text-white tracking-tight leading-[1.1] mt-5 mb-6">
+            <div className="flex items-center gap-2 mb-3 sm:mb-4">
+              <span className="h-1.5 w-1.5 rounded-full bg-violet-400 animate-pulse" />
+              <span className="text-[10.5px] sm:text-[11px] font-bold tracking-[0.22em] text-white/40 uppercase">
+                SEE THE TRANSFORMATION
+              </span>
+            </div>
+            <h2 className="text-[28px] sm:text-[36px] lg:text-[clamp(32px,4.5vw,46px)] font-semibold text-white tracking-tight leading-[1.15] mt-2 mb-4 sm:mb-6">
               Better prompts.
               <br />
               Better outcomes.
             </h2>
 
-            <div className="mt-12 flex flex-col items-start w-full">
-              <p className="text-[18px] leading-relaxed text-gray-400/80 mb-8 max-w-sm">
-                Our AI analyzes your prompt across<br />
-                6 key dimensions and transforms it<br />
-                for maximum impact.
+            <div className="mt-4 sm:mt-8 flex flex-col items-start w-full">
+              <p className="text-[15px] sm:text-[18px] leading-relaxed text-gray-400/80 mb-4 sm:mb-8 max-w-sm">
+                Our AI analyzes your prompt across<br className="hidden sm:inline" />
+                {" "}6 key dimensions and transforms it<br className="hidden sm:inline" />
+                {" "}for maximum impact.
               </p>
             </div>
           </motion.div>
 
           {/* RIGHT COLUMN */}
-          <div className="flex flex-col gap-6 md:gap-8 w-full">
+          <div className="flex flex-col gap-5 sm:gap-6 md:gap-8 w-full">
             {/* Unified macOS console window */}
             <motion.div
               variants={consoleVariants}
@@ -266,24 +269,24 @@ export default function PromptTransformationShowcase({
                   repeat: Infinity,
                   ease: "easeInOut",
                 }}
-                className="w-full bg-[#08080E]/60 border border-white/[0.08] rounded-[22px] overflow-hidden shadow-[0_30px_70px_rgba(0,0,0,0.65),0_0_50px_rgba(139,92,246,0.05)] backdrop-blur-xl relative"
+                className="w-full bg-[#08080E]/75 border border-white/[0.08] rounded-[20px] sm:rounded-[22px] overflow-hidden shadow-[0_30px_70px_rgba(0,0,0,0.65),0_0_50px_rgba(139,92,246,0.05)] backdrop-blur-xl relative"
               >
                 {/* Header bar */}
-                <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.06] bg-[#07070B]/85 select-none">
+                <div className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-3.5 border-b border-white/[0.06] bg-[#07070B]/85 select-none">
                   {/* Traffic lights */}
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#FF5F56]/15" />
-                    <div className="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#FFBD2E]/15" />
-                    <div className="w-3 h-3 rounded-full bg-[#27C93F] border border-[#27C93F]/15" />
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#FF5F56] border border-[#FF5F56]/15" />
+                    <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#FFBD2E] border border-[#FFBD2E]/15" />
+                    <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#27C93F] border border-[#27C93F]/15" />
                   </div>
                   {/* Window title */}
-                  <div className="text-[12px] font-mono text-white/40 tracking-wider">
+                  <div className="text-[11px] sm:text-[12px] font-mono text-white/40 tracking-wider">
                     prompt-transformer.sh
                   </div>
                   {/* Status Indicator */}
                   <div className="flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />
-                    <span className="text-[10px] font-mono text-white/30 uppercase tracking-wider">active</span>
+                    <span className="text-[9.5px] sm:text-[10px] font-mono text-white/30 uppercase tracking-wider">active</span>
                   </div>
                 </div>
 
@@ -296,46 +299,52 @@ export default function PromptTransformationShowcase({
                   </div>
 
                   {/* LEFT PANE: Your prompt (Input) */}
-                  <div className="p-6 md:p-8 flex flex-col justify-between bg-[#08080C]/20">
+                  <div className="p-4 sm:p-6 md:p-8 flex flex-col justify-between bg-[#08080C]/20">
                     <div>
-                      <div className="flex items-center gap-2.5 mb-5">
-                        <svg
-                          width="14"
-                          height="14"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.5"
-                          className="text-white/50"
-                        >
-                          <polyline points="4 17 10 11 4 5" strokeLinecap="round" strokeLinejoin="round" />
-                          <line x1="12" y1="19" x2="20" y2="19" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                        <span className="text-[13px] font-medium text-white/80 font-mono">Your prompt</span>
+                      <div className="flex items-center justify-between mb-3 sm:mb-5">
+                        <div className="flex items-center gap-2 sm:gap-2.5">
+                          <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            className="text-white/50"
+                          >
+                            <polyline points="4 17 10 11 4 5" strokeLinecap="round" strokeLinejoin="round" />
+                            <line x1="12" y1="19" x2="20" y2="19" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                          <span className="text-[12px] sm:text-[13px] font-medium text-white/80 font-mono">Your prompt</span>
+                        </div>
+                        <span className="md:hidden text-[10px] font-mono text-white/30">
+                          {originalText.length}/1000
+                        </span>
                       </div>
 
-                      <div className="bg-[#030307]/50 border border-white/[0.04] rounded-xl p-5 text-[14px] leading-relaxed text-white/70 min-h-[140px] font-sans">
+                      <div className="bg-[#030307]/60 border border-white/[0.05] rounded-xl p-3.5 sm:p-5 text-[13.5px] sm:text-[14px] leading-relaxed text-white/70 min-h-[100px] sm:min-h-[140px] font-sans">
                         {originalText}
                       </div>
                     </div>
 
-                    <div className="text-[11px] text-white/30 font-mono mt-6">
+                    <div className="hidden md:block text-[11px] text-white/30 font-mono mt-6">
                       {originalText.length}/1000
                     </div>
                   </div>
 
-                  {/* Mobile Divider Arrow (DOM flow) */}
-                  <div className="flex md:hidden justify-center items-center my-[-18px] z-20 pointer-events-none">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-gray-900 shadow-[0_4px_15px_rgba(139,92,246,0.35)] border border-white/[0.08] pointer-events-auto active:scale-95 transition-transform">
-                      <span className="text-md font-bold select-none rotate-90 leading-none">→</span>
+                  {/* Mobile Transformation Bridge (DOM flow) */}
+                  <div className="flex md:hidden flex-col items-center justify-center my-[-10px] z-20 pointer-events-none">
+                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#13111C] border border-purple-500/30 text-purple-300 shadow-[0_4px_16px_rgba(124,58,237,0.3)] pointer-events-auto backdrop-blur-md">
+                      <span className="text-[10px] font-semibold tracking-wider font-mono">Transform</span>
+                      <span className="text-xs">↓</span>
                     </div>
                   </div>
 
                   {/* RIGHT PANE: Enhanced prompt (Output) */}
-                  <div className="p-6 md:p-8 flex flex-col justify-between bg-[#08080C]/40 border-t border-white/[0.06] md:border-t-0 md:border-l border-white/[0.06]">
+                  <div className="p-4 sm:p-6 md:p-8 flex flex-col justify-between bg-[#08080C]/40 border-t border-white/[0.06] md:border-t-0 md:border-l border-white/[0.06]">
                     <div>
-                      <div className="flex items-center justify-between mb-5">
-                        <div className="flex items-center gap-2.5">
+                      <div className="flex items-center justify-between mb-3 sm:mb-5">
+                        <div className="flex items-center gap-2 sm:gap-2.5">
                           <svg
                             width="14"
                             height="14"
@@ -356,7 +365,7 @@ export default function PromptTransformationShowcase({
                               d="M19.071 4.929l-.26 1.63L17.18 6.82l1.63.26.26 1.63.26-1.63 1.63-.26-1.63-.26-.26-1.63z"
                             />
                           </svg>
-                          <span className="text-[13px] font-medium text-white/80 font-mono">Enhanced prompt</span>
+                          <span className="text-[12px] sm:text-[13px] font-medium text-white/80 font-mono">Enhanced prompt</span>
                         </div>
 
                         {/* Copy Button */}
@@ -398,23 +407,23 @@ export default function PromptTransformationShowcase({
                         </button>
                       </div>
 
-                      <div className="bg-[#030307]/60 border border-[#8B5CF6]/20 shadow-[0_0_15px_rgba(139,92,246,0.06)] rounded-xl p-5 text-[14px] leading-relaxed text-white/90 font-sans">
+                      <div className="bg-[#030307]/70 border border-[#8B5CF6]/25 shadow-[0_0_20px_rgba(139,92,246,0.08)] rounded-xl p-3.5 sm:p-5 text-[13.5px] sm:text-[14px] leading-relaxed text-white/90 font-sans">
                         {enhancedText}
                       </div>
                     </div>
 
                     {/* Bottom tags */}
-                    <div className="flex flex-wrap gap-2 mt-6">
-                      <span className="text-[10.5px] font-semibold tracking-wider px-3 py-1 rounded-full border bg-blue-500/10 border-blue-500/20 text-[#60A5FA]">
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-4 sm:mt-6">
+                      <span className="text-[10px] sm:text-[10.5px] font-semibold tracking-wider px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full border bg-blue-500/10 border-blue-500/20 text-[#60A5FA]">
                         Clearer
                       </span>
-                      <span className="text-[10.5px] font-semibold tracking-wider px-3 py-1 rounded-full border bg-purple-500/10 border-purple-500/20 text-[#C084FC]">
+                      <span className="text-[10px] sm:text-[10.5px] font-semibold tracking-wider px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full border bg-purple-500/10 border-purple-500/20 text-[#C084FC]">
                         Context rich
                       </span>
-                      <span className="text-[10.5px] font-semibold tracking-wider px-3 py-1 rounded-full border bg-pink-500/10 border-pink-500/20 text-[#F472B6]">
+                      <span className="text-[10px] sm:text-[10.5px] font-semibold tracking-wider px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full border bg-pink-500/10 border-pink-500/20 text-[#F472B6]">
                         Actionable
                       </span>
-                      <span className="text-[10.5px] font-semibold tracking-wider px-3 py-1 rounded-full border bg-orange-500/10 border-orange-500/20 text-[#FB923C]">
+                      <span className="text-[10px] sm:text-[10.5px] font-semibold tracking-wider px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full border bg-orange-500/10 border-orange-500/20 text-[#FB923C]">
                         Impactful
                       </span>
                     </div>
@@ -430,7 +439,7 @@ export default function PromptTransformationShowcase({
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, amount: 0.15 }}
-              className="w-full bg-white/[0.02] border border-white/[0.08] backdrop-blur-md rounded-[20px] p-6 md:py-6 md:px-8 shadow-[0_20px_50px_rgba(0,0,0,0.35)] relative overflow-hidden"
+              className="w-full bg-white/[0.02] border border-white/[0.08] backdrop-blur-md rounded-[18px] sm:rounded-[20px] p-4 sm:p-6 md:py-6 md:px-8 shadow-[0_20px_50px_rgba(0,0,0,0.35)] relative overflow-hidden"
             >
               {/* Subtle noise/grain texture inside panel */}
               <div className="absolute inset-0 pointer-events-none opacity-[0.015] mix-blend-overlay">
@@ -447,31 +456,36 @@ export default function PromptTransformationShowcase({
                 </svg>
               </div>
 
-              <span className="relative z-10 text-[13px] font-medium text-white/90 mb-5 block">
-                6-Dimensional Analysis
-              </span>
+              <div className="relative z-10 flex items-center justify-between mb-4 sm:mb-5">
+                <span className="text-[12px] sm:text-[13px] font-medium text-white/90">
+                  6-Dimensional Analysis
+                </span>
+                <span className="text-[10px] font-mono text-purple-400 bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 rounded-full">
+                  AI Evaluation
+                </span>
+              </div>
 
-              <div className="relative z-10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-y-6 lg:gap-y-0 w-full">
+              <div className="relative z-10 grid grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3.5 lg:gap-y-0 w-full">
                 {dimensions.map((dim, idx) => (
                   <motion.div
                     key={dim.name}
                     variants={columnVariants}
-                    className="flex flex-col border-white/[0.06] lg:border-r lg:last:border-r-0 lg:px-3.5 xl:px-6 lg:first:pl-0 lg:last:pr-0"
+                    className="flex flex-col rounded-xl bg-white/[0.02] border border-white/[0.04] p-2 sm:p-3 lg:bg-transparent lg:border-0 lg:border-r lg:border-white/[0.06] lg:last:border-r-0 lg:p-0 lg:px-3.5 xl:px-6 lg:first:pl-0 lg:last:pr-0 transition-colors hover:border-white/10"
                   >
-                    <span className="text-[10px] font-semibold tracking-wider text-[#94A3B8] uppercase mb-1.5">
+                    <span className="text-[8.5px] sm:text-[10px] font-semibold tracking-wider text-[#94A3B8] uppercase mb-1 sm:mb-1.5 truncate">
                       {dim.name}
                     </span>
                     <div className="flex items-center">
-                      <span className="text-[14px] text-[#F8FAFC]/50 font-medium">{dim.from}</span>
-                      <span className="text-[14px] text-[#94A3B8]/20 mx-1.5">→</span>
-                      <span className="text-[16px] text-[#F8FAFC] font-semibold min-w-[20px]">
+                      <span className="text-[11.5px] sm:text-[14px] text-[#F8FAFC]/50 font-medium">{dim.from}</span>
+                      <span className="text-[11px] sm:text-[14px] text-[#94A3B8]/20 mx-0.5 sm:mx-1.5">→</span>
+                      <span className="text-[13px] sm:text-[16px] text-[#F8FAFC] font-semibold min-w-[18px]">
                         <AnimatedScore from={dim.from} to={dim.to} delay={idx * 0.1 + 0.2} />
                       </span>
                       <ArrowUpRight className={dim.arrowColor} />
                     </div>
 
                     {/* Progress Bar Container */}
-                    <div className="relative w-full h-[4px] bg-white/5 rounded-full mt-3 overflow-visible">
+                    <div className="relative w-full h-[3px] sm:h-[4px] bg-white/5 rounded-full mt-2 sm:mt-3 overflow-visible">
                       {/* Glow Behind */}
                       <motion.div
                         initial={{ width: 0 }}

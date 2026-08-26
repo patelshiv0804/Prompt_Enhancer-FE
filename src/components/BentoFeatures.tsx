@@ -216,19 +216,38 @@ function CardChaining() { ... }
 */
 
 /* ═══════════════════════════════════════════════════════════════════
- *  CARD 3 — Multi-Model Optimization
+ *  CARD 3 — Multi-Model Optimization (360° Radial Ecosystem Hub)
  *  Grid area: "model" — 5/12 cols, row 2 (520px)
  * ═══════════════════════════════════════════════════════════════════ */
-/* Model data — palette strictly purple/lavender/pink per brand rules */
-const MODELS = [
-  { name: "ChatGPT", icon: "/chatgpt-icon.svg", c: P.purple, bg: "rgba(139,92,246,0.10)", pos: { x: 52, y: 68 }, size: 60 },
-  { name: "Claude", icon: "/claude-ai-icon.svg", c: P.lav, bg: "rgba(167,139,250,0.10)", pos: { x: 168, y: 32 }, size: 54 },
-  { name: "Gemini", icon: "/google-gemini-icon.svg", c: P.violet, bg: "rgba(124,58,237,0.10)", pos: { x: 295, y: 48 }, size: 58 },
-  { name: "Midjourney", icon: "/midjourney-color-icon.svg", c: P.pink, bg: "rgba(236,72,153,0.10)", pos: { x: 388, y: 22 }, size: 68 },
-  { name: "VEO", icon: "/veo-icon.svg", c: "#C084FC", bg: "rgba(192,132,252,0.10)", pos: { x: 80, y: 178 }, size: 46 },
+/* Exact 12-node dual-ring constellation layout matching reference architecture */
+const RADIAL_MODELS = [
+  // 1. Top center
+  { name: "ChatGPT", icon: "/chatgpt-icon.svg", x: 230, y: 32, size: 35, isSatellite: false },
+  // 2. Top-left outer
+  { name: "Claude", icon: "/claude-ai-icon.svg", x: 130, y: 38, size: 35, isSatellite: false },
+  // 3. Top-left inner satellite
+  { name: "Perplexity", icon: "/perplexity-ai-icon.svg", x: 188, y: 88, size: 27, isSatellite: true },
+  // 4. Top-right middle
+  { name: "Gemini", icon: "/google-gemini-icon.svg", x: 312, y: 56, size: 35, isSatellite: false },
+  // 5. Top-right outer
+  { name: "Grok", icon: "/grok-icon.svg", x: 392, y: 68, size: 35, isSatellite: false },
+  // 6. Left outer
+  { name: "DALL·E", icon: "/dalle-icon.svg", x: 92, y: 116, size: 35, isSatellite: false },
+  // 7. Left inner satellite
+  { name: "Higgsfield", icon: "/higgsfield-icon.svg", x: 142, y: 168, size: 27, isSatellite: true },
+  // 8. Right inner satellite
+  { name: "DeepSeek", icon: "/deepseek-logo-icon.svg", x: 338, y: 160, size: 27, isSatellite: true },
+  // 9. Far bottom-right outer
+  { name: "Midjourney", icon: "/midjourney-color-icon.svg", x: 378, y: 232, size: 35, isSatellite: false },
+  // 10. Bottom-left outer
+  { name: "VEO", icon: "/veo-icon.svg", x: 112, y: 228, size: 35, isSatellite: false },
+  // 11. Bottom center-left
+  { name: "Chrome", icon: "/google-chrome-icon.svg", x: 184, y: 255, size: 35, isSatellite: false },
+  // 12. Bottom center-right inner satellite
+  { name: "ChatGPT 4o", icon: "/chatgpt-icon.svg", x: 272, y: 242, size: 28, isSatellite: true },
 ];
-/* Central prompt node in SVG coordinates */
-const MODEL_CENTER = { x: 230, y: 230 };
+
+const HUB_CENTER = { x: 230, y: 145 };
 
 function CardMultiModel() {
   return (
@@ -236,176 +255,190 @@ function CardMultiModel() {
       {/* Deep ambient glow — bottom-left */}
       <div style={{
         position: "absolute", bottom: -80, left: -80, width: 320, height: 320,
-        borderRadius: "50%", background: "radial-gradient(circle, rgba(167,139,250,0.12) 0%, transparent 65%)",
+        borderRadius: "50%", background: "radial-gradient(circle, rgba(167,139,250,0.14) 0%, transparent 65%)",
         pointerEvents: "none",
       }} />
       {/* Secondary glow — top-right */}
       <div style={{
-        position: "absolute", top: -40, right: -40, width: 200, height: 200,
-        borderRadius: "50%", background: "radial-gradient(circle, rgba(236,72,153,0.07) 0%, transparent 65%)",
+        position: "absolute", top: -40, right: -40, width: 220, height: 220,
+        borderRadius: "50%", background: "radial-gradient(circle, rgba(236,72,153,0.08) 0%, transparent 65%)",
         pointerEvents: "none",
       }} />
 
-      {/* ── Header (compact — visual takes 70%+) ── */}
+      {/* ── Header ── */}
       <span style={LBL}>Multi-Model</span>
       <h2 style={{ fontSize: 22, fontWeight: 760, color: P.ink, letterSpacing: "-0.025em", lineHeight: 1.18, margin: "0 0 6px" }}>
         Multi-Model<br />Optimization
       </h2>
-      <p style={{ fontSize: 12.5, color: P.g500, lineHeight: 1.6, margin: "0 0 16px" }}>
+      <p style={{ fontSize: 12.5, color: P.g500, lineHeight: 1.6, margin: "0 0 14px" }}>
         Every model has its own language. We craft your prompt to speak fluently to each one.
       </p>
 
-      {/* ── Hero Visual: floating model cards connected to central node ── */}
+      {/* ── Hero Visual: 360° Radial Model Constellation Hub ── */}
       <div className="bento-svg-model" style={{ flex: 1, minHeight: 0, position: "relative" }}>
         <svg
-          viewBox="0 0 460 280"
+          viewBox="0 0 460 290"
           width="100%" height="100%"
           fill="none"
           style={{ overflow: "visible", display: "block" }}
         >
           <defs>
-            <radialGradient id="centerGlow" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="rgba(139,92,246,0.28)" />
-              <stop offset="100%" stopColor="rgba(139,92,246,0)" />
+            {/* Theme Violet / Purple Hub Radial Glow */}
+            <radialGradient id="hubVioletGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="rgba(139, 92, 246, 0.35)" />
+              <stop offset="50%" stopColor="rgba(167, 139, 250, 0.14)" />
+              <stop offset="100%" stopColor="rgba(139, 92, 246, 0)" />
             </radialGradient>
-            <filter id="mBlur">
-              <feGaussianBlur stdDeviation="3" result="blur" />
-              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            {/* Theme Pink / Purple Secondary Glow */}
+            <radialGradient id="hubPinkGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="rgba(236, 72, 153, 0.22)" />
+              <stop offset="60%" stopColor="rgba(139, 92, 246, 0.06)" />
+              <stop offset="100%" stopColor="rgba(236, 72, 153, 0)" />
+            </radialGradient>
+            {/* Theme Ring Gradient */}
+            <linearGradient id="hubThemeRing" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#A78BFA" />
+              <stop offset="50%" stopColor="#8B5CF6" />
+              <stop offset="100%" stopColor="#EC4899" />
+            </linearGradient>
+            {/* Tile Drop Shadow */}
+            <filter id="tileShadow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="2" stdDeviation="4" floodColor="#09090B" floodOpacity="0.06" />
+              <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodColor="#09090B" floodOpacity="0.04" />
             </filter>
           </defs>
 
-          {/* Central prompt node glow */}
-          <circle cx={MODEL_CENTER.x} cy={MODEL_CENTER.y} r={52} fill="url(#centerGlow)" />
+          {/* 1. Large Ambient Aura behind Hub */}
+          <circle cx={HUB_CENTER.x} cy={HUB_CENTER.y} r={95} fill="url(#hubVioletGlow)" />
+          <circle cx={HUB_CENTER.x} cy={HUB_CENTER.y} r={65} fill="url(#hubPinkGlow)" />
 
-          {/* Curved connection lines from each model to center */}
-          {MODELS.map((m, i) => {
-            const cpx = (m.pos.x + MODEL_CENTER.x) / 2 + (i % 2 === 0 ? 20 : -20);
-            const cpy = (m.pos.y + MODEL_CENTER.y) / 2 + (i % 3 === 0 ? -30 : 15);
-            return (
-              <motion.path
-                key={`line-${m.name}`}
-                d={`M${m.pos.x},${m.pos.y} Q${cpx},${cpy} ${MODEL_CENTER.x},${MODEL_CENTER.y}`}
-                stroke={`${m.c}40`}
-                strokeWidth={1.6}
-                strokeDasharray="5 6"
-                strokeLinecap="round"
-                initial={{ pathLength: 0, opacity: 0 }}
-                animate={{ pathLength: 1, opacity: 1, strokeDashoffset: [0, -22] }}
+          {/* 2. Solid Radial Connecting Rays to all Models */}
+          {RADIAL_MODELS.map((m, i) => (
+            <g key={`ray-${m.name}-${i}`}>
+              {/* Clean solid connecting line */}
+              <line
+                x1={HUB_CENTER.x}
+                y1={HUB_CENTER.y}
+                x2={m.x}
+                y2={m.y}
+                stroke="rgba(139, 92, 246, 0.35)"
+                strokeWidth={1.3}
+              />
+              {/* Smooth energy bead traveling along solid line */}
+              <motion.circle
+                r={1.8}
+                fill={i % 2 === 0 ? "#8B5CF6" : "#EC4899"}
+                opacity={0.9}
+                animate={{
+                  cx: [HUB_CENTER.x, m.x],
+                  cy: [HUB_CENTER.y, m.y],
+                  opacity: [0, 0.95, 0],
+                }}
                 transition={{
-                  pathLength: { duration: 1.2, delay: 0.15 + i * 0.12, ease: "easeOut" },
-                  opacity: { duration: 1.2, delay: 0.15 + i * 0.12, ease: "easeOut" },
-                  strokeDashoffset: { duration: 2 + i * 0.3, repeat: Infinity, ease: "linear", delay: 1.5 },
+                  duration: 2.2 + (i % 4) * 0.4,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: i * 0.18,
                 }}
               />
-            );
-          })}
+            </g>
+          ))}
 
-          {/* Floating model cards */}
-          {MODELS.map((m, i) => {
-            const cardW = m.size + 38;
-            const cardH = 36;
+          {/* 3. Orbiting Model Squircle Badges */}
+          {RADIAL_MODELS.map((m, i) => {
+            const size = m.size;
+            const iconSize = m.isSatellite ? 15 : 19;
+            const rx = m.isSatellite ? 8 : 10;
             return (
               <motion.g
-                key={m.name}
+                key={`${m.name}-${i}`}
                 initial={{ opacity: 0, scale: 0.7 }}
-                animate={{ opacity: 1, scale: 1, y: [0, -5 - i * 1.5, 0] }}
-                transition={{
-                  opacity: { delay: 0.1 + i * 0.1, duration: 0.55, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
-                  scale: { delay: 0.1 + i * 0.1, duration: 0.55, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
-                  y: { duration: 3 + i * 0.6, repeat: Infinity, ease: "easeInOut", delay: 1 + i * 0.3 },
+                animate={{
+                  opacity: 1,
+                  scale: 1,
+                  y: [0, -2.5 - (i % 3) * 1.2, 0],
                 }}
+                transition={{
+                  opacity: { delay: 0.08 + i * 0.05, duration: 0.45, ease: [0.22, 1, 0.36, 1] },
+                  scale: { delay: 0.08 + i * 0.05, duration: 0.45, ease: [0.22, 1, 0.36, 1] },
+                  y: { duration: 3.2 + (i % 3) * 0.8, repeat: Infinity, ease: "easeInOut", delay: i * 0.15 },
+                }}
+                style={{ cursor: "pointer" }}
               >
-                {/* card shadow / glow */}
+                {/* Tile Background Body with Apple Squircle */}
                 <rect
-                  x={m.pos.x - cardW / 2 - 3} y={m.pos.y - cardH / 2 - 3}
-                  width={cardW + 6} height={cardH + 6} rx={16}
-                  fill={`${m.c}10`}
+                  x={m.x - size / 2}
+                  y={m.y - size / 2}
+                  width={size}
+                  height={size}
+                  rx={rx}
+                  fill="#FFFFFF"
+                  stroke="rgba(139, 92, 246, 0.12)"
+                  strokeWidth={1}
+                  filter="url(#tileShadow)"
                 />
-                {/* card body */}
-                <rect
-                  x={m.pos.x - cardW / 2} y={m.pos.y - cardH / 2}
-                  width={cardW} height={cardH} rx={12}
-                  fill="white"
-                  stroke={`${m.c}25`}
-                  strokeWidth={1.2}
-                />
-                {/* avatar circle */}
-                <circle
-                  cx={m.pos.x - cardW / 2 + 18} cy={m.pos.y}
-                  r={10} fill="rgba(255,255,255,0.95)"
-                  stroke={`${m.c}20`} strokeWidth={0.8}
-                />
-                {/* AI logo image */}
+                {/* Brand Logo Icon */}
                 <image
                   href={m.icon}
-                  x={m.pos.x - cardW / 2 + 18 - 6.5}
-                  y={m.pos.y - 6.5}
-                  width={13}
-                  height={13}
+                  x={m.x - iconSize / 2}
+                  y={m.y - iconSize / 2}
+                  width={iconSize}
+                  height={iconSize}
                   preserveAspectRatio="xMidYMid meet"
                 />
-                {/* name */}
-                <text
-                  x={m.pos.x - cardW / 2 + 33} y={m.pos.y + 1}
-                  fontSize={9.5} fontWeight="580" fill="#374151"
-                  dominantBaseline="middle"
-                  fontFamily="system-ui,-apple-system,sans-serif"
-                  letterSpacing="-0.2"
-                >{m.name}</text>
-                {/* live dot */}
-                <circle cx={m.pos.x + cardW / 2 - 10} cy={m.pos.y} r={3} fill={m.c} />
               </motion.g>
             );
           })}
 
-          {/* Central "Prompt" node */}
+          {/* 4. Central Circular Hub (AURE Website Logo Core + Glowing Theme Ring) */}
           <motion.g
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: 1, scale: [1, 1.06, 1] }}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: [1, 1.04, 1] }}
             transition={{
-              opacity: { delay: 0.05, duration: 0.6, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
-              scale: { duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.7 },
+              opacity: { delay: 0.05, duration: 0.6 },
+              scale: { duration: 3.5, repeat: Infinity, ease: "easeInOut" },
             }}
           >
-            <circle cx={MODEL_CENTER.x} cy={MODEL_CENTER.y} r={30} fill="white" stroke="rgba(139,92,246,0.18)" strokeWidth={1.5} />
-            <circle cx={MODEL_CENTER.x} cy={MODEL_CENTER.y} r={22} fill="rgba(139,92,246,0.07)" />
-            <text
-              x={MODEL_CENTER.x} y={MODEL_CENTER.y - 5}
-              fontSize={8.5} fontWeight="700" fill={P.purple}
-              textAnchor="middle" dominantBaseline="middle"
-              fontFamily="system-ui,-apple-system,sans-serif"
-              letterSpacing="0.05em"
-            >YOUR</text>
-            <text
-              x={MODEL_CENTER.x} y={MODEL_CENTER.y + 7}
-              fontSize={8.5} fontWeight="700" fill={P.purple}
-              textAnchor="middle" dominantBaseline="middle"
-              fontFamily="system-ui,-apple-system,sans-serif"
-              letterSpacing="0.05em"
-            >PROMPT</text>
+            {/* Outer Glowing Theme Ring */}
+            <circle
+              cx={HUB_CENTER.x}
+              cy={HUB_CENTER.y}
+              r={32}
+              fill="none"
+              stroke="url(#hubThemeRing)"
+              strokeWidth={2}
+              style={{ filter: "drop-shadow(0 0 10px rgba(139, 92, 246, 0.40))" }}
+            />
+            {/* Outer subtle halo ring */}
+            <circle
+              cx={HUB_CENTER.x}
+              cy={HUB_CENTER.y}
+              r={38}
+              fill="none"
+              stroke="rgba(139, 92, 246, 0.18)"
+              strokeWidth={1}
+              strokeDasharray="2 3"
+            />
+            {/* Inner White Glass Node Core */}
+            <circle
+              cx={HUB_CENTER.x}
+              cy={HUB_CENTER.y}
+              r={29}
+              fill="#FFFFFF"
+              stroke="rgba(139, 92, 246, 0.12)"
+              strokeWidth={1}
+            />
+
+            {/* Central Website Logo (AURE) */}
+            <image
+              href="/logo_1.svg"
+              x={HUB_CENTER.x - 17}
+              y={HUB_CENTER.y - 17}
+              width={34}
+              height={34}
+              preserveAspectRatio="xMidYMid meet"
+            />
           </motion.g>
-
-          {/* Orbiting particles around center */}
-          {[0, 72, 144, 216, 288].map((deg, i) => (
-            <motion.circle
-              key={`orb${i}`}
-              cx={MODEL_CENTER.x + Math.cos((deg * Math.PI) / 180) * 42}
-              cy={MODEL_CENTER.y + Math.sin((deg * Math.PI) / 180) * 42}
-              r={2}
-              fill={i % 2 === 0 ? P.lav : P.pink}
-              animate={{ opacity: [0.2, 0.7, 0.2] }}
-              transition={{ duration: 1.8 + i * 0.3, repeat: Infinity, delay: i * 0.25 }}
-            />
-          ))}
-
-          {/* Floating free particles */}
-          {[{ x: 310, y: 145 }, { x: 140, y: 220 }, { x: 380, y: 200 }].map((pt, i) => (
-            <motion.circle key={`fp${i}`} cx={pt.x} cy={pt.y} r={2.2}
-              fill={i % 2 === 0 ? P.lav : "#C084FC"}
-              animate={{ y: [0, -8, 0], opacity: [0.25, 0.55, 0.25] }}
-              transition={{ duration: 2.6 + i * 0.6, repeat: Infinity, delay: i * 0.7 }}
-            />
-          ))}
         </svg>
       </div>
     </div>
