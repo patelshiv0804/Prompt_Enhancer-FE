@@ -152,6 +152,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       formData.append('password', password);
 
       const response = await apiClient.post<{ access_token: string }>('/api/v1/auth/login', formData);
+      if (response.access_token) {
+        localStorage.setItem('token', response.access_token);
+        localStorage.setItem('promptiq_access_token', response.access_token);
+      }
       await finalizeAuthentication(response.access_token);
     } catch (err) {
       setLoading(false);
@@ -182,6 +186,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await apiClient.post<{ access_token: string }>('/api/v1/auth/google', {
         id_token: idToken,
       });
+      if (response.access_token) {
+        localStorage.setItem('token', response.access_token);
+        localStorage.setItem('promptiq_access_token', response.access_token);
+      }
       await finalizeAuthentication(response.access_token);
     } catch (err) {
       setLoading(false);
@@ -198,6 +206,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // Even if the call fails, drop local state so the UI logs out.
     }
+    localStorage.removeItem('token');
+    localStorage.removeItem('promptiq_access_token');
     setToken(null);
     setUser(null);
     setStyleProfiles([]);
