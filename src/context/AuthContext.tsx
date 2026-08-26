@@ -70,7 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(profile);
 
     await refreshStyleProfiles();
-    router.push('/dashboard/optimizer');
+    router.replace('/dashboard/optimizer');
   };
 
   const refreshUserProfile = async () => {
@@ -212,7 +212,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setStyleProfiles([]);
     setActiveStyle({ id: null, name: 'None' });
-    router.push('/auth');
+    router.push('/');
   };
 
   // ── Forgot Password helpers ───────────────────────────────────────────────

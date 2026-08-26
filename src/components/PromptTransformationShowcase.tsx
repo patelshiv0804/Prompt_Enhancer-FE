@@ -408,21 +408,7 @@ export default function PromptTransformationShowcase({
                       </div>
                     </div>
 
-                    {/* Bottom tags */}
-                    <div className="flex flex-wrap gap-1.5 mt-3">
-                      <span className="text-[9.5px] sm:text-[10px] font-semibold tracking-wider px-2 py-0.5 rounded-full border bg-blue-500/10 border-blue-500/20 text-[#60A5FA]">
-                        Clearer
-                      </span>
-                      <span className="text-[9.5px] sm:text-[10px] font-semibold tracking-wider px-2 py-0.5 rounded-full border bg-purple-500/10 border-purple-500/20 text-[#C084FC]">
-                        Context rich
-                      </span>
-                      <span className="text-[9.5px] sm:text-[10px] font-semibold tracking-wider px-2 py-0.5 rounded-full border bg-pink-500/10 border-pink-500/20 text-[#F472B6]">
-                        Actionable
-                      </span>
-                      <span className="text-[9.5px] sm:text-[10px] font-semibold tracking-wider px-2 py-0.5 rounded-full border bg-orange-500/10 border-orange-500/20 text-[#FB923C]">
-                        Impactful
-                      </span>
-                    </div>
+
                   </div>
 
                 </div>

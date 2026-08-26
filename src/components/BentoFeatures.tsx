@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { motion, useInView } from "framer-motion";
+import { motion, useInView, AnimatePresence } from "framer-motion";
 
 /* ═══════════════════════════════════════════════════════════════════
  *  BentoFeatures — Handcrafted editorial Bento Grid
@@ -461,7 +461,7 @@ function AnimNum({ target, displaySuffix = "", delay = 0 }: { target: number; di
   useEffect(() => {
     if (!inView) return;
     let startTimestamp: number | null = null;
-    const duration = 1600;
+    const duration = 1500;
 
     const step = (timestamp: number) => {
       if (!startTimestamp) startTimestamp = timestamp;
@@ -495,130 +495,512 @@ function AnimNum({ target, displaySuffix = "", delay = 0 }: { target: number; di
   );
 }
 
-function MiniSpark({ pts, c }: { pts: string; c: string }) {
+// Smooth cubic Bezier spline helper
+function generateSpline(points: { x: number; y: number }[], height = 150): { path: string; area: string } {
+  if (!points || points.length === 0) return { path: "", area: "" };
+  if (points.length === 1) return { path: `M ${points[0].x} ${points[0].y}`, area: "" };
+
+  let d = `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`;
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i === 0 ? 0 : i - 1];
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const p3 = points[i + 2] || p2;
+
+    const cp1x = p1.x + (p2.x - p0.x) / 5.5;
+    const cp1y = p1.y + (p2.y - p0.y) / 5.5;
+    const cp2x = p2.x - (p3.x - p1.x) / 5.5;
+    const cp2y = p2.y - (p3.y - p1.y) / 5.5;
+
+    d += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+  }
+
+  const last = points[points.length - 1];
+  const first = points[0];
+  const area = `${d} L ${last.x.toFixed(1)} ${height} L ${first.x.toFixed(1)} ${height} Z`;
+
+  return { path: d, area };
+}
+
+function MiniSpark({ values, color }: { values: number[]; color: string }) {
+  const W = 62;
+  const H = 22;
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+  const pts = values.map((v, i) => ({
+    x: (i / (values.length - 1)) * W,
+    y: H - 3 - ((v - min) / range) * (H - 6),
+  }));
+  const { path, area } = generateSpline(pts, H);
+
   return (
-    <svg width="60" height="20" viewBox="0 0 60 20" fill="none" style={{ overflow: "visible" }}>
-      <motion.polyline
-        points={pts}
-        stroke={c}
-        strokeWidth="2"
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} fill="none" style={{ overflow: "visible" }}>
+      <defs>
+        <linearGradient id={`sparkGrad-${color.replace(/[^a-zA-Z0-9]/g, "")}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.22" />
+          <stop offset="100%" stopColor={color} stopOpacity="0.0" />
+        </linearGradient>
+      </defs>
+      <path d={area} fill={`url(#sparkGrad-${color.replace(/[^a-zA-Z0-9]/g, "")})`} />
+      <motion.path
+        d={path}
+        stroke={color}
+        strokeWidth="1.8"
         strokeLinecap="round"
         strokeLinejoin="round"
         fill="none"
         initial={{ pathLength: 0 }}
         animate={{ pathLength: 1 }}
-        transition={{ duration: 1.4, ease: "easeInOut" }}
+        transition={{ duration: 1.2, ease: "easeOut" }}
       />
+      {pts.length > 0 && (
+        <circle
+          cx={pts[pts.length - 1].x}
+          cy={pts[pts.length - 1].y}
+          r={2.2}
+          fill="#FFFFFF"
+          stroke={color}
+          strokeWidth="1.5"
+        />
+      )}
     </svg>
   );
 }
 
 const METRICS = [
-  { label: "Prompts Analyzed", target: 1248, suffix: "", c: P.purple, pts: "2,16 12,11 24,13 36,7 48,4 58,2" },
-  { label: "Avg. PromptScore", target: 78, suffix: "/100", c: P.lav, pts: "2,14 12,9 24,12 36,5 48,8 58,3" },
-  { label: "Tokens Saved", target: 56700, suffix: "", c: P.pink, pts: "2,16 12,13 24,9 36,11 48,5 58,2" },
-  { label: "Times Optimized", target: 2341, suffix: "", c: P.violet, pts: "2,17 12,14 24,12 36,10 48,7 58,4" },
+  {
+    label: "Prompts Analyzed",
+    target: 1248,
+    suffix: "",
+    growth: "+28.4%",
+    c: "#8B5CF6",
+    bgTint: "rgba(139,92,246,0.03)",
+    sparkData: [10, 18, 14, 24, 20, 32, 38],
+  },
+  {
+    label: "Avg. PromptScore",
+    target: 78,
+    suffix: "/100",
+    growth: "+14.2%",
+    c: "#6366F1",
+    bgTint: "rgba(99,102,241,0.03)",
+    sparkData: [45, 52, 60, 58, 68, 72, 78],
+  },
+  {
+    label: "Tokens Saved",
+    target: 56700,
+    suffix: "",
+    growth: "+92.6%",
+    c: "#EC4899",
+    bgTint: "rgba(236,72,153,0.03)",
+    sparkData: [12, 22, 18, 35, 42, 48, 56.7],
+  },
+  {
+    label: "Times Optimized",
+    target: 2341,
+    suffix: "",
+    growth: "+38.1%",
+    c: "#7C3AED",
+    bgTint: "rgba(124,58,237,0.03)",
+    sparkData: [15, 19, 28, 24, 38, 42, 54],
+  },
 ];
 
+const TIMEFRAME_DATA: Record<string, { label: string; summary: string; values: { label: string; value: number }[] }> = {
+  "7D": {
+    label: "Past 7 Days",
+    summary: "+24.3% this week",
+    values: [
+      { label: "Mon", value: 24 },
+      { label: "Tue", value: 36 },
+      { label: "Wed", value: 30 },
+      { label: "Thu", value: 48 },
+      { label: "Fri", value: 56 },
+      { label: "Sat", value: 50 },
+      { label: "Sun", value: 68 },
+    ],
+  },
+  "30D": {
+    label: "This Month",
+    summary: "+48.2% vs last month",
+    values: [
+      { label: "Day 1", value: 12 },
+      { label: "Day 4", value: 18 },
+      { label: "Day 7", value: 16 },
+      { label: "Day 10", value: 26 },
+      { label: "Day 13", value: 34 },
+      { label: "Day 16", value: 29 },
+      { label: "Day 19", value: 44 },
+      { label: "Day 22", value: 41 },
+      { label: "Day 25", value: 58 },
+      { label: "Day 28", value: 66 },
+      { label: "Day 30", value: 82 },
+    ],
+  },
+  "90D": {
+    label: "Past Quarter",
+    summary: "+114% velocity",
+    values: [
+      { label: "Month 1", value: 18 },
+      { label: "Month 2", value: 32 },
+      { label: "Month 3", value: 48 },
+      { label: "Month 4", value: 64 },
+      { label: "Month 5", value: 78 },
+      { label: "Month 6", value: 94 },
+    ],
+  },
+  "All": {
+    label: "All Time",
+    summary: "3.8x total gain",
+    values: [
+      { label: "Q1", value: 14 },
+      { label: "Q2", value: 36 },
+      { label: "Q3", value: 62 },
+      { label: "Q4", value: 89 },
+      { label: "Current", value: 98 },
+    ],
+  },
+};
+
 function HeroBigChart() {
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true });
-  const data = [8, 12, 10, 16, 22, 18, 28, 26, 36, 42, 38, 54];
-  const W = 620, H = 170;
-  const mx = 60;
-  const px = (i: number) => (i / (data.length - 1)) * W;
-  const py = (v: number) => H - (v / mx) * H;
-  const linePts = data.map((v, i) => `${px(i)},${py(v)}`).join(" ");
-  const areaD = `M${px(0)},${py(data[0])} ${data.map((v, i) => `L${px(i)},${py(v)}`).join(" ")} L${W},${H} L0,${H} Z`;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const inView = useInView(containerRef, { once: true });
+  const [timeframe, setTimeframe] = useState<"7D" | "30D" | "90D" | "All">("30D");
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+
+  const currentDataset = TIMEFRAME_DATA[timeframe];
+  const rawData = currentDataset.values;
+
+  const W = 620;
+  const H = 160;
+  const maxY = 100;
+
+  const points = rawData.map((d, i) => ({
+    x: (i / (rawData.length - 1)) * (W - 36) + 16,
+    y: H - 14 - (d.value / maxY) * (H - 32),
+  }));
+
+  const { path: curvePath, area: curveArea } = generateSpline(points, H);
+
+  // Active hover point data
+  const activePt = hoverIndex !== null && points[hoverIndex] ? points[hoverIndex] : points[points.length - 1];
+  const activeData = hoverIndex !== null && rawData[hoverIndex] ? rawData[hoverIndex] : rawData[rawData.length - 1];
+
+  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const normX = Math.max(0, Math.min(1, mouseX / rect.width));
+    const closestIdx = Math.round(normX * (rawData.length - 1));
+    setHoverIndex(closestIdx);
+  };
+
+  const handleMouseLeave = () => {
+    setHoverIndex(null);
+  };
+
+  const isRightSide = activePt ? (activePt.x / W) > 0.65 : false;
+  const isLeftSide = activePt ? (activePt.x / W) < 0.22 : false;
+  const isTopSide = activePt ? activePt.y < 58 : false;
+
+  const tooltipTransform = isRightSide
+    ? `translate(calc(-100% - 12px), ${isTopSide ? "10px" : "calc(-100% - 12px)"})`
+    : isLeftSide
+    ? `translate(12px, ${isTopSide ? "10px" : "calc(-100% - 12px)"})`
+    : `translate(-50%, ${isTopSide ? "12px" : "calc(-100% - 12px)"})`;
 
   return (
-    <div ref={ref} style={{ position: "relative" }}>
-      {/* Chart header with Live Status Indicator */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-        <span style={{ fontSize: 13, fontWeight: 700, color: P.g700, letterSpacing: "-0.01em" }}>
-          Your Optimization Growth
-        </span>
+    <div ref={containerRef} style={{ position: "relative", width: "100%" }}>
+      {/* Chart Top Control Bar */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 13.5, fontWeight: 700, color: P.ink, letterSpacing: "-0.02em" }}>
+            Optimization Velocity
+          </span>
+          <span style={{
+            fontSize: 11,
+            fontWeight: 600,
+            color: "#059669",
+            background: "rgba(16,185,129,0.08)",
+            border: "1px solid rgba(16,185,129,0.18)",
+            padding: "2px 8px",
+            borderRadius: 999,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 3,
+          }}>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <polyline points="18 15 12 9 6 15" />
+            </svg>
+            {currentDataset.summary}
+          </span>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {/* Live indicator */}
           <div style={{
-            display: "inline-flex", alignItems: "center", gap: 6,
-            padding: "4px 10px", borderRadius: 999,
-            background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.20)",
-            fontSize: 10, fontWeight: 700, color: "#059669", letterSpacing: "0.02em"
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 5,
+            padding: "3px 8px",
+            borderRadius: 999,
+            background: "rgba(16,185,129,0.06)",
+            border: "1px solid rgba(16,185,129,0.18)",
+            fontSize: 9.5,
+            fontWeight: 700,
+            color: "#059669",
+            letterSpacing: "0.04em",
           }}>
             <span style={{ position: "relative", display: "flex", width: 6, height: 6 }}>
               <motion.span
-                animate={{ scale: [1, 2, 1], opacity: [0.75, 0, 0.75] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
+                animate={{ scale: [1, 2.2, 1], opacity: [0.75, 0, 0.75] }}
+                transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
                 style={{ position: "absolute", inset: 0, borderRadius: "50%", background: "#10B981" }}
               />
               <span style={{ position: "relative", width: 6, height: 6, borderRadius: "50%", background: "#059669" }} />
             </span>
             LIVE UPDATES
           </div>
-          <span style={{ fontSize: 10.5, color: P.g500, background: P.g100, padding: "4px 10px", borderRadius: 999, fontWeight: 500 }}>
-            This Month
-          </span>
+
+          {/* Apple/Notion Segmented Timeframe Switcher */}
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            background: "rgba(0,0,0,0.04)",
+            padding: "2px",
+            borderRadius: 10,
+            border: "1px solid rgba(0,0,0,0.04)",
+          }}>
+            {(["7D", "30D", "90D", "All"] as const).map((t) => {
+              const isSelected = timeframe === t;
+              return (
+                <button
+                  key={t}
+                  onClick={() => setTimeframe(t)}
+                  style={{
+                    position: "relative",
+                    padding: "3px 9px",
+                    fontSize: 10.5,
+                    fontWeight: isSelected ? 650 : 500,
+                    color: isSelected ? P.ink : P.g500,
+                    borderRadius: 8,
+                    border: "none",
+                    background: "transparent",
+                    cursor: "pointer",
+                    transition: "color 0.15s ease",
+                    zIndex: 1,
+                  }}
+                >
+                  {isSelected && (
+                    <motion.div
+                      layoutId="chartTimeframePill"
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        background: "#FFFFFF",
+                        borderRadius: 8,
+                        boxShadow: "0 1px 4px rgba(0,0,0,0.08), 0 0.5px 1px rgba(0,0,0,0.06)",
+                        zIndex: -1,
+                      }}
+                      transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                    />
+                  )}
+                  {t}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      {/* The live chart */}
-      <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" fill="none" style={{ overflow: "visible" }}>
-        {[40, 80, 120].map(y => (
-          <line key={y} x1="0" y1={y} x2={W} y2={y} stroke="rgba(139,92,246,0.06)" strokeWidth={1} strokeDasharray="4 6" />
-        ))}
-        <defs>
-          <linearGradient id="heroAreaG" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="rgba(139,92,246,0.25)" />
-            <stop offset="60%" stopColor="rgba(167,139,250,0.06)" />
-            <stop offset="100%" stopColor="rgba(139,92,246,0.00)" />
-          </linearGradient>
-        </defs>
-        {inView && (
-          <>
-            <motion.path
-              d={areaD}
-              fill="url(#heroAreaG)"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.15, duration: 0.8 }}
-            />
-            <motion.polyline
-              points={linePts}
-              stroke={P.purple}
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              initial={{ pathLength: 0, opacity: 0 }}
-              animate={{ pathLength: 1, opacity: 1 }}
-              transition={{ delay: 0.2, duration: 1.6, ease: "easeInOut" }}
-            />
-            {/* Glowing data points along curve */}
-            {[4, 7, 9, 11].map(i => (
-              <g key={i}>
-                <motion.circle
-                  cx={px(i)}
-                  cy={py(data[i])}
-                  r="7"
-                  fill="rgba(139,92,246,0.20)"
-                  animate={{ scale: [1, 1.4, 1] }}
-                  transition={{ duration: 2, repeat: Infinity, delay: i * 0.2 }}
+      {/* SVG Canvas with Interactive Hover */}
+      <div style={{ position: "relative", width: "100%", height: H, overflow: "visible" }}>
+        {/* Floating Tooltip Follower with Collision-Proof Offset */}
+        <AnimatePresence>
+          {activePt && (
+            <div
+              key={`${timeframe}-${hoverIndex ?? 'def'}`}
+              style={{
+                position: "absolute",
+                left: `${(activePt.x / W) * 100}%`,
+                top: `${(activePt.y / H) * 100}%`,
+                transform: tooltipTransform,
+                pointerEvents: "none",
+                zIndex: 50,
+                transition: "transform 0.15s ease-out, left 0.12s ease-out, top 0.12s ease-out",
+              }}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.92 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.92 }}
+                transition={{ duration: 0.15 }}
+                style={{
+                  background: "rgba(15, 15, 22, 0.95)",
+                  backdropFilter: "blur(14px)",
+                  border: "1px solid rgba(255, 255, 255, 0.18)",
+                  boxShadow: "0 10px 30px rgba(0,0,0,0.40), 0 2px 8px rgba(0,0,0,0.20)",
+                  padding: "6px 12px",
+                  borderRadius: 10,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 1.5,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                <span style={{ fontSize: 9.5, color: "rgba(255,255,255,0.65)", fontWeight: 500 }}>
+                  {activeData.label}
+                </span>
+                <div style={{ display: "flex", alignItems: "center", gap: 4.5 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#FFFFFF" }}>
+                    {activeData.value}%
+                  </span>
+                  <span style={{ fontSize: 9.5, color: "#A78BFA", fontWeight: 600 }}>
+                    efficiency
+                  </span>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        <svg
+          width="100%"
+          height={H}
+          viewBox={`0 0 ${W} ${H}`}
+          preserveAspectRatio="none"
+          fill="none"
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+          style={{ overflow: "visible", cursor: "crosshair", display: "block" }}
+        >
+          <defs>
+            {/* Subtle multi-stop smooth area gradient */}
+            <linearGradient id="appleChartArea" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.28" />
+              <stop offset="45%" stopColor="#A78BFA" stopOpacity="0.10" />
+              <stop offset="90%" stopColor="#EC4899" stopOpacity="0.02" />
+              <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0.0" />
+            </linearGradient>
+
+            {/* Glowing Line Stroke Gradient */}
+            <linearGradient id="appleLineStroke" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#8B5CF6" />
+              <stop offset="40%" stopColor="#A78BFA" />
+              <stop offset="75%" stopColor="#C084FC" />
+              <stop offset="100%" stopColor="#8B5CF6" />
+            </linearGradient>
+
+            {/* Ambient drop shadow for the spline curve */}
+            <filter id="splineShadow" x="-10%" y="-20%" width="120%" height="160%">
+              <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#8B5CF6" floodOpacity="0.32" />
+            </filter>
+          </defs>
+
+          {/* Dotted horizontal guideline grids with sleek micro labels */}
+          {[30, 75, 120].map((y, idx) => {
+            const labelVal = idx === 0 ? "90%" : idx === 1 ? "60%" : "30%";
+            return (
+              <g key={y}>
+                <line
+                  x1="0"
+                  y1={y}
+                  x2={W}
+                  y2={y}
+                  stroke="rgba(139,92,246,0.07)"
+                  strokeWidth="1"
+                  strokeDasharray="3 4"
                 />
-                <motion.circle
-                  cx={px(i)}
-                  cy={py(data[i])}
-                  r="4"
-                  fill="white"
-                  stroke={P.purple}
-                  strokeWidth="2.5"
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.6 + i * 0.08, duration: 0.35 }}
-                />
+                <text
+                  x={W - 4}
+                  y={y - 3}
+                  textAnchor="end"
+                  fontSize="8.5"
+                  fill="rgba(100,116,139,0.4)"
+                  fontWeight="600"
+                  fontFamily="sans-serif"
+                >
+                  {labelVal}
+                </text>
               </g>
-            ))}
-          </>
-        )}
-      </svg>
+            );
+          })}
+
+          {inView && (
+            <>
+              {/* Smooth Spline Area Fill */}
+              <motion.path
+                key={`area-${timeframe}`}
+                d={curveArea}
+                fill="url(#appleChartArea)"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
+              />
+
+              {/* Smooth Spline Stroke */}
+              <motion.path
+                key={`path-${timeframe}`}
+                d={curvePath}
+                stroke="url(#appleLineStroke)"
+                strokeWidth="2.75"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                filter="url(#splineShadow)"
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: 1, opacity: 1 }}
+                transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
+              />
+
+              {/* Vertical Guide Line to Hover Point */}
+              {activePt && (
+                <line
+                  x1={activePt.x}
+                  y1={activePt.y}
+                  x2={activePt.x}
+                  y2={H - 6}
+                  stroke="rgba(139,92,246,0.30)"
+                  strokeWidth="1.2"
+                  strokeDasharray="2 3"
+                />
+              )}
+
+              {/* Active Beacon Node */}
+              {activePt && (
+                <g>
+                  {/* Outer pulsating ring */}
+                  <motion.circle
+                    cx={activePt.x}
+                    cy={activePt.y}
+                    r={9}
+                    fill="rgba(139,92,246,0.18)"
+                    animate={{ scale: [1, 1.45, 1], opacity: [0.8, 0.3, 0.8] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                  />
+                  {/* Inner halo ring */}
+                  <circle
+                    cx={activePt.x}
+                    cy={activePt.y}
+                    r={5.5}
+                    fill="#8B5CF6"
+                    opacity={0.35}
+                  />
+                  {/* Solid central dot */}
+                  <circle
+                    cx={activePt.x}
+                    cy={activePt.y}
+                    r={3.5}
+                    fill="#FFFFFF"
+                    stroke="#8B5CF6"
+                    strokeWidth="2.2"
+                  />
+                </g>
+              )}
+            </>
+          )}
+        </svg>
+      </div>
     </div>
   );
 }
@@ -626,23 +1008,39 @@ function HeroBigChart() {
 function CardAnalytics() {
   return (
     <div style={CARD}>
-      {/* Hero ambient glow */}
+      {/* Refined ambient Apple-style glow layers */}
       <div style={{
-        position: "absolute", top: -60, right: -60, width: 300, height: 300,
-        borderRadius: "50%", background: "radial-gradient(circle, rgba(167,139,250,0.12) 0%, transparent 65%)",
+        position: "absolute", top: -80, right: -80, width: 340, height: 340,
+        borderRadius: "50%", background: "radial-gradient(circle, rgba(167,139,250,0.12) 0%, transparent 68%)",
         pointerEvents: "none",
       }} />
       <div style={{
-        position: "absolute", bottom: -40, left: -40, width: 200, height: 200,
-        borderRadius: "50%", background: "radial-gradient(circle, rgba(236,72,153,0.06) 0%, transparent 65%)",
+        position: "absolute", bottom: -60, left: -60, width: 260, height: 260,
+        borderRadius: "50%", background: "radial-gradient(circle, rgba(236,72,153,0.06) 0%, transparent 70%)",
         pointerEvents: "none",
       }} />
 
-      {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
+      {/* Header with Kicker Badge */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
         <div>
-          <span style={LBL}>Analytics</span>
-          <h2 style={{ fontSize: 26, fontWeight: 760, color: P.ink, letterSpacing: "-0.025em", lineHeight: 1.1, margin: "0 0 4px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 8 }}>
+            <span style={LBL}>Analytics</span>
+            <span style={{
+              fontSize: 9.5,
+              fontWeight: 650,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              padding: "2px 7px",
+              borderRadius: 6,
+              background: "rgba(139,92,246,0.08)",
+              color: P.purple,
+              border: "1px solid rgba(139,92,246,0.15)",
+            }}>
+              Intelligence Hub
+            </span>
+          </div>
+
+          <h2 style={{ fontSize: 25, fontWeight: 780, color: P.ink, letterSpacing: "-0.03em", lineHeight: 1.12, margin: "0 0 5px" }}>
             Analytics Dashboard
           </h2>
           <p style={{ fontSize: 13, color: P.g500, lineHeight: 1.5, margin: 0 }}>
@@ -651,12 +1049,12 @@ function CardAnalytics() {
         </div>
       </div>
 
-      {/* 4-column metric cards grid */}
+      {/* 4-column Apple/Notion Glass KPI Cards */}
       <div className="bento-metrics" style={{
         display: "grid",
         gridTemplateColumns: "repeat(4, 1fr)",
-        gap: 12,
-        marginBottom: 20,
+        gap: 10,
+        marginBottom: 18,
       }}>
         {METRICS.map((m, i) => (
           <motion.div
@@ -664,33 +1062,49 @@ function CardAnalytics() {
             initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ delay: i * 0.08, duration: 0.45 }}
-            whileHover={{ y: -3, scale: 1.02 }}
+            transition={{ delay: i * 0.07, duration: 0.45 }}
+            whileHover={{ y: -3, transition: { duration: 0.18 } }}
             style={{
-              background: "linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(250,248,255,0.92) 100%)",
-              borderRadius: 18,
-              border: `1px solid ${m.c}25`,
-              boxShadow: `0 4px 16px rgba(0,0,0,0.03), 0 0 0 1px ${m.c}12`,
-              padding: "12px 14px",
+              background: "linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(249,248,255,0.92) 100%)",
+              borderRadius: 16,
+              border: `1px solid ${m.c}22`,
+              boxShadow: "0 2px 10px rgba(0,0,0,0.02), inset 0 1px 0 rgba(255,255,255,0.9)",
+              padding: "11px 13px",
               display: "flex",
               flexDirection: "column",
               justifyContent: "space-between",
-              transition: "all 0.2s ease",
+              position: "relative",
+              overflow: "hidden",
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-              <p style={{ fontSize: 10, color: P.g500, margin: 0, fontWeight: 620, letterSpacing: "0.01em" }}>
+            {/* Top row: Label + Growth Pill */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+              <p style={{ fontSize: 10.5, color: P.g600, margin: 0, fontWeight: 620, letterSpacing: "-0.01em", lineHeight: 1.25 }}>
                 {m.label}
               </p>
-              <motion.span animate={{ scale: [1, 1.5, 1], opacity: [0.6, 1, 0.6] }} transition={{ duration: 2, repeat: Infinity, delay: i * 0.3 }} style={{ width: 6, height: 6, borderRadius: "50%", background: m.c, boxShadow: `0 0 6px ${m.c}`, display: "block" }} />
+              <span style={{
+                fontSize: 9,
+                fontWeight: 700,
+                color: m.c,
+                background: `${m.c}12`,
+                padding: "1.5px 5px",
+                borderRadius: 5,
+                lineHeight: 1.2,
+                flexShrink: 0,
+                marginLeft: 4,
+              }}>
+                {m.growth}
+              </span>
             </div>
 
-            <div style={{ fontSize: 21, fontWeight: 800, color: m.c, lineHeight: 1, marginBottom: 8, letterSpacing: "-0.03em" }}>
-              <AnimNum target={m.target} displaySuffix={m.suffix} delay={i * 0.1} />
+            {/* Middle row: Big metric number */}
+            <div style={{ fontSize: 20, fontWeight: 800, color: P.ink, lineHeight: 1.1, marginBottom: 8, letterSpacing: "-0.035em" }}>
+              <AnimNum target={m.target} displaySuffix={m.suffix} delay={i * 0.08} />
             </div>
 
-            <div style={{ marginTop: "auto" }}>
-              <MiniSpark pts={m.pts} c={m.c} />
+            {/* Bottom row: Smooth curved Bezier mini sparkline */}
+            <div style={{ marginTop: "auto", display: "flex", justifyContent: "flex-start" }}>
+              <MiniSpark values={m.sparkData} color={m.c} />
             </div>
           </motion.div>
         ))}
@@ -954,154 +1368,253 @@ function CardSmartTags() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
- *  CARD 8 — Export Anywhere (cinematic redesign)
+ *  CARD 8 — Export Anywhere (Prompt Dispatcher & Live Format Studio)
  *  Grid area: "xport" — 3/12 cols, row 3 (240px, compact)
- *
- *  Visual: radial node network. Center "AURE" node glows.
- *  4 format cards orbit at different depths + angles.
- *  Curved lines connect center → each format.
- *  Particles orbit slowly to imply live data flow.
  * ═══════════════════════════════════════════════════════════════════ */
 
-/* Format nodes: angle (deg from center) + distance + color */
-const EXPS = [
-  { label: "TXT", sub: "Plain text", c: P.purple, angle: 210, r: 74 },
-  { label: "MD", sub: "Markdown", c: P.lav, angle: 320, r: 70 },
-  { label: "JSON", sub: "Structured", c: P.violet, angle: 50, r: 78 },
-  { label: "Copy", sub: "Clipboard", c: P.pink, angle: 145, r: 68 },
+const FORMAT_OPTIONS = [
+  {
+    id: "md",
+    name: "Markdown",
+    ext: ".md",
+    color: "#8B5CF6",
+    code: "# Role: Senior Architect\n> Context: Production ready\nProvide system constraints...",
+    badge: "Doc Ready",
+  },
+  {
+    id: "json",
+    name: "JSON",
+    ext: ".json",
+    color: "#6366F1",
+    code: '{\n  "role": "system",\n  "prompt": "Optimized...",\n  "temperature": 0.7\n}',
+    badge: "API Schema",
+  },
+  {
+    id: "txt",
+    name: "Raw",
+    ext: ".txt",
+    color: "#EC4899",
+    code: "Act as Senior Architect. Provide production constraints with benchmarks.",
+    badge: "Plain text",
+  },
 ];
 
 function CardExport() {
-  /* Convert polar → Cartesian in a 220×200 SVG */
-  const CX = 110, CY = 108;
-  const toXY = (angle: number, r: number) => ({
-    x: CX + r * Math.cos((angle * Math.PI) / 180),
-    y: CY + r * Math.sin((angle * Math.PI) / 180),
-  });
+  const [activeFmt, setActiveFmt] = useState(FORMAT_OPTIONS[0]);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
-    <div style={{ ...CARD_SM, overflow: "hidden" }}>
-      {/* Deep radial glow behind the whole card */}
-      <div style={{
-        position: "absolute", inset: 0,
-        background: "radial-gradient(ellipse at 50% 60%, rgba(139,92,246,0.07) 0%, transparent 68%)",
-        pointerEvents: "none",
-      }} />
+    <div style={{ ...CARD_SM, overflow: "hidden", display: "flex", flexDirection: "column", padding: "18px 20px" }}>
+      {/* Background Soft Glow */}
+      <div
+        style={{
+          position: "absolute",
+          top: -40,
+          right: -40,
+          width: 180,
+          height: 180,
+          background: "radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 70%)",
+          pointerEvents: "none",
+        }}
+      />
 
-      {/* Compact header */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-        <div style={{
-          width: 28, height: 28, borderRadius: 9,
-          background: "linear-gradient(135deg, rgba(139,92,246,0.15) 0%, rgba(167,139,250,0.08) 100%)",
-          border: "1px solid rgba(139,92,246,0.18)",
-          boxShadow: "0 0 10px rgba(139,92,246,0.18)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={P.purple} strokeWidth="2">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
-          </svg>
-        </div>
-        <span style={{ fontSize: 15, fontWeight: 700, color: P.ink, letterSpacing: "-0.02em" }}>Export Anywhere</span>
-      </div>
-      <p style={{ fontSize: 11.5, color: P.g500, margin: "0 0 6px", lineHeight: 1.5 }}>Your format, always.</p>
-
-      {/* ── Hero SVG: orbital node network ── */}
-      <div className="bento-svg-export" style={{ flex: 1, minHeight: 0 }}>
-        <svg viewBox="0 0 220 190" width="100%" height="100%" fill="none" style={{ overflow: "visible", display: "block" }}>
-          <defs>
-            <radialGradient id="aureGlow" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="rgba(139,92,246,0.25)" />
-              <stop offset="100%" stopColor="rgba(139,92,246,0)" />
-            </radialGradient>
-          </defs>
-
-          {/* Center glow */}
-          <circle cx={CX} cy={CY} r={42} fill="url(#aureGlow)" />
-
-          {/* Curved connection lines: center → each format node */}
-          {EXPS.map((f, i) => {
-            const { x: fx, y: fy } = toXY(f.angle, f.r);
-            const cpx = CX + (fx - CX) * 0.5 + (i % 2 === 0 ? 12 : -12);
-            const cpy = CY + (fy - CY) * 0.5 + (i % 2 === 0 ? -10 : 10);
-            return (
-              <motion.path
-                key={`ln-${f.label}`}
-                d={`M${CX},${CY} Q${cpx},${cpy} ${fx},${fy}`}
-                stroke={`${f.c}45`}
-                strokeWidth={1.4}
-                strokeDasharray="4 5"
-                strokeLinecap="round"
-                initial={{ pathLength: 0, opacity: 0 }}
-                animate={{ pathLength: 1, opacity: 1, strokeDashoffset: [0, -18] }}
-                transition={{
-                  pathLength: { duration: 0.9, delay: 0.1 + i * 0.12, ease: "easeOut" },
-                  opacity: { duration: 0.9, delay: 0.1 + i * 0.12, ease: "easeOut" },
-                  strokeDashoffset: { duration: 1.8 + i * 0.3, repeat: Infinity, ease: "linear", delay: 1.2 },
-                }}
-              />
-            );
-          })}
-
-          {/* Format node chips */}
-          {EXPS.map((f, i) => {
-            const { x: fx, y: fy } = toXY(f.angle, f.r);
-            const chipW = 44, chipH = 28;
-            return (
-              <motion.g
-                key={f.label}
-                initial={{ opacity: 0, scale: 0.6 }}
-                animate={{ opacity: 1, scale: 1, y: [0, -3 - i * 1.5, 0] }}
-                transition={{
-                  opacity: { delay: 0.15 + i * 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
-                  scale: { delay: 0.15 + i * 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
-                  y: { duration: 3 + i * 0.7, repeat: Infinity, ease: "easeInOut", delay: 1 + i * 0.25 },
-                }}
-              >
-                {/* glow behind chip */}
-                <rect x={fx - chipW / 2 - 3} y={fy - chipH / 2 - 3} width={chipW + 6} height={chipH + 6} rx={12} fill={`${f.c}10`} />
-                {/* chip body */}
-                <rect x={fx - chipW / 2} y={fy - chipH / 2} width={chipW} height={chipH} rx={9}
-                  fill="white" stroke={`${f.c}28`} strokeWidth={1.2} />
-                {/* format label */}
-                <text x={fx} y={fy} fontSize={9.5} fontWeight="700" fill={f.c}
-                  textAnchor="middle" dominantBaseline="middle"
-                  fontFamily="system-ui,-apple-system,sans-serif" letterSpacing="0.02em">
-                  {f.label}
-                </text>
-              </motion.g>
-            );
-          })}
-
-          {/* Center AURE node */}
-          <motion.g
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: 1, scale: [1, 1.08, 1] }}
-            transition={{
-              opacity: { delay: 0.05, duration: 0.55, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
-              scale: { duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.6 },
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div
+            style={{
+              width: 26,
+              height: 26,
+              borderRadius: 8,
+              background: "linear-gradient(135deg, rgba(139,92,246,0.16) 0%, rgba(236,72,153,0.10) 100%)",
+              border: "1px solid rgba(139,92,246,0.20)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            <circle cx={CX} cy={CY} r={24} fill="white" stroke="rgba(139,92,246,0.20)" strokeWidth={1.5} />
-            <circle cx={CX} cy={CY} r={17} fill="rgba(139,92,246,0.07)" />
-            <text x={CX} y={CY + 1} fontSize={9} fontWeight="800" fill={P.purple}
-              textAnchor="middle" dominantBaseline="middle"
-              fontFamily="system-ui,-apple-system,sans-serif" letterSpacing="0.03em">AURE</text>
-          </motion.g>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={P.purple} strokeWidth="2.2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+          </div>
+          <div>
+            <span style={{ fontSize: 14, fontWeight: 700, color: P.ink, letterSpacing: "-0.02em" }}>
+              Export Anywhere
+            </span>
+          </div>
+        </div>
 
-          {/* Slowly orbiting particles */}
-          {[45, 135, 225, 315].map((deg, i) => (
-            <motion.circle
-              key={`op${i}`}
-              cx={CX + Math.cos((deg * Math.PI) / 180) * 30}
-              cy={CY + Math.sin((deg * Math.PI) / 180) * 30}
-              r={2}
-              fill={i % 2 === 0 ? P.lav : P.pink}
-              animate={{ opacity: [0.2, 0.6, 0.2] }}
-              transition={{ duration: 1.6 + i * 0.4, repeat: Infinity, delay: i * 0.3 }}
-            />
-          ))}
-        </svg>
+        {/* Live Status Pill */}
+        <span
+          style={{
+            fontSize: 9.5,
+            fontWeight: 600,
+            color: "#8B5CF6",
+            background: "rgba(139,92,246,0.08)",
+            border: "1px solid rgba(139,92,246,0.18)",
+            padding: "2px 7px",
+            borderRadius: 999,
+          }}
+        >
+          {activeFmt.badge}
+        </span>
+      </div>
+
+      {/* Segmented Format Switcher Tabs */}
+      <div
+        style={{
+          display: "flex",
+          gap: 4,
+          background: "rgba(0,0,0,0.03)",
+          padding: 3,
+          borderRadius: 10,
+          border: "1px solid rgba(0,0,0,0.04)",
+          marginBottom: 10,
+        }}
+      >
+        {FORMAT_OPTIONS.map((f) => {
+          const isActive = activeFmt.id === f.id;
+          return (
+            <button
+              key={f.id}
+              onClick={() => setActiveFmt(f)}
+              style={{
+                flex: 1,
+                padding: "4px 0",
+                fontSize: 11,
+                fontWeight: isActive ? 650 : 500,
+                color: isActive ? P.ink : P.g500,
+                background: isActive ? "#FFFFFF" : "transparent",
+                borderRadius: 7,
+                border: "none",
+                cursor: "pointer",
+                boxShadow: isActive ? "0 2px 6px rgba(0,0,0,0.06)" : "none",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 4,
+                transition: "all 0.18s ease",
+              }}
+            >
+              <span>{f.name}</span>
+              <span
+                style={{
+                  fontSize: 8.5,
+                  fontFamily: "monospace",
+                  color: isActive ? f.color : P.g400,
+                  opacity: isActive ? 1 : 0.7,
+                }}
+              >
+                {f.ext}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Live Format Code / Document Preview Box (Theme-matching light glass) */}
+      <div
+        style={{
+          flex: 1,
+          background: "linear-gradient(135deg, rgba(245,243,255,0.75) 0%, rgba(253,244,255,0.85) 100%)",
+          border: "1px solid rgba(139,92,246,0.14)",
+          borderRadius: 12,
+          padding: "9px 11px",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+          position: "relative",
+          overflow: "hidden",
+          boxShadow: "inset 0 1px 2px rgba(139,92,246,0.04), 0 2px 8px rgba(139,92,246,0.04)",
+        }}
+      >
+        {/* Top window dots */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+          <div style={{ display: "flex", gap: 4 }}>
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#FB7185" }} />
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#FBBF24" }} />
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#34D399" }} />
+          </div>
+          <span style={{ fontSize: 9, fontFamily: "monospace", color: P.purple, opacity: 0.75, fontWeight: 600 }}>
+            prompt{activeFmt.ext}
+          </span>
+        </div>
+
+        {/* Code / Content */}
+        <AnimatePresence mode="wait">
+          <motion.pre
+            key={activeFmt.id}
+            initial={{ opacity: 0, y: 3 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -3 }}
+            transition={{ duration: 0.15 }}
+            style={{
+              margin: 0,
+              fontSize: 10.5,
+              fontFamily: "ui-monospace, monospace",
+              color: "#1E1B4B",
+              fontWeight: 500,
+              lineHeight: 1.45,
+              whiteSpace: "pre-wrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {activeFmt.code}
+          </motion.pre>
+        </AnimatePresence>
+
+        {/* Bottom Copy / Dispatch Button */}
+        <div style={{ marginTop: 8, display: "flex", justifyContent: "flex-end" }}>
+          <motion.button
+            onClick={handleCopy}
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.96 }}
+            style={{
+              background: copied
+                ? "rgba(16,185,129,0.12)"
+                : "#8B5CF6",
+              border: copied
+                ? "1px solid rgba(16,185,129,0.3)"
+                : "none",
+              color: copied ? "#059669" : "#FFFFFF",
+              padding: "4px 10px",
+              borderRadius: 8,
+              fontSize: 9.5,
+              fontWeight: 650,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+              boxShadow: copied ? "none" : "0 2px 10px rgba(139,92,246,0.3)",
+              transition: "all 0.2s ease",
+            }}
+          >
+            {copied ? (
+              <>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <span>Copied!</span>
+              </>
+            ) : (
+              <>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>
+                <span>Export {activeFmt.ext}</span>
+              </>
+            )}
+          </motion.button>
+        </div>
       </div>
     </div>
   );
@@ -1645,56 +2158,61 @@ export default function BentoFeatures() {
     <section id="features" className="bento-section" style={{ background: P.bg, padding: "100px 0 90px", position: "relative", overflow: "hidden" }}>
 
       <style>{`
-        /* ─── Responsive ───────────────────────────────────────────────
-           Every rule lives inside a media query, so the desktop layout is
-           untouched. !important is needed because the markup sizes these
-           elements with inline style={{}}, which outranks a class. ────── */
+        /* ─── Responsive Bento Grid ───────────────────────────────────
+           - Desktop (>= 1024px): 12-column precision editorial Bento Grid
+           - Tablet (640px - 1023px): 2-column modular Bento Grid
+           - Mobile (< 640px): 1-column vertical flow
+        ──────────────────────────────────────────────────────────────── */
 
-        /* The 12-column grid cannot work on a phone: 11 x 16px gaps consume
-           176px, so at a 327px container each 1fr track gets ~12.6px. Tracks
-           bottom out at min-content, the grid overflows, and
-           body{overflow-x:hidden} clips it. Separately, the fixed
-           grid-template-rows (460/480/260/510px) combined with
-           CARD{overflow:hidden} clips content *inside* the cards once it
-           reflows taller. Both are fixed by flowing one card per row at
-           auto height. DOM order already matches the visual reading order
-           of the named areas, so the sequence is unchanged.
-
-           900px is the threshold: above it the container is wide enough that
-           every card still fits its fixed row height; below it they clip. */
-        @media (max-width: 899px) {
-          .bento-section { padding: 64px 0 56px !important; }
-          .bento-inner   { padding: 0 16px !important; }
-          .bento-head    { margin-bottom: 40px !important; }
+        /* Tablet Bento Grid (640px - 1023px) */
+        @media (min-width: 640px) and (max-width: 1023px) {
+          .bento-section { padding: 80px 0 70px !important; }
+          .bento-inner   { padding: 0 24px !important; max-width: 100% !important; }
+          .bento-head    { margin-bottom: 48px !important; }
 
           .bento-grid {
+            display: grid !important;
+            grid-template-areas:
+              "role   model"
+              "anlyt  anlyt"
+              "vault  vault"
+              "smart  xport"
+              "srch   histy"
+              "tmpl   tmpl"
+              "cta    cta" !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            grid-template-rows: auto !important;
+            gap: 16px !important;
+          }
+
+          .bento-grid > * { height: 100% !important; }
+
+          .bento-svg-model  { flex: none !important; width: 100%; aspect-ratio: 460 / 280; }
+          .bento-svg-export { flex: none !important; width: 100%; aspect-ratio: 220 / 180; }
+          .bento-metrics    { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+        }
+
+        /* Mobile Single-Column Flow (< 640px) */
+        @media (max-width: 639px) {
+          .bento-section { padding: 60px 0 50px !important; }
+          .bento-inner   { padding: 0 16px !important; }
+          .bento-head    { margin-bottom: 36px !important; }
+
+          .bento-grid {
+            display: grid !important;
             grid-template-areas: none !important;
             grid-template-columns: minmax(0, 1fr) !important;
             grid-template-rows: auto !important;
             gap: 14px !important;
           }
-          /* Clears the inline gridArea ("role", "model", ...) on each child
-             so they flow in DOM order down the single column. */
-          .bento-grid > * { grid-area: auto !important; }
+          /* Clear named grid areas for vertical mobile stacking */
+          .bento-grid > * { grid-area: auto !important; height: auto !important; }
 
-          /* These two wrappers hold an SVG sized height="100%". Their inline
-             flex:1 means flex-basis:0, so in an auto-height card they would
-             collapse to zero and the visual would disappear. flex:none hands
-             sizing back to aspect-ratio, which derives a definite height from
-             the (definite) width. Ratios match each SVG's own viewBox. */
-          .bento-svg-model,
-          .bento-svg-export { flex: none !important; width: 100%; }
-          .bento-svg-model  { aspect-ratio: 460 / 280; }
-          .bento-svg-export { aspect-ratio: 220 / 190; }
-        }
-
-        @media (max-width: 639px) {
-          /* 4 metric columns leave 32.75px of content width, but MiniSpark is
-             a fixed width="60" SVG and cannot fit. */
-          .bento-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
-          /* Each template card's header needs ~139px min-content (icon +
-             category pill + usage count) against ~106px available. */
+          .bento-metrics   { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
           .bento-tmpl-grid { grid-template-columns: minmax(0, 1fr) !important; }
+
+          .bento-svg-model  { flex: none !important; width: 100%; aspect-ratio: 460 / 280; }
+          .bento-svg-export { flex: none !important; width: 100%; aspect-ratio: 220 / 190; }
         }
       `}</style>
 
