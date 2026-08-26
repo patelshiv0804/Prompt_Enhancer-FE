@@ -8,6 +8,7 @@ import { getUserMessage } from '@/utils/errorMessages';
 
 declare global {
   interface Window {
+    __gsi_initialized?: boolean;
     google?: {
       accounts: {
         id: {
@@ -105,7 +106,32 @@ export default function AuthPage() {
   };
 
   useEffect(() => {
-    if (!googleReady || !window.google || !googleClientId || googleInitRef.current) {
+    if (typeof window !== 'undefined' && window.google?.accounts?.id) {
+      setGoogleReady(true);
+      return;
+    }
+
+    const checkGoogleInterval = setInterval(() => {
+      if (typeof window !== 'undefined' && window.google?.accounts?.id) {
+        setGoogleReady(true);
+        clearInterval(checkGoogleInterval);
+      }
+    }, 200);
+
+    return () => clearInterval(checkGoogleInterval);
+  }, []);
+
+  const loginWithGoogleRef = useRef(loginWithGoogle);
+  useEffect(() => {
+    loginWithGoogleRef.current = loginWithGoogle;
+  }, [loginWithGoogle]);
+
+  useEffect(() => {
+    if (!googleReady || !window.google?.accounts?.id || !googleClientId) {
+      return;
+    }
+
+    if (window.__gsi_initialized) {
       return;
     }
 
@@ -120,7 +146,7 @@ export default function AuthPage() {
         setError(null);
         setIsSubmitting(true);
         try {
-          await loginWithGoogle(credential);
+          await loginWithGoogleRef.current(credential);
         } catch (err: unknown) {
           console.error(err);
           setError(getErrorMessage(err));
@@ -129,16 +155,19 @@ export default function AuthPage() {
       },
     });
 
+    window.__gsi_initialized = true;
     googleInitRef.current = true;
-  }, [googleClientId, googleReady, loginWithGoogle]);
+  }, [googleClientId, googleReady]);
 
   useEffect(() => {
-    if (!googleReady || !window.google || !googleButtonRef.current || !googleClientId) {
+    if (!googleReady || !window.google || !googleClientId || view !== 'auth') {
       return;
     }
 
+    let intervalId: NodeJS.Timeout;
+
     const renderGoogleBtn = () => {
-      if (!googleButtonRef.current || !window.google) return;
+      if (!googleButtonRef.current || !window.google?.accounts?.id) return false;
       const parentWidth = googleButtonRef.current.parentElement?.clientWidth || googleButtonRef.current.clientWidth || 320;
       googleButtonRef.current.innerHTML = '';
       window.google.accounts.id.renderButton(googleButtonRef.current, {
@@ -150,12 +179,23 @@ export default function AuthPage() {
         logo_alignment: 'left',
       });
       setGoogleButtonVisible(true);
+      return true;
     };
 
-    renderGoogleBtn();
+    if (!renderGoogleBtn()) {
+      intervalId = setInterval(() => {
+        if (renderGoogleBtn()) {
+          clearInterval(intervalId);
+        }
+      }, 50);
+    }
+
     window.addEventListener('resize', renderGoogleBtn);
-    return () => window.removeEventListener('resize', renderGoogleBtn);
-  }, [googleClientId, googleReady, tab]);
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+      window.removeEventListener('resize', renderGoogleBtn);
+    };
+  }, [googleClientId, googleReady, tab, view]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
