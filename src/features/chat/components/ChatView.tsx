@@ -13,6 +13,7 @@ import { useEnabledStyleOptions } from '@/features/style-memory/services/styleMe
 import { apiClient, streamEnhance, type ReenhanceStreamDone } from '@/utils/apiClient';
 import FormattedPromptViewer from '../../optimizer/components/FormattedPromptViewer';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useTheme, D } from '@/theme/theme';
 
 // ── Streaming prompt formatter ──────────────────────────────────────────────
 function formatPromptText(text: string): string {
@@ -553,6 +554,8 @@ function getLocalToolRecommendations(prompt: string, mode?: string): { matched_t
 }
 
 function ChatDetailSkeleton() {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', height: '100%', flex: 1, overflowY: 'auto',
@@ -564,8 +567,8 @@ function ChatDetailSkeleton() {
       }}>
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '12px 20px', background: 'rgba(255,255,255,0.85)', borderRadius: 16,
-          border: '1px solid rgba(124,58,237,0.10)', boxShadow: '0 2px 12px rgba(109,40,217,0.04)',
+          padding: '12px 20px', background: isDark ? 'rgba(20, 19, 32, 0.85)' : 'rgba(255,255,255,0.85)', borderRadius: 16,
+          border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.10)'}`, boxShadow: isDark ? '0 2px 12px rgba(0,0,0,0.3)' : '0 2px 12px rgba(109,40,217,0.04)',
           width: '100%', boxSizing: 'border-box',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -580,8 +583,9 @@ function ChatDetailSkeleton() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
           {Array.from({ length: 2 }).map((_, panelIndex) => (
             <div key={panelIndex} style={{
-              background: '#FFFFFF', borderRadius: 20, padding: 24,
-              boxShadow: '0 4px 20px rgba(109,40,217,0.04)', border: '1px solid rgba(124,58,237,0.10)',
+              background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF', borderRadius: 20, padding: 24,
+              boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.35)' : '0 4px 20px rgba(109,40,217,0.04)',
+              border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.10)'}`,
               display: 'flex', flexDirection: 'column', gap: 18, minHeight: 300,
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -599,19 +603,21 @@ function ChatDetailSkeleton() {
         </div>
 
         <div style={{
-          background: '#FFFFFF', borderRadius: 20, border: '1px solid rgba(124,58,237,0.10)',
-          boxShadow: '0 4px 20px rgba(109,40,217,0.05)', overflow: 'hidden', display: 'flex',
+          background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF', borderRadius: 20,
+          border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.10)'}`,
+          boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.35)' : '0 4px 20px rgba(109,40,217,0.05)', overflow: 'hidden', display: 'flex',
         }}>
           <div style={{
             width: 190, flexShrink: 0, display: 'flex', flexDirection: 'column',
             alignItems: 'center', justifyContent: 'center', padding: '28px 20px', gap: 12,
-            borderRight: '1px solid rgba(124,58,237,0.08)', background: '#FDFCFF',
+            borderRight: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.08)'}`,
+            background: isDark ? 'rgba(14, 13, 20, 0.5)' : '#FDFCFF',
           }}>
             <div className="skeleton" style={{ width: 110, height: 110, borderRadius: '50%' }} />
             <div className="skeleton" style={{ width: 96, height: 20, borderRadius: 8 }} />
             <div className="skeleton" style={{ width: 76, height: 24, borderRadius: 9999 }} />
           </div>
-          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, padding: 20, background: '#F8FAFC' }}>
+          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, padding: 20, background: isDark ? 'rgba(10, 10, 15, 0.4)' : '#F8FAFC' }}>
             {Array.from({ length: 6 }).map((_, index) => (
               <div key={index} className="skeleton" style={{ height: 112, borderRadius: 12 }} />
             ))}
@@ -624,6 +630,8 @@ function ChatDetailSkeleton() {
 
 // ── CopyPromptButton Component ────────────────────────────────────────────────
 function CopyPromptButton({ text }: { text: string }) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const [copied, setCopied] = useState(false);
 
   const handleCopy = (e: React.MouseEvent) => {
@@ -646,13 +654,13 @@ function CopyPromptButton({ text }: { text: string }) {
         borderRadius: 8,
         fontSize: 12,
         fontWeight: 600,
-        border: '1px solid rgba(124,58,237,0.15)',
-        background: copied ? 'rgba(16,185,129,0.10)' : 'rgba(124,58,237,0.06)',
-        color: copied ? '#059669' : '#6D28D9',
+        border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(124,58,237,0.15)'}`,
+        background: copied ? 'rgba(16,185,129,0.15)' : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(124,58,237,0.06)'),
+        color: copied ? '#10B981' : (isDark ? '#C084FC' : '#6D28D9'),
         cursor: 'pointer',
         transition: 'all 180ms ease',
       }}
-      className="hover:bg-[rgba(124,58,237,0.12)] hover:scale-105"
+      className={isDark ? 'hover:bg-[rgba(255,255,255,0.10)] hover:scale-105' : 'hover:bg-[rgba(124,58,237,0.12)] hover:scale-105'}
     >
       {copied ? <CheckCircle2 size={13} /> : <Copy size={13} />}
       <span>{copied ? 'Copied' : 'Copy'}</span>
@@ -662,6 +670,8 @@ function CopyPromptButton({ text }: { text: string }) {
 
 // ── Component ──────────────────────────────────────────────────────────────────
 export default function ChatView({ chatId }: { chatId: string | null }) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const [currentSession, setCurrentSession] = useState<OptimizationSession>(() => {
     return chatId && MOCK_SESSIONS[chatId] ? MOCK_SESSIONS[chatId] : DEFAULT_SESSION;
   });
@@ -1155,17 +1165,21 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
           minWidth: isMobile ? 0 : 214, width: isMobile ? '100%' : undefined,
           height: 46, padding: '0 14px 0 18px', borderRadius: 999,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
-          background: 'linear-gradient(180deg, #FFFFFF 0%, #FAF7FF 100%)', border: '1px solid rgba(124,58,237,0.22)',
-          color: '#241144', fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 14px rgba(124,58,237,0.10), inset 0 1px 0 rgba(255,255,255,0.9)',
+          background: isDark ? 'rgba(20, 19, 32, 0.95)' : 'linear-gradient(180deg, #FFFFFF 0%, #FAF7FF 100%)',
+          border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(124,58,237,0.22)'}`,
+          color: isDark ? D.textPrimary : '#241144', fontSize: 14, fontWeight: 700, cursor: 'pointer',
+          boxShadow: isDark ? '0 4px 14px rgba(0,0,0,0.4)' : '0 4px 14px rgba(124,58,237,0.10), inset 0 1px 0 rgba(255,255,255,0.9)',
         }}>
           <span>v{selected.versionNumber} — Score {selected.overallScore}</span>
-          <ChevronDown size={17} color="#6D28D9" style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 160ms ease' }} />
+          <ChevronDown size={17} color={isDark ? '#C084FC' : '#6D28D9'} style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 160ms ease' }} />
         </button>
         {isOpen && (
           <div role="menu" style={{
             position: 'absolute', top: 'calc(100% + 8px)', left: 0, minWidth: '100%', zIndex: 30, padding: 6,
-            borderRadius: 18, background: 'linear-gradient(180deg, #FFFFFF 0%, #FAF7FF 100%)',
-            border: '1px solid rgba(124,58,237,0.18)', boxShadow: '0 16px 34px rgba(91,33,182,0.16)',
+            borderRadius: 18,
+            background: isDark ? '#141320' : 'linear-gradient(180deg, #FFFFFF 0%, #FAF7FF 100%)',
+            border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(124,58,237,0.18)'}`,
+            boxShadow: isDark ? '0 16px 34px rgba(0,0,0,0.7)' : '0 16px 34px rgba(91,33,182,0.16)',
           }}>
             {sessionVersions.map((item, index) => {
               const isSelected = index === selectedIndex;
@@ -1173,7 +1187,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                 <button key={`${item.versionNumber}-${index}`} type="button" role="menuitem" onClick={() => { onSelect(index); setIsOpen(false); }} style={{
                   width: '100%', padding: '10px 12px', border: 'none', borderRadius: 11, textAlign: 'left',
                   background: isSelected ? 'linear-gradient(135deg, #7C3AED, #A855F7)' : 'transparent',
-                  color: isSelected ? '#FFFFFF' : '#5B21B6', fontSize: 13, fontWeight: isSelected ? 700 : 600, cursor: 'pointer',
+                  color: isSelected ? '#FFFFFF' : (isDark ? D.textPrimary : '#5B21B6'), fontSize: 13, fontWeight: isSelected ? 700 : 600, cursor: 'pointer',
                 }}>
                   v{item.versionNumber} — Score {item.overallScore}
                 </button>
@@ -1192,17 +1206,21 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
     const isGenerating = !!v.isGenerating;
     return (
       <div style={{
-        flex: 1, background: '#FFFFFF', borderRadius: 20, padding: isMobile ? '18px 6px 18px 18px' : '24px 8px 24px 24px',
-        boxShadow: '0 4px 20px rgba(109,40,217,0.06), 0 1px 3px rgba(0,0,0,0.03)',
-        border: '1px solid rgba(124,58,237,0.12)', display: 'flex', flexDirection: 'column',
+        flex: 1,
+        background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
+        borderRadius: 20, padding: isMobile ? '18px 6px 18px 18px' : '24px 8px 24px 24px',
+        boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.4)' : '0 4px 20px rgba(109,40,217,0.06), 0 1px 3px rgba(0,0,0,0.03)',
+        border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.12)'}`,
+        display: 'flex', flexDirection: 'column',
         position: 'relative', overflow: 'hidden', minWidth: 0, height: isMobile ? 340 : 420, maxHeight: isMobile ? 340 : 420, boxSizing: 'border-box',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, paddingRight: 16 }}>
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 9999,
             fontSize: 12, fontWeight: 700, letterSpacing: '0.3px',
-            background: 'linear-gradient(135deg, rgba(124,58,237,0.12), rgba(168,85,247,0.15))',
-            color: '#6D28D9', border: '1px solid rgba(124,58,237,0.18)',
+            background: isDark ? 'rgba(139,92,246,0.18)' : 'linear-gradient(135deg, rgba(124,58,237,0.12), rgba(168,85,247,0.15))',
+            color: isDark ? '#C084FC' : '#6D28D9',
+            border: `1px solid ${isDark ? 'rgba(167,139,250,0.30)' : 'rgba(124,58,237,0.18)'}`,
           }}>
             <Wand2 size={13} style={{ animation: isGenerating ? 'spin 1.5s linear infinite' : 'none' }} />
             <span>{isGenerating ? `Optimized · v${v.versionNumber} (Generating…)` : label}</span>
@@ -1212,10 +1230,11 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
             {isGenerating ? (
               <span style={{
                 fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 9999,
-                background: 'rgba(124,58,237,0.10)', color: '#7C3AED',
+                background: isDark ? 'rgba(139,92,246,0.2)' : 'rgba(124,58,237,0.10)',
+                color: isDark ? '#C084FC' : '#7C3AED',
                 display: 'inline-flex', alignItems: 'center', gap: 5,
               }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#7C3AED', animation: 'pulse 1.5s infinite' }} />
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#8B5CF6', animation: 'pulse 1.5s infinite' }} />
                 Generating
               </span>
             ) : (
@@ -1239,7 +1258,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                   lineHeight: 1.6,
                   overflowY: 'auto',
                   paddingRight: 16,
-                  color: '#1E293B',
+                  color: isDark ? D.textPrimary : '#1E293B',
                   letterSpacing: '0.01em',
                   whiteSpace: 'pre-wrap',
                   wordBreak: 'break-word',
@@ -1254,24 +1273,24 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                     height: 15,
                     marginLeft: 2,
                     borderRadius: 1,
-                    background: '#7C3AED',
+                    background: '#8B5CF6',
                     verticalAlign: 'text-bottom',
                     animation: 'streamCaretBlink 1s step-end infinite',
                   }}
                 />
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 12, color: '#6D28D9' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 12, color: isDark ? '#C084FC' : '#6D28D9' }}>
                 <div style={{
                   width: 44, height: 44, borderRadius: '50%',
-                  background: 'linear-gradient(135deg, rgba(124,58,237,0.12), rgba(168,85,247,0.18))',
+                  background: isDark ? 'rgba(139,92,246,0.2)' : 'linear-gradient(135deg, rgba(124,58,237,0.12), rgba(168,85,247,0.18))',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
-                  <Wand2 size={22} style={{ animation: 'spin 2s linear infinite', color: '#7C3AED' }} />
+                  <Wand2 size={22} style={{ animation: 'spin 2s linear infinite', color: '#8B5CF6' }} />
                 </div>
                 <div style={{ textAlign: 'center' }}>
-                  <p style={{ margin: 0, fontSize: 13.5, fontWeight: 700, color: '#241144' }}>Re-enhancing prompt…</p>
-                  <p style={{ margin: '4px 0 0', fontSize: 12, color: '#64748B' }}>Synthesizing higher quality prompt version in real-time</p>
+                  <p style={{ margin: 0, fontSize: 13.5, fontWeight: 700, color: isDark ? D.textPrimary : '#241144' }}>Re-enhancing prompt…</p>
+                  <p style={{ margin: '4px 0 0', fontSize: 12, color: isDark ? D.textSecondary : '#64748B' }}>Synthesizing higher quality prompt version in real-time</p>
                 </div>
               </div>
             )}
@@ -1285,7 +1304,8 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
         {isGenerating ? (
           <div style={{
             display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, paddingTop: 14,
-            borderTop: '1px dashed rgba(124,58,237,0.16)', fontSize: 12, color: '#6D28D9', fontWeight: 600,
+            borderTop: `1px dashed ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(124,58,237,0.16)'}`, fontSize: 12,
+            color: isDark ? '#C084FC' : '#6D28D9', fontWeight: 600,
             paddingRight: 16,
           }}>
             <Wand2 size={13} style={{ flexShrink: 0, animation: 'spin 1.5s linear infinite' }} />
@@ -1294,7 +1314,8 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
         ) : v.tweakNote ? (
           <div style={{
             display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, paddingTop: 14,
-            borderTop: '1px dashed rgba(124,58,237,0.16)', fontSize: 12, color: '#6D28D9', fontWeight: 600,
+            borderTop: `1px dashed ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(124,58,237,0.16)'}`, fontSize: 12,
+            color: isDark ? '#C084FC' : '#6D28D9', fontWeight: 600,
             paddingRight: 16,
           }}>
             <Wand2 size={13} style={{ flexShrink: 0 }} />
@@ -1320,10 +1341,10 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           flexWrap: 'nowrap', gap: isMobile ? 8 : 12,
           padding: isMobile ? '8px 12px' : '10px 18px',
-          background: 'rgba(255,255,255,0.90)',
+          background: isDark ? 'rgba(20, 19, 32, 0.85)' : 'rgba(255,255,255,0.90)',
           borderRadius: isMobile ? 12 : 16,
-          border: '1px solid rgba(124,58,237,0.10)',
-          boxShadow: '0 2px 12px rgba(109,40,217,0.04)',
+          border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.10)'}`,
+          boxShadow: isDark ? '0 2px 12px rgba(0,0,0,0.3)' : '0 2px 12px rgba(109,40,217,0.04)',
           backdropFilter: 'blur(12px)',
           width: '100%', boxSizing: 'border-box',
           position: 'relative', zIndex: 10,
@@ -1335,8 +1356,8 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
               borderRadius: 9999,
               fontSize: isMobile ? 11.5 : 12.5,
               fontWeight: 700,
-              background: 'rgba(124,58,237,0.11)',
-              color: '#6D28D9',
+              background: isDark ? 'rgba(139,92,246,0.18)' : 'rgba(124,58,237,0.11)',
+              color: isDark ? '#C084FC' : '#6D28D9',
               whiteSpace: 'nowrap',
               flexShrink: 0,
             }}>
@@ -1346,7 +1367,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
             <span style={{
               display: 'inline-flex', alignItems: 'center', gap: 4,
               fontSize: isMobile ? 11 : 12,
-              color: '#64748B',
+              color: isDark ? D.textSecondary : '#64748B',
               fontWeight: 500,
               whiteSpace: 'nowrap',
               overflow: 'hidden',
@@ -1369,11 +1390,12 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                   fontWeight: 600,
                   cursor: 'pointer',
                   transition: 'all 160ms ease',
-                  background: compareMode ? 'linear-gradient(135deg, #6D28D9, #7C3AED)' : 'rgba(124,58,237,0.07)',
-                  color: compareMode ? 'white' : '#6D28D9',
-                  border: '1px solid rgba(124,58,237,0.15)',
+                  background: compareMode ? 'linear-gradient(135deg, #6D28D9, #7C3AED)' : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(124,58,237,0.07)'),
+                  color: compareMode ? 'white' : (isDark ? '#C084FC' : '#6D28D9'),
+                  border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(124,58,237,0.15)'}`,
                   whiteSpace: 'nowrap',
                 }}
+                className={isDark ? 'hover:!bg-[rgba(255,255,255,0.10)] hover:!text-[#FFFFFF]' : ''}
               >
                 <GitCompareArrows size={13} />
                 <span>{compareMode ? 'Exit' : 'Compare'}</span>
@@ -1395,12 +1417,13 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                   cursor: isReenhancing ? 'not-allowed' : 'pointer',
                   transition: 'all 160ms ease',
                   opacity: isReenhancing ? 0.7 : 1,
-                  background: 'linear-gradient(135deg, rgba(124,58,237,0.14), rgba(168,85,247,0.10))',
-                  color: '#6D28D9',
-                  border: '1px solid rgba(124,58,237,0.22)',
+                  background: isDark ? 'rgba(139,92,246,0.22)' : 'linear-gradient(135deg, rgba(124,58,237,0.14), rgba(168,85,247,0.10))',
+                  color: isDark ? '#C084FC' : '#6D28D9',
+                  border: `1px solid ${isDark ? 'rgba(167,139,250,0.35)' : 'rgba(124,58,237,0.22)'}`,
                   boxShadow: isReenhancing ? 'none' : '0 2px 8px rgba(124,58,237,0.10)',
                   whiteSpace: 'nowrap',
                 }}
+                className={isDark ? 'hover:!bg-[rgba(139,92,246,0.32)] hover:!text-[#FFFFFF]' : ''}
               >
                 <Wand2 size={13} style={{ animation: isReenhancing ? 'spin 1s linear infinite' : 'none' }} />
                 <span>{isReenhancing ? 'Re-enhancing…' : 'Re-enhance'}</span>
@@ -1443,7 +1466,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                     <option key={i} value={i}>v{v.versionNumber} — Score {v.overallScore}</option>
                   ))}
                 </select>
-                <span style={{ fontWeight: 700, color: '#94A3B8', fontSize: 13 }}>vs</span>
+                <span style={{ fontWeight: 700, color: isDark ? D.textMuted : '#94A3B8', fontSize: 13 }}>vs</span>
                 {renderComparisonSelector(activeVersionIndex, isRightCompareMenuOpen, setIsRightCompareMenuOpen, handleVersionSelect)}
                 <select
                   value={activeVersionIndex} onChange={e => handleVersionSelect(Number(e.target.value))}
@@ -1466,14 +1489,18 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
               <div style={{ display: 'grid', gridTemplateColumns: isCompact ? '1fr' : '1fr 1fr', gap: 20 }}>
                 {/* Input / Original panel */}
                 <div style={{
-                  background: '#FFFFFF', borderRadius: 20, padding: isMobile ? '18px 6px 18px 18px' : '24px 8px 24px 24px',
-                  boxShadow: '0 4px 20px rgba(109,40,217,0.04)', border: '1px solid rgba(124,58,237,0.10)',
+                  background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
+                  borderRadius: 20, padding: isMobile ? '18px 6px 18px 18px' : '24px 8px 24px 24px',
+                  boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.4)' : '0 4px 20px rgba(109,40,217,0.04)',
+                  border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.10)'}`,
                   display: 'flex', flexDirection: 'column', height: isMobile ? 340 : 420, maxHeight: isMobile ? 340 : 420, boxSizing: 'border-box', overflow: 'hidden', minWidth: 0,
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, paddingRight: 16 }}>
                     <div style={{
                       display: 'inline-flex', alignItems: 'center', padding: '6px 14px', borderRadius: 9999,
-                      fontSize: 12, fontWeight: 700, background: '#F1F5F9', color: '#64748B',
+                      fontSize: 12, fontWeight: 700,
+                      background: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9',
+                      color: isDark ? D.textSecondary : '#64748B',
                     }}>
                       <span>
                         {activeVersionIndex > 0 && version.versionType?.toLowerCase() === 'reenhancement'
@@ -1493,9 +1520,10 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
 
               {/* ── MERGED: Score Overview + Score Breakdown (Image 2 layout) ── */}
               <div style={{
-                background: '#FFFFFF', borderRadius: 20,
-                border: '1px solid rgba(124,58,237,0.10)',
-                boxShadow: '0 4px 20px rgba(109,40,217,0.05)',
+                background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
+                borderRadius: 20,
+                border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.10)'}`,
+                boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.4)' : '0 4px 20px rgba(109,40,217,0.05)',
                 overflow: 'hidden',
                 display: 'flex',
                 flexDirection: isCompact ? 'column' : 'row',
@@ -1505,9 +1533,9 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                   width: isCompact ? '100%' : 190, flexShrink: 0, boxSizing: 'border-box',
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                   padding: '28px 20px', gap: 12,
-                  borderRight: isCompact ? 'none' : '1px solid rgba(124,58,237,0.08)',
-                  borderBottom: isCompact ? '1px solid rgba(124,58,237,0.08)' : 'none',
-                  background: '#FDFCFF',
+                  borderRight: isCompact ? 'none' : `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.08)'}`,
+                  borderBottom: isCompact ? `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.08)'}` : 'none',
+                  background: isDark ? 'rgba(14, 13, 20, 0.5)' : '#FDFCFF',
                 }}>
                   {/* Ring */}
                   <div style={{ position: 'relative', width: 110, height: 110 }}>
@@ -1520,14 +1548,14 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                               <stop offset="100%" stopColor="#A855F7" />
                             </linearGradient>
                           </defs>
-                          <circle cx="55" cy="55" r="46" fill="none" stroke="rgba(124,58,237,0.10)" strokeWidth="7" />
+                          <circle cx="55" cy="55" r="46" fill="none" stroke={isDark ? 'rgba(255,255,255,0.08)' : 'rgba(124,58,237,0.10)'} strokeWidth="7" />
                           <circle
                             cx="55" cy="55" r="46" fill="none" stroke="url(#scoreRingGrad)" strokeWidth="7"
                             strokeLinecap="round" strokeDasharray="90 200"
                           />
                         </svg>
                         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <Wand2 size={24} style={{ color: '#7C3AED', animation: 'spin 3s linear infinite' }} />
+                          <Wand2 size={24} style={{ color: '#8B5CF6', animation: 'spin 3s linear infinite' }} />
                         </div>
                       </div>
                     ) : (
@@ -1539,7 +1567,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                               <stop offset="100%" stopColor="#A855F7" />
                             </linearGradient>
                           </defs>
-                          <circle cx="55" cy="55" r="46" fill="none" stroke="rgba(124,58,237,0.10)" strokeWidth="7" />
+                          <circle cx="55" cy="55" r="46" fill="none" stroke={isDark ? 'rgba(255,255,255,0.08)' : 'rgba(124,58,237,0.10)'} strokeWidth="7" />
                           <circle
                             cx="55" cy="55" r="46" fill="none" stroke="url(#scoreRingGrad)" strokeWidth="7"
                             strokeLinecap="round"
@@ -1549,19 +1577,19 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                           />
                         </svg>
                         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <span style={{ fontSize: 30, fontWeight: 900, color: '#1E293B' }}>{animatedScore}</span>
+                          <span style={{ fontSize: 30, fontWeight: 900, color: isDark ? D.textPrimary : '#1E293B' }}>{animatedScore}</span>
                         </div>
                       </div>
                     )}
                   </div>
 
                   {/* Label */}
-                  <span style={{ fontSize: 16, fontWeight: 800, color: '#7C3AED', letterSpacing: '-0.01em' }}>
+                  <span style={{ fontSize: 16, fontWeight: 800, color: isDark ? '#C084FC' : '#7C3AED', letterSpacing: '-0.01em' }}>
                     {version.isGenerating ? 'Evaluating…' : scoreLabel(version.overallScore)}
                   </span>
 
                   {/* Pts badge */}
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 12px', background: version.isGenerating ? 'rgba(124,58,237,0.10)' : 'rgba(16,185,129,0.10)', color: version.isGenerating ? '#7C3AED' : '#059669', borderRadius: 9999, fontSize: 12, fontWeight: 700 }}>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 12px', background: version.isGenerating ? (isDark ? 'rgba(139,92,246,0.18)' : 'rgba(124,58,237,0.10)') : (isDark ? 'rgba(16,185,129,0.18)' : 'rgba(16,185,129,0.10)'), color: version.isGenerating ? (isDark ? '#C084FC' : '#7C3AED') : '#10B981', borderRadius: 9999, fontSize: 12, fontWeight: 700 }}>
                     {version.isGenerating ? (
                       <>
                         <Sparkles size={12} />
@@ -1575,17 +1603,17 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                     )}
                   </div>
 
-                  {/* Before / After — use per-version old_analysis when available */}
+                  {/* Before / After */}
                   <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 5, marginTop: 4 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#64748B', fontWeight: 600 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: isDark ? D.textSecondary : '#64748B', fontWeight: 600 }}>
                       <span>Before</span>
-                      <span style={{ fontWeight: 700, color: '#94A3B8' }}>
+                      <span style={{ fontWeight: 700, color: isDark ? D.textMuted : '#94A3B8' }}>
                         {version.beforeOverallScore ?? session.originalScore ?? sessionVersions[0].overallScore}
                       </span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#64748B', fontWeight: 600 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: isDark ? D.textSecondary : '#64748B', fontWeight: 600 }}>
                       <span>After</span>
-                      <span style={{ fontWeight: 900, color: version.isGenerating ? '#7C3AED' : scoreColor(version.overallScore), fontSize: 14 }}>
+                      <span style={{ fontWeight: 900, color: version.isGenerating ? (isDark ? '#C084FC' : '#7C3AED') : scoreColor(version.overallScore), fontSize: 14 }}>
                         {version.isGenerating ? '—' : version.overallScore}
                       </span>
                     </div>
@@ -1599,7 +1627,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                   gridTemplateColumns: isCompact ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
                   gap: isMobile ? 10 : 16,
                   padding: isMobile ? 12 : 20,
-                  background: '#F8FAFC',
+                  background: isDark ? 'rgba(10, 10, 15, 0.4)' : '#F8FAFC',
                 }}>
                   {version.isGenerating || !version.dimensions || version.dimensions.length === 0 ? (
                     [
@@ -1618,39 +1646,39 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                           gap: isMobile ? 10 : 12,
                           padding: isMobile ? 13 : 16,
                           minWidth: 0,
-                          background: '#FFFFFF',
+                          background: isDark ? '#141320' : '#FFFFFF',
                           borderRadius: 12,
-                          border: '1px solid #E2E8F0',
-                          borderLeft: '4px solid #7C3AED',
-                          boxShadow: '0 4px 12px rgba(15, 23, 42, 0.03)',
+                          border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0'}`,
+                          borderLeft: '4px solid #8B5CF6',
+                          boxShadow: isDark ? '0 4px 12px rgba(0, 0, 0, 0.3)' : '0 4px 12px rgba(15, 23, 42, 0.03)',
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <div style={{
                               width: 24, height: 24, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              background: 'rgba(124,58,237,0.10)', color: '#7C3AED',
+                              background: isDark ? 'rgba(139,92,246,0.18)' : 'rgba(124,58,237,0.10)', color: isDark ? '#C084FC' : '#7C3AED',
                             }}>
                               <Sparkles size={13} style={{ animation: 'spin 2s linear infinite' }} />
                             </div>
-                            <span style={{ fontSize: 13, fontWeight: 700, color: '#1E293B' }}>{d.label}</span>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: isDark ? D.textPrimary : '#1E293B' }}>{d.label}</span>
                           </div>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: '#7C3AED' }}>Analyzing…</span>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: isDark ? '#C084FC' : '#7C3AED' }}>Analyzing…</span>
                         </div>
-                        <div style={{ height: 4, background: '#F1F5F9', borderRadius: 99, overflow: 'hidden' }}>
+                        <div style={{ height: 4, background: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9', borderRadius: 99, overflow: 'hidden' }}>
                           <div style={{
                             height: '100%', width: '60%', background: 'linear-gradient(90deg, #7C3AED, #A855F7)',
                             borderRadius: 99, animation: 'pulse 1.5s infinite',
                           }} />
                         </div>
-                        <p style={{ fontSize: 11.5, color: '#64748B', margin: 0, lineHeight: 1.45, fontWeight: 500 }}>{d.desc}</p>
+                        <p style={{ fontSize: 11.5, color: isDark ? D.textSecondary : '#64748B', margin: 0, lineHeight: 1.45, fontWeight: 500 }}>{d.desc}</p>
                       </div>
                     ))
                   ) : (
                     version.dimensions.map((dim) => {
                       const Icon = dim.icon;
                       const score = dim.score;
-                      const barColor = score >= 80 ? '#10B981' : score >= 55 ? '#7C3AED' : '#F59E0B';
+                      const barColor = score >= 80 ? '#10B981' : score >= 55 ? '#8B5CF6' : '#F59E0B';
                       return (
                         <div
                           key={dim.id}
@@ -1660,40 +1688,33 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                             gap: isMobile ? 10 : 12,
                             padding: isMobile ? 13 : 16,
                             minWidth: 0,
-                            background: '#FFFFFF',
+                            background: isDark ? '#141320' : '#FFFFFF',
                             borderRadius: 12,
-                            border: '1px solid #E2E8F0',
+                            border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0'}`,
                             borderLeft: `4px solid ${barColor}`,
-                            boxShadow: '0 4px 12px rgba(15, 23, 42, 0.03)',
+                            boxShadow: isDark ? '0 4px 12px rgba(0, 0, 0, 0.3)' : '0 4px 12px rgba(15, 23, 42, 0.03)',
                             transition: 'transform 180ms ease, box-shadow 180ms ease',
                           }}
-                          onMouseEnter={e => {
-                            e.currentTarget.style.transform = 'translateY(-2px)';
-                            e.currentTarget.style.boxShadow = '0 6px 18px rgba(15, 23, 42, 0.05)';
-                          }}
-                          onMouseLeave={e => {
-                            e.currentTarget.style.transform = 'none';
-                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(15, 23, 42, 0.03)';
-                          }}
+                          className={isDark ? 'hover:translate-y-[-2px] hover:!border-white/20' : ''}
                         >
                           {/* Top row: icon + name + score */}
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, minWidth: 0 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 8, minWidth: 0 }}>
                               <div style={{
                                 width: isMobile ? 22 : 24, height: isMobile ? 22 : 24, flexShrink: 0, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                background: dim.status === 'good' ? 'rgba(16,185,129,0.10)' : dim.status === 'warning' ? 'rgba(245,158,11,0.10)' : 'rgba(148,163,184,0.10)',
-                                color: dim.status === 'good' ? '#10B981' : dim.status === 'warning' ? '#F59E0B' : '#94A3B8',
+                                background: dim.status === 'good' ? (isDark ? 'rgba(16,185,129,0.18)' : 'rgba(16,185,129,0.10)') : dim.status === 'warning' ? (isDark ? 'rgba(245,158,11,0.18)' : 'rgba(245,158,11,0.10)') : (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(148,163,184,0.10)'),
+                                color: dim.status === 'good' ? '#10B981' : dim.status === 'warning' ? '#F59E0B' : (isDark ? D.textMuted : '#94A3B8'),
                               }}>
                                 <Icon size={13} strokeWidth={2.3} />
                               </div>
-                              <span style={{ fontSize: isMobile ? 12 : 13, fontWeight: 700, color: '#1E293B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{dim.label}</span>
+                              <span style={{ fontSize: isMobile ? 12 : 13, fontWeight: 700, color: isDark ? D.textPrimary : '#1E293B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{dim.label}</span>
                             </div>
                             {/* Score: show beforeScore → score if beforeScore exists */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700, flexShrink: 0 }}>
                               {dim.beforeScore !== undefined && (
                                 <>
-                                  <span style={{ color: '#94A3B8' }}>{dim.beforeScore}</span>
-                                  <span style={{ color: '#CBD5E1', fontSize: 10 }}>→</span>
+                                  <span style={{ color: isDark ? D.textMuted : '#94A3B8' }}>{dim.beforeScore}</span>
+                                  <span style={{ color: isDark ? 'rgba(255,255,255,0.2)' : '#CBD5E1', fontSize: 10 }}>→</span>
                                 </>
                               )}
                               <span style={{ fontSize: isMobile ? 14 : 15, fontWeight: 900, color: barColor }}>{score}</span>
@@ -1701,7 +1722,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                           </div>
 
                           {/* Progress bar */}
-                          <div style={{ height: 4, background: '#F1F5F9', borderRadius: 99, overflow: 'hidden' }}>
+                          <div style={{ height: 4, background: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9', borderRadius: 99, overflow: 'hidden' }}>
                             <div style={{
                               height: '100%', width: `${score}%`, background: barColor,
                               borderRadius: 99, transition: 'width 0.9s ease-out',
@@ -1709,7 +1730,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                           </div>
 
                           {/* Description */}
-                          <p style={{ fontSize: 11.5, color: '#64748B', margin: 0, lineHeight: 1.45, fontWeight: 500 }}>{dim.desc}</p>
+                          <p style={{ fontSize: 11.5, color: isDark ? D.textSecondary : '#64748B', margin: 0, lineHeight: 1.45, fontWeight: 500 }}>{dim.desc}</p>
                         </div>
                       );
                     })
@@ -1720,18 +1741,20 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
               {/* Recommended AI Tools */}
               {session.toolRecommendations && session.toolRecommendations.tools && session.toolRecommendations.tools.length > 0 && (
                 <div style={{
-                  background: '#FFFFFF', borderRadius: 20, padding: isMobile ? '18px 16px' : '24px 28px',
-                  border: '1px solid rgba(124,58,237,0.12)', boxShadow: '0 4px 20px rgba(109,40,217,0.06)',
+                  background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
+                  borderRadius: 20, padding: isMobile ? '18px 16px' : '24px 28px',
+                  border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.12)'}`,
+                  boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.4)' : '0 4px 20px rgba(109,40,217,0.06)',
                   display: 'flex', flexDirection: 'column', gap: 16, marginTop: 8
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                      <Sparkles size={18} style={{ color: '#7C3AED' }} />
-                      <h3 style={{ fontSize: 16, fontWeight: 800, color: '#1E293B', margin: 0 }}>
+                      <Sparkles size={18} style={{ color: '#8B5CF6' }} />
+                      <h3 style={{ fontSize: 16, fontWeight: 800, color: isDark ? D.textPrimary : '#1E293B', margin: 0 }}>
                         Recommended AI Tools for Best Execution
                       </h3>
                       {session.toolRecommendations.matched_task && (
-                        <span style={{ fontSize: 11, fontWeight: 700, color: '#6D28D9', background: 'rgba(124,58,237,0.08)', padding: '3px 10px', borderRadius: 9999 }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: isDark ? '#C084FC' : '#6D28D9', background: isDark ? 'rgba(139,92,246,0.18)' : 'rgba(124,58,237,0.08)', padding: '3px 10px', borderRadius: 9999 }}>
                           Task: {session.toolRecommendations.matched_task}
                         </span>
                       )}
@@ -1744,10 +1767,14 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                         key={t.name}
                         style={{
                           display: 'flex', alignItems: 'center', gap: 12, padding: '14px 20px',
-                          background: t.rank === 1 ? 'linear-gradient(135deg, rgba(124,58,237,0.09) 0%, rgba(167,139,250,0.04) 100%)' : 'rgba(124,58,237,0.03)',
-                          border: t.rank === 1 ? '1px solid rgba(124,58,237,0.22)' : '1px solid rgba(124,58,237,0.08)',
+                          background: t.rank === 1
+                            ? (isDark ? 'rgba(139, 92, 246, 0.18)' : 'linear-gradient(135deg, rgba(124,58,237,0.09) 0%, rgba(167,139,250,0.04) 100%)')
+                            : (isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(124,58,237,0.03)'),
+                          border: t.rank === 1
+                            ? `1px solid ${isDark ? 'rgba(167, 139, 250, 0.35)' : 'rgba(124,58,237,0.22)'}`
+                            : `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.08)'}`,
                           borderRadius: 14, flex: '1 1 200px', minWidth: 180,
-                          boxShadow: t.rank === 1 ? '0 4px 14px rgba(124,58,237,0.08)' : 'none',
+                          boxShadow: t.rank === 1 ? (isDark ? '0 4px 14px rgba(0,0,0,0.3)' : '0 4px 14px rgba(124,58,237,0.08)') : 'none',
                         }}
                       >
                         <span
@@ -1761,8 +1788,8 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                           #{t.rank}
                         </span>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                          <span style={{ fontSize: 14, fontWeight: 700, color: '#1E293B' }}>{t.name}</span>
-                          <span style={{ fontSize: 11, color: '#64748B', fontWeight: 500 }}>
+                          <span style={{ fontSize: 14, fontWeight: 700, color: isDark ? D.textPrimary : '#1E293B' }}>{t.name}</span>
+                          <span style={{ fontSize: 11, color: isDark ? D.textSecondary : '#64748B', fontWeight: 500 }}>
                             {t.rank === 1 ? 'Primary Recommendation' : `Alternative #${t.rank}`}
                           </span>
                         </div>

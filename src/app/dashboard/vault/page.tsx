@@ -12,6 +12,7 @@ import { fetchHistory, fetchHistoryStats, toggleFavorite, deleteHistoryItems } f
 import type { HistoryItem, HistoryStats, SortBy } from '@/features/history/types/history.types';
 import ScoreSpinner from '@/components/ScoreSpinner';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useTheme, D } from '@/theme/theme';
 
 const PAGE_SIZE = 10;
 
@@ -31,8 +32,8 @@ const CATEGORY_ICONS: Record<string, React.ElementType> = {
   'image-gen': ImageIcon, cinematic: Film, youtube: PlaySquare, seo: TrendingUp, general: Sparkles, email: Mail,
 };
 const CATEGORY_ACCENTS: Record<string, string> = {
-  coding: '#0EA5E9', research: '#8B5CF6', marketing: '#10B981', storytelling: '#F59E0B',
-  'image-gen': '#EC4899', cinematic: '#8B5CF6', youtube: '#EF4444', seo: '#10B981', general: '#7C3AED', email: '#0EA5E9',
+  coding: '#38BDF8', research: '#A78BFA', marketing: '#34D399', storytelling: '#FBBF24',
+  'image-gen': '#F472B6', cinematic: '#A78BFA', youtube: '#F87171', seo: '#34D399', general: '#8B5CF6', email: '#38BDF8',
 };
 
 function timeAgo(isoString: string): string {
@@ -50,7 +51,7 @@ function timeAgo(isoString: string): string {
 
 function scoreColor(score: number): string {
   if (score >= 90) return '#10B981';
-  if (score >= 80) return '#7C3AED';
+  if (score >= 80) return '#8B5CF6';
   if (score >= 65) return '#F59E0B';
   return '#EF4444';
 }
@@ -111,17 +112,22 @@ interface StatCardProps {
 }
 
 function StatCard({ label, value, suffix = '', prefix = '', icon: Icon, accent, sub, sparkline, animate, isMobile = false }: StatCardProps) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const count = useCountUp(value, animate);
   return (
     <div style={{
-      background: '#FFFFFF', border: '1px solid rgba(124,58,237,0.10)', borderRadius: 16, padding: isMobile ? '16px 16px' : '20px 24px',
-      flex: '1 1 0', minWidth: 0, boxShadow: '0 4px 12px rgba(109,40,217,0.06), 0 1px 3px rgba(0,0,0,0.04)',
+      background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
+      border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.10)'}`,
+      borderRadius: 16, padding: isMobile ? '16px 16px' : '20px 24px',
+      flex: '1 1 0', minWidth: 0,
+      boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.4)' : '0 4px 12px rgba(109,40,217,0.06), 0 1px 3px rgba(0,0,0,0.04)',
       display: 'flex', flexDirection: 'column', gap: 8, transition: 'transform 250ms ease, box-shadow 250ms ease',
     }}
-    className="hover:translate-y-[-2px] hover:shadow-[0_8px_24px_rgba(109,40,217,0.09),0_2px_6px_rgba(0,0,0,0.05)]"
+    className="hover:translate-y-[-2px]"
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: isMobile ? '0.4px' : '0.9px', color: 'var(--color-text-secondary)' }}>{label}</span>
+        <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: isMobile ? '0.4px' : '0.9px', color: isDark ? D.textMuted : 'var(--color-text-secondary)' }}>{label}</span>
         <div style={{ width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accent, background: `${accent}18` }}>
           <Icon size={14} strokeWidth={2} />
         </div>
@@ -141,10 +147,12 @@ function StatCard({ label, value, suffix = '', prefix = '', icon: Icon, accent, 
 
 /* ── VaultRow ── */
 function VaultRow({ item, isSelectionMode, selected, onSelect, onToggleFavorite, onDelete, onOpenInOptimizer, isMobile = false }: { item: HistoryItem; isSelectionMode: boolean; selected: boolean; onSelect: (id: string) => void; onToggleFavorite: (id: string, current: boolean) => void; onDelete: (id: string) => void; onOpenInOptimizer: (id: string) => void; isMobile?: boolean; }) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const Icon    = CATEGORY_ICONS[item.category] || FileText;
-  const accent  = CATEGORY_ACCENTS[item.category] || '#7C3AED';
+  const accent  = CATEGORY_ACCENTS[item.category] || '#8B5CF6';
 
   useEffect(() => {
     function close(e: MouseEvent) {
@@ -157,12 +165,18 @@ function VaultRow({ item, isSelectionMode, selected, onSelect, onToggleFavorite,
   return (
     <div id={`vault-row-${item.id}`} style={{
       display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 16, padding: isMobile ? '11px 12px' : '14px 20px',
-      background: menuOpen ? 'rgba(124,58,237,0.04)' : selected ? 'rgba(124,58,237,0.03)' : '#FFFFFF',
-      border: selected ? '1px solid rgba(124,58,237,0.25)' : '1px solid rgba(124,58,237,0.09)', borderRadius: 14,
+      background: isDark
+        ? (menuOpen ? 'rgba(139,92,246,0.18)' : selected ? 'rgba(139,92,246,0.22)' : 'rgba(20, 19, 32, 0.85)')
+        : (menuOpen ? 'rgba(124,58,237,0.04)' : selected ? 'rgba(124,58,237,0.03)' : '#FFFFFF'),
+      border: isDark
+        ? (selected ? '1px solid rgba(167,139,250,0.40)' : '1px solid rgba(255,255,255,0.08)')
+        : (selected ? '1px solid rgba(124,58,237,0.25)' : '1px solid rgba(124,58,237,0.09)'),
+      borderRadius: 14,
+      boxShadow: isDark ? '0 2px 10px rgba(0,0,0,0.35)' : 'none',
       transition: 'background 200ms ease, box-shadow 200ms ease, border-color 200ms ease',
       position: 'relative', cursor: 'pointer',
     }}
-    className="hover:!bg-[rgba(124,58,237,0.03)] hover:shadow-[0_4px_16px_rgba(109,40,217,0.07)] hover:!border-[rgba(124,58,237,0.15)]"
+    className={isDark ? 'hover:!bg-[rgba(255,255,255,0.05)] hover:!border-[rgba(167,139,250,0.3)]' : 'hover:!bg-[rgba(124,58,237,0.03)] hover:shadow-[0_4px_16px_rgba(109,40,217,0.07)] hover:!border-[rgba(124,58,237,0.15)]'}
     onClick={() => {
       if (isSelectionMode) {
         onSelect(item.id);
@@ -179,16 +193,16 @@ function VaultRow({ item, isSelectionMode, selected, onSelect, onToggleFavorite,
           aria-label={`Select ${item.prompt}`}
           onClick={event => event.stopPropagation()}
           onChange={() => onSelect(item.id)}
-          style={{ width: 16, height: 16, accentColor: '#7C3AED', cursor: 'pointer', flexShrink: 0 }}
+          style={{ width: 16, height: 16, accentColor: '#8B5CF6', cursor: 'pointer', flexShrink: 0 }}
         />
       )}
-      <div style={{ width: isMobile ? 32 : 38, height: isMobile ? 32 : 38, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accent, background: `${accent}14`, border: `1px solid ${accent}22`, flexShrink: 0 }}>
+      <div style={{ width: isMobile ? 32 : 38, height: isMobile ? 32 : 38, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accent, background: `${accent}18`, border: `1px solid ${accent}30`, flexShrink: 0 }}>
         <Icon size={isMobile ? 15 : 16} strokeWidth={1.6} />
       </div>
 
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <p style={{ margin: 0, fontSize: 14, fontWeight: 500, color: 'var(--color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.prompt}</p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--color-text-secondary)', minWidth: 0, overflow: 'hidden', whiteSpace: 'nowrap' }}>
+        <p style={{ margin: 0, fontSize: 14, fontWeight: 500, color: isDark ? D.textPrimary : 'var(--color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.prompt}</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: isDark ? D.textSecondary : 'var(--color-text-secondary)', minWidth: 0, overflow: 'hidden', whiteSpace: 'nowrap' }}>
           <Clock size={11} strokeWidth={1.5} style={{ flexShrink: 0 }} />
           <span style={{ flexShrink: 0 }}>{timeAgo(item.createdAt)}</span>
           <span style={{ opacity: 0.3, flexShrink: 0 }}>·</span>
@@ -199,10 +213,8 @@ function VaultRow({ item, isSelectionMode, selected, onSelect, onToggleFavorite,
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, flexShrink: 0 }}>
-        <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', color: 'var(--color-text-secondary)', opacity: 0.6 }}>Score</span>
+        <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', color: isDark ? D.textMuted : 'var(--color-text-secondary)', opacity: 0.8 }}>Score</span>
         {item.score == null ? (
-          // Quality analysis still processing in the background — show a spinner
-          // until the real score is persisted to and fetched from the DB.
           <ScoreSpinner size={18} />
         ) : (
           <span style={{ fontSize: 18, fontWeight: 800, lineHeight: 1, color: scoreColor(item.score) }}>{item.score}</span>
@@ -210,15 +222,15 @@ function VaultRow({ item, isSelectionMode, selected, onSelect, onToggleFavorite,
       </div>
 
       <button id={`star-btn-${item.id}`} onClick={(e) => { e.stopPropagation(); onToggleFavorite(item.id, item.isFavorite); }} title={item.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-        style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', border: 'none', cursor: 'pointer', background: 'transparent', color: item.isFavorite ? '#F59E0B' : 'rgba(107,107,138,0.40)', transition: 'all 200ms ease', flexShrink: 0 }}
-        className="hover:!bg-[rgba(245,158,11,0.10)] hover:!text-[#F59E0B] hover:scale-110"
+        style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', border: 'none', cursor: 'pointer', background: 'transparent', color: item.isFavorite ? '#F59E0B' : (isDark ? 'rgba(255,255,255,0.3)' : 'rgba(107,107,138,0.40)'), transition: 'all 200ms ease', flexShrink: 0 }}
+        className="hover:!bg-[rgba(245,158,11,0.12)] hover:!text-[#F59E0B] hover:scale-110"
       >
         <Star size={15} strokeWidth={item.isFavorite ? 0 : 1.5} fill={item.isFavorite ? 'currentColor' : 'none'} />
       </button>
 
       <button id={`delete-btn-${item.id}`} onClick={(e) => { e.stopPropagation(); onDelete(item.id); }} title="Delete prompt"
-        style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', border: 'none', cursor: 'pointer', background: 'transparent', color: 'rgba(239,68,68,0.60)', transition: 'all 200ms ease', flexShrink: 0 }}
-        className="hover:!bg-[rgba(239,68,68,0.10)] hover:!text-[#EF4444] hover:scale-110"
+        style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', border: 'none', cursor: 'pointer', background: 'transparent', color: isDark ? 'rgba(239,68,68,0.80)' : 'rgba(239,68,68,0.60)', transition: 'all 200ms ease', flexShrink: 0 }}
+        className="hover:!bg-[rgba(239,68,68,0.15)] hover:!text-[#EF4444] hover:scale-110"
       >
         <Trash2 size={16} strokeWidth={1.5} />
       </button>
@@ -228,6 +240,8 @@ function VaultRow({ item, isSelectionMode, selected, onSelect, onToggleFavorite,
 
 /* ── Pagination ── */
 function Pagination({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (p: number) => void; }) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const pages: (number | '…')[] = [];
   if (totalPages <= 7) { for (let i = 1; i <= totalPages; i++) pages.push(i); }
   else {
@@ -246,24 +260,38 @@ function Pagination({ currentPage, totalPages, onPageChange }: { currentPage: nu
   return (
     <div id="vault-pagination" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 32 }}>
       <button id="pagination-prev-btn" onClick={() => onPageChange(currentPage - 1)} disabled={currentPage === 1} title="Previous page"
-        style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, border: '1px solid rgba(124,58,237,0.12)', background: '#FFFFFF', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', color: currentPage === 1 ? '#CBD5E1' : '#7C3AED', opacity: currentPage === 1 ? 0.6 : 1 }}
+        style={{
+          width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8,
+          border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(124,58,237,0.12)'}`,
+          background: isDark ? 'rgba(14, 13, 20, 0.85)' : '#FFFFFF',
+          cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+          color: currentPage === 1 ? (isDark ? 'rgba(255,255,255,0.2)' : '#CBD5E1') : (isDark ? '#C084FC' : '#7C3AED'),
+          opacity: currentPage === 1 ? 0.6 : 1,
+        }}
       >
         <ChevronLeft size={16} />
       </button>
       {pages.map((p, i) => p === '…' ? (
-        <span key={`dots-${i}`} style={{ padding: '0 8px', color: '#94A3B8' }}>…</span>
+        <span key={`dots-${i}`} style={{ padding: '0 8px', color: isDark ? D.textMuted : '#94A3B8' }}>…</span>
       ) : (
         <button key={p} id={`pagination-page-${p}`} onClick={() => onPageChange(p)}
           style={{
             width: 32, height: 32, borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: p === currentPage ? 700 : 500,
             background: p === currentPage ? 'linear-gradient(135deg, #7C3AED, #A855F7)' : 'transparent',
-            color: p === currentPage ? 'white' : 'var(--color-text-secondary)',
+            color: p === currentPage ? 'white' : (isDark ? D.textSecondary : 'var(--color-text-secondary)'),
           }}
-          className={p !== currentPage ? 'hover:bg-[rgba(124,58,237,0.06)] hover:!text-[var(--color-primary)]' : ''}
+          className={p !== currentPage ? (isDark ? 'hover:bg-[rgba(255,255,255,0.06)] hover:!text-[#FFFFFF]' : 'hover:bg-[rgba(124,58,237,0.06)] hover:!text-[var(--color-primary)]') : ''}
         >{p}</button>
       ))}
       <button id="pagination-next-btn" onClick={() => onPageChange(currentPage + 1)} disabled={currentPage === totalPages} title="Next page"
-        style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, border: '1px solid rgba(124,58,237,0.12)', background: '#FFFFFF', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', color: currentPage === totalPages ? '#CBD5E1' : '#7C3AED', opacity: currentPage === totalPages ? 0.6 : 1 }}
+        style={{
+          width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8,
+          border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(124,58,237,0.12)'}`,
+          background: isDark ? 'rgba(14, 13, 20, 0.85)' : '#FFFFFF',
+          cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+          color: currentPage === totalPages ? (isDark ? 'rgba(255,255,255,0.2)' : '#CBD5E1') : (isDark ? '#C084FC' : '#7C3AED'),
+          opacity: currentPage === totalPages ? 0.6 : 1,
+        }}
       >
         <ChevronRight size={16} />
       </button>
@@ -273,6 +301,8 @@ function Pagination({ currentPage, totalPages, onPageChange }: { currentPage: nu
 
 export default function VaultPage() {
   const router = useRouter();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   const [items,          setItems]          = useState<HistoryItem[]>([]);
   const [total,          setTotal]          = useState(0);
@@ -519,13 +549,13 @@ export default function VaultPage() {
 
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: statsTwoCol ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? 12 : 16, marginBottom: isMobile ? 20 : 28 }}>
-        <StatCard label="Total Prompts" value={stats?.totalPrompts ?? 0} icon={Sparkles} accent="#7C3AED" animate={statsAnimate} isMobile={isMobile} />
+        <StatCard label="Total Prompts" value={stats?.totalPrompts ?? 0} icon={Sparkles} accent="#8B5CF6" animate={statsAnimate} isMobile={isMobile} />
         <StatCard label="Avg Score" value={stats?.averageScore ?? 0} suffix="%" icon={TrendingUp} accent="#10B981" animate={statsAnimate} isMobile={isMobile}
-          sub={<div style={{ height: 4, background: 'rgba(16,185,129,0.12)', borderRadius: 99, overflow: 'hidden' }}><div style={{ height: '100%', background: '#10B981', borderRadius: 99, width: statsAnimate ? `${stats?.averageScore ?? 0}%` : '0%', transition: 'width 1.2s ease-out' }} /></div>}
+          sub={<div style={{ height: 4, background: isDark ? 'rgba(16,185,129,0.2)' : 'rgba(16,185,129,0.12)', borderRadius: 99, overflow: 'hidden' }}><div style={{ height: '100%', background: '#10B981', borderRadius: 99, width: statsAnimate ? `${stats?.averageScore ?? 0}%` : '0%', transition: 'width 1.2s ease-out' }} /></div>}
         />
-        <StatCard label="This Week" value={stats?.thisWeekDelta ?? 0} prefix="+" icon={Zap} accent="#0EA5E9" animate={statsAnimate} isMobile={isMobile} sparkline />
+        <StatCard label="This Week" value={stats?.thisWeekDelta ?? 0} prefix="+" icon={Zap} accent="#38BDF8" animate={statsAnimate} isMobile={isMobile} sparkline />
         <StatCard label="Favorites" value={stats?.favoritesCount ?? 0} icon={Star} accent="#F59E0B" animate={statsAnimate} isMobile={isMobile}
-          sub={<button id="view-all-favorites-btn" onClick={() => setActiveCategory('favorites')} style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-primary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} className="hover:underline">View all →</button>}
+          sub={<button id="view-all-favorites-btn" onClick={() => setActiveCategory('favorites')} style={{ fontSize: 11, fontWeight: 600, color: isDark ? '#C084FC' : 'var(--color-primary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} className="hover:underline">View all →</button>}
         />
       </div>
 
@@ -533,12 +563,19 @@ export default function VaultPage() {
       <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 12, marginBottom: 16, flexWrap: 'wrap' }}>
         {/* Search */}
         <div style={{ position: 'relative', flex: isMobile ? '1 1 100%' : '0 0 260px' }}>
-          <Search size={14} strokeWidth={1.8} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-secondary)', pointerEvents: 'none' }} />
+          <Search size={14} strokeWidth={1.8} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: isDark ? D.textMuted : 'var(--color-text-secondary)', pointerEvents: 'none' }} />
           <input id="vault-search-input" type="text" placeholder="Search prompts..." value={search} onChange={e => setSearch(e.target.value)}
-            style={{ width: '100%', padding: '9px 36px 9px 36px', fontSize: 13, background: '#FFFFFF', border: '1px solid rgba(124,58,237,0.12)', borderRadius: 10, outline: 'none', color: 'var(--color-text-primary)', transition: 'border-color 200ms ease, box-shadow 200ms ease' }}
+            style={{
+              width: '100%', padding: '9px 36px 9px 36px', fontSize: 13,
+              background: isDark ? 'rgba(14, 13, 20, 0.85)' : '#FFFFFF',
+              border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(124,58,237,0.12)'}`,
+              borderRadius: 10, outline: 'none',
+              color: isDark ? D.textPrimary : 'var(--color-text-primary)',
+              transition: 'border-color 200ms ease, box-shadow 200ms ease',
+            }}
             className="focus:!border-[rgba(124,58,237,0.35)] focus:shadow-[0_0_0_3px_rgba(124,58,237,0.08)]"
           />
-          {search && <button onClick={() => setSearch('')} title="Clear" style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: 'var(--color-text-secondary)', lineHeight: 1 }}>×</button>}
+          {search && <button onClick={() => setSearch('')} title="Clear" style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: isDark ? D.textMuted : 'var(--color-text-secondary)', lineHeight: 1 }}>×</button>}
         </div>
 
         {/* Category chips */}
@@ -548,11 +585,13 @@ export default function VaultPage() {
               style={{
                 padding: '6px 14px', borderRadius: 9999, fontSize: 12.5, fontWeight: 500, cursor: 'pointer', border: 'none', whiteSpace: 'nowrap', transition: 'all 180ms ease',
                 flexShrink: 0,
-                background: activeCategory === cat.id ? 'linear-gradient(135deg, #7C3AED, #A855F7)' : 'rgba(124,58,237,0.06)',
-                color: activeCategory === cat.id ? 'white' : 'var(--color-text-secondary)',
+                background: activeCategory === cat.id
+                  ? 'linear-gradient(135deg, #7C3AED, #A855F7)'
+                  : (isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(124,58,237,0.06)'),
+                color: activeCategory === cat.id ? 'white' : (isDark ? D.textSecondary : 'var(--color-text-secondary)'),
                 boxShadow: activeCategory === cat.id ? '0 3px 10px rgba(124,58,237,0.25)' : 'none',
               }}
-              className={activeCategory !== cat.id ? 'hover:!bg-[rgba(124,58,237,0.12)] hover:!text-[var(--color-text-primary)]' : ''}
+              className={activeCategory !== cat.id ? (isDark ? 'hover:!bg-[rgba(255,255,255,0.09)] hover:!text-[#FFFFFF]' : 'hover:!bg-[rgba(124,58,237,0.12)] hover:!text-[var(--color-text-primary)]') : ''}
             >{cat.label}</button>
           ))}
         </div>
@@ -560,18 +599,36 @@ export default function VaultPage() {
         {/* Sort */}
         <div style={{ position: 'relative', flex: isMobile ? '1 1 0' : '0 0 auto' }} ref={sortRef}>
           <button id="sort-btn" onClick={() => setShowSort(v => !v)}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: 6, padding: '8px 14px', borderRadius: 10, fontSize: 13, fontWeight: 500, border: '1px solid rgba(124,58,237,0.12)', cursor: 'pointer', background: '#FFFFFF', color: 'var(--color-text-secondary)', transition: 'all 200ms ease', width: isMobile ? '100%' : undefined }}
-            className="hover:!border-[rgba(124,58,237,0.22)] hover:!text-[var(--color-text-primary)]"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: 6, padding: '8px 14px', borderRadius: 10, fontSize: 13, fontWeight: 500,
+              border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(124,58,237,0.12)'}`,
+              cursor: 'pointer',
+              background: isDark ? 'rgba(14, 13, 20, 0.85)' : '#FFFFFF',
+              color: isDark ? D.textPrimary : 'var(--color-text-secondary)',
+              transition: 'all 200ms ease', width: isMobile ? '100%' : undefined
+            }}
+            className={isDark ? 'hover:!border-[rgba(167,139,250,0.35)] hover:!text-[#FFFFFF]' : 'hover:!border-[rgba(124,58,237,0.22)] hover:!text-[var(--color-text-primary)]'}
           >
             <SlidersHorizontal size={13} strokeWidth={2} />{activeSortLabel}
             <ChevronDown size={12} strokeWidth={2} style={{ transition: 'transform 200ms', transform: showSort ? 'rotate(180deg)' : 'none' }} />
           </button>
           {showSort && (
-            <div id="sort-menu" style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, background: '#FFFFFF', border: '1px solid rgba(124,58,237,0.10)', borderRadius: 10, minWidth: 180, zIndex: 50, padding: 4, boxShadow: '0 8px 24px rgba(109,40,217,0.10)', animation: 'dropdownFadeIn 150ms ease' }}>
+            <div id="sort-menu" style={{
+              position: 'absolute', top: 'calc(100% + 6px)', right: 0,
+              background: isDark ? '#141320' : '#FFFFFF',
+              border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(124,58,237,0.10)'}`,
+              borderRadius: 10, minWidth: 180, zIndex: 50, padding: 4,
+              boxShadow: isDark ? '0 12px 28px rgba(0,0,0,0.6)' : '0 8px 24px rgba(109,40,217,0.10)',
+              animation: 'dropdownFadeIn 150ms ease'
+            }}>
               {SORT_OPTIONS.map(opt => (
                 <button key={opt.id} id={`sort-${opt.id}`} onClick={() => { setSortBy(opt.id); setShowSort(false); }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', fontSize: 13, fontWeight: sortBy === opt.id ? 600 : 500, color: sortBy === opt.id ? 'var(--color-primary)' : 'var(--color-text-primary)', borderRadius: 8, border: 'none', cursor: 'pointer', background: 'transparent', textAlign: 'left' }}
-                  className="hover:bg-[rgba(124,58,237,0.05)]"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', fontSize: 13, fontWeight: sortBy === opt.id ? 600 : 500,
+                    color: sortBy === opt.id ? (isDark ? '#C084FC' : 'var(--color-primary)') : (isDark ? D.textPrimary : 'var(--color-text-primary)'),
+                    borderRadius: 8, border: 'none', cursor: 'pointer', background: 'transparent', textAlign: 'left'
+                  }}
+                  className={isDark ? 'hover:bg-[rgba(255,255,255,0.06)]' : 'hover:bg-[rgba(124,58,237,0.05)]'}
                 >
                   <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--color-primary)', opacity: sortBy === opt.id ? 1 : 0, flexShrink: 0 }} />
                   {opt.label}
@@ -585,11 +642,13 @@ export default function VaultPage() {
         <button id="vault-toggle-select-btn" onClick={() => { setIsSelectionMode(v => !v); setSelectedIds(new Set()); }}
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, fontSize: 13, fontWeight: 500,
-            border: isSelectionMode ? '1px solid rgba(124,58,237,0.30)' : '1px solid rgba(124,58,237,0.12)', cursor: 'pointer',
-            background: isSelectionMode ? 'rgba(124,58,237,0.08)' : '#FFFFFF',
-            color: isSelectionMode ? 'var(--color-primary)' : 'var(--color-text-secondary)', transition: 'all 200ms ease', flex: isMobile ? '1 1 0' : '0 0 auto', width: isMobile ? '100%' : undefined,
+            border: isSelectionMode ? `1px solid ${isDark ? 'rgba(167,139,250,0.4)' : 'rgba(124,58,237,0.30)'}` : `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(124,58,237,0.12)'}`,
+            cursor: 'pointer',
+            background: isSelectionMode ? (isDark ? 'rgba(139,92,246,0.2)' : 'rgba(124,58,237,0.08)') : (isDark ? 'rgba(14, 13, 20, 0.85)' : '#FFFFFF'),
+            color: isSelectionMode ? (isDark ? '#C084FC' : 'var(--color-primary)') : (isDark ? D.textSecondary : 'var(--color-text-secondary)'),
+            transition: 'all 200ms ease', flex: isMobile ? '1 1 0' : '0 0 auto', width: isMobile ? '100%' : undefined,
           }}
-          className="hover:!border-[rgba(124,58,237,0.22)] hover:!text-[var(--color-text-primary)]"
+          className={isDark ? 'hover:!border-[rgba(167,139,250,0.35)] hover:!text-[#FFFFFF]' : 'hover:!border-[rgba(124,58,237,0.22)] hover:!text-[var(--color-text-primary)]'}
         >
           <CheckSquare size={13} strokeWidth={2} />{isSelectionMode ? 'Cancel Select' : 'Select'}
         </button>
@@ -597,14 +656,19 @@ export default function VaultPage() {
 
       {/* Selection action bar (rendered ONLY in selection mode) */}
       {isSelectionMode && items.length > 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 12, padding: '10px 16px', background: 'rgba(124,58,237,0.04)', borderRadius: 12, border: '1px solid rgba(124,58,237,0.10)' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--color-text-primary)', fontWeight: 600, cursor: 'pointer' }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 12, padding: '10px 16px',
+          background: isDark ? 'rgba(139,92,246,0.12)' : 'rgba(124,58,237,0.04)',
+          borderRadius: 12,
+          border: `1px solid ${isDark ? 'rgba(167,139,250,0.25)' : 'rgba(124,58,237,0.10)'}`
+        }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: isDark ? D.textPrimary : 'var(--color-text-primary)', fontWeight: 600, cursor: 'pointer' }}>
             <input
               id="vault-select-all"
               type="checkbox"
               checked={items.length > 0 && items.every(item => selectedIds.has(item.id))}
               onChange={() => setSelectedIds(previous => items.every(item => previous.has(item.id)) ? new Set() : new Set(items.map(item => item.id)))}
-              style={{ width: 16, height: 16, accentColor: '#7C3AED', cursor: 'pointer' }}
+              style={{ width: 16, height: 16, accentColor: '#8B5CF6', cursor: 'pointer' }}
             />
             Select all on this page
           </label>
@@ -618,7 +682,13 @@ export default function VaultPage() {
             )}
             <button
               onClick={() => { setIsSelectionMode(false); setSelectedIds(new Set()); }}
-              style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid rgba(124,58,237,0.15)', background: '#FFFFFF', color: 'var(--color-text-secondary)', fontSize: 12.5, fontWeight: 500, cursor: 'pointer' }}
+              style={{
+                padding: '6px 12px', borderRadius: 8,
+                border: `1px solid ${isDark ? 'rgba(255,255,255,0.15)' : 'rgba(124,58,237,0.15)'}`,
+                background: isDark ? 'rgba(255,255,255,0.06)' : '#FFFFFF',
+                color: isDark ? D.textPrimary : 'var(--color-text-secondary)',
+                fontSize: 12.5, fontWeight: 500, cursor: 'pointer'
+              }}
               className="hover:!text-[var(--color-text-primary)]"
             >
               Done
@@ -629,12 +699,9 @@ export default function VaultPage() {
 
       {/* List */}
       <div id="vault-list" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {/* An empty page while total > 0 means the current page fell out of range
-            after a delete; the effect above is already snapping back to a valid
-            page, so keep showing skeletons instead of flashing the empty state. */}
         {loading || (items.length === 0 && total > 0) ? (
           Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 20px', borderRadius: 14, border: '1px solid rgba(124,58,237,0.09)' }}>
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 20px', borderRadius: 14, border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(124,58,237,0.09)'}` }}>
               <div className="skeleton" style={{ width: 38, height: 38, borderRadius: 10 }} />
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <div className="skeleton" style={{ height: 16, width: '60%' }} />
@@ -645,9 +712,9 @@ export default function VaultPage() {
           ))
         ) : items.length === 0 ? (
           <div id="vault-empty-state" style={{ textAlign: 'center', padding: '64px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 56, height: 56, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(124,58,237,0.08)', color: 'var(--color-primary)' }}><Library size={26} strokeWidth={1.2} /></div>
-            <h3 style={{ fontSize: 16, fontWeight: 600, color: 'var(--color-text-primary)', margin: 0 }}>Your Vault is empty</h3>
-            <p style={{ fontSize: 14, color: 'var(--color-text-secondary)', margin: 0 }}>Save optimized prompts to build your personal library.</p>
+            <div style={{ width: 56, height: 56, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: isDark ? 'rgba(139,92,246,0.15)' : 'rgba(124,58,237,0.08)', color: 'var(--color-primary)' }}><Library size={26} strokeWidth={1.2} /></div>
+            <h3 style={{ fontSize: 16, fontWeight: 600, color: isDark ? D.textPrimary : 'var(--color-text-primary)', margin: 0 }}>Your Vault is empty</h3>
+            <p style={{ fontSize: 14, color: isDark ? D.textSecondary : 'var(--color-text-secondary)', margin: 0 }}>Save optimized prompts to build your personal library.</p>
           </div>
         ) : items.map(item => (
           <VaultRow key={item.id} item={item} isSelectionMode={isSelectionMode} selected={selectedIds.has(item.id)} onSelect={toggleSelected} onToggleFavorite={handleToggleFavorite} onDelete={(id) => requestDelete([id])} onOpenInOptimizer={(id) => router.push(`/dashboard/chat/${id}`)} isMobile={isMobile} />
@@ -666,7 +733,7 @@ export default function VaultPage() {
             position: 'fixed',
             inset: 0,
             zIndex: 100,
-            background: 'rgba(15, 23, 42, 0.45)',
+            background: 'rgba(0, 0, 0, 0.65)',
             backdropFilter: 'blur(4px)',
             display: 'flex',
             alignItems: 'center',
@@ -683,9 +750,9 @@ export default function VaultPage() {
             style={{
               width: 'min(100%, 440px)',
               borderRadius: 20,
-              border: '1px solid rgba(124,58,237,0.12)',
-              background: '#FFFFFF',
-              boxShadow: '0 24px 80px rgba(15, 23, 42, 0.25)',
+              border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(124,58,237,0.12)'}`,
+              background: isDark ? '#141320' : '#FFFFFF',
+              boxShadow: isDark ? '0 24px 80px rgba(0, 0, 0, 0.7)' : '0 24px 80px rgba(15, 23, 42, 0.25)',
               padding: 24,
               display: 'flex',
               flexDirection: 'column',
@@ -701,16 +768,16 @@ export default function VaultPage() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: deleteDialog.mode === 'error' ? 'rgba(239,68,68,0.10)' : 'rgba(124,58,237,0.10)',
-                color: deleteDialog.mode === 'error' ? '#EF4444' : '#7C3AED',
+                background: deleteDialog.mode === 'error' ? 'rgba(239,68,68,0.15)' : (isDark ? 'rgba(139,92,246,0.18)' : 'rgba(124,58,237,0.10)'),
+                color: deleteDialog.mode === 'error' ? '#EF4444' : (isDark ? '#C084FC' : '#7C3AED'),
               }}>
                 <Trash2 size={18} />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <h3 id="vault-delete-dialog-title" style={{ margin: '0 0 6px', fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)' }}>
+                <h3 id="vault-delete-dialog-title" style={{ margin: '0 0 6px', fontSize: 18, fontWeight: 700, color: isDark ? D.textPrimary : 'var(--color-text-primary)' }}>
                   {deleteDialog.title}
                 </h3>
-                <p id="vault-delete-dialog-message" style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: 'var(--color-text-secondary)' }}>
+                <p id="vault-delete-dialog-message" style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: isDark ? D.textSecondary : 'var(--color-text-secondary)' }}>
                   {deleteDialog.message}
                 </p>
               </div>
@@ -726,9 +793,9 @@ export default function VaultPage() {
                     style={{
                       padding: '10px 16px',
                       borderRadius: 10,
-                      border: '1px solid rgba(124,58,237,0.14)',
-                      background: '#FFFFFF',
-                      color: 'var(--color-text-primary)',
+                      border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(124,58,237,0.14)'}`,
+                      background: isDark ? 'rgba(255,255,255,0.06)' : '#FFFFFF',
+                      color: isDark ? D.textPrimary : 'var(--color-text-primary)',
                       fontSize: 13,
                       fontWeight: 600,
                       cursor: deleting ? 'not-allowed' : 'pointer',
