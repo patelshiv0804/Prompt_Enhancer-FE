@@ -332,12 +332,15 @@ button:focus-visible {
 .dashboard-root {
   /* ── 60-30-10 Color System ── */
   --color-canvas: #FAFAFC;
-  --color-dark-surface: #0E0B18;
-  --color-dark-surface-2: #160F26;
-  --color-dark-surface-3: #1E1535;
-  --color-dark-border: rgba(167, 139, 250, 0.12);
-  --color-dark-text-primary: #EDE9FE;
-  --color-dark-text-secondary: rgba(221, 214, 254, 0.45);
+
+  /* ── Dark surface defaults — kept in sync with D tokens in theme.tsx
+     so that html.dark .dashboard-root overrides always win cleanly. ── */
+  --color-dark-surface:        #0A0A0F;   /* D.bg */
+  --color-dark-surface-2:      #141320;   /* D.surface */
+  --color-dark-surface-3:      #1A1827;   /* D.surfaceElevated */
+  --color-dark-border:         rgba(255, 255, 255, 0.09); /* D.border */
+  --color-dark-text-primary:   #F5F4F8;   /* D.textPrimary */
+  --color-dark-text-secondary: #ABA9BC;   /* D.textSecondary */
 
   /* ── Accent ── */
   --color-primary: #7C3AED;
@@ -827,9 +830,13 @@ html.dark {
   color-scheme: dark;
 }
 
+/* Override Tailwind's bg-white utility that layout.tsx applies to <body>.
+   The !important is intentional — Tailwind utility classes generate
+   `background-color: #fff` which would otherwise win over this rule. */
 html.dark body {
-  background: #0A0A0F;
-  color: #F5F4F8;
+  background-color: #0A0A0F !important;
+  background: #0A0A0F !important;
+  color: #F5F4F8 !important;
 }
 
 html.dark .landing-root,

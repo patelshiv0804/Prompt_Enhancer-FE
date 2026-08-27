@@ -47,7 +47,7 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col bg-white text-foreground">
+      <body className="min-h-full flex flex-col text-foreground">
         {/* No-flash theme bootstrap. Runs synchronously before paint so a
             visitor loads straight into the correct theme with no white flash on
             any route. Resolves the same preference the ThemeProvider does:
