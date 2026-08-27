@@ -6,6 +6,7 @@ import {
   Sparkles, BookOpen, Cpu, Layers, FileText, Search, TrendingUp, Terminal,
   type LucideIcon,
 } from "lucide-react";
+import { useTheme, D } from "@/theme/theme";
 
 /* ═══════════════════════════════════════════════════════════════
  * AUREUniverse — Unabyss-Style Gravity Wells & Light Theme
@@ -88,6 +89,9 @@ const COLORS = [
   "99,102,241", "139,92,246", "168,85,247",
   "236,72,153", "96,165,250", "244,114,182", "129,140,248",
 ];
+
+// Primary brand violet used to tint the grid mesh in dark mode (uniform, matches the feature nodes)
+const GRID_PALETTE = ["139,92,246"];
 
 // Expanded grid size: COLS=21, ROWS=25, SX=82, SY=72 stretches the mesh wide and tall to fill space
 const TILT = 1.05, COST = Math.cos(TILT), SINT = Math.sin(TILT);
@@ -214,9 +218,11 @@ function drawGrid(
   G: { px: number; py: number }[][],
   alpha: number,
   parallaxX: number, parallaxY: number,
+  gc: string = "175, 170, 185",
+  palette?: string[],
 ) {
   if (alpha < 0.01) return;
-  const GC = "175, 170, 185"; // Warm grey-violet grid lines for light theme
+  const GC = gc; // Grid-line colour (theme-aware; warm grey-violet on light)
   ctx.lineWidth = 1.15;
 
   ctx.save();
@@ -230,10 +236,21 @@ function drawGrid(
     }
     const a = (0.12 + (r / (ROWS - 1)) * 0.46) * alpha;
     const g = ctx.createLinearGradient(G[r][0].px, 0, G[r][COLS - 1].px, 0);
-    g.addColorStop(0, `rgba(${GC}, 0)`);
-    g.addColorStop(0.12, `rgba(${GC}, ${a})`);
-    g.addColorStop(0.88, `rgba(${GC}, ${a})`);
-    g.addColorStop(1, `rgba(${GC}, 0)`);
+    if (palette && palette.length) {
+      // Brand-spectrum sweep: hue drifts across the row and shifts per row (aurora mesh)
+      const P = palette, n = P.length, o = r % n;
+      g.addColorStop(0, `rgba(${P[o]}, 0)`);
+      g.addColorStop(0.12, `rgba(${P[o]}, ${a})`);
+      g.addColorStop(0.40, `rgba(${P[(o + 1) % n]}, ${a})`);
+      g.addColorStop(0.62, `rgba(${P[(o + 2) % n]}, ${a})`);
+      g.addColorStop(0.88, `rgba(${P[(o + 3) % n]}, ${a})`);
+      g.addColorStop(1, `rgba(${P[(o + 3) % n]}, 0)`);
+    } else {
+      g.addColorStop(0, `rgba(${GC}, 0)`);
+      g.addColorStop(0.12, `rgba(${GC}, ${a})`);
+      g.addColorStop(0.88, `rgba(${GC}, ${a})`);
+      g.addColorStop(1, `rgba(${GC}, 0)`);
+    }
     ctx.strokeStyle = g;
     ctx.stroke();
   }
@@ -245,7 +262,8 @@ function drawGrid(
       r === 0 ? ctx.moveTo(G[r][c].px, G[r][c].py) : ctx.lineTo(G[r][c].px, G[r][c].py);
     }
     const s = 1 - Math.abs((c - (COLS - 1) / 2) / ((COLS - 1) / 2));
-    ctx.strokeStyle = `rgba(${GC}, ${(0.06 + s * 0.34) * alpha})`;
+    const vc = palette && palette.length ? palette[c % palette.length] : GC;
+    ctx.strokeStyle = `rgba(${vc}, ${(0.06 + s * 0.34) * alpha})`;
     ctx.stroke();
   }
 
@@ -255,7 +273,8 @@ function drawGrid(
       if (r < 5) continue; // Leave the top 5 rows clear of intersection dots
       ctx.beginPath();
       ctx.arc(G[r][c].px, G[r][c].py, 1.8, 0, 6.283);
-      ctx.fillStyle = `rgba(${GC}, ${(0.18 + (r / (ROWS - 1)) * 0.52) * alpha})`;
+      const dc = palette && palette.length ? palette[(r + c) % palette.length] : GC;
+      ctx.fillStyle = `rgba(${dc}, ${(0.18 + (r / (ROWS - 1)) * 0.52) * alpha})`;
       ctx.fill();
     }
   }
@@ -268,6 +287,14 @@ function drawGrid(
 // ══════════════════════════════════════════════════════════════
 
 export default function PromptIQUniverse() {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+  const isDarkRef = useRef(isDark);
+  useEffect(() => { isDarkRef.current = isDark; }, [isDark]);
+
+  // Colour the canvas backdrop + the edge vignettes fade into, per theme.
+  const vig = isDark ? D.bg : "#FAFBFC";
+
   const bgCanvasRef = useRef<HTMLCanvasElement>(null);
   const mainCanvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -771,7 +798,7 @@ export default function PromptIQUniverse() {
       mX.clearRect(0, 0, cw, ch);
 
       // 1. Grid
-      drawGrid(mX, G, gridAlpha, bgPx, bgPy);
+      drawGrid(mX, G, gridAlpha, bgPx, bgPy, isDarkRef.current ? "158, 152, 192" : "175, 170, 185", isDarkRef.current ? GRID_PALETTE : undefined);
 
       // 2. Node shadows on grid
       NODES.forEach((n, i) => {
@@ -883,6 +910,7 @@ export default function PromptIQUniverse() {
     <div
       ref={containerRef}
       className="absolute inset-0 bg-[#FAFBFC]"
+      style={{ background: isDark ? D.bg : undefined }}
       onClick={() => setActiveId(null)}
     >
       {/* Background canvas — blurred tiny ambient */}
@@ -901,10 +929,10 @@ export default function PromptIQUniverse() {
 
       {/* Edge fade vignettes to match light background */}
       <div className="pointer-events-none absolute inset-0" style={{ zIndex: 2 }}>
-        <div className="absolute left-0 top-0 bottom-0" style={{ width: "4%", background: "linear-gradient(to right, #FAFBFC, transparent)" }} />
-        <div className="absolute right-0 top-0 bottom-0" style={{ width: "4%", background: "linear-gradient(to left, #FAFBFC, transparent)" }} />
-        <div className="absolute top-0 left-0 right-0" style={{ height: "24%", background: "linear-gradient(to bottom, #FAFBFC, transparent)" }} />
-        <div className="absolute bottom-0 left-0 right-0" style={{ height: "4%", background: "linear-gradient(to top, #FAFBFC, transparent)" }} />
+        <div className="absolute left-0 top-0 bottom-0" style={{ width: "4%", background: `linear-gradient(to right, ${vig}, transparent)` }} />
+        <div className="absolute right-0 top-0 bottom-0" style={{ width: "4%", background: `linear-gradient(to left, ${vig}, transparent)` }} />
+        <div className="absolute top-0 left-0 right-0" style={{ height: "24%", background: `linear-gradient(to bottom, ${vig}, transparent)` }} />
+        <div className="absolute bottom-0 left-0 right-0" style={{ height: "4%", background: `linear-gradient(to top, ${vig}, transparent)` }} />
       </div>
 
       {/* Ambient center glow */}
@@ -1018,15 +1046,25 @@ export default function PromptIQUniverse() {
               className="relative flex items-center justify-center rounded-full"
               style={{
                 width: 52, height: 52,
-                background: `radial-gradient(circle at 35% 35%, #ffffff 0%, #f9fafb 32%, #f3f4f6 60%, ${n.glow.replace("0.28", "0.12")} 85%, ${n.glow.replace("0.28", "0.22")} 100%)`,
+                background: isDark
+                  ? "#8B5CF6"
+                  : `radial-gradient(circle at 35% 35%, #ffffff 0%, #f9fafb 32%, #f3f4f6 60%, ${n.glow.replace("0.28", "0.12")} 85%, ${n.glow.replace("0.28", "0.22")} 100%)`,
                 boxShadow: isHovered || isActive
-                  ? "0 10px 24px -4px rgba(0,0,0,0.12), inset 2px 2px 4px rgba(255,255,255,0.9), inset -2px -2px 6px rgba(0,0,0,0.06)"
-                  : "0 6px 18px -4px rgba(0,0,0,0.08), inset 2px 2px 3px rgba(255,255,255,0.95), inset -2px -2px 5px rgba(0,0,0,0.04)",
-                border: `1px solid ${isHovered || isActive ? n.color : "rgba(210, 205, 225, 0.55)"}`,
+                  ? (isDark
+                      ? "0 6px 20px rgba(139,92,246,0.5), 0 0 26px rgba(139,92,246,0.6)"
+                      : "0 10px 24px -4px rgba(0,0,0,0.12), inset 2px 2px 4px rgba(255,255,255,0.9), inset -2px -2px 6px rgba(0,0,0,0.06)")
+                  : (isDark
+                      ? "0 4px 14px rgba(139,92,246,0.35), 0 0 16px rgba(139,92,246,0.4)"
+                      : "0 6px 18px -4px rgba(0,0,0,0.08), inset 2px 2px 3px rgba(255,255,255,0.95), inset -2px -2px 5px rgba(0,0,0,0.04)"),
+                border: `1px solid ${
+                  isDark
+                    ? (isHovered || isActive ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.22)")
+                    : (isHovered || isActive ? n.color : "rgba(210, 205, 225, 0.55)")
+                }`,
                 transition: "box-shadow 0.25s ease, border-color 0.25s ease",
               }}
             >
-              <NodeIcon size={17} style={{ color: isHovered || isActive ? n.color : "#9CA3AF", transition: "color 0.2s" }} />
+              <NodeIcon size={17} style={{ color: isDark ? "#ffffff" : (isHovered || isActive ? n.color : "#9CA3AF"), transition: "color 0.2s" }} />
             </div>
 
             {/* Floating label */}
@@ -1035,10 +1073,14 @@ export default function PromptIQUniverse() {
                 className={`absolute top-1/2 -translate-y-1/2 whitespace-nowrap px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider pointer-events-none border transition-all duration-150 ${labelOnRight ? "left-15" : "right-15"}`}
                 style={{
                   opacity: isHovered ? 1 : 0.5,
-                  background: isHovered ? "white" : "rgba(255,255,255,0.85)",
+                  background: isDark
+                    ? (isHovered ? "rgba(26,24,39,0.95)" : "rgba(20,19,32,0.82)")
+                    : (isHovered ? "white" : "rgba(255,255,255,0.85)"),
                   backdropFilter: "blur(6px)",
-                  borderColor: isHovered ? n.color : "rgba(229,231,235,0.7)",
-                  color: isHovered ? "#1A1A2E" : "#5B6278",
+                  borderColor: isHovered ? n.color : isDark ? "rgba(255,255,255,0.12)" : "rgba(229,231,235,0.7)",
+                  color: isDark
+                    ? (isHovered ? D.textPrimary : D.textSecondary)
+                    : (isHovered ? "#1A1A2E" : "#5B6278"),
                 }}
               >
                 {n.title}
@@ -1053,12 +1095,12 @@ export default function PromptIQUniverse() {
                   style={{
                     top: "-10px",
                     width: isActive ? "260px" : "180px",
-                    background: "rgba(255,255,255,0.96)",
+                    background: isDark ? "rgba(20,19,32,0.96)" : "rgba(255,255,255,0.96)",
                     backdropFilter: "blur(18px)",
-                    borderColor: isActive ? n.color : "rgba(139,92,246,0.13)",
+                    borderColor: isActive ? n.color : isDark ? "rgba(167,139,250,0.20)" : "rgba(139,92,246,0.13)",
                     boxShadow: isActive
                       ? `0 12px 32px rgba(99,102,241,0.13), 0 4px 10px ${n.glow}`
-                      : "0 8px 20px rgba(0,0,0,0.07)",
+                      : isDark ? "0 8px 20px rgba(0,0,0,0.5)" : "0 8px 20px rgba(0,0,0,0.07)",
                   }}
                   initial={{ opacity: 0, scale: 0.92, x: labelOnRight ? -6 : 6 }}
                   animate={{ opacity: 1, scale: 1, x: 0 }}
@@ -1070,11 +1112,11 @@ export default function PromptIQUniverse() {
                     <div className="p-1 rounded-md" style={{ background: n.glow }}>
                       <NodeIcon size={11} style={{ color: n.color }} />
                     </div>
-                    <h4 className="text-[11px] font-bold text-[#0A0A0A] uppercase tracking-wide">{n.title}</h4>
+                    <h4 className="text-[11px] font-bold text-[#0A0A0A] uppercase tracking-wide" style={{ color: isDark ? D.textPrimary : undefined }}>{n.title}</h4>
                   </div>
-                  <p className="text-[11px] leading-relaxed text-[#6B7280]">{isActive ? n.fullDesc : n.shortDesc}</p>
+                  <p className="text-[11px] leading-relaxed text-[#6B7280]" style={{ color: isDark ? D.textSecondary : undefined }}>{isActive ? n.fullDesc : n.shortDesc}</p>
                   {isActive && (
-                    <div className="mt-2 pt-2 border-t border-gray-100 flex items-center justify-between text-[9px] text-[#8B5CF6] font-semibold">
+                    <div className="mt-2 pt-2 border-t border-gray-100 flex items-center justify-between text-[9px] text-[#8B5CF6] font-semibold" style={{ borderColor: isDark ? "rgba(255,255,255,0.08)" : undefined }}>
                       <span>Active Module</span>
                       <button className="hover:underline" onClick={() => setActiveId(null)}>Dismiss</button>
                     </div>

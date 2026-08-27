@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { motion, useInView, Variants } from "framer-motion";
+import { useTheme, D } from "@/theme/theme";
 
 // Upward Arrow Icon component (↗)
 const ArrowUpRight = ({ className = "text-emerald-400" }: { className?: string }) => (
@@ -77,6 +78,8 @@ export default function PromptTransformationShowcase({
   enhancedAnalysis,
 }: PromptTransformationShowcaseProps) {
   const [copied, setCopied] = useState(false);
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
   const handleCopy = async () => {
     try {
@@ -199,13 +202,14 @@ export default function PromptTransformationShowcase({
 
 
   return (
-    <section className="w-full bg-[#FAFBFC] py-16 md:py-20 px-6 md:px-12 lg:px-16" id="transformation-showcase">
+    <section className="w-full bg-[#FAFBFC] py-16 md:py-20 px-6 md:px-12 lg:px-16" id="transformation-showcase" style={{ background: isDark ? D.bg : undefined }}>
       <motion.div
         variants={containerVariants}
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, amount: 0.25 }}
         className="mx-auto max-w-[1000px] rounded-[24px] sm:rounded-[28px] bg-[#05050A] border border-white/[0.06] overflow-hidden relative p-6 sm:p-8 md:p-9 lg:p-9 shadow-[0_24px_80px_rgba(0,0,0,0.5)]"
+        style={{ borderColor: isDark ? "rgba(255,255,255,0.09)" : undefined }}
       >
         {/* Subtle noise/grain texture */}
         <div className="absolute inset-0 pointer-events-none opacity-[0.015] mix-blend-overlay">

@@ -11,6 +11,7 @@ import AnimatedParticleFlow, {
 } from "./AnimatedParticleFlow";
 import { MobileTopFlow, MobileBottomFlow } from "./MobileParticleFlow";
 import OptimizedForCard from "./OptimizedForCard";
+import { useTheme, D } from "@/theme/theme";
 
 /* ─────────────────────────────────────────────
  * TransformationEngine — The second "page" section.
@@ -42,6 +43,8 @@ export default function TransformationEngine({
 }: TransformationEngineProps) {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -67,7 +70,7 @@ export default function TransformationEngine({
       ref={sectionRef}
       className="relative overflow-hidden bg-[#FAFBFC]"
       id="transformation-engine"
-      style={{ minHeight: "100vh" }}
+      style={{ minHeight: "100vh", background: isDark ? D.bg : undefined }}
     >
       <style>{`
         /* ─── Responsive ───────────────────────────────────────────────
@@ -149,13 +152,13 @@ export default function TransformationEngine({
                 <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" />
               </svg>
             </div>
-            <span className="text-[10.5px] sm:text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">
+            <span className="text-[10.5px] sm:text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400" style={{ color: isDark ? D.textMuted : undefined }}>
               The Transformation Engine
             </span>
           </div>
 
           {/* Heading */}
-          <h2 className="text-[28px] sm:text-[36px] lg:text-[clamp(32px,3.8vw,46px)] font-extrabold leading-[1.2] tracking-tight text-gray-900">
+          <h2 className="text-[28px] sm:text-[36px] lg:text-[clamp(32px,3.8vw,46px)] font-extrabold leading-[1.2] tracking-tight text-gray-900" style={{ color: isDark ? D.textPrimary : undefined }}>
             One prompt.{" "}
             <span className="gradient-text italic">Optimized everywhere.</span>
           </h2>
@@ -235,6 +238,7 @@ export default function TransformationEngine({
                 viewBox="0 0 55 35"
                 fill="none"
                 className="text-gray-300"
+                style={{ color: isDark ? D.textMuted : undefined }}
               >
                 <path
                   d="M2 32 C 12 32, 25 5, 50 5"
@@ -254,7 +258,7 @@ export default function TransformationEngine({
               </svg>
               <span
                 className="whitespace-nowrap text-[14px] italic text-gray-400"
-                style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+                style={{ fontFamily: "Georgia, 'Times New Roman', serif", color: isDark ? D.textMuted : undefined }}
               >
                 AI Enhancement
                 <br />

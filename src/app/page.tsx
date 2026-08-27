@@ -9,9 +9,10 @@ import PromptTransformationShowcase from "@/components/PromptTransformationShowc
 import BentoFeatures from "@/components/BentoFeatures";
 import FAQSection from "@/components/FAQSection";
 import Footer from "@/components/Footer";
+import { ThemeProvider } from "@/theme/theme";
 
 const TransformationEngine = dynamic(() => import("@/components/TransformationEngine"), {
-  loading: () => <div style={{ minHeight: "100vh" }} className="bg-[#FAFBFC]" />,
+  loading: () => <div style={{ minHeight: "100vh" }} className="landing-engine-fallback" />,
 });
 
 export default function Home() {
@@ -24,25 +25,27 @@ export default function Home() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col bg-white">
-      <Navbar />
-      <Hero />
-      <WorksEverywhere />
-      <TransformationEngine
-        prompt={prompt}
-        setPrompt={setPrompt}
-        onSubmit={handleEnhance}
-        isEnhancing={isEnhancing}
-      />
-      <PromptTransformationShowcase
-        originalText={enhancedData?.original_prompt || prompt}
-        enhancedText={enhancedData?.enhanced_prompt}
-        originalAnalysis={enhancedData?.original_analysis}
-        enhancedAnalysis={enhancedData?.enhanced_analysis}
-      />
-      <BentoFeatures />
-      <FAQSection />
-      <Footer />
-    </main>
+    <ThemeProvider>
+      <main className="landing-root flex min-h-screen flex-col bg-white">
+        <Navbar />
+        <Hero />
+        <WorksEverywhere />
+        <TransformationEngine
+          prompt={prompt}
+          setPrompt={setPrompt}
+          onSubmit={handleEnhance}
+          isEnhancing={isEnhancing}
+        />
+        <PromptTransformationShowcase
+          originalText={enhancedData?.original_prompt || prompt}
+          enhancedText={enhancedData?.enhanced_prompt}
+          originalAnalysis={enhancedData?.original_analysis}
+          enhancedAnalysis={enhancedData?.enhanced_analysis}
+        />
+        <BentoFeatures />
+        <FAQSection />
+        <Footer />
+      </main>
+    </ThemeProvider>
   );
 }

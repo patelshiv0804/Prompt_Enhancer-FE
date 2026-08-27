@@ -2,6 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
+import { useTheme, D } from "@/theme/theme";
 
 /* ─────────────────────────────────────────────
  * OptimizedForCard — Shows all target AI platforms
@@ -24,6 +25,8 @@ const apps = [
 ];
 
 const OptimizedForCard = React.memo(function OptimizedForCard() {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -31,7 +34,13 @@ const OptimizedForCard = React.memo(function OptimizedForCard() {
       transition={{ delay: 0.8, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
       className="animate-float-delayed w-full flex justify-center"
     >
-      <div className="w-full max-w-[480px] sm:max-w-[580px] lg:max-w-[1000px] rounded-[22px] sm:rounded-[24px] border border-gray-200/60 bg-white/95 p-4 sm:p-6 lg:px-8 lg:py-6 shadow-[0_4px_28px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.02)] backdrop-blur-xl">
+      <div className="w-full max-w-[480px] sm:max-w-[580px] lg:max-w-[1000px] rounded-[22px] sm:rounded-[24px] border border-gray-200/60 bg-white/95 p-4 sm:p-6 lg:px-8 lg:py-6 shadow-[0_4px_28px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.02)] backdrop-blur-xl"
+        style={{
+          background: isDark ? D.surface : undefined,
+          borderColor: isDark ? D.border : undefined,
+          boxShadow: isDark ? "0 10px 30px rgba(0,0,0,0.5)" : undefined,
+        }}
+      >
         {/* Header */}
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -39,11 +48,17 @@ const OptimizedForCard = React.memo(function OptimizedForCard() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]"></span>
             </span>
-            <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-gray-500">
+            <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-gray-500" style={{ color: isDark ? D.textMuted : undefined }}>
               Optimized For
             </span>
           </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50/90 border border-emerald-200/60 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-600">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50/90 border border-emerald-200/60 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-600"
+            style={{
+              background: isDark ? "rgba(16,185,129,0.13)" : undefined,
+              borderColor: isDark ? "rgba(16,185,129,0.28)" : undefined,
+              color: isDark ? "#6EE7B7" : undefined,
+            }}
+          >
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
             All Models Ready
           </span>
@@ -64,7 +79,7 @@ const OptimizedForCard = React.memo(function OptimizedForCard() {
                   draggable="false"
                 />
               </div>
-              <span className="text-center text-[9.5px] sm:text-[10px] lg:text-[10px] font-medium leading-tight text-gray-400 transition-colors duration-200 group-hover:text-gray-600 truncate max-w-full">
+              <span className="text-center text-[9.5px] sm:text-[10px] lg:text-[10px] font-medium leading-tight text-gray-400 transition-colors duration-200 group-hover:text-gray-600 truncate max-w-full" style={{ color: isDark ? D.textMuted : undefined }}>
                 {app.name}
               </span>
             </div>

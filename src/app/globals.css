@@ -41,7 +41,9 @@ body {
 }
 
 /* Hide scrollbars across all browsers by default while allowing scrolling */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   -ms-overflow-style: none !important;
   scrollbar-width: none !important;
 }
@@ -105,6 +107,7 @@ button:focus-visible {
 
 /* ── Respect reduced motion preferences ── */
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
@@ -132,6 +135,7 @@ button:focus-visible {
 }
 
 @media (max-width: 767px) {
+
   /* Phones: let the copy define the height instead of forcing a tall
      viewport box, so nothing is ever clipped on short screens. */
   .hero-shell {
@@ -159,23 +163,23 @@ button:focus-visible {
   0% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
+
   100% {
     background-position: 0% 50%;
   }
 }
 
 .animated-remarkable-gradient {
-  background: linear-gradient(
-    115deg,
-    #6366F1 0%,
-    #8B5CF6 25%,
-    #EC4899 50%,
-    #8B5CF6 75%,
-    #6366F1 100%
-  );
+  background: linear-gradient(115deg,
+      #6366F1 0%,
+      #8B5CF6 25%,
+      #EC4899 50%,
+      #8B5CF6 75%,
+      #6366F1 100%);
   background-size: 250% 250%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -186,31 +190,37 @@ button:focus-visible {
 
 /* ── Floating animation ── */
 @keyframes float {
+
   0%,
   100% {
     transform: translate3d(0, 0, 0);
   }
+
   50% {
     transform: translate3d(0, -12px, 0);
   }
 }
 
 @keyframes float-delayed {
+
   0%,
   100% {
     transform: translate3d(0, 0, 0);
   }
+
   50% {
     transform: translate3d(0, -8px, 0);
   }
 }
 
 @keyframes pulse-glow {
+
   0%,
   100% {
     opacity: 0.15;
     transform: scale3d(1, 1, 1);
   }
+
   50% {
     opacity: 0.3;
     transform: scale3d(1.05, 1.05, 1);
@@ -266,11 +276,13 @@ button:focus-visible {
 
 /* ── Platform ring pulse ── */
 @keyframes pulse-ring {
+
   0%,
   100% {
     opacity: 0.5;
     transform: translate3d(-50%, -50%, 0) scale3d(1, 1, 1);
   }
+
   50% {
     opacity: 0.8;
     transform: translate3d(-50%, -50%, 0) scale3d(1.04, 1.04, 1);
@@ -424,9 +436,11 @@ button:focus-visible {
   0% {
     transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
   }
+
   50% {
     transform: translate3d(30px, 20px, 0) scale3d(1.1, 1.1, 1);
   }
+
   100% {
     transform: translate3d(-20px, 30px, 0) scale3d(0.95, 0.95, 1);
   }
@@ -436,6 +450,7 @@ button:focus-visible {
   0% {
     background-position: -200% 0;
   }
+
   100% {
     background-position: 200% 0;
   }
@@ -446,6 +461,7 @@ button:focus-visible {
     opacity: 0;
     transform: translate3d(0, -8px, 0);
   }
+
   to {
     opacity: 1;
     transform: translate3d(0, 0, 0);
@@ -457,6 +473,7 @@ button:focus-visible {
     opacity: 0;
     transform: translate3d(0, -6px, 0) scale3d(0.97, 0.97, 1);
   }
+
   to {
     opacity: 1;
     transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
@@ -467,6 +484,7 @@ button:focus-visible {
   0% {
     transform: translate3d(-140%, 0, 0);
   }
+
   100% {
     transform: translate3d(240%, 0, 0);
   }
@@ -476,16 +494,19 @@ button:focus-visible {
   0% {
     transform: translate3d(-100%, 0, 0);
   }
+
   100% {
     transform: translate3d(200%, 0, 0);
   }
 }
 
 @keyframes ringPulse {
+
   0%,
   100% {
     opacity: 0.25;
   }
+
   50% {
     opacity: 0.4;
   }
@@ -496,6 +517,7 @@ button:focus-visible {
     opacity: 0;
     transform: translate3d(0, 12px, 0);
   }
+
   to {
     opacity: 1;
     transform: translate3d(0, 0, 0);
@@ -507,6 +529,7 @@ button:focus-visible {
     opacity: 0;
     transform: translate3d(0, 14px, 0) scale3d(0.97, 0.97, 1);
   }
+
   to {
     opacity: 1;
     transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
@@ -518,10 +541,12 @@ button:focus-visible {
     transform: scale3d(1, 1, 1);
     opacity: 1;
   }
+
   50% {
     transform: scale3d(1.15, 1.15, 1);
     opacity: 0.7;
   }
+
   100% {
     transform: scale3d(1, 1, 1);
     opacity: 1;
@@ -533,6 +558,7 @@ button:focus-visible {
     opacity: 0;
     transform: translate3d(0, 10px, 0);
   }
+
   to {
     opacity: 1;
     transform: translate3d(0, 0, 0);
@@ -541,10 +567,14 @@ button:focus-visible {
 
 /* Blinking caret for the live token-streaming view in the optimizer. */
 @keyframes streamCaretBlink {
-  0%, 45% {
+
+  0%,
+  45% {
     opacity: 1;
   }
-  55%, 100% {
+
+  55%,
+  100% {
     opacity: 0;
   }
 }
@@ -710,6 +740,7 @@ button:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .aure-nav-item,
   .aure-nav-icon,
   .aure-nav-shortcut,
@@ -718,5 +749,72 @@ button:focus-visible {
   .aure-soft-btn {
     transition: none !important;
     transform: none !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   LANDING — Dark mode
+   Scoped to the landing page only (the ThemeProvider adds `.dark` to
+   <html> just on "/", and strips it on any other route). These rules
+   handle the base canvas so the switch is flash-free; individual
+   section components pick their own colours via useTheme(). Light mode
+   is untouched — none of this applies without `.dark`.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Fallback shown while the optimizer chunk lazy-loads. */
+.landing-engine-fallback {
+  background: #FAFBFC;
+}
+
+html.dark {
+  --background: #0A0A0F;
+  --foreground: #F5F4F8;
+  color-scheme: dark;
+}
+
+html.dark body {
+  background: #0A0A0F;
+  color: #F5F4F8;
+}
+
+html.dark .landing-root,
+html.dark .auth-root {
+  background: #0A0A0F;
+}
+
+html.dark .landing-engine-fallback {
+  background: #0A0A0F;
+}
+
+/* Softer scrollbar thumb on the dark canvas. */
+html.dark ::-webkit-scrollbar-thumb {
+  background: #2A2740;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #3A3652;
+}
+
+/* Smooth cross-fade when toggling. Only colour-family properties are
+   transitioned, so framer-motion transforms/opacity and the animated brand
+   gradients are unaffected. */
+.landing-root,
+.landing-root *:not(canvas):not(svg):not(svg *),
+.auth-root,
+.auth-root *:not(canvas):not(svg):not(svg *) {
+  transition:
+    background-color 0.4s ease,
+    border-color 0.4s ease,
+    color 0.4s ease,
+    fill 0.4s ease,
+    box-shadow 0.4s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-root,
+  .landing-root *,
+  .auth-root,
+  .auth-root * {
+    transition: none !important;
   }
 }
