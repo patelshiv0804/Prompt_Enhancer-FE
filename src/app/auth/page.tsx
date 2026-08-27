@@ -4,8 +4,7 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, CheckCircle, Eye, EyeOff, KeyRound, Lock, Mail, RefreshCw, Sparkles, User, Zap } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { ThemeProvider, useTheme, D } from '@/theme/theme';
-import ThemeToggle from '@/components/ThemeToggle';
+import { useTheme, D } from '@/theme/theme';
 import { getUserMessage } from '@/utils/errorMessages';
 
 declare global {
@@ -1030,9 +1029,8 @@ function AuthContent() {
         <span style={{ fontFamily: "'Geist',sans-serif", fontSize: 12, fontWeight: 600, letterSpacing: '0.05em', color: isDark ? D.textPrimary : '#09090B' }}>Back to home</span>
       </Link>
 
-      {/* Top Right Controls: Theme Toggle & Token Badge */}
+      {/* Top Right Controls: Token Badge */}
       <div className="auth-top-right" style={{ position: 'absolute', top: 24, right: 24, zIndex: 50, display: 'flex', alignItems: 'center', gap: 12 }}>
-        <ThemeToggle />
         <div className="glass-floating auth-token-badge" style={{ padding: '8px 16px', borderRadius: 9999, display: 'flex', alignItems: 'center', gap: 8 }}>
           <Zap size={16} color="#8B5CF6" />
           <span style={{ fontFamily: "'Geist',sans-serif", fontSize: 12, fontWeight: 600, letterSpacing: '0.05em', color: isDark ? D.textPrimary : '#09090B' }}>Token Efficiency: 94%</span>
@@ -1342,9 +1340,5 @@ function AuthContent() {
 }
 
 export default function AuthPage() {
-  return (
-    <ThemeProvider>
-      <AuthContent />
-    </ThemeProvider>
-  );
+  return <AuthContent />;
 }

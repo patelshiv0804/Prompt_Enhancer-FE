@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
+import { ThemeProvider } from "@/theme/theme";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -48,17 +49,22 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-white text-foreground">
         {/* No-flash theme bootstrap. Runs synchronously before paint so a
-            returning dark-mode visitor never sees a white flash across all routes.
-            Mirrors THEME_STORAGE_KEY in src/theme/theme.tsx. */}
+            visitor loads straight into the correct theme with no white flash on
+            any route. Resolves the same preference the ThemeProvider does:
+            "light"/"dark" are used as-is; anything else (missing key or
+            "system") follows the OS via prefers-color-scheme. Mirrors
+            THEME_STORAGE_KEY in src/theme/theme.tsx. */}
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "(function(){try{var t=localStorage.getItem('aure-theme');if(t==='dark'){var d=document.documentElement;d.classList.add('dark');d.style.colorScheme='dark';}}catch(e){}})();",
+              "(function(){try{var p=localStorage.getItem('aure-theme-preference');var dark;if(p==='light'){dark=false;}else if(p==='dark'){dark=true;}else{dark=!!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);}var d=document.documentElement;if(dark){d.classList.add('dark');d.style.colorScheme='dark';}else{d.classList.remove('dark');d.style.colorScheme='light';}}catch(e){}})();",
           }}
         />
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

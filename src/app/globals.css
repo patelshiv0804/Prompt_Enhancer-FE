@@ -808,12 +808,12 @@ html.dark .aure-soft-btn:hover {
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   LANDING — Dark mode
-   Scoped to the landing page only (the ThemeProvider adds `.dark` to
-   <html> just on "/", and strips it on any other route). These rules
-   handle the base canvas so the switch is flash-free; individual
-   section components pick their own colours via useTheme(). Light mode
-   is untouched — none of this applies without `.dark`.
+   Dark mode — base canvas
+   Applies app-wide: the ThemeProvider (mounted once at the app root) adds
+   `.dark` to <html> on every route, and the no-flash script sets it before
+   paint. These rules handle the base canvas so the switch is flash-free;
+   individual section components pick their own colours via useTheme(). Light
+   mode is untouched — none of this applies without `.dark`.
    ══════════════════════════════════════════════════════════════════ */
 
 /* Fallback shown while the optimizer chunk lazy-loads. */
@@ -856,7 +856,9 @@ html.dark ::-webkit-scrollbar-thumb:hover {
 .landing-root,
 .landing-root *:not(canvas):not(svg):not(svg *),
 .auth-root,
-.auth-root *:not(canvas):not(svg):not(svg *) {
+.auth-root *:not(canvas):not(svg):not(svg *),
+.dashboard-root,
+.dashboard-root *:not(canvas):not(svg):not(svg *) {
   transition:
     background-color 0.4s ease,
     border-color 0.4s ease,
@@ -869,7 +871,9 @@ html.dark ::-webkit-scrollbar-thumb:hover {
   .landing-root,
   .landing-root *,
   .auth-root,
-  .auth-root * {
+  .auth-root *,
+  .dashboard-root,
+  .dashboard-root * {
     transition: none !important;
   }
 }

@@ -1,12 +1,24 @@
 "use client";
 
 /**
- * Landing-page theme system (light ⇄ dark).
+ * App-wide theme system (light ⇄ dark ⇄ system).
+ *
+ * MODEL (how YouTube / GitHub / next-themes do it):
+ * We persist a *preference* — "light" | "dark" | "system" — and derive the
+ * *resolved* theme ("light" | "dark") that actually paints:
+ *
+ *     resolved = preference === "system" ? <OS setting> : preference
+ *
+ * A brand-new visitor (no stored preference) defaults to "system", so the site
+ * matches their operating system on first load, just like YouTube. The moment
+ * they pick light or dark from a toggle, that explicit choice is stored and
+ * wins forever after. While on "system" we keep listening to the OS and flip
+ * the site live if the OS switches (e.g. a phone entering night mode).
  *
  * WHY A HOOK AND NOT `dark:` VARIANTS:
- * The landing components paint their colours through inline `style={{ … }}`
- * literals (see Hero/Navbar/etc.). Inline styles beat Tailwind utility classes,
- * so `dark:` variants would silently lose. Instead every component reads the
+ * The landing/auth/dashboard components paint their colours through inline
+ * `style={{ … }}` literals. Inline styles beat Tailwind utility classes, so
+ * `dark:` variants would silently lose. Instead every component reads the
  * active theme from `useTheme()` and picks its colour with a plain ternary:
  *
  *     const { theme } = useTheme();
@@ -17,23 +29,44 @@
  * and gradients (violet/purple/pink/blue) are theme-agnostic and left as-is —
  * they already read well on a dark canvas, the way Claude/Gemini render them.
  *
- * SCOPE: dark mode is intentionally limited to the landing route. The provider
- * is mounted inside the landing page tree only, and it strips the `.dark` class
- * from <html> when it unmounts, so /auth and /dashboard always render light.
+ * SCOPE: a single provider is mounted once at the app root (src/app/layout.tsx),
+ * so the theme is shared *live* across every route — toggling on any page
+ * updates all of them in the same session. `theme` keeps its original
+ * "light" | "dark" meaning, so existing components need zero changes; the
+ * three-way preference (incl. "system") is exposed separately as `preference`.
+ *
+ * NO-FLASH: the inline bootstrap script in src/app/layout.tsx resolves the same
+ * preference (including system → OS) and sets `.dark` on <html> before the first
+ * paint. It reads the same localStorage key + matchMedia this provider does, so
+ * the DOM the script produces always matches the provider's first client render
+ * (no hydration flash). <html> carries suppressHydrationWarning for that reason.
  */
 
 import React, {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
   useState,
 } from "react";
 
+/** The resolved theme that actually paints. */
 export type Theme = "light" | "dark";
+/** The user's stored preference; "system" follows the OS live. */
+export type ThemePreference = "light" | "dark" | "system";
 
-/** Persist key — mirrored by the no-flash script in app/layout.tsx. */
-export const THEME_STORAGE_KEY = "aure-theme";
+/**
+ * Persist key — mirrored by the no-flash script in app/layout.tsx.
+ *
+ * NOTE: this is deliberately a fresh key (not the old "aure-theme"). An earlier
+ * version of this provider auto-persisted the *default* ("light") to storage
+ * even when the visitor never chose it, which then looked like an explicit
+ * light preference and defeated "follow the system on first visit". Using a new
+ * key makes every one of those stale values a clean miss → we correctly fall
+ * back to "system". The new provider only ever stores a real preference.
+ */
+export const THEME_STORAGE_KEY = "aure-theme-preference";
 
 /**
  * Dark-mode design tokens. Centralised so every component maps to the same
@@ -78,69 +111,137 @@ export const D = {
   blue: "#60A5FA",
 } as const;
 
+/** Read the OS colour-scheme preference. SSR-safe (returns "light"). */
+function getSystemTheme(): Theme {
+  if (typeof window === "undefined" || !window.matchMedia) return "light";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
+}
+
+/**
+ * Read the stored preference. Missing or invalid → "system" (the YouTube
+ * default: follow the OS until the visitor makes an explicit choice).
+ */
+function getStoredPreference(): ThemePreference {
+  if (typeof window === "undefined") return "system";
+  try {
+    const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+    if (stored === "light" || stored === "dark" || stored === "system") {
+      return stored;
+    }
+  } catch {
+    /* localStorage can throw in private mode — fall back to system. */
+  }
+  return "system";
+}
+
+/** Collapse a preference to the theme that should paint right now. */
+function resolvePreference(pref: ThemePreference): Theme {
+  return pref === "system" ? getSystemTheme() : pref;
+}
+
 interface ThemeContextValue {
+  /** Resolved theme that paints — "light" | "dark". Original meaning kept. */
   theme: Theme;
+  /** Alias of `theme`, named for clarity where it matters. */
+  resolvedTheme: Theme;
+  /** The stored preference — "light" | "dark" | "system". */
+  preference: ThemePreference;
   /** False until the client has synced with localStorage after mount. */
   mounted: boolean;
-  setTheme: (theme: Theme) => void;
+  /** Set an explicit preference. Pass "system" to follow the OS live. */
+  setPreference: (preference: ThemePreference) => void;
+  /**
+   * Back-compat setter. Existing callers pass "light" / "dark"; it also accepts
+   * "system". Alias of setPreference so old call sites keep working unchanged.
+   */
+  setTheme: (theme: ThemePreference) => void;
+  /** Flip the *resolved* theme to the opposite explicit value (light ⇄ dark). */
   toggleTheme: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  // Start light so SSR output matches the default document (the no-flash script
-  // in the layout handles the dark canvas before paint on a dark reload).
-  const [theme, setThemeState] = useState<Theme>("light");
+  // Start with SSR-safe defaults that match the server-rendered document (no
+  // .dark class, "system" preference). The mount effect below syncs to the
+  // real stored value — which is exactly what the no-flash script already
+  // applied to <html> — so there is no visible change on hydration.
+  const [preference, setPreferenceState] = useState<ThemePreference>("system");
+  const [resolvedTheme, setResolvedTheme] = useState<Theme>("light");
   const [mounted, setMounted] = useState(false);
 
   // Sync from whatever the no-flash script / localStorage already decided.
   useEffect(() => {
-    let initial: Theme = "light";
-    try {
-      const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
-      if (stored === "dark" || stored === "light") {
-        initial = stored;
-      } else if (document.documentElement.classList.contains("dark")) {
-        initial = "dark";
-      }
-    } catch {
-      /* localStorage can throw in private mode — fall back to light. */
-    }
-    setThemeState(initial);
+    const pref = getStoredPreference();
+    setPreferenceState(pref);
+    setResolvedTheme(resolvePreference(pref));
     setMounted(true);
   }, []);
 
-  // Reflect the theme onto <html> and persist it — only after the initial sync
-  // so we never stomp the class the no-flash script set (which would flash).
+  // Resolve the preference, and — while on "system" — follow the OS live. The
+  // media-query listener is only attached in system mode, so an explicit
+  // light/dark choice is never overridden by the OS.
+  useEffect(() => {
+    if (!mounted) return;
+    if (preference !== "system") {
+      setResolvedTheme(preference);
+      return;
+    }
+    const mql = window.matchMedia("(prefers-color-scheme: dark)");
+    const apply = () => setResolvedTheme(mql.matches ? "dark" : "light");
+    apply();
+    // addEventListener is the modern API; older Safari only has addListener.
+    if (mql.addEventListener) {
+      mql.addEventListener("change", apply);
+      return () => mql.removeEventListener("change", apply);
+    }
+    mql.addListener(apply);
+    return () => mql.removeListener(apply);
+  }, [preference, mounted]);
+
+  // Reflect the resolved theme onto <html> — only after the initial sync, so we
+  // never stomp the class the no-flash script set (which would cause a flash).
   useEffect(() => {
     if (!mounted) return;
     const root = document.documentElement;
-    root.classList.toggle("dark", theme === "dark");
-    root.style.colorScheme = theme === "dark" ? "dark" : "light";
-    try {
-      window.localStorage.setItem(THEME_STORAGE_KEY, theme);
-    } catch {
-      /* ignore persistence failures */
-    }
-  }, [theme, mounted]);
+    root.classList.toggle("dark", resolvedTheme === "dark");
+    root.style.colorScheme = resolvedTheme === "dark" ? "dark" : "light";
+  }, [resolvedTheme, mounted]);
 
-  // Theme is applied globally across landing, auth, and dashboard routes
+  // Persist the *preference* (not the resolved value), so "system" is remembered
+  // as "system" across reloads and keeps following the OS.
   useEffect(() => {
-    return () => {
-      // Retain theme across client navigation
-    };
+    if (!mounted) return;
+    try {
+      window.localStorage.setItem(THEME_STORAGE_KEY, preference);
+    } catch {
+      /* ignore persistence failures (private mode, quota) */
+    }
+  }, [preference, mounted]);
+
+  const setPreference = useCallback((pref: ThemePreference) => {
+    setPreferenceState(pref);
   }, []);
+
+  const toggleTheme = useCallback(() => {
+    // The quick toggle always lands on an explicit light/dark (leaving "system"
+    // to the Settings menu), flipping whatever is currently showing.
+    setPreferenceState(resolvedTheme === "dark" ? "light" : "dark");
+  }, [resolvedTheme]);
 
   const value = useMemo<ThemeContextValue>(
     () => ({
-      theme,
+      theme: resolvedTheme,
+      resolvedTheme,
+      preference,
       mounted,
-      setTheme: setThemeState,
-      toggleTheme: () =>
-        setThemeState((t) => (t === "dark" ? "light" : "dark")),
+      setPreference,
+      setTheme: setPreference,
+      toggleTheme,
     }),
-    [theme, mounted]
+    [resolvedTheme, preference, mounted, setPreference, toggleTheme]
   );
 
   return (
@@ -149,8 +250,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * Read the active theme. Fails soft: a landing component rendered outside the
- * provider (or reused elsewhere) simply reports light, so it renders exactly as
+ * Read the active theme. Fails soft: a component rendered outside the provider
+ * (or reused elsewhere) simply reports light/system, so it renders exactly as
  * it does today rather than throwing.
  */
 export function useTheme(): ThemeContextValue {
@@ -158,7 +259,10 @@ export function useTheme(): ThemeContextValue {
   if (ctx === undefined) {
     return {
       theme: "light",
+      resolvedTheme: "light",
+      preference: "system",
       mounted: false,
+      setPreference: () => {},
       setTheme: () => {},
       toggleTheme: () => {},
     };

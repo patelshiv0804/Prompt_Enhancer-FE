@@ -89,7 +89,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
     return initialTab;
   });
 
-  const { theme: appTheme, setTheme: setAppTheme } = useTheme();
+  const { theme: appTheme, setTheme: setAppTheme, preference: appPreference } = useTheme();
   const isDark = appTheme === 'dark';
 
   useEffect(() => {
@@ -113,8 +113,14 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
   });
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Preference Settings
-  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>(() => (appTheme === 'dark' ? 'dark' : 'light'));
+  // Preference Settings — the theme control mirrors the global preference
+  // (light / dark / system) so "System" shows selected and survives reloads.
+  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>(() => appPreference);
+  // Keep the local control in sync when the theme is changed elsewhere (e.g. the
+  // navbar toggle), so the selected pill always reflects the real preference.
+  useEffect(() => {
+    setTheme(appPreference);
+  }, [appPreference]);
   const [defaultMode, setDefaultMode] = useState<string>('Creative');
   const [defaultModel, setDefaultModel] = useState<string>('Claude');
   const [showDiffByDefault, setShowDiffByDefault] = useState<boolean>(true);
@@ -210,7 +216,9 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
           if (settingsData.theme) {
             const t = settingsData.theme.toLowerCase();
             setTheme(t as any);
-            if (t === 'dark' || t === 'light') setAppTheme(t);
+            // Adopt the saved preference globally, including "system" so the
+            // account's choice follows the user across devices on load.
+            if (t === 'dark' || t === 'light' || t === 'system') setAppTheme(t);
           }
           
           const roleKey = userRole.toLowerCase();
@@ -355,14 +363,9 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
 
   const handleThemeChange = async (newTheme: 'light' | 'dark' | 'system') => {
     setTheme(newTheme);
-    if (newTheme === 'dark') {
-      setAppTheme('dark');
-    } else if (newTheme === 'light') {
-      setAppTheme('light');
-    } else if (newTheme === 'system') {
-      const prefersDark = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setAppTheme(prefersDark ? 'dark' : 'light');
-    }
+    // Hand the preference to the global provider. It resolves "system" against
+    // the OS and keeps following it live — no manual matchMedia needed here.
+    setAppTheme(newTheme);
     triggerSavedFeedback('theme');
     try {
       await apiClient.patch('/api/v1/settings/theme', { theme: newTheme });
