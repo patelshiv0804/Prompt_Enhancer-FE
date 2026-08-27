@@ -17,6 +17,7 @@ import { ROLES, ROLE_MODES, getModeIcon } from '@/constants/roles';
 import { presetAvatarGradients, getInitials, renderPresetAvatar } from '@/constants/avatars';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import SettingsSkeleton from './SettingsSkeleton';
+import { useTheme, D } from '@/theme/theme';
 
 /* ── Custom iOS / macOS Switch Component ── */
 interface ToggleSwitchProps {
@@ -26,6 +27,9 @@ interface ToggleSwitchProps {
 }
 
 function ToggleSwitch({ enabled, onToggle, ariaLabel }: ToggleSwitchProps) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
   return (
     <button
       type="button"
@@ -39,7 +43,7 @@ function ToggleSwitch({ enabled, onToggle, ariaLabel }: ToggleSwitchProps) {
         borderRadius: 9999,
         border: 'none',
         cursor: 'pointer',
-        background: enabled ? 'linear-gradient(135deg, #7C3AED 0%, #9333EA 100%)' : 'rgba(124, 58, 237, 0.14)',
+        background: enabled ? 'linear-gradient(135deg, #7C3AED 0%, #9333EA 100%)' : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(124, 58, 237, 0.14)'),
         position: 'relative',
         transition: 'all 240ms cubic-bezier(0.16, 1, 0.3, 1)',
         flexShrink: 0,
@@ -85,6 +89,9 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
     return initialTab;
   });
 
+  const { theme: appTheme, setTheme: setAppTheme } = useTheme();
+  const isDark = appTheme === 'dark';
+
   useEffect(() => {
     if (queryTab === 'profile') setActiveTab('profile');
     else if (queryTab === 'settings') setActiveTab('settings');
@@ -107,7 +114,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Preference Settings
-  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('light');
+  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>(() => (appTheme === 'dark' ? 'dark' : 'light'));
   const [defaultMode, setDefaultMode] = useState<string>('Creative');
   const [defaultModel, setDefaultModel] = useState<string>('Claude');
   const [showDiffByDefault, setShowDiffByDefault] = useState<boolean>(true);
@@ -200,7 +207,11 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
       try {
         const settingsData = await apiClient.get('/api/v1/settings');
         if (settingsData) {
-          if (settingsData.theme) setTheme(settingsData.theme.toLowerCase() as any);
+          if (settingsData.theme) {
+            const t = settingsData.theme.toLowerCase();
+            setTheme(t as any);
+            if (t === 'dark' || t === 'light') setAppTheme(t);
+          }
           
           const roleKey = userRole.toLowerCase();
           const validModes = ROLE_MODES[roleKey] || [];
@@ -344,6 +355,14 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
 
   const handleThemeChange = async (newTheme: 'light' | 'dark' | 'system') => {
     setTheme(newTheme);
+    if (newTheme === 'dark') {
+      setAppTheme('dark');
+    } else if (newTheme === 'light') {
+      setAppTheme('light');
+    } else if (newTheme === 'system') {
+      const prefersDark = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      setAppTheme(prefersDark ? 'dark' : 'light');
+    }
     triggerSavedFeedback('theme');
     try {
       await apiClient.patch('/api/v1/settings/theme', { theme: newTheme });
@@ -480,8 +499,8 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                   fontWeight: 700,
                   textTransform: 'uppercase',
                   letterSpacing: '1px',
-                  color: 'var(--color-primary, #7C3AED)',
-                  background: 'rgba(124, 58, 237, 0.08)',
+                  color: isDark ? '#C084FC' : 'var(--color-primary, #7C3AED)',
+                  background: isDark ? 'rgba(139, 92, 246, 0.18)' : 'rgba(124, 58, 237, 0.08)',
                   padding: '2.5px 9px',
                   borderRadius: 6,
                 }}
@@ -493,14 +512,14 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
               style={{
                 fontSize: isMobile ? 24 : 28,
                 fontWeight: 800,
-                color: 'var(--color-text-primary, #0F172A)',
+                color: isDark ? D.textPrimary : '#0F172A',
                 letterSpacing: -0.6,
                 margin: '0 0 4px',
               }}
             >
               {activeTab === 'profile' ? 'User Profile' : 'Settings & Preferences'}
             </h1>
-            <p style={{ fontSize: 14, color: 'var(--color-text-secondary, #64748B)', margin: 0, lineHeight: 1.5 }}>
+            <p style={{ fontSize: 14, color: isDark ? D.textSecondary : '#64748B', margin: 0, lineHeight: 1.5 }}>
               {activeTab === 'profile'
                 ? 'Manage your professional persona, telemetry stats, and subscription tier.'
                 : 'Configure AI prompt architectures, role personas, engine models, and interface theme.'}
@@ -512,12 +531,12 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              background: 'rgba(124, 58, 237, 0.06)',
+              background: isDark ? 'rgba(20, 19, 32, 0.85)' : 'rgba(124, 58, 237, 0.06)',
               padding: 4,
               borderRadius: 14,
-              border: '1px solid rgba(124, 58, 237, 0.12)',
+              border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.10)' : 'rgba(124, 58, 237, 0.12)'}`,
               flexShrink: 0,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+              boxShadow: isDark ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 8px rgba(0,0,0,0.02)',
             }}
           >
             <button
@@ -536,9 +555,9 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                 border: 'none',
                 cursor: 'pointer',
                 transition: 'all 200ms cubic-bezier(0.16, 1, 0.3, 1)',
-                background: activeTab === 'profile' ? '#FFFFFF' : 'transparent',
-                color: activeTab === 'profile' ? '#6D28D9' : 'var(--color-text-secondary, #64748B)',
-                boxShadow: activeTab === 'profile' ? '0 2px 10px rgba(109, 40, 217, 0.12)' : 'none',
+                background: activeTab === 'profile' ? (isDark ? 'rgba(255, 255, 255, 0.12)' : '#FFFFFF') : 'transparent',
+                color: activeTab === 'profile' ? (isDark ? '#C084FC' : '#6D28D9') : (isDark ? D.textMuted : '#64748B'),
+                boxShadow: activeTab === 'profile' ? (isDark ? '0 2px 10px rgba(0,0,0,0.4)' : '0 2px 10px rgba(109, 40, 217, 0.12)') : 'none',
               }}
             >
               <User size={15} strokeWidth={activeTab === 'profile' ? 2.4 : 1.8} />
@@ -560,9 +579,9 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                 border: 'none',
                 cursor: 'pointer',
                 transition: 'all 200ms cubic-bezier(0.16, 1, 0.3, 1)',
-                background: activeTab === 'settings' ? '#FFFFFF' : 'transparent',
-                color: activeTab === 'settings' ? '#6D28D9' : 'var(--color-text-secondary, #64748B)',
-                boxShadow: activeTab === 'settings' ? '0 2px 10px rgba(109, 40, 217, 0.12)' : 'none',
+                background: activeTab === 'settings' ? (isDark ? 'rgba(255, 255, 255, 0.12)' : '#FFFFFF') : 'transparent',
+                color: activeTab === 'settings' ? (isDark ? '#C084FC' : '#6D28D9') : (isDark ? D.textMuted : '#64748B'),
+                boxShadow: activeTab === 'settings' ? (isDark ? '0 2px 10px rgba(0,0,0,0.4)' : '0 2px 10px rgba(109, 40, 217, 0.12)') : 'none',
               }}
             >
               <Settings size={15} strokeWidth={activeTab === 'settings' ? 2.4 : 1.8} />
@@ -589,10 +608,10 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
             {/* Identity Bento Card */}
             <div
               style={{
-                background: '#FFFFFF',
+                background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
                 borderRadius: 24,
-                border: '1px solid rgba(124, 58, 237, 0.12)',
-                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02)',
+                border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124, 58, 237, 0.12)'}`,
+                boxShadow: isDark ? '0 4px 20px rgba(0, 0, 0, 0.35)' : '0 4px 20px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02)',
                 overflow: 'hidden',
                 position: 'relative',
               }}
@@ -645,12 +664,12 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                         width: 80,
                         height: 80,
                         borderRadius: '50%',
-                        border: '4px solid #FFFFFF',
+                        border: `4px solid ${isDark ? '#141320' : '#FFFFFF'}`,
                         boxShadow: '0 4px 16px rgba(109, 40, 217, 0.22)',
                         overflow: 'hidden',
                         cursor: 'pointer',
                         position: 'relative',
-                        background: '#FFFFFF',
+                        background: isDark ? '#141320' : '#FFFFFF',
                       }}
                       title="Click to customize avatar"
                     >
@@ -690,7 +709,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                         height: 26,
                         borderRadius: '50%',
                         background: '#7C3AED',
-                        border: '2px solid #FFFFFF',
+                        border: `2px solid ${isDark ? '#141320' : '#FFFFFF'}`,
                         color: '#FFFFFF',
                         display: 'flex',
                         alignItems: 'center',
@@ -712,16 +731,16 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                       marginBottom: 16,
                       padding: 14,
                       borderRadius: 16,
-                      background: '#F8FAFC',
-                      border: '1px solid #E2E8F0',
+                      background: isDark ? 'rgba(14, 13, 20, 0.95)' : '#F8FAFC',
+                      border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.10)' : '#E2E8F0'}`,
                       display: 'flex',
                       flexDirection: 'column',
                       gap: 10,
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: '#1E293B' }}>Choose Avatar Preset</span>
-                      <button onClick={() => setShowAvatarPicker(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: isDark ? D.textPrimary : '#1E293B' }}>Choose Avatar Preset</span>
+                      <button onClick={() => setShowAvatarPicker(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: isDark ? D.textMuted : '#64748B' }}>
                         <X size={14} />
                       </button>
                     </div>
@@ -792,6 +811,8 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                           border: '1.5px solid #7C3AED',
                           outline: 'none',
                           flex: 1,
+                          background: isDark ? 'rgba(14, 13, 20, 0.9)' : '#FFFFFF',
+                          color: isDark ? D.textPrimary : '#0F172A',
                         }}
                       />
                       <button
@@ -811,8 +832,8 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                         type="button"
                         onClick={() => setIsEditingName(false)}
                         style={{
-                          background: '#F1F5F9',
-                          color: '#64748B',
+                          background: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9',
+                          color: isDark ? D.textSecondary : '#64748B',
                           border: 'none',
                           borderRadius: 8,
                           padding: '8px 12px',
@@ -824,7 +845,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                     </form>
                   ) : (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                      <h2 style={{ fontSize: 20, fontWeight: 800, color: '#0F172A', margin: 0, letterSpacing: -0.4 }}>
+                      <h2 style={{ fontSize: 20, fontWeight: 800, color: isDark ? D.textPrimary : '#0F172A', margin: 0, letterSpacing: -0.4 }}>
                         {displayName || 'User'}
                       </h2>
                       <button
@@ -836,7 +857,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                           background: 'none',
                           border: 'none',
                           cursor: 'pointer',
-                          color: '#94A3B8',
+                          color: isDark ? D.textMuted : '#94A3B8',
                           padding: 2,
                           display: 'inline-flex',
                           alignItems: 'center',
@@ -852,8 +873,8 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                           fontWeight: 700,
                           textTransform: 'uppercase',
                           letterSpacing: '0.6px',
-                          background: 'rgba(124, 58, 237, 0.08)',
-                          color: '#7C3AED',
+                          background: isDark ? 'rgba(139, 92, 246, 0.18)' : 'rgba(124, 58, 237, 0.08)',
+                          color: isDark ? '#C084FC' : '#7C3AED',
                           padding: '2px 8px',
                           borderRadius: 6,
                         }}
@@ -864,7 +885,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                   )}
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: 13, color: '#64748B' }}>{email}</span>
+                    <span style={{ fontSize: 13, color: isDark ? D.textSecondary : '#64748B' }}>{email}</span>
                     <span
                       style={{
                         display: 'inline-flex',
@@ -880,7 +901,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                     >
                       <Check size={10} strokeWidth={3} /> Verified
                     </span>
-                    {createdAt && <span style={{ fontSize: 12, color: '#94A3B8' }}>• Member since {createdAt}</span>}
+                    {createdAt && <span style={{ fontSize: 12, color: isDark ? D.textMuted : '#94A3B8' }}>• Member since {createdAt}</span>}
                   </div>
                 </div>
               </div>
@@ -894,7 +915,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                 border: '1px solid rgba(139, 92, 246, 0.22)',
                 padding: isMobile ? '22px 18px' : '28px 30px',
                 color: '#FFFFFF',
-                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.06)',
+                boxShadow: isDark ? '0 4px 24px rgba(0, 0, 0, 0.4)' : '0 4px 20px rgba(0, 0, 0, 0.06)',
                 position: 'relative',
                 overflow: 'hidden',
               }}
@@ -973,10 +994,10 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
             {/* KPI Metric Tiles */}
             <div
               style={{
-                background: '#FFFFFF',
+                background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
                 borderRadius: 24,
-                border: '1px solid rgba(124, 58, 237, 0.12)',
-                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02)',
+                border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124, 58, 237, 0.12)'}`,
+                boxShadow: isDark ? '0 4px 20px rgba(0, 0, 0, 0.35)' : '0 4px 20px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02)',
                 padding: '24px 26px',
                 display: 'flex',
                 flexDirection: 'column',
@@ -984,11 +1005,11 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <h3 style={{ fontSize: 16, fontWeight: 700, color: isDark ? D.textPrimary : '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
                   <Activity size={17} color="#7C3AED" />
                   <span>Performance Telemetry</span>
                 </h3>
-                <span style={{ fontSize: 12, color: '#64748B' }}>Live Metrics</span>
+                <span style={{ fontSize: 12, color: isDark ? D.textMuted : '#64748B' }}>Live Metrics</span>
               </div>
 
               {/* 3 Metric Boxes */}
@@ -1001,9 +1022,9 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                   <div
                     key={i}
                     style={{
-                      background: '#F8FAFC',
+                      background: isDark ? 'rgba(14, 13, 20, 0.75)' : '#F8FAFC',
                       borderRadius: 16,
-                      border: '1px solid #E2E8F0',
+                      border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.06)' : '#E2E8F0'}`,
                       padding: '14px 10px',
                       display: 'flex',
                       flexDirection: 'column',
@@ -1012,8 +1033,8 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                     }}
                   >
                     <item.icon size={16} color={item.color} strokeWidth={2.2} />
-                    <span style={{ fontSize: 18, fontWeight: 800, color: '#0F172A', letterSpacing: -0.4 }}>{item.value}</span>
-                    <span style={{ fontSize: 11, color: '#64748B', fontWeight: 600 }}>{item.label}</span>
+                    <span style={{ fontSize: 18, fontWeight: 800, color: isDark ? D.textPrimary : '#0F172A', letterSpacing: -0.4 }}>{item.value}</span>
+                    <span style={{ fontSize: 11, color: isDark ? D.textMuted : '#64748B', fontWeight: 600 }}>{item.label}</span>
                   </div>
                 ))}
               </div>
@@ -1021,8 +1042,8 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
               {/* Weekly Activity Sparkline */}
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: '#334155' }}>Enhancement Frequency</span>
-                  <span style={{ fontSize: 11, color: '#94A3B8' }}>Past 7 Days</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: isDark ? D.textPrimary : '#334155' }}>Enhancement Frequency</span>
+                  <span style={{ fontSize: 11, color: isDark ? D.textMuted : '#94A3B8' }}>Past 7 Days</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 44 }}>
                   {[35, 60, 45, 75, 95, 70, 90].map((h, i) => {
@@ -1035,11 +1056,11 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                             width: '100%',
                             borderRadius: 4,
                             height: `${Math.round((h / 100) * 36)}px`,
-                            background: isToday ? 'linear-gradient(180deg, #8B5CF6, #7C3AED)' : 'rgba(124, 58, 237, 0.12)',
+                            background: isToday ? 'linear-gradient(180deg, #8B5CF6, #7C3AED)' : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124, 58, 237, 0.12)'),
                             boxShadow: isToday ? '0 2px 8px rgba(124, 58, 237, 0.3)' : 'none',
                           }}
                         />
-                        <span style={{ fontSize: 9.5, color: isToday ? '#7C3AED' : '#94A3B8', fontWeight: isToday ? 700 : 500 }}>{days[i]}</span>
+                        <span style={{ fontSize: 9.5, color: isToday ? '#7C3AED' : (isDark ? D.textMuted : '#94A3B8'), fontWeight: isToday ? 700 : 500 }}>{days[i]}</span>
                       </div>
                     );
                   })}
@@ -1050,10 +1071,10 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
             {/* Achievements & Badges */}
             <div
               style={{
-                background: '#FFFFFF',
+                background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
                 borderRadius: 24,
-                border: '1px solid rgba(124, 58, 237, 0.12)',
-                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02)',
+                border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124, 58, 237, 0.12)'}`,
+                boxShadow: isDark ? '0 4px 20px rgba(0, 0, 0, 0.35)' : '0 4px 20px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02)',
                 padding: '24px 26px',
                 display: 'flex',
                 flexDirection: 'column',
@@ -1061,11 +1082,11 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <h3 style={{ fontSize: 16, fontWeight: 700, color: isDark ? D.textPrimary : '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
                   <Award size={17} color="#F59E0B" />
                   <span>Unlocked Badges</span>
                 </h3>
-                <span style={{ fontSize: 11, fontWeight: 700, color: '#7C3AED', background: 'rgba(124, 58, 237, 0.08)', padding: '2px 8px', borderRadius: 9999 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: isDark ? '#C084FC' : '#7C3AED', background: isDark ? 'rgba(139, 92, 246, 0.18)' : 'rgba(124, 58, 237, 0.08)', padding: '2px 8px', borderRadius: 9999 }}>
                   4 Badges
                 </span>
               </div>
@@ -1082,8 +1103,8 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                     style={{
                       padding: 12,
                       borderRadius: 14,
-                      border: '1px solid #F1F5F9',
-                      background: '#FAF5FF',
+                      border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9'}`,
+                      background: isDark ? 'rgba(14, 13, 20, 0.75)' : '#FAF5FF',
                       display: 'flex',
                       alignItems: 'center',
                       gap: 10,
@@ -1094,7 +1115,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                         width: 32,
                         height: 32,
                         borderRadius: 8,
-                        background: '#FFFFFF',
+                        background: isDark ? 'rgba(255, 255, 255, 0.08)' : '#FFFFFF',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -1106,8 +1127,8 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                       <b.icon size={16} strokeWidth={2.2} />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontSize: 12.5, fontWeight: 700, color: '#1E293B' }}>{b.title}</span>
-                      <span style={{ fontSize: 10.5, color: '#64748B' }}>{b.desc}</span>
+                      <span style={{ fontSize: 12.5, fontWeight: 700, color: isDark ? D.textPrimary : '#1E293B' }}>{b.title}</span>
+                      <span style={{ fontSize: 10.5, color: isDark ? D.textMuted : '#64748B' }}>{b.desc}</span>
                     </div>
                   </div>
                 ))}
@@ -1125,10 +1146,10 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
           {/* Main Settings Bento Box */}
           <div
             style={{
-              background: '#FFFFFF',
+              background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
               borderRadius: 24,
-              border: '1px solid rgba(124, 58, 237, 0.12)',
-              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02)',
+              border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124, 58, 237, 0.12)'}`,
+              boxShadow: isDark ? '0 4px 24px rgba(0, 0, 0, 0.35)' : '0 4px 20px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02)',
               padding: isMobile ? '22px 18px' : '32px 36px',
               display: 'flex',
               flexDirection: 'column',
@@ -1138,8 +1159,8 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
             {/* ── 1. Visual Theme (Apple OS Style) ── */}
             <div>
               <div style={{ marginBottom: 12 }}>
-                <h3 style={{ fontSize: 15, fontWeight: 800, color: '#0F172A', margin: '0 0 3px' }}>Appearance</h3>
-                <p style={{ fontSize: 13, color: '#64748B', margin: 0 }}>Select your preferred workspace theme color palette.</p>
+                <h3 style={{ fontSize: 15, fontWeight: 800, color: isDark ? D.textPrimary : '#0F172A', margin: '0 0 3px' }}>Appearance</h3>
+                <p style={{ fontSize: 13, color: isDark ? D.textSecondary : '#64748B', margin: 0 }}>Select your preferred workspace theme color palette.</p>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(3, 160px)', gap: 12 }}>
@@ -1156,8 +1177,8 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                       style={{
                         padding: '12px 8px',
                         borderRadius: 14,
-                        border: isSelected ? '2px solid #7C3AED' : '1px solid #E2E8F0',
-                        background: isSelected ? 'rgba(124, 58, 237, 0.04)' : '#FFFFFF',
+                        border: isSelected ? '2px solid #8B5CF6' : `1px solid ${isDark ? 'rgba(255, 255, 255, 0.10)' : '#E2E8F0'}`,
+                        background: isSelected ? (isDark ? 'rgba(139, 92, 246, 0.15)' : 'rgba(124, 58, 237, 0.04)') : (isDark ? 'rgba(14, 13, 20, 0.75)' : '#FFFFFF'),
                         cursor: 'pointer',
                         display: 'flex',
                         flexDirection: 'column',
@@ -1165,7 +1186,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                         gap: 8,
                         transition: 'all 180ms ease',
                       }}
-                      className="hover:!border-[#7C3AED]"
+                      className="hover:!border-[#8B5CF6]"
                     >
                       <div
                         style={{
@@ -1182,7 +1203,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                       >
                         <th.icon size={14} color={th.id === 'dark' ? '#93C5FD' : '#64748B'} />
                       </div>
-                      <span style={{ fontSize: 12, fontWeight: isSelected ? 700 : 500, color: isSelected ? '#7C3AED' : '#334155' }}>
+                      <span style={{ fontSize: 12, fontWeight: isSelected ? 700 : 500, color: isSelected ? (isDark ? '#C084FC' : '#7C3AED') : (isDark ? D.textSecondary : '#334155') }}>
                         {th.label}
                       </span>
                     </button>
@@ -1191,21 +1212,21 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
               </div>
             </div>
 
-            <div style={{ height: 1, background: 'rgba(124, 58, 237, 0.08)' }} />
+            <div style={{ height: 1, background: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124, 58, 237, 0.08)' }} />
 
             {/* ── 2. Default Role Persona (Linear 12 Roles Grid) ── */}
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                 <div>
-                  <h3 style={{ fontSize: 15, fontWeight: 800, color: '#0F172A', margin: '0 0 3px' }}>Default Role Architecture</h3>
-                  <p style={{ fontSize: 13, color: '#64748B', margin: 0 }}>Every optimization defaults to this role persona.</p>
+                  <h3 style={{ fontSize: 15, fontWeight: 800, color: isDark ? D.textPrimary : '#0F172A', margin: '0 0 3px' }}>Default Role Architecture</h3>
+                  <p style={{ fontSize: 13, color: isDark ? D.textSecondary : '#64748B', margin: 0 }}>Every optimization defaults to this role persona.</p>
                 </div>
                 <span
                   style={{
                     fontSize: 11,
                     fontWeight: 700,
-                    color: '#7C3AED',
-                    background: 'rgba(124, 58, 237, 0.08)',
+                    color: isDark ? '#C084FC' : '#7C3AED',
+                    background: isDark ? 'rgba(139, 92, 246, 0.18)' : 'rgba(124, 58, 237, 0.08)',
                     padding: '2px 8px',
                     borderRadius: 9999,
                   }}
@@ -1232,9 +1253,9 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                       style={{
                         padding: '12px 14px',
                         borderRadius: 14,
-                        border: isSelected ? '1.5px solid #7C3AED' : '1px solid rgba(124, 58, 237, 0.10)',
-                        background: isSelected ? 'linear-gradient(135deg, #7C3AED 0%, #9333EA 100%)' : '#FFFFFF',
-                        color: isSelected ? '#FFFFFF' : '#1E293B',
+                        border: isSelected ? '1.5px solid #8B5CF6' : `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124, 58, 237, 0.10)'}`,
+                        background: isSelected ? 'linear-gradient(135deg, #7C3AED 0%, #9333EA 100%)' : (isDark ? 'rgba(14, 13, 20, 0.75)' : '#FFFFFF'),
+                        color: isSelected ? '#FFFFFF' : (isDark ? D.textPrimary : '#1E293B'),
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
@@ -1243,18 +1264,18 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                         transition: 'all 200ms cubic-bezier(0.16, 1, 0.3, 1)',
                         boxShadow: isSelected ? '0 4px 14px rgba(124, 58, 237, 0.28)' : '0 1px 2px rgba(0,0,0,0.02)',
                       }}
-                      className={!isSelected ? 'hover:!border-[#7C3AED] hover:translate-y-[-1px]' : ''}
+                      className={!isSelected ? 'hover:!border-[#8B5CF6] hover:translate-y-[-1px]' : ''}
                     >
                       <div
                         style={{
                           width: 32,
                           height: 32,
                           borderRadius: 8,
-                          background: isSelected ? 'rgba(255, 255, 255, 0.22)' : 'rgba(124, 58, 237, 0.08)',
+                          background: isSelected ? 'rgba(255, 255, 255, 0.22)' : (isDark ? 'rgba(139, 92, 246, 0.18)' : 'rgba(124, 58, 237, 0.08)'),
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          color: isSelected ? '#FFFFFF' : '#7C3AED',
+                          color: isSelected ? '#FFFFFF' : (isDark ? '#C084FC' : '#7C3AED'),
                           flexShrink: 0,
                         }}
                       >
@@ -1265,7 +1286,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                           {role.label}
                         </span>
                         {modesCount > 0 && (
-                          <span style={{ fontSize: 10.5, color: isSelected ? 'rgba(255,255,255,0.75)' : '#64748B', fontWeight: 500 }}>
+                          <span style={{ fontSize: 10.5, color: isSelected ? 'rgba(255,255,255,0.75)' : (isDark ? D.textMuted : '#64748B'), fontWeight: 500 }}>
                             {modesCount} modes
                           </span>
                         )}
@@ -1281,9 +1302,9 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
             {currentRoleModes.length === 0 ? (
               <div
                 style={{
-                  background: '#F8FAFC',
+                  background: isDark ? 'rgba(14, 13, 20, 0.85)' : '#F8FAFC',
                   borderRadius: 18,
-                  border: '1px solid #E2E8F0',
+                  border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0'}`,
                   padding: isMobile ? '16px 14px' : '18px 22px',
                   display: 'flex',
                   alignItems: 'center',
@@ -1293,7 +1314,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontSize: 13.5, fontWeight: 800, color: '#0F172A' }}>Default Mode:</span>
+                  <span style={{ fontSize: 13.5, fontWeight: 800, color: isDark ? D.textPrimary : '#0F172A' }}>Default Mode:</span>
                   <span
                     style={{
                       fontSize: 11.5,
@@ -1308,16 +1329,16 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                     Universal / All-Purpose
                   </span>
                 </div>
-                <span style={{ fontSize: 12.5, color: '#64748B' }}>
+                <span style={{ fontSize: 12.5, color: isDark ? D.textSecondary : '#64748B' }}>
                   The General role operates universally across all domains without sub-mode specialization.
                 </span>
               </div>
             ) : (
               <div
                 style={{
-                  background: '#F8FAFC',
+                  background: isDark ? 'rgba(14, 13, 20, 0.85)' : '#F8FAFC',
                   borderRadius: 18,
-                  border: '1px solid #E2E8F0',
+                  border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0'}`,
                   padding: isMobile ? '16px 14px' : '20px 22px',
                   display: 'flex',
                   flexDirection: 'column',
@@ -1326,7 +1347,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 13.5, fontWeight: 800, color: '#0F172A' }}>Default Mode:</span>
+                    <span style={{ fontSize: 13.5, fontWeight: 800, color: isDark ? D.textPrimary : '#0F172A' }}>Default Mode:</span>
                     <span
                       style={{
                         fontSize: 11.5,
@@ -1348,14 +1369,14 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                       display: 'flex',
                       alignItems: 'center',
                       gap: 6,
-                      background: '#FFFFFF',
-                      border: '1px solid #CBD5E1',
+                      background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
+                      border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : '#CBD5E1'}`,
                       borderRadius: 10,
                       padding: '6px 12px',
                       width: isMobile ? '100%' : 220,
                     }}
                   >
-                    <Search size={14} color="#94A3B8" />
+                    <Search size={14} color={isDark ? D.textMuted : '#94A3B8'} />
                     <input
                       type="text"
                       placeholder="Search modes..."
@@ -1365,13 +1386,13 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                         border: 'none',
                         outline: 'none',
                         fontSize: 12.5,
-                        color: '#0F172A',
+                        color: isDark ? D.textPrimary : '#0F172A',
                         width: '100%',
                         background: 'transparent',
                       }}
                     />
                     {modeSearchQuery && (
-                      <button onClick={() => setModeSearchQuery('')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: '#94A3B8' }}>
+                      <button onClick={() => setModeSearchQuery('')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: isDark ? D.textMuted : '#94A3B8' }}>
                         <X size={12} />
                       </button>
                     )}
@@ -1395,14 +1416,14 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                           borderRadius: 9999,
                           fontSize: 12,
                           fontWeight: isModeSelected ? 700 : 500,
-                          border: isModeSelected ? '1px solid #7C3AED' : '1px solid #E2E8F0',
-                          background: isModeSelected ? 'linear-gradient(135deg, #7C3AED, #9333EA)' : '#FFFFFF',
-                          color: isModeSelected ? '#FFFFFF' : '#334155',
+                          border: isModeSelected ? '1px solid #8B5CF6' : `1px solid ${isDark ? 'rgba(255, 255, 255, 0.10)' : '#E2E8F0'}`,
+                          background: isModeSelected ? 'linear-gradient(135deg, #7C3AED, #9333EA)' : (isDark ? 'rgba(255, 255, 255, 0.06)' : '#FFFFFF'),
+                          color: isModeSelected ? '#FFFFFF' : (isDark ? D.textSecondary : '#334155'),
                           cursor: 'pointer',
                           transition: 'all 160ms ease',
                           boxShadow: isModeSelected ? '0 2px 8px rgba(124, 58, 237, 0.25)' : 'none',
                         }}
-                        className={!isModeSelected ? 'hover:!border-[#7C3AED] hover:!text-[#7C3AED]' : ''}
+                        className={!isModeSelected ? 'hover:!border-[#8B5CF6] hover:!text-[#C084FC]' : ''}
                       >
                         <ModeIcon size={12} strokeWidth={isModeSelected ? 2.5 : 1.8} />
                         <span>{modeName}</span>
@@ -1413,82 +1434,26 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
               </div>
             )}
 
-            {/* ── 4. AI Model Architecture (Temporarily commented out) ──
-            <div style={{ height: 1, background: 'rgba(124, 58, 237, 0.08)' }} />
-            <div>
-              <div style={{ marginBottom: 12 }}>
-                <h3 style={{ fontSize: 15, fontWeight: 800, color: '#0F172A', margin: '0 0 3px' }}>Default Intelligence Engine</h3>
-                <p style={{ fontSize: 13, color: '#64748B', margin: 0 }}>Select the target LLM for tailored tokenization and formatting.</p>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : isDesktop ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)', gap: 10 }}>
-                {AI_MODELS.map((model) => {
-                  const isSelected = defaultModel.toLowerCase() === model.id.toLowerCase();
-                  return (
-                    <button
-                      key={model.id}
-                      onClick={() => handleModelChange(model.id)}
-                      style={{
-                        padding: '12px 14px',
-                        borderRadius: 14,
-                        border: isSelected ? '1.5px solid #7C3AED' : '1px solid rgba(124, 58, 237, 0.10)',
-                        background: isSelected ? 'linear-gradient(135deg, #7C3AED 0%, #9333EA 100%)' : '#FFFFFF',
-                        color: isSelected ? '#FFFFFF' : '#1E293B',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'flex-start',
-                        gap: 6,
-                        textAlign: 'left',
-                        transition: 'all 180ms ease',
-                        boxShadow: isSelected ? '0 4px 14px rgba(124, 58, 237, 0.28)' : '0 1px 2px rgba(0,0,0,0.02)',
-                      }}
-                      className={!isSelected ? 'hover:!border-[#7C3AED] hover:translate-y-[-1px]' : ''}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                        <span style={{ fontSize: 10.5, fontWeight: 600, color: isSelected ? 'rgba(255,255,255,0.8)' : '#64748B' }}>{model.maker}</span>
-                        {isSelected && <Check size={13} strokeWidth={3} />}
-                      </div>
-                      <span style={{ fontSize: 13, fontWeight: 700 }}>{model.label}</span>
-                      <span
-                        style={{
-                          fontSize: 10,
-                          fontWeight: 700,
-                          padding: '1.5px 6px',
-                          borderRadius: 4,
-                          background: isSelected ? 'rgba(255,255,255,0.2)' : 'rgba(124, 58, 237, 0.08)',
-                          color: isSelected ? '#FFFFFF' : '#7C3AED',
-                        }}
-                      >
-                        {model.badge}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            */}
-
             {/* ── 5. Behaviors & Toggles ── */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               <div>
-                <h3 style={{ fontSize: 15, fontWeight: 800, color: '#0F172A', margin: '0 0 3px' }}>Workspace Automation</h3>
-                <p style={{ fontSize: 13, color: '#64748B', margin: 0 }}>Refine interactive behaviors across the prompt enhancement canvas.</p>
+                <h3 style={{ fontSize: 15, fontWeight: 800, color: isDark ? D.textPrimary : '#0F172A', margin: '0 0 3px' }}>Workspace Automation</h3>
+                <p style={{ fontSize: 13, color: isDark ? D.textSecondary : '#64748B', margin: 0 }}>Refine interactive behaviors across the prompt enhancement canvas.</p>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
                   <div>
-                    <span style={{ fontSize: 13.5, fontWeight: 700, color: '#0F172A', display: 'block' }}>Show Side-by-Side Diff View</span>
-                    <span style={{ fontSize: 12, color: '#64748B' }}>Display token-level red/green diff highlighting by default on enhanced drafts.</span>
+                    <span style={{ fontSize: 13.5, fontWeight: 700, color: isDark ? D.textPrimary : '#0F172A', display: 'block' }}>Show Side-by-Side Diff View</span>
+                    <span style={{ fontSize: 12, color: isDark ? D.textSecondary : '#64748B' }}>Display token-level red/green diff highlighting by default on enhanced drafts.</span>
                   </div>
                   <ToggleSwitch enabled={showDiffByDefault} onToggle={() => handleToggleDiff(!showDiffByDefault)} />
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
                   <div>
-                    <span style={{ fontSize: 13.5, fontWeight: 700, color: '#0F172A', display: 'block' }}>Auto-Detect Prompt Intent</span>
-                    <span style={{ fontSize: 12, color: '#64748B' }}>Analyze raw prompt semantics to suggest role and template matches automatically.</span>
+                    <span style={{ fontSize: 13.5, fontWeight: 700, color: isDark ? D.textPrimary : '#0F172A', display: 'block' }}>Auto-Detect Prompt Intent</span>
+                    <span style={{ fontSize: 12, color: isDark ? D.textSecondary : '#64748B' }}>Analyze raw prompt semantics to suggest role and template matches automatically.</span>
                   </div>
                   <ToggleSwitch enabled={autoDetectIntent} onToggle={() => handleToggleIntent(!autoDetectIntent)} />
                 </div>
@@ -1501,7 +1466,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                borderTop: '1px solid rgba(124, 58, 237, 0.10)',
+                borderTop: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124, 58, 237, 0.10)'}`,
                 paddingTop: 20,
                 flexWrap: 'wrap',
                 gap: 12,
@@ -1509,7 +1474,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#10B981' }} />
-                <span style={{ fontSize: 12.5, color: '#64748B' }}>
+                <span style={{ fontSize: 12.5, color: isDark ? D.textMuted : '#64748B' }}>
                   {updatedAt ? `Last synced ${updatedAt}` : 'All changes auto-saved'}
                 </span>
               </div>

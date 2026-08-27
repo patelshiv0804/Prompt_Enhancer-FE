@@ -2,12 +2,15 @@
 
 import React from 'react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useTheme } from '@/theme/theme';
 
 export interface SettingsSkeletonProps {
   activeTab?: 'settings' | 'profile';
 }
 
 export default function SettingsSkeleton({ activeTab = 'settings' }: SettingsSkeletonProps) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const isDesktop = useMediaQuery('(min-width: 1081px)');
   const isTablet = useMediaQuery('(max-width: 1080px) and (min-width: 641px)');
   const isMobile = useMediaQuery('(max-width: 640px)');
@@ -96,10 +99,10 @@ export default function SettingsSkeleton({ activeTab = 'settings' }: SettingsSke
             {/* Identity Card Skeleton */}
             <div
               style={{
-                background: '#FFFFFF',
+                background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
                 borderRadius: 24,
-                border: '1px solid rgba(124, 58, 237, 0.12)',
-                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
+                border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124, 58, 237, 0.12)'}`,
+                boxShadow: isDark ? '0 4px 20px rgba(0, 0, 0, 0.35)' : '0 4px 20px rgba(0, 0, 0, 0.04)',
                 overflow: 'hidden',
               }}
             >
@@ -132,7 +135,7 @@ export default function SettingsSkeleton({ activeTab = 'settings' }: SettingsSke
                       width: 80,
                       height: 80,
                       borderRadius: '50%',
-                      border: '4px solid #FFFFFF',
+                      border: `4px solid ${isDark ? '#141320' : '#FFFFFF'}`,
                     }}
                   />
                 </div>
@@ -187,9 +190,9 @@ export default function SettingsSkeleton({ activeTab = 'settings' }: SettingsSke
             {/* KPI Metrics Skeleton */}
             <div
               style={{
-                background: '#FFFFFF',
+                background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
                 borderRadius: 24,
-                border: '1px solid rgba(124, 58, 237, 0.12)',
+                border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124, 58, 237, 0.12)'}`,
                 padding: '24px 26px',
                 display: 'flex',
                 flexDirection: 'column',
@@ -203,7 +206,7 @@ export default function SettingsSkeleton({ activeTab = 'settings' }: SettingsSke
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
                 {[1, 2, 3].map((_, i) => (
-                  <div key={i} style={{ background: '#F8FAFC', borderRadius: 16, border: '1px solid #E2E8F0', padding: '14px 10px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                  <div key={i} style={{ background: isDark ? 'rgba(14, 13, 20, 0.75)' : '#F8FAFC', borderRadius: 16, border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.06)' : '#E2E8F0'}`, padding: '14px 10px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
                     <div className="skeleton" style={{ width: 16, height: 16, borderRadius: '50%' }} />
                     <div className="skeleton" style={{ width: 36, height: 18, borderRadius: 4 }} />
                     <div className="skeleton" style={{ width: 45, height: 10, borderRadius: 4 }} />
@@ -230,9 +233,9 @@ export default function SettingsSkeleton({ activeTab = 'settings' }: SettingsSke
             {/* Badges Skeleton */}
             <div
               style={{
-                background: '#FFFFFF',
+                background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
                 borderRadius: 24,
-                border: '1px solid rgba(124, 58, 237, 0.12)',
+                border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124, 58, 237, 0.12)'}`,
                 padding: '24px 26px',
                 display: 'flex',
                 flexDirection: 'column',
@@ -246,7 +249,7 @@ export default function SettingsSkeleton({ activeTab = 'settings' }: SettingsSke
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
                 {[1, 2, 3, 4].map((_, i) => (
-                  <div key={i} style={{ padding: 12, borderRadius: 14, border: '1px solid #F1F5F9', background: '#FAF5FF', display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div key={i} style={{ padding: 12, borderRadius: 14, border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9'}`, background: isDark ? 'rgba(14, 13, 20, 0.75)' : '#FAF5FF', display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div className="skeleton" style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0 }} />
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
                       <div className="skeleton" style={{ width: '80%', height: 12, borderRadius: 4 }} />
@@ -265,10 +268,10 @@ export default function SettingsSkeleton({ activeTab = 'settings' }: SettingsSke
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24, width: '100%' }}>
           <div
             style={{
-              background: '#FFFFFF',
+              background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
               borderRadius: 24,
-              border: '1px solid rgba(124, 58, 237, 0.12)',
-              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
+              border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124, 58, 237, 0.12)'}`,
+              boxShadow: isDark ? '0 4px 24px rgba(0, 0, 0, 0.35)' : '0 4px 20px rgba(0, 0, 0, 0.04)',
               padding: isMobile ? '22px 18px' : '32px 36px',
               display: 'flex',
               flexDirection: 'column',
@@ -280,7 +283,7 @@ export default function SettingsSkeleton({ activeTab = 'settings' }: SettingsSke
               <div className="skeleton" style={{ width: 110, height: 16, borderRadius: 4 }} />
               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(3, 160px)', gap: 12 }}>
                 {[1, 2, 3].map((_, i) => (
-                  <div key={i} style={{ padding: '12px 8px', borderRadius: 14, border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                  <div key={i} style={{ padding: '12px 8px', borderRadius: 14, border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.10)' : '#E2E8F0'}`, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
                     <div className="skeleton" style={{ width: 42, height: 28, borderRadius: 6 }} />
                     <div className="skeleton" style={{ width: 45, height: 12, borderRadius: 4 }} />
                   </div>
@@ -288,7 +291,7 @@ export default function SettingsSkeleton({ activeTab = 'settings' }: SettingsSke
               </div>
             </div>
 
-            <div style={{ height: 1, background: 'rgba(124, 58, 237, 0.08)' }} />
+            <div style={{ height: 1, background: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124, 58, 237, 0.08)' }} />
 
             {/* 12 Roles Grid */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -304,7 +307,7 @@ export default function SettingsSkeleton({ activeTab = 'settings' }: SettingsSke
                 }}
               >
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((_, i) => (
-                  <div key={i} style={{ padding: '12px 14px', borderRadius: 14, border: '1px solid rgba(124, 58, 237, 0.10)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div key={i} style={{ padding: '12px 14px', borderRadius: 14, border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124, 58, 237, 0.10)'}`, display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div className="skeleton" style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0 }} />
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
                       <div className="skeleton" style={{ width: '70%', height: 13, borderRadius: 4 }} />
@@ -316,7 +319,7 @@ export default function SettingsSkeleton({ activeTab = 'settings' }: SettingsSke
             </div>
 
             {/* Mode Container */}
-            <div style={{ background: '#F8FAFC', borderRadius: 18, border: '1px solid #E2E8F0', padding: isMobile ? '16px 14px' : '20px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ background: isDark ? 'rgba(14, 13, 20, 0.85)' : '#F8FAFC', borderRadius: 18, border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0'}`, padding: isMobile ? '16px 14px' : '20px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div className="skeleton" style={{ width: 140, height: 18, borderRadius: 9999 }} />
                 <div className="skeleton" style={{ width: isMobile ? 120 : 200, height: 32, borderRadius: 8 }} />
