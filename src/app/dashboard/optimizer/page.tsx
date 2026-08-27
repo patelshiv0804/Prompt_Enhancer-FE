@@ -6,6 +6,7 @@ import { ComparisonBlock } from '@/features/optimizer';
 import ScoreSection from '@/features/optimizer/components/ScoreSection';
 import { apiClient, streamEnhance, type ReenhanceStreamDone } from '@/utils/apiClient';
 import { useAuth } from '@/context/AuthContext';
+import { getUserMessage } from '@/utils/errorMessages';
 
 const MODE_MAPPING: Record<string, { role: string; mode: string }> = {
   'General': { role: 'student', mode: 'study' },
@@ -139,7 +140,7 @@ function OptimizerPageContent() {
       }
     } catch (err: any) {
       console.error('Failed to load prompt details:', err);
-      setError('Could not load prompt history record.');
+      setError(getUserMessage(err, 'Could not load prompt history record.'));
     }
   };
 
@@ -164,7 +165,7 @@ function OptimizerPageContent() {
       await loadPromptDetails(loadedPromptId);
     } catch (err: any) {
       console.error('Failed to restore version:', err);
-      setError('Failed to switch version.');
+      setError(getUserMessage(err, 'Failed to switch version.'));
     } finally {
       setIsOptimizing(false);
     }
@@ -187,7 +188,7 @@ function OptimizerPageContent() {
       setIsAnalyzed(true);
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Failed to analyze prompt. Please try again.');
+      setError(getUserMessage(err, 'Failed to analyze prompt. Please try again.'));
     } finally {
       setIsAnalyzing(false);
     }
@@ -346,7 +347,7 @@ function OptimizerPageContent() {
           await runBlockingOptimize(payload, promptText);
         } catch (fbErr: any) {
           console.error(fbErr);
-          setError(fbErr.message || 'Failed to optimize prompt. Please try again.');
+          setError(getUserMessage(fbErr, 'Failed to optimize prompt. Please try again.'));
           setIsOptimizing(false);
         }
       },
@@ -435,7 +436,7 @@ function OptimizerPageContent() {
           await runBlockingReenhance(pId);
         } catch (fbErr: any) {
           console.error('Failed to re-enhance prompt:', fbErr);
-          setError(fbErr.message || 'Failed to re-enhance prompt. Please try again.');
+          setError(getUserMessage(fbErr, 'Failed to re-enhance prompt. Please try again.'));
         } finally {
           reenhanceInFlight.current = false;
           setIsOptimizing(false);

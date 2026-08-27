@@ -6,9 +6,11 @@ import { ArrowLeft, ArrowRight, CheckCircle, Eye, EyeOff, KeyRound, Lock, Mail, 
 import { useAuth } from '@/context/AuthContext';
 import { ThemeProvider, useTheme, D } from '@/theme/theme';
 import ThemeToggle from '@/components/ThemeToggle';
+import { getUserMessage } from '@/utils/errorMessages';
 
 declare global {
   interface Window {
+    __gsi_initialized?: boolean;
     google?: {
       accounts: {
         id: {
@@ -81,7 +83,7 @@ function AuthContent() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const getErrorMessage = (value: unknown) =>
-    value instanceof Error ? value.message : 'Authentication failed. Please try again.';
+    getUserMessage(value, 'Authentication failed. Please try again.');
 
   const startOtpTimer = () => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -109,7 +111,32 @@ function AuthContent() {
   };
 
   useEffect(() => {
-    if (!googleReady || !window.google || !googleClientId || googleInitRef.current) {
+    if (typeof window !== 'undefined' && window.google?.accounts?.id) {
+      setGoogleReady(true);
+      return;
+    }
+
+    const checkGoogleInterval = setInterval(() => {
+      if (typeof window !== 'undefined' && window.google?.accounts?.id) {
+        setGoogleReady(true);
+        clearInterval(checkGoogleInterval);
+      }
+    }, 200);
+
+    return () => clearInterval(checkGoogleInterval);
+  }, []);
+
+  const loginWithGoogleRef = useRef(loginWithGoogle);
+  useEffect(() => {
+    loginWithGoogleRef.current = loginWithGoogle;
+  }, [loginWithGoogle]);
+
+  useEffect(() => {
+    if (!googleReady || !window.google?.accounts?.id || !googleClientId) {
+      return;
+    }
+
+    if (window.__gsi_initialized) {
       return;
     }
 
@@ -124,7 +151,7 @@ function AuthContent() {
         setError(null);
         setIsSubmitting(true);
         try {
-          await loginWithGoogle(credential);
+          await loginWithGoogleRef.current(credential);
         } catch (err: unknown) {
           console.error(err);
           setError(getErrorMessage(err));
@@ -133,16 +160,19 @@ function AuthContent() {
       },
     });
 
+    window.__gsi_initialized = true;
     googleInitRef.current = true;
-  }, [googleClientId, googleReady, loginWithGoogle]);
+  }, [googleClientId, googleReady]);
 
   useEffect(() => {
-    if (!googleReady || !window.google || !googleButtonRef.current || !googleClientId) {
+    if (!googleReady || !window.google || !googleClientId || view !== 'auth') {
       return;
     }
 
+    let intervalId: NodeJS.Timeout;
+
     const renderGoogleBtn = () => {
-      if (!googleButtonRef.current || !window.google) return;
+      if (!googleButtonRef.current || !window.google?.accounts?.id) return false;
       const parentWidth = googleButtonRef.current.parentElement?.clientWidth || googleButtonRef.current.clientWidth || 320;
       googleButtonRef.current.innerHTML = '';
       window.google.accounts.id.renderButton(googleButtonRef.current, {
@@ -154,12 +184,23 @@ function AuthContent() {
         logo_alignment: 'left',
       });
       setGoogleButtonVisible(true);
+      return true;
     };
 
-    renderGoogleBtn();
+    if (!renderGoogleBtn()) {
+      intervalId = setInterval(() => {
+        if (renderGoogleBtn()) {
+          clearInterval(intervalId);
+        }
+      }, 50);
+    }
+
     window.addEventListener('resize', renderGoogleBtn);
-    return () => window.removeEventListener('resize', renderGoogleBtn);
-  }, [googleClientId, googleReady, tab, isDark]);
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+      window.removeEventListener('resize', renderGoogleBtn);
+    };
+  }, [googleClientId, googleReady, tab, view, isDark]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
