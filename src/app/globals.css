@@ -385,6 +385,31 @@ button:focus-visible {
   display: flex;
   height: 100vh;
   width: 100vw;
+  transition: background 0.4s ease, color 0.4s ease;
+}
+
+html.dark .dashboard-root {
+  --color-canvas: #0A0A0F;
+  --color-text-primary: #F5F4F8;
+  --color-text-secondary: #ABA9BC;
+  --color-surface: #141320;
+  --glass-bg: rgba(20, 19, 32, 0.75);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.3);
+  --glass-inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+  --color-dark-surface: #0A0A0F;
+  --color-dark-surface-2: #141320;
+  --color-dark-surface-3: #1A1827;
+  --color-dark-border: rgba(255, 255, 255, 0.09);
+  --color-dark-text-primary: #F5F4F8;
+  --color-dark-text-secondary: #ABA9BC;
+
+  background-color: #0A0A0F;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 10% 0%, rgba(139, 92, 246, 0.15), transparent 55%),
+    radial-gradient(ellipse 60% 50% at 90% 90%, rgba(236, 72, 153, 0.10), transparent 55%),
+    linear-gradient(180deg, #0A0A0F 0%, #0D0C14 50%, #0A0A0F 100%);
 }
 
 /* ── Dashboard Layout ── */
@@ -612,6 +637,12 @@ button:focus-visible {
   border-radius: 6px;
 }
 
+html.dark .skeleton,
+html.dark .dashboard-root .skeleton {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 25%, rgba(139, 92, 246, 0.12) 50%, rgba(255, 255, 255, 0.03) 75%);
+  background-size: 200% 100%;
+}
+
 @media (max-width: 1024px) {
   .workspace-container {
     padding: 0 32px;
@@ -651,6 +682,12 @@ button:focus-visible {
   box-shadow: 0 4px 14px rgba(124, 58, 237, 0.08);
 }
 
+html.dark .aure-nav-item:hover:not(.is-active) {
+  background: linear-gradient(90deg, rgba(139, 92, 246, 0.18) 0%, rgba(168, 85, 247, 0.08) 100%) !important;
+  color: #F5F4F8 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
 .aure-nav-item:active:not(.is-active) {
   transform: translateX(4px) scale(0.985);
   transition-duration: 120ms;
@@ -665,6 +702,10 @@ button:focus-visible {
 .aure-nav-item:hover:not(.is-active) .aure-nav-icon {
   color: #7C3AED !important;
   transform: scale(1.1);
+}
+
+html.dark .aure-nav-item:hover:not(.is-active) .aure-nav-icon {
+  color: #A78BFA !important;
 }
 
 /* Shortcut hint — slides + fades in when hovering its own row */
@@ -696,6 +737,10 @@ button:focus-visible {
   transform: translateX(3px);
 }
 
+html.dark .aure-recent-item:hover:not(.is-active) {
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
 .aure-recent-item:active:not(.is-active) {
   transform: translateX(3px) scale(0.99);
   transition-duration: 110ms;
@@ -718,6 +763,12 @@ button:focus-visible {
   box-shadow: 0 6px 16px rgba(124, 58, 237, 0.14);
 }
 
+html.dark .aure-rail-btn:hover:not(.is-active) {
+  background: rgba(139, 92, 246, 0.18) !important;
+  color: #A78BFA !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
 .aure-rail-btn:active {
   transform: translateY(-1px) scale(0.97);
   transition-duration: 110ms;
@@ -733,6 +784,10 @@ button:focus-visible {
 
 .aure-soft-btn:hover {
   background: rgba(124, 58, 237, 0.07) !important;
+}
+
+html.dark .aure-soft-btn:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
 }
 
 .aure-soft-btn:active {

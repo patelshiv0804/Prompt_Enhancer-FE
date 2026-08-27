@@ -125,16 +125,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   }, [theme, mounted]);
 
-  // Clean up when navigating to non-themed routes (e.g. /dashboard)
+  // Theme is applied globally across landing, auth, and dashboard routes
   useEffect(() => {
     return () => {
-      if (
-        typeof window !== "undefined" &&
-        window.location.pathname.startsWith("/dashboard")
-      ) {
-        document.documentElement.classList.remove("dark");
-        document.documentElement.style.colorScheme = "";
-      }
+      // Retain theme across client navigation
     };
   }, []);
 

@@ -48,13 +48,12 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-white text-foreground">
         {/* No-flash theme bootstrap. Runs synchronously before paint so a
-            returning dark-mode visitor never sees a white flash. Scoped to the
-            landing ("/") and auth ("/auth") routes. Mirrors
-            THEME_STORAGE_KEY in src/theme/theme.tsx. */}
+            returning dark-mode visitor never sees a white flash across all routes.
+            Mirrors THEME_STORAGE_KEY in src/theme/theme.tsx. */}
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "(function(){try{var p=location.pathname;if(p==='/'||p==='/auth'||p==='/auth/'){var t=localStorage.getItem('aure-theme');if(t==='dark'){var d=document.documentElement;d.classList.add('dark');d.style.colorScheme='dark';}}}catch(e){}})();",
+              "(function(){try{var t=localStorage.getItem('aure-theme');if(t==='dark'){var d=document.documentElement;d.classList.add('dark');d.style.colorScheme='dark';}}catch(e){}})();",
           }}
         />
         <AuthProvider>

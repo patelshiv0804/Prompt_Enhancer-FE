@@ -2,12 +2,15 @@
 
 import React, { useState } from 'react';
 import { Copy, Check, Code as CodeIcon } from 'lucide-react';
+import { useTheme, D } from '@/theme/theme';
 
 interface FormattedPromptViewerProps {
   content: string;
 }
 
 export default function FormattedPromptViewer({ content }: FormattedPromptViewerProps) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const [copiedCodeIndex, setCopiedCodeIndex] = useState<number | null>(null);
 
   if (!content) return null;
@@ -49,12 +52,11 @@ export default function FormattedPromptViewer({ content }: FormattedPromptViewer
 
   // Helper to render inline formatting (**bold**, `code`)
   const renderInline = (str: string) => {
-    // Split by ** for bold
     const parts = str.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
     return parts.map((part, i) => {
       if (part.startsWith('**') && part.endsWith('**')) {
         return (
-          <strong key={i} style={{ fontWeight: 700, color: 'var(--color-text-primary, #1E1B4B)' }}>
+          <strong key={i} style={{ fontWeight: 700, color: isDark ? '#FFFFFF' : 'var(--color-text-primary, #1E1B4B)' }}>
             {part.slice(2, -2)}
           </strong>
         );
@@ -64,8 +66,8 @@ export default function FormattedPromptViewer({ content }: FormattedPromptViewer
           <code
             key={i}
             style={{
-              background: 'rgba(124,58,237,0.08)',
-              color: '#6D28D9',
+              background: isDark ? 'rgba(139,92,246,0.18)' : 'rgba(124,58,237,0.08)',
+              color: isDark ? '#C084FC' : '#6D28D9',
               padding: '2px 6px',
               borderRadius: '6px',
               fontSize: '0.9em',
@@ -132,9 +134,9 @@ export default function FormattedPromptViewer({ content }: FormattedPromptViewer
               style={{
                 borderRadius: 14,
                 overflow: 'hidden',
-                background: '#0F172A',
-                border: '1px solid rgba(255,255,255,0.1)',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                background: '#0B0B12',
+                border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(124,58,237,0.15)'}`,
+                boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
                 margin: '8px 0',
               }}
             >
@@ -145,7 +147,7 @@ export default function FormattedPromptViewer({ content }: FormattedPromptViewer
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   padding: '8px 16px',
-                  background: '#1E293B',
+                  background: isDark ? '#141320' : '#1E293B',
                   borderBottom: '1px solid rgba(255,255,255,0.08)',
                   fontSize: 12,
                   color: '#94A3B8',
@@ -205,19 +207,15 @@ export default function FormattedPromptViewer({ content }: FormattedPromptViewer
               const trimmed = line.trim();
               if (!trimmed) return null;
 
-              // Horizontal separators are Markdown decoration, not prompt
-              // content. Hide them rather than showing raw --- rows.
               if (/^(---+|___+|\*\*\*+)$/.test(trimmed)) return null;
 
-              // Support every Markdown heading level so legacy `#### Title`
-              // content renders as a heading without exposing # characters.
               const headingMatch = trimmed.match(/^(#{1,6})\s+(.*)$/);
               if (headingMatch) {
                 const headingLevel = headingMatch[1].length;
                 const headingStyle = {
                   fontSize: headingLevel <= 2 ? 20 : headingLevel <= 4 ? 17 : 15,
                   fontWeight: 700,
-                  color: headingLevel <= 2 ? '#1E1B4B' : headingLevel <= 4 ? '#4C1D95' : '#6D28D9',
+                  color: headingLevel <= 2 ? (isDark ? '#F5F4F8' : '#1E1B4B') : headingLevel <= 4 ? (isDark ? '#C084FC' : '#4C1D95') : (isDark ? '#A78BFA' : '#6D28D9'),
                   margin: '10px 0 4px',
                   letterSpacing: headingLevel <= 2 ? '-0.02em' : '-0.01em',
                   fontFamily: "'Geist', sans-serif",
@@ -225,7 +223,6 @@ export default function FormattedPromptViewer({ content }: FormattedPromptViewer
                 return <div key={lIdx} style={headingStyle}>{renderInline(headingMatch[2])}</div>;
               }
 
-              // Check for Headings (#, ##, ### or **Header:**)
               if (trimmed.startsWith('# ')) {
                 return (
                   <h1
@@ -233,7 +230,7 @@ export default function FormattedPromptViewer({ content }: FormattedPromptViewer
                     style={{
                       fontSize: 20,
                       fontWeight: 800,
-                      color: '#1E1B4B',
+                      color: isDark ? '#F5F4F8' : '#1E1B4B',
                       margin: '12px 0 4px',
                       letterSpacing: '-0.02em',
                       fontFamily: "'Geist', sans-serif",
@@ -250,7 +247,7 @@ export default function FormattedPromptViewer({ content }: FormattedPromptViewer
                     style={{
                       fontSize: 17,
                       fontWeight: 700,
-                      color: '#4C1D95',
+                      color: isDark ? '#C084FC' : '#4C1D95',
                       margin: '10px 0 4px',
                       letterSpacing: '-0.01em',
                       fontFamily: "'Geist', sans-serif",
@@ -267,7 +264,7 @@ export default function FormattedPromptViewer({ content }: FormattedPromptViewer
                     style={{
                       fontSize: 15,
                       fontWeight: 700,
-                      color: '#6D28D9',
+                      color: isDark ? '#A78BFA' : '#6D28D9',
                       margin: '8px 0 2px',
                       fontFamily: "'Geist', sans-serif",
                     }}
@@ -286,16 +283,18 @@ export default function FormattedPromptViewer({ content }: FormattedPromptViewer
                     style={{
                       marginTop: 10,
                       padding: '10px 14px',
-                      background: 'linear-gradient(135deg, rgba(124,58,237,0.06) 0%, rgba(167,139,250,0.03) 100%)',
-                      borderLeft: '4px solid #7C3AED',
+                      background: isDark
+                        ? 'linear-gradient(135deg, rgba(139,92,246,0.14) 0%, rgba(167,139,250,0.06) 100%)'
+                        : 'linear-gradient(135deg, rgba(124,58,237,0.06) 0%, rgba(167,139,250,0.03) 100%)',
+                      borderLeft: '4px solid #8B5CF6',
                       borderRadius: '0 10px 10px 0',
                     }}
                   >
-                    <div style={{ fontWeight: 700, color: '#5B21B6', fontSize: 14, marginBottom: sectionMatch[2] ? 4 : 0 }}>
+                    <div style={{ fontWeight: 700, color: isDark ? '#C084FC' : '#5B21B6', fontSize: 14, marginBottom: sectionMatch[2] ? 4 : 0 }}>
                       {renderInline(sectionMatch[1])}
                     </div>
                     {sectionMatch[2] && (
-                      <div style={{ color: '#374151', fontSize: 13.5, lineHeight: 1.6 }}>
+                      <div style={{ color: isDark ? D.textSecondary : '#374151', fontSize: 13.5, lineHeight: 1.6 }}>
                         {renderInline(sectionMatch[2])}
                       </div>
                     )}
@@ -307,8 +306,8 @@ export default function FormattedPromptViewer({ content }: FormattedPromptViewer
               if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
                 return (
                   <div key={lIdx} style={{ display: 'flex', gap: 10, paddingLeft: 8, alignItems: 'flex-start' }}>
-                    <span style={{ color: '#7C3AED', fontWeight: 800, fontSize: 16, lineHeight: '18px' }}>•</span>
-                    <div style={{ color: '#374151', flex: 1 }}>{renderInline(trimmed.slice(2))}</div>
+                    <span style={{ color: isDark ? '#A78BFA' : '#7C3AED', fontWeight: 800, fontSize: 16, lineHeight: '18px' }}>•</span>
+                    <div style={{ color: isDark ? D.textPrimary : '#374151', flex: 1 }}>{renderInline(trimmed.slice(2))}</div>
                   </div>
                 );
               }
@@ -320,8 +319,8 @@ export default function FormattedPromptViewer({ content }: FormattedPromptViewer
                   <div key={lIdx} style={{ display: 'flex', gap: 10, paddingLeft: 6, alignItems: 'flex-start' }}>
                     <span
                       style={{
-                        background: 'rgba(124,58,237,0.1)',
-                        color: '#6D28D9',
+                        background: isDark ? 'rgba(139,92,246,0.2)' : 'rgba(124,58,237,0.1)',
+                        color: isDark ? '#C084FC' : '#6D28D9',
                         fontWeight: 700,
                         fontSize: 11,
                         borderRadius: '50%',
@@ -336,14 +335,14 @@ export default function FormattedPromptViewer({ content }: FormattedPromptViewer
                     >
                       {numMatch[1]}
                     </span>
-                    <div style={{ color: '#374151', flex: 1 }}>{renderInline(numMatch[2])}</div>
+                    <div style={{ color: isDark ? D.textPrimary : '#374151', flex: 1 }}>{renderInline(numMatch[2])}</div>
                   </div>
                 );
               }
 
               // Standard paragraph line
               return (
-                <p key={lIdx} style={{ margin: 0, color: '#374151' }}>
+                <p key={lIdx} style={{ margin: 0, color: isDark ? D.textPrimary : '#374151' }}>
                   {renderInline(trimmed)}
                 </p>
               );

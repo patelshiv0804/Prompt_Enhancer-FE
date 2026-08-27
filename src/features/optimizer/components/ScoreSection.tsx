@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { CheckCircle2, AlertTriangle, Minus, TrendingUp, Sparkles } from 'lucide-react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useTheme, D } from '@/theme/theme';
 
 function useCountUp(target: number, active: boolean, duration = 1200): number {
   const [value, setValue] = useState(0);
@@ -42,6 +43,8 @@ interface ScoreSectionProps {
 }
 
 export default function ScoreSection({ isAnalyzed, isOptimized, originalAnalysis, enhancedAnalysis, toolRecommendations }: ScoreSectionProps) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const [ready, setReady] = useState(false);
   const isMobile = useMediaQuery('(max-width: 768px)');
 
@@ -64,11 +67,12 @@ export default function ScoreSection({ isAnalyzed, isOptimized, originalAnalysis
       <div style={{ width: '100%', marginTop: 32, animation: 'fadeInRise 400ms ease-out forwards' }}>
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14,
-          padding: '28px 36px', background: '#FFFFFF', border: '1px solid rgba(124,58,237,0.14)',
-          borderRadius: 24, boxShadow: '0 4px 24px rgba(109,40,217,0.06)',
+          padding: '28px 36px', background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
+          border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(124,58,237,0.14)'}`,
+          borderRadius: 24, boxShadow: isDark ? '0 4px 24px rgba(0,0,0,0.4)' : '0 4px 24px rgba(109,40,217,0.06)',
         }}>
           <Sparkles size={20} style={{ color: 'var(--color-primary)', animation: 'spin 2s linear infinite' }} />
-          <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text-secondary)', fontFamily: "'Geist', sans-serif" }}>
+          <span style={{ fontSize: 14, fontWeight: 600, color: isDark ? D.textSecondary : 'var(--color-text-secondary)', fontFamily: "'Geist', sans-serif" }}>
             Calculating deep quality scores & multi-dimensional analysis...
           </span>
         </div>
@@ -156,10 +160,9 @@ export default function ScoreSection({ isAnalyzed, isOptimized, originalAnalysis
   const iconColor = (status: string) => {
     if (status === 'good') return 'var(--color-success)';
     if (status === 'warning') return 'var(--color-primary)';
-    return 'var(--color-text-secondary)';
+    return isDark ? D.textMuted : 'var(--color-text-secondary)';
   };
 
-  // Compile actionable suggestions from all dimensions dynamically
   const activeDims = isOptimized ? enhDims : origDims;
   const allSuggestions = Object.entries(activeDims).flatMap(([key, dimVal]: any) =>
     (dimVal.suggestions || []).map((s: string) => ({
@@ -172,25 +175,28 @@ export default function ScoreSection({ isAnalyzed, isOptimized, originalAnalysis
     <div style={{ width: '100%', marginTop: 32, animation: 'fadeInRise 500ms ease-out forwards' }}>
       <div
         style={{
-          display: 'flex', flexDirection: 'column', background: '#FFFFFF', border: '1px solid rgba(124,58,237,0.10)',
-          borderRadius: isMobile ? 20 : 28, boxShadow: '0 4px 24px rgba(109,40,217,0.07), 0 1px 4px rgba(0,0,0,0.04)',
+          display: 'flex', flexDirection: 'column', background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
+          border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.09)' : 'rgba(124,58,237,0.10)'}`,
+          borderRadius: isMobile ? 20 : 28,
+          boxShadow: isDark
+            ? '0 4px 28px rgba(0,0,0,0.5), 0 0 20px rgba(139,92,246,0.04)'
+            : '0 4px 24px rgba(109,40,217,0.07), 0 1px 4px rgba(0,0,0,0.04)',
           padding: isMobile ? 20 : 32, position: 'relative', overflow: 'hidden',
           transition: 'transform 300ms ease-in-out, box-shadow 300ms ease-in-out',
         }}
-        className="hover:translate-y-[-3px] hover:shadow-[0_12px_48px_rgba(109,40,217,0.10),0_4px_12px_rgba(0,0,0,0.05)]"
       >
-        {/* Top score ring and 6 dimension cards — rendered only during Optimize mode */}
+        {/* Top score ring and 6 dimension cards */}
         {isOptimized && (
           <div style={{ display: 'flex', gap: isMobile ? 24 : 40, flexWrap: 'wrap', width: '100%', marginBottom: 8 }}>
             {/* Left: Ring */}
             <div style={{
               flex: isMobile ? '1 1 100%' : '0 0 200px', display: 'flex', flexDirection: 'column', alignItems: 'center',
-              borderRight: isMobile ? 'none' : '1px solid rgba(0,0,0,0.07)', paddingRight: isMobile ? 0 : 40,
-              borderBottom: isMobile ? '1px solid rgba(0,0,0,0.07)' : 'none', paddingBottom: isMobile ? 24 : 0,
+              borderRight: isMobile ? 'none' : `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)'}`, paddingRight: isMobile ? 0 : 40,
+              borderBottom: isMobile ? `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)'}` : 'none', paddingBottom: isMobile ? 24 : 0,
             }}>
               <div style={{ position: 'relative', width: 120, height: 120, marginBottom: 16 }}>
                 <svg style={{ transform: 'rotate(-90deg)' }} width="120" height="120">
-                  <circle cx="60" cy="60" r={radius} fill="none" stroke="rgba(124,58,237,0.10)" strokeWidth="8" />
+                  <circle cx="60" cy="60" r={radius} fill="none" stroke={isDark ? 'rgba(255,255,255,0.08)' : 'rgba(124,58,237,0.10)'} strokeWidth="8" />
                   <circle
                     cx="60" cy="60" r={radius} fill="none"
                     stroke="var(--color-primary)" strokeWidth="8" strokeLinecap="round"
@@ -199,7 +205,7 @@ export default function ScoreSection({ isAnalyzed, isOptimized, originalAnalysis
                   />
                 </svg>
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontSize: 36, fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: -1 }}>{animatedScore}</span>
+                  <span style={{ fontSize: 36, fontWeight: 700, color: isDark ? D.textPrimary : 'var(--color-text-primary)', letterSpacing: -1 }}>{animatedScore}</span>
                 </div>
               </div>
 
@@ -220,11 +226,11 @@ export default function ScoreSection({ isAnalyzed, isOptimized, originalAnalysis
 
               <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
-                  <span style={{ color: 'var(--color-text-secondary)' }}>Before</span>
-                  <span style={{ fontWeight: 600, color: 'var(--color-text-secondary)' }}>{origScore}</span>
+                  <span style={{ color: isDark ? D.textSecondary : 'var(--color-text-secondary)' }}>Before</span>
+                  <span style={{ fontWeight: 600, color: isDark ? D.textSecondary : 'var(--color-text-secondary)' }}>{origScore}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
-                  <span style={{ color: 'var(--color-text-secondary)' }}>After</span>
+                  <span style={{ color: isDark ? D.textSecondary : 'var(--color-text-secondary)' }}>After</span>
                   <span style={{ fontWeight: 700, color: 'var(--color-success)' }}>{enhScore}</span>
                 </div>
               </div>
@@ -239,33 +245,34 @@ export default function ScoreSection({ isAnalyzed, isOptimized, originalAnalysis
                   <div
                     key={dim.id}
                     style={{
-                      background: 'rgba(124,58,237,0.03)', border: '1px solid rgba(124,58,237,0.09)',
+                      background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(124,58,237,0.03)',
+                      border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(124,58,237,0.09)'}`,
                       borderRadius: 12, padding: 16, position: 'relative', overflow: 'hidden',
                       display: 'flex', flexDirection: 'column', gap: 8,
                       transition: 'transform 250ms ease, box-shadow 250ms ease, background 250ms ease',
                     }}
-                    className="hover:translate-y-[-3px] hover:!bg-[rgba(124,58,237,0.05)] hover:shadow-[0_8px_24px_rgba(109,40,217,0.09)]"
+                    className="hover:translate-y-[-3px]"
                   >
                     {/* Colored edge bar */}
                     <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: 3, borderRadius: '3px 0 0 3px', background: edgeColor(dim.status) }} />
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <Icon size={15} style={{ color: iconColor(dim.status), flexShrink: 0 }} />
-                      <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text-primary)', flex: 1 }}>{dim.label}</span>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: isDark ? D.textPrimary : 'var(--color-text-primary)', flex: 1 }}>{dim.label}</span>
                       <div style={{ marginLeft: 'auto', flexShrink: 0 }}>
                         <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600 }}>
-                          <span style={{ color: 'var(--color-text-secondary)', fontWeight: 500 }}>{dim.scoreBefore}</span>
-                          <span style={{ color: 'var(--color-text-secondary)', fontSize: 10 }}>→</span>
+                          <span style={{ color: isDark ? D.textMuted : 'var(--color-text-secondary)', fontWeight: 500 }}>{dim.scoreBefore}</span>
+                          <span style={{ color: isDark ? D.textMuted : 'var(--color-text-secondary)', fontSize: 10 }}>→</span>
                           <span style={{ fontWeight: 700, color: scoreColor(dim.scoreAfter) }}>{dim.scoreAfter}</span>
                         </span>
                       </div>
                     </div>
 
-                    <div style={{ height: 3, background: 'rgba(124,58,237,0.08)', borderRadius: 99, overflow: 'hidden', margin: '2px 0 4px' }}>
+                    <div style={{ height: 3, background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(124,58,237,0.08)', borderRadius: 99, overflow: 'hidden', margin: '2px 0 4px' }}>
                       <div style={{ height: '100%', borderRadius: 99, width: `${displayed}%`, background: scoreColor(displayed), transition: 'width 0.8s ease-out' }} />
                     </div>
 
-                    <p style={{ fontSize: 12, color: 'var(--color-text-secondary)', lineHeight: 1.5, margin: 0, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }} title={dim.desc || 'No details provided.'}>{dim.desc || 'No details provided.'}</p>
+                    <p style={{ fontSize: 12, color: isDark ? D.textSecondary : 'var(--color-text-secondary)', lineHeight: 1.5, margin: 0, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }} title={dim.desc || 'No details provided.'}>{dim.desc || 'No details provided.'}</p>
                   </div>
                 );
               })}
@@ -275,15 +282,15 @@ export default function ScoreSection({ isAnalyzed, isOptimized, originalAnalysis
 
         {/* Recommended AI Tools */}
         {toolRecommendations && toolRecommendations.tools && toolRecommendations.tools.length > 0 && (
-          <div style={{ marginTop: isOptimized ? 28 : 0, paddingTop: isOptimized ? 20 : 0, borderTop: isOptimized ? '1px solid rgba(0,0,0,0.07)' : 'none', width: '100%' }}>
+          <div style={{ marginTop: isOptimized ? 28 : 0, paddingTop: isOptimized ? 20 : 0, borderTop: isOptimized ? `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)'}` : 'none', width: '100%' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Sparkles size={16} style={{ color: '#7C3AED' }} />
-                <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0, fontFamily: "'Geist', sans-serif" }}>
+                <Sparkles size={16} style={{ color: '#8B5CF6' }} />
+                <h3 style={{ fontSize: 15, fontWeight: 700, color: isDark ? D.textPrimary : 'var(--color-text-primary)', margin: 0, fontFamily: "'Geist', sans-serif" }}>
                   Recommended AI Tools for Best Execution
                 </h3>
                 {toolRecommendations.matched_task && (
-                  <span style={{ fontSize: 11, fontWeight: 600, color: '#6D28D9', background: 'rgba(124,58,237,0.08)', padding: '2px 8px', borderRadius: 9999 }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: isDark ? '#C084FC' : '#6D28D9', background: isDark ? 'rgba(139,92,246,0.18)' : 'rgba(124,58,237,0.08)', padding: '2px 8px', borderRadius: 9999 }}>
                     Task: {toolRecommendations.matched_task}
                   </span>
                 )}
@@ -296,10 +303,14 @@ export default function ScoreSection({ isAnalyzed, isOptimized, originalAnalysis
                   key={t.name}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 12, padding: '12px 18px',
-                    background: t.rank === 1 ? 'linear-gradient(135deg, rgba(124,58,237,0.09) 0%, rgba(167,139,250,0.04) 100%)' : 'rgba(124,58,237,0.03)',
-                    border: t.rank === 1 ? '1px solid rgba(124,58,237,0.22)' : '1px solid rgba(124,58,237,0.08)',
+                    background: t.rank === 1
+                      ? (isDark ? 'linear-gradient(135deg, rgba(139,92,246,0.18) 0%, rgba(168,85,247,0.08) 100%)' : 'linear-gradient(135deg, rgba(124,58,237,0.09) 0%, rgba(167,139,250,0.04) 100%)')
+                      : (isDark ? 'rgba(255,255,255,0.04)' : 'rgba(124,58,237,0.03)'),
+                    border: t.rank === 1
+                      ? `1px solid ${isDark ? 'rgba(167,139,250,0.35)' : 'rgba(124,58,237,0.22)'}`
+                      : `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(124,58,237,0.08)'}`,
                     borderRadius: 14, flex: '1 1 180px', minWidth: 160,
-                    boxShadow: t.rank === 1 ? '0 4px 14px rgba(124,58,237,0.08)' : 'none',
+                    boxShadow: t.rank === 1 ? (isDark ? '0 4px 14px rgba(0,0,0,0.4)' : '0 4px 14px rgba(124,58,237,0.08)') : 'none',
                   }}
                 >
                   <span
@@ -313,8 +324,8 @@ export default function ScoreSection({ isAnalyzed, isOptimized, originalAnalysis
                     #{t.rank}
                   </span>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text-primary)' }}>{t.name}</span>
-                    <span style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: isDark ? D.textPrimary : 'var(--color-text-primary)' }}>{t.name}</span>
+                    <span style={{ fontSize: 11, color: isDark ? D.textSecondary : 'var(--color-text-secondary)' }}>
                       {t.rank === 1 ? 'Primary Recommendation' : `Alternative #${t.rank}`}
                     </span>
                   </div>
@@ -326,21 +337,22 @@ export default function ScoreSection({ isAnalyzed, isOptimized, originalAnalysis
 
         {/* Dynamic Actionable Recommendations */}
         {allSuggestions.length > 0 && (
-          <div style={{ marginTop: (isOptimized || (toolRecommendations && toolRecommendations.tools && toolRecommendations.tools.length > 0)) ? 28 : 0, paddingTop: (isOptimized || (toolRecommendations && toolRecommendations.tools && toolRecommendations.tools.length > 0)) ? 20 : 0, borderTop: (isOptimized || (toolRecommendations && toolRecommendations.tools && toolRecommendations.tools.length > 0)) ? '1px solid rgba(0,0,0,0.07)' : 'none', width: '100%' }}>
-            <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: 16, fontFamily: "'Geist', sans-serif" }}>
+          <div style={{ marginTop: (isOptimized || (toolRecommendations && toolRecommendations.tools && toolRecommendations.tools.length > 0)) ? 28 : 0, paddingTop: (isOptimized || (toolRecommendations && toolRecommendations.tools && toolRecommendations.tools.length > 0)) ? 20 : 0, borderTop: (isOptimized || (toolRecommendations && toolRecommendations.tools && toolRecommendations.tools.length > 0)) ? `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)'}` : 'none', width: '100%' }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: isDark ? D.textPrimary : 'var(--color-text-primary)', marginBottom: 16, fontFamily: "'Geist', sans-serif" }}>
               Actionable Recommendations
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {allSuggestions.map((s: any, idx: number) => (
                 <div key={idx} style={{
                   display: 'flex', gap: 12, padding: '12px 16px',
-                  background: 'rgba(124,58,237,0.02)', border: '1px solid rgba(124,58,237,0.07)',
-                  borderRadius: 12, fontSize: 13, color: 'var(--color-text-secondary)',
+                  background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(124,58,237,0.02)',
+                  border: `1px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(124,58,237,0.07)'}`,
+                  borderRadius: 12, fontSize: 13, color: isDark ? D.textSecondary : 'var(--color-text-secondary)',
                   lineHeight: 1.5, alignItems: 'center'
                 }}>
                   <span style={{
                     fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
-                    color: 'var(--color-primary)', background: 'rgba(124,58,237,0.08)',
+                    color: isDark ? '#C084FC' : 'var(--color-primary)', background: isDark ? 'rgba(139,92,246,0.18)' : 'rgba(124,58,237,0.08)',
                     padding: '2px 8px', borderRadius: 9999, flexShrink: 0
                   }}>
                     {s.dimension}

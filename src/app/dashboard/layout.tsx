@@ -8,6 +8,8 @@ import AuthGuard from '@/components/layout/AuthGuard';
 import { useAuth } from '@/context/AuthContext';
 import { OnboardingModal } from '@/features/onboarding/components/OnboardingModal';
 
+import { ThemeProvider } from '@/theme/theme';
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -48,27 +50,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   return (
-    <AuthGuard>
-      <div className="dashboard-root">
-        <div className="app-container">
-          <Sidebar />
-          <main className="main-content">
-            <div className={`content-scroll${isChat ? ' content-scroll--chat' : ''}`}>
-              {/* Header only for non-chat pages that need it */}
-              {!isChat && (pathname.includes('/optimizer') || pathname.includes('/history') || pathname.includes('/vault') || pathname === '/dashboard') && (
-                <Header activeTab={activeTab} onTabChange={handleTabChange} />
-              )}
-              {children}
-            </div>
-          </main>
+    <ThemeProvider>
+      <AuthGuard>
+        <div className="dashboard-root">
+          <div className="app-container">
+            <Sidebar />
+            <main className="main-content">
+              <div className={`content-scroll${isChat ? ' content-scroll--chat' : ''}`}>
+                {/* Header only for non-chat pages that need it */}
+                {!isChat && (pathname.includes('/optimizer') || pathname.includes('/history') || pathname.includes('/vault') || pathname === '/dashboard') && (
+                  <Header activeTab={activeTab} onTabChange={handleTabChange} />
+                )}
+                {children}
+              </div>
+            </main>
+          </div>
         </div>
-      </div>
 
-      {/* Onboarding Flow Modal */}
-      <OnboardingModal
-        isOpen={isOnboardingOpen}
-        onClose={() => setIsOnboardingOpen(false)}
-      />
-    </AuthGuard>
+        {/* Onboarding Flow Modal */}
+        <OnboardingModal
+          isOpen={isOnboardingOpen}
+          onClose={() => setIsOnboardingOpen(false)}
+        />
+      </AuthGuard>
+    </ThemeProvider>
   );
 }

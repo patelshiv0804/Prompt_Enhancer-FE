@@ -15,6 +15,7 @@ import FormattedPromptViewer from './FormattedPromptViewer';
 
 import { ROLES, ROLE_MODES, getModeIcon } from '@/constants/roles';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useTheme, D } from '@/theme/theme';
 
 function scoreColor(s: number) {
   if (s >= 80) return 'var(--color-success)';
@@ -71,6 +72,9 @@ function formatPromptText(text?: string): string {
 
 /* ── Inline Score Panel ─────────────────────────────────────────────────── */
 function InlineScorePanel({ active, analysisResult }: { active: boolean; analysisResult: any }) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
   const score = analysisResult?.overall_score || 0;
   const animScore = useCountUp(score, active);
   const radius = 44;
@@ -95,16 +99,16 @@ function InlineScorePanel({ active, analysisResult }: { active: boolean; analysi
   const iconCol = (status: string) => {
     if (status === 'good') return 'var(--color-success)';
     if (status === 'warning') return 'var(--color-primary)';
-    return 'var(--color-text-secondary)';
+    return isDark ? D.textMuted : 'var(--color-text-secondary)';
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20, flex: 1 }}>
       {/* Top row: ring + meta */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 20, paddingBottom: 16, borderBottom: '1px solid rgba(124,58,237,0.08)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 20, paddingBottom: 16, borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(124,58,237,0.08)'}` }}>
         <div style={{ position: 'relative', width: 110, height: 110, flexShrink: 0 }}>
           <svg width="110" height="110" style={{ transform: 'rotate(-90deg)' }}>
-            <circle cx="55" cy="55" r={radius} fill="none" stroke="rgba(124,58,237,0.10)" strokeWidth="8" />
+            <circle cx="55" cy="55" r={radius} fill="none" stroke={isDark ? 'rgba(255,255,255,0.08)' : 'rgba(124,58,237,0.10)'} strokeWidth="8" />
             <circle
               cx="55" cy="55" r={radius} fill="none"
               stroke="var(--color-primary)" strokeWidth="8" strokeLinecap="round"
@@ -113,7 +117,7 @@ function InlineScorePanel({ active, analysisResult }: { active: boolean; analysi
             />
           </svg>
           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontSize: 30, fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: -1.5 }}>{animScore}</span>
+            <span style={{ fontSize: 30, fontWeight: 700, color: isDark ? D.textPrimary : 'var(--color-text-primary)', letterSpacing: -1.5 }}>{animScore}</span>
           </div>
         </div>
 
@@ -121,7 +125,7 @@ function InlineScorePanel({ active, analysisResult }: { active: boolean; analysi
           <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-primary)', letterSpacing: -0.3 }}>
             {scoreLabel(score)}
           </div>
-          <p style={{ fontSize: 12, color: 'var(--color-text-secondary)', lineHeight: 1.4, margin: 0 }}>
+          <p style={{ fontSize: 12, color: isDark ? D.textSecondary : 'var(--color-text-secondary)', lineHeight: 1.4, margin: 0 }}>
             {analysisResult?.summary || 'Run Optimize to improve your score'}
           </p>
         </div>
@@ -136,27 +140,28 @@ function InlineScorePanel({ active, analysisResult }: { active: boolean; analysi
             <div
               key={dim.id}
               style={{
-                background: 'rgba(124,58,237,0.03)', border: '1px solid rgba(124,58,237,0.09)',
+                background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(124,58,237,0.03)',
+                border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(124,58,237,0.09)'}`,
                 borderRadius: 12, padding: '10px 12px', position: 'relative', overflow: 'hidden',
                 display: 'flex', flexDirection: 'column', gap: 4,
                 transition: 'transform 250ms ease, box-shadow 250ms ease, background 250ms ease',
                 animationDelay: active ? `${i * 60}ms` : '0ms',
               }}
-              className="hover:translate-y-[-2px] hover:!bg-[rgba(124,58,237,0.06)] hover:shadow-[0_6px_20px_rgba(109,40,217,0.09)]"
+              className="hover:translate-y-[-2px]"
             >
               <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: 3, borderRadius: '3px 0 0 3px', background: edgeBg(dim.status) }} />
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <Icon size={14} style={{ color: iconCol(dim.status), flexShrink: 0 }} />
-                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)', flex: 1 }}>{dim.label}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: isDark ? D.textPrimary : 'var(--color-text-primary)', flex: 1 }}>{dim.label}</span>
                 <span style={{ fontSize: 14, fontWeight: 700, flexShrink: 0, color: scoreColor(scoreVal) }}>{scoreVal}</span>
               </div>
-              <div style={{ height: 3, background: 'rgba(124,58,237,0.08)', borderRadius: 99, overflow: 'hidden' }}>
+              <div style={{ height: 3, background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(124,58,237,0.08)', borderRadius: 99, overflow: 'hidden' }}>
                 <div style={{
                   height: '100%', borderRadius: 99, background: scoreColor(scoreVal),
                   width: active ? `${scoreVal}%` : '0%', transition: `width 0.8s ease-out ${i * 60}ms`,
                 }} />
               </div>
-              <p style={{ fontSize: 11, color: 'var(--color-text-secondary)', lineHeight: 1.4, margin: 0, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={dim.desc}>{dim.desc}</p>
+              <p style={{ fontSize: 11, color: isDark ? D.textMuted : 'var(--color-text-secondary)', lineHeight: 1.4, margin: 0, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={dim.desc}>{dim.desc}</p>
             </div>
           );
         })}
@@ -203,6 +208,9 @@ export default function ComparisonBlock({
   analysisResult, optimizationResult, streamingText = '', versions = [], activeVersionNumber = null, onRestoreVersion,
   initialOriginalPromptText = '', templateName = null, onClearTemplate,
 }: ComparisonBlockProps) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
   const [originalText, setOriginalText] = useState(
     'write a cinematic short about an astronaut who discovers a garden on mars. make it emotional.'
   );
@@ -277,6 +285,11 @@ export default function ComparisonBlock({
     height: stackCards ? 'auto' : 780,
     maxHeight: stackCards ? 'none' : 780,
     minHeight: stackCards ? (isMobile ? 540 : 460) : undefined,
+    background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
+    border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.09)' : 'rgba(124,58,237,0.10)'}`,
+    boxShadow: isDark
+      ? '0 4px 28px rgba(0,0,0,0.5), 0 0 20px rgba(139,92,246,0.04)'
+      : '0 4px 24px rgba(109,40,217,0.07), 0 1px 4px rgba(0,0,0,0.04)',
   };
 
   return (
@@ -289,32 +302,34 @@ export default function ComparisonBlock({
           ...responsiveCard,
           overflowY: 'auto',
           scrollbarWidth: 'thin',
-          scrollbarColor: 'rgba(124,58,237,0.2) transparent',
+          scrollbarColor: isDark ? 'rgba(139,92,246,0.25) transparent' : 'rgba(124,58,237,0.2) transparent',
         }}
         layout
         transition={{ type: 'spring', bounce: 0, duration: 0.6 }}
-        className="hover:translate-y-[-3px] hover:shadow-[0_12px_48px_rgba(109,40,217,0.10),0_4px_12px_rgba(0,0,0,0.05)]"
       >
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap', marginBottom: isMobile ? 16 : 24 }}>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', letterSpacing: '1.2px', textTransform: 'uppercase', marginBottom: isMobile ? 4 : 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: isDark ? D.textMuted : 'var(--color-text-secondary)', letterSpacing: '1.2px', textTransform: 'uppercase', marginBottom: isMobile ? 4 : 8 }}>
               Your Prompt
             </div>
-            <h2 style={{ fontSize: isMobile ? 16 : 18, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0, letterSpacing: -0.3 }}>
+            <h2 style={{ fontSize: isMobile ? 16 : 18, fontWeight: 700, color: isDark ? D.textPrimary : 'var(--color-text-primary)', margin: 0, letterSpacing: -0.3 }}>
               Paste or write below
             </h2>
           </div>
 
-          {/* Applied-template chip — shows which library template will drive the
-              enhancement. Dismissing it reverts to the normal (auto-retrieval) flow. */}
+          {/* Applied-template chip */}
           {templateName && (
             <div
               style={{
                 display: 'flex', alignItems: 'center', gap: 10,
                 padding: '7px 8px', maxWidth: 240, borderRadius: 14,
-                background: 'linear-gradient(160deg, rgba(167,139,250,0.20) 0%, rgba(196,181,253,0.10) 100%)',
-                border: '1px solid rgba(124,58,237,0.28)',
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6), 0 3px 12px rgba(124,58,237,0.12)',
+                background: isDark
+                  ? 'linear-gradient(160deg, rgba(139,92,246,0.20) 0%, rgba(168,85,247,0.10) 100%)'
+                  : 'linear-gradient(160deg, rgba(167,139,250,0.20) 0%, rgba(196,181,253,0.10) 100%)',
+                border: `1px solid ${isDark ? 'rgba(167,139,250,0.35)' : 'rgba(124,58,237,0.28)'}`,
+                boxShadow: isDark
+                  ? 'inset 0 1px 0 rgba(255,255,255,0.1), 0 3px 12px rgba(0,0,0,0.4)'
+                  : 'inset 0 1px 0 rgba(255,255,255,0.6), 0 3px 12px rgba(124,58,237,0.12)',
                 flexShrink: 0,
               }}
             >
@@ -323,13 +338,13 @@ export default function ComparisonBlock({
               </span>
               <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
                 <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: 'var(--color-primary)', lineHeight: 1 }}>Template in use</span>
-                <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.25 }} title={templateName}>{templateName}</span>
+                <span style={{ fontSize: 12.5, fontWeight: 700, color: isDark ? D.textPrimary : 'var(--color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.25 }} title={templateName}>{templateName}</span>
               </div>
               {onClearTemplate && (
                 <button
                   onClick={onClearTemplate}
                   aria-label="Stop using template"
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, borderRadius: 7, border: 'none', background: 'transparent', color: 'var(--color-text-secondary)', cursor: 'pointer', flexShrink: 0, transition: 'all 180ms ease' }}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, borderRadius: 7, border: 'none', background: 'transparent', color: isDark ? D.textMuted : 'var(--color-text-secondary)', cursor: 'pointer', flexShrink: 0, transition: 'all 180ms ease' }}
                   className="hover:!bg-[rgba(124,58,237,0.14)] hover:!text-[var(--color-primary)]"
                 >
                   <X size={13} strokeWidth={2.4} />
@@ -343,18 +358,21 @@ export default function ComparisonBlock({
         <div
           style={{
             flex: 1,
-            border: originalText.length > 12000 ? '1px solid #EF4444' : '1px solid rgba(124,58,237,0.10)',
+            border: originalText.length > 12000
+              ? '1px solid #EF4444'
+              : `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.10)'}`,
             borderRadius: isMobile ? 16 : 18,
-            background: originalText.length > 12000 ? '#FFF5F5' : '#FDFCFF',
+            background: originalText.length > 12000
+              ? (isDark ? 'rgba(239, 68, 68, 0.15)' : '#FFF5F5')
+              : (isDark ? 'rgba(14, 13, 20, 0.65)' : '#FDFCFF'),
             padding: isMobile ? '16px 14px' : 24,
             display: 'flex',
             flexDirection: 'column',
             minHeight: isMobile ? 260 : 200,
-            boxShadow: originalText.length > 12000 ? '0 0 0 3px rgba(239,68,68,0.12)' : 'inset 0 1px 3px rgba(109,40,217,0.03)',
+            boxShadow: originalText.length > 12000 ? '0 0 0 3px rgba(239,68,68,0.12)' : (isDark ? 'inset 0 1px 3px rgba(0,0,0,0.3)' : 'inset 0 1px 3px rgba(109,40,217,0.03)'),
             transition: 'all 300ms ease-in-out',
             opacity: (isOptimizing || isAnalyzing) ? 0.7 : 1,
           }}
-          className="focus-within:!bg-[#FAFAFE] focus-within:!border-[rgba(124,58,237,0.35)] focus-within:shadow-[inset_0_1px_3px_rgba(0,0,0,0.02),0_0_0_3px_rgba(124,58,237,0.08),0_0_20px_rgba(124,58,237,0.05)]"
         >
           <textarea
             value={originalText}
@@ -362,7 +380,7 @@ export default function ComparisonBlock({
             disabled={isOptimizing || isAnalyzing}
             placeholder="Paste or write below..."
             style={{
-              width: '100%', flex: 1, fontSize: 14, lineHeight: 1.6, color: 'var(--color-text-primary)',
+              width: '100%', flex: 1, fontSize: 14, lineHeight: 1.6, color: isDark ? D.textPrimary : 'var(--color-text-primary)',
               background: 'transparent', border: 'none', resize: 'none', outline: 'none', letterSpacing: '0.01em',
               cursor: (isOptimizing || isAnalyzing) ? 'not-allowed' : 'text',
             }}
@@ -375,7 +393,7 @@ export default function ComparisonBlock({
             ) : (
               <span />
             )}
-            <span style={{ fontSize: isMobile ? 11 : 12, fontWeight: originalText.length > 12000 ? 700 : 400, color: originalText.length > 12000 ? '#DC2626' : 'var(--color-text-secondary)' }}>
+            <span style={{ fontSize: isMobile ? 11 : 12, fontWeight: originalText.length > 12000 ? 700 : 400, color: originalText.length > 12000 ? '#DC2626' : (isDark ? D.textMuted : 'var(--color-text-secondary)') }}>
               {originalText.split(' ').filter(Boolean).length} words &middot; {originalText.length.toLocaleString()} / 12,000 chars
             </span>
           </div>
@@ -389,7 +407,7 @@ export default function ComparisonBlock({
           transition: 'opacity 200ms ease',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '1.2px' }}>Role</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: isDark ? D.textMuted : 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '1.2px' }}>Role</div>
             {isMobile && (
               <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--color-primary)', letterSpacing: '0.02em' }}>Swipe &rarr;</span>
             )}
@@ -423,14 +441,22 @@ export default function ComparisonBlock({
                       cursor: (isOptimizing || isAnalyzing) ? 'not-allowed' : 'pointer', transition: 'all 250ms ease', display: 'flex', alignItems: 'center', gap: 6,
                       flexShrink: isMobile ? 0 : undefined,
                       whiteSpace: 'nowrap',
-                      color: active ? '#6D28D9' : '#6B6B8A',
+                      color: active ? (isDark ? '#F5F4F8' : '#6D28D9') : (isDark ? D.textSecondary : '#6B6B8A'),
                       background: active
-                        ? 'linear-gradient(160deg, rgba(167,139,250,0.22) 0%, rgba(196,181,253,0.12) 100%)'
-                        : 'linear-gradient(160deg, rgba(109,40,217,0.07) 0%, rgba(124,58,237,0.03) 100%)',
-                      border: `1px solid ${active ? 'rgba(124,58,237,0.30)' : 'rgba(124,58,237,0.12)'}`,
+                        ? (isDark
+                            ? 'linear-gradient(160deg, rgba(139,92,246,0.28) 0%, rgba(168,85,247,0.14) 100%)'
+                            : 'linear-gradient(160deg, rgba(167,139,250,0.22) 0%, rgba(196,181,253,0.12) 100%)')
+                        : (isDark
+                            ? 'rgba(255,255,255,0.04)'
+                            : 'linear-gradient(160deg, rgba(109,40,217,0.07) 0%, rgba(124,58,237,0.03) 100%)'),
+                      border: `1px solid ${active ? (isDark ? 'rgba(167,139,250,0.40)' : 'rgba(124,58,237,0.30)') : (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(124,58,237,0.12)')}`,
                       boxShadow: active
-                        ? 'inset 0 1px 0 rgba(255,255,255,0.70), 0 4px 14px rgba(124,58,237,0.18), 0 1px 4px rgba(0,0,0,0.08), 0 0 0 1px rgba(124,58,237,0.18)'
-                        : 'inset 0 2px 4px rgba(80,20,180,0.10), inset 0 1px 2px rgba(0,0,0,0.06), 0 1px 0 rgba(255,255,255,0.80)',
+                        ? (isDark
+                            ? 'inset 0 1px 0 rgba(255,255,255,0.15), 0 4px 14px rgba(0,0,0,0.4), 0 0 0 1px rgba(167,139,250,0.25)'
+                            : 'inset 0 1px 0 rgba(255,255,255,0.70), 0 4px 14px rgba(124,58,237,0.18), 0 1px 4px rgba(0,0,0,0.08), 0 0 0 1px rgba(124,58,237,0.18)')
+                        : (isDark
+                            ? 'none'
+                            : 'inset 0 2px 4px rgba(80,20,180,0.10), inset 0 1px 2px rgba(0,0,0,0.06), 0 1px 0 rgba(255,255,255,0.80)'),
                       transform: active ? 'translateY(-1px)' : 'none',
                     }}
                   >
@@ -452,9 +478,9 @@ export default function ComparisonBlock({
                 transition={{ duration: 0.3 }}
                 style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 2 }}
               >
-                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '1.2px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: isDark ? D.textMuted : 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '1.2px', display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span>Mode</span>
-                  <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--color-text-secondary)', textTransform: 'none' }}>
+                  <span style={{ fontSize: 11, fontWeight: 500, color: isDark ? D.textMuted : 'var(--color-text-secondary)', textTransform: 'none' }}>
                     for {ROLES.find(r => r.id === activeRole)?.label}
                   </span>
                 </div>
@@ -485,14 +511,22 @@ export default function ComparisonBlock({
                           cursor: (isOptimizing || isAnalyzing) ? 'not-allowed' : 'pointer', transition: 'all 250ms ease', display: 'flex', alignItems: 'center', gap: 6,
                           flexShrink: isMobile ? 0 : undefined,
                           whiteSpace: 'nowrap',
-                          color: active ? '#6D28D9' : '#6B6B8A',
+                          color: active ? (isDark ? '#F5F4F8' : '#6D28D9') : (isDark ? D.textSecondary : '#6B6B8A'),
                           background: active
-                            ? 'linear-gradient(160deg, rgba(167,139,250,0.22) 0%, rgba(196,181,253,0.12) 100%)'
-                            : 'linear-gradient(160deg, rgba(109,40,217,0.07) 0%, rgba(124,58,237,0.03) 100%)',
-                          border: `1px solid ${active ? 'rgba(124,58,237,0.30)' : 'rgba(124,58,237,0.12)'}`,
+                            ? (isDark
+                                ? 'linear-gradient(160deg, rgba(139,92,246,0.28) 0%, rgba(168,85,247,0.14) 100%)'
+                                : 'linear-gradient(160deg, rgba(167,139,250,0.22) 0%, rgba(196,181,253,0.12) 100%)')
+                            : (isDark
+                                ? 'rgba(255,255,255,0.04)'
+                                : 'linear-gradient(160deg, rgba(109,40,217,0.07) 0%, rgba(124,58,237,0.03) 100%)'),
+                          border: `1px solid ${active ? (isDark ? 'rgba(167,139,250,0.40)' : 'rgba(124,58,237,0.30)') : (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(124,58,237,0.12)')}`,
                           boxShadow: active
-                            ? 'inset 0 1px 0 rgba(255,255,255,0.70), 0 4px 14px rgba(124,58,237,0.18), 0 1px 4px rgba(0,0,0,0.08), 0 0 0 1px rgba(124,58,237,0.18)'
-                            : 'inset 0 2px 4px rgba(80,20,180,0.10), inset 0 1px 2px rgba(0,0,0,0.06), 0 1px 0 rgba(255,255,255,0.80)',
+                            ? (isDark
+                                ? 'inset 0 1px 0 rgba(255,255,255,0.15), 0 4px 14px rgba(0,0,0,0.4), 0 0 0 1px rgba(167,139,250,0.25)'
+                                : 'inset 0 1px 0 rgba(255,255,255,0.70), 0 4px 14px rgba(124,58,237,0.18), 0 1px 4px rgba(0,0,0,0.08), 0 0 0 1px rgba(124,58,237,0.18)')
+                            : (isDark
+                                ? 'none'
+                                : 'inset 0 2px 4px rgba(80,20,180,0.10), inset 0 1px 2px rgba(0,0,0,0.06), 0 1px 0 rgba(255,255,255,0.80)'),
                           transform: active ? 'translateY(-1px)' : 'none',
                         }}
                       >
@@ -509,7 +543,7 @@ export default function ComparisonBlock({
           {/* Enhancement Level Segmented Control */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '1.2px' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: isDark ? D.textMuted : 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '1.2px' }}>
                 Enhancement Depth
               </div>
               {enhancementLevel === 'auto' && (
@@ -517,9 +551,9 @@ export default function ComparisonBlock({
                   style={{
                     fontSize: isMobile ? 10 : 11,
                     fontWeight: 600,
-                    color: '#7C3AED',
-                    background: 'rgba(124, 58, 237, 0.08)',
-                    border: '1px solid rgba(124, 58, 237, 0.16)',
+                    color: '#8B5CF6',
+                    background: isDark ? 'rgba(139, 92, 246, 0.16)' : 'rgba(124, 58, 237, 0.08)',
+                    border: `1px solid ${isDark ? 'rgba(139, 92, 246, 0.3)' : 'rgba(124, 58, 237, 0.16)'}`,
                     padding: '2px 8px',
                     borderRadius: 9999,
                     display: 'inline-flex',
@@ -537,9 +571,13 @@ export default function ComparisonBlock({
               display: isMobile ? 'grid' : (narrowControls ? 'grid' : 'inline-flex'),
               gridTemplateColumns: isMobile ? 'repeat(4, 1fr)' : (narrowControls ? '1fr 1fr' : undefined),
               position: 'relative',
-              background: 'linear-gradient(160deg, rgba(109,40,217,0.09) 0%, rgba(124,58,237,0.04) 100%)',
-              border: '1px solid rgba(124,58,237,0.13)', borderRadius: 9999, padding: 3,
-              boxShadow: 'inset 0 2px 5px rgba(80,20,180,0.13), inset 0 1px 2px rgba(0,0,0,0.07), 0 1px 0 rgba(255,255,255,0.80)',
+              background: isDark
+                ? 'rgba(14, 13, 20, 0.7)'
+                : 'linear-gradient(160deg, rgba(109,40,217,0.09) 0%, rgba(124,58,237,0.04) 100%)',
+              border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(124,58,237,0.13)'}`, borderRadius: 9999, padding: 3,
+              boxShadow: isDark
+                ? 'inset 0 2px 5px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.06)'
+                : 'inset 0 2px 5px rgba(80,20,180,0.13), inset 0 1px 2px rgba(0,0,0,0.07), 0 1px 0 rgba(255,255,255,0.80)',
               alignSelf: (isMobile || narrowControls) ? 'stretch' : 'flex-start',
               width: (isMobile || narrowControls) ? '100%' : undefined,
               gap: 2,
@@ -565,7 +603,7 @@ export default function ComparisonBlock({
                       padding: isMobile ? '0 4px' : '0 15px',
                       fontSize: isMobile ? 11.5 : 13,
                       fontWeight: active ? 650 : 500,
-                      color: active ? 'var(--color-primary)' : 'var(--color-text-secondary)',
+                      color: active ? (isDark ? D.textPrimary : 'var(--color-primary)') : (isDark ? D.textMuted : 'var(--color-text-secondary)'),
                       position: 'relative',
                       background: 'transparent',
                       border: 'none',
@@ -585,10 +623,12 @@ export default function ComparisonBlock({
                         style={{
                           position: 'absolute',
                           inset: 0,
-                          background: '#FFFFFF',
+                          background: isDark ? '#1E1A2E' : '#FFFFFF',
                           borderRadius: 9999,
                           zIndex: 1,
-                          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.95), 0 3px 8px rgba(80,20,180,0.12), 0 1px 3px rgba(0,0,0,0.10), 0 0 0 1px rgba(124,58,237,0.07)',
+                          boxShadow: isDark
+                            ? '0 2px 8px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.12)'
+                            : 'inset 0 1px 0 rgba(255,255,255,0.95), 0 3px 8px rgba(80,20,180,0.12), 0 1px 3px rgba(0,0,0,0.10), 0 0 0 1px rgba(124,58,237,0.07)',
                         }}
                       />
                     )}
@@ -623,15 +663,18 @@ export default function ComparisonBlock({
                 padding: isMobile ? '0 12px' : '8px 32px',
                 height: isMobile ? 42 : undefined,
                 flex: (narrowControls && !isMobile) ? 1 : undefined,
-                borderRadius: 12, fontSize: 13.5, fontWeight: 600, border: 'none',
+                borderRadius: 12, fontSize: 13.5, fontWeight: 600,
+                border: isDark ? '1px solid rgba(255,255,255,0.14)' : 'none',
                 cursor: (isAnalyzing || isOptimizing || originalText.length > 12000) ? 'not-allowed' : 'pointer',
-                background: originalText.length > 12000 ? 'rgba(107,107,138,0.20)' : 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)',
+                background: originalText.length > 12000
+                  ? 'rgba(107,107,138,0.20)'
+                  : (isDark ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)'),
                 color: originalText.length > 12000 ? 'rgba(107,107,138,0.60)' : 'white',
-                boxShadow: originalText.length > 12000 ? 'none' : '0 4px 16px rgba(124,58,237,0.30)',
+                boxShadow: originalText.length > 12000 ? 'none' : (isDark ? '0 4px 16px rgba(0,0,0,0.4)' : '0 4px 16px rgba(124,58,237,0.30)'),
                 opacity: (isAnalyzing || isOptimizing || originalText.length > 12000) ? 0.75 : 1,
                 transition: 'all 220ms ease',
               }}
-              className={!(isAnalyzing || isOptimizing || originalText.length > 12000) ? 'hover:translate-y-[-1px] hover:shadow-[0_8px_24px_rgba(124,58,237,0.40)] hover:brightness-105 active:scale-[0.98]' : ''}
+              className={!(isAnalyzing || isOptimizing || originalText.length > 12000) ? 'hover:translate-y-[-1px] hover:brightness-105 active:scale-[0.98]' : ''}
             >
               <Sparkles size={14} style={{ animation: 'pulseGlow 2s infinite' }} />
               <span>{isAnalyzing ? 'Analyzing...' : 'Analyze'}</span>
@@ -654,7 +697,7 @@ export default function ComparisonBlock({
                   ? 'linear-gradient(135deg, #6D28D9 0%, #7C3AED 100%)'
                   : 'rgba(107,107,138,0.20)',
                 color: (!isOptimizing && !isAnalyzing && originalText.length <= 12000) ? 'white' : 'rgba(107,107,138,0.60)',
-                border: (!isOptimizing && !isAnalyzing && originalText.length <= 12000) ? 'none' : '1px solid rgba(124,58,237,0.10)',
+                border: (!isOptimizing && !isAnalyzing && originalText.length <= 12000) ? 'none' : `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(124,58,237,0.10)'}`,
                 boxShadow: (!isOptimizing && !isAnalyzing && originalText.length <= 12000) ? '0 4px 16px rgba(109,40,217,0.30)' : 'none',
                 opacity: (isOptimizing || originalText.length > 12000) ? 0.75 : 1,
                 transition: 'all 220ms ease',
@@ -697,12 +740,12 @@ export default function ComparisonBlock({
                 maxHeight: stackCards ? (isMobile ? 520 : 600) : 780,
                 overflowY: 'auto',
                 scrollbarWidth: 'thin',
-                scrollbarColor: 'rgba(124,58,237,0.2) transparent',
+                scrollbarColor: isDark ? 'rgba(139,92,246,0.25) transparent' : 'rgba(124,58,237,0.2) transparent',
               }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', letterSpacing: '1.2px', textTransform: 'uppercase', marginBottom: 8 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: isDark ? D.textMuted : 'var(--color-text-secondary)', letterSpacing: '1.2px', textTransform: 'uppercase', marginBottom: 8 }}>
                   Analysis
                 </div>
-                <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)', margin: '0 0 20px', letterSpacing: -0.3 }}>
+                <h2 style={{ fontSize: 18, fontWeight: 700, color: isDark ? D.textPrimary : 'var(--color-text-primary)', margin: '0 0 20px', letterSpacing: -0.3 }}>
                   Your Prompt Score
                 </h2>
                 {isAnalyzing ? (
@@ -742,7 +785,7 @@ export default function ComparisonBlock({
                 flexDirection: 'column',
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: isMobile ? 16 : 24, height: 36, paddingRight: isMobile ? 0 : 28 }}>
-                  <h2 style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', opacity: isOptimizing ? 0.6 : 1 }}>
+                  <h2 style={{ fontSize: 12, fontWeight: 600, color: isDark ? D.textMuted : 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', opacity: isOptimizing ? 0.6 : 1 }}>
                     Optimized Prompt
                   </h2>
 
@@ -755,9 +798,11 @@ export default function ComparisonBlock({
                           style={{
                             display: 'inline-flex', alignItems: 'center', gap: 5,
                             padding: '3px 10px', borderRadius: 9999, fontSize: 11, fontWeight: 600,
-                            background: 'linear-gradient(135deg, rgba(124,58,237,0.10) 0%, rgba(168,85,247,0.07) 100%)',
-                            border: '1px solid rgba(124,58,237,0.18)',
-                            color: 'var(--color-primary)', cursor: 'default', flexShrink: 0,
+                            background: isDark
+                              ? 'linear-gradient(135deg, rgba(139,92,246,0.2) 0%, rgba(168,85,247,0.1) 100%)'
+                              : 'linear-gradient(135deg, rgba(124,58,237,0.10) 0%, rgba(168,85,247,0.07) 100%)',
+                            border: `1px solid ${isDark ? 'rgba(167,139,250,0.3)' : 'rgba(124,58,237,0.18)'}`,
+                            color: isDark ? '#C084FC' : 'var(--color-primary)', cursor: 'default', flexShrink: 0,
                           }}
                         >
                           <Zap size={10} />
@@ -777,14 +822,18 @@ export default function ComparisonBlock({
                               height: 36,
                               padding: '6px 10px',
                               borderRadius: 9999,
-                              border: '1px solid rgba(124,58,237,0.20)',
+                              border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(124,58,237,0.20)'}`,
                               fontSize: '13px',
                               fontWeight: 600,
-                              background: 'linear-gradient(160deg, rgba(255,255,255,1) 0%, rgba(248,245,255,1) 100%)',
-                              color: 'var(--color-primary)',
+                              background: isDark
+                                ? 'rgba(14, 13, 20, 0.85)'
+                                : 'linear-gradient(160deg, rgba(255,255,255,1) 0%, rgba(248,245,255,1) 100%)',
+                              color: isDark ? D.textPrimary : 'var(--color-primary)',
                               cursor: 'pointer',
                               outline: 'none',
-                              boxShadow: '0 2px 6px rgba(124,58,237,0.12), inset 0 1px 0 rgba(255,255,255,0.9)',
+                              boxShadow: isDark
+                                ? '0 2px 6px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)'
+                                : '0 2px 6px rgba(124,58,237,0.12), inset 0 1px 0 rgba(255,255,255,0.9)',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
@@ -805,9 +854,11 @@ export default function ComparisonBlock({
                                 style={{
                                   position: 'absolute', top: 'calc(100% + 8px)', right: 0, minWidth: '100%',
                                   padding: 5, borderRadius: 14, zIndex: 20, overflow: 'hidden',
-                                  background: 'linear-gradient(160deg, #FFFFFF 0%, #F8F5FF 100%)',
-                                  border: '1px solid rgba(124,58,237,0.18)',
-                                  boxShadow: '0 12px 28px rgba(91,33,182,0.18), 0 2px 8px rgba(0,0,0,0.07)',
+                                  background: isDark ? 'rgba(20, 19, 32, 0.96)' : 'linear-gradient(160deg, #FFFFFF 0%, #F8F5FF 100%)',
+                                  border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(124,58,237,0.18)'}`,
+                                  boxShadow: isDark
+                                    ? '0 12px 28px rgba(0,0,0,0.6)'
+                                    : '0 12px 28px rgba(91,33,182,0.18), 0 2px 8px rgba(0,0,0,0.07)',
                                 }}
                               >
                                 {versions.map((version: any) => {
@@ -824,7 +875,7 @@ export default function ComparisonBlock({
                                       style={{
                                         width: '100%', padding: '7px 12px', border: 'none', borderRadius: 9,
                                         background: isActive ? 'linear-gradient(135deg, #7C3AED, #A855F7)' : 'transparent',
-                                        color: isActive ? '#FFFFFF' : 'var(--color-primary)',
+                                        color: isActive ? '#FFFFFF' : (isDark ? D.textPrimary : 'var(--color-primary)'),
                                         fontSize: 13, fontWeight: isActive ? 700 : 600, textAlign: 'left', cursor: 'pointer',
                                       }}
                                     >
@@ -848,9 +899,7 @@ export default function ComparisonBlock({
                           disabled: false,
                           spinning: false,
                         },
-                        // Regenerate starts a new normal enhancement. Once this
-                        // prompt has a re-enhanced version, retain only the
-                        // version-aware Re-enhance action.
+                        // Regenerate starts a new normal enhancement
                         ...(versions.some((version: any) =>
                           version.version_type?.toLowerCase() === 'reenhancement'
                         ) ? [] : [{
@@ -874,8 +923,6 @@ export default function ComparisonBlock({
                               : 'Re-enhance is available after the prompt is saved',
                           primary: true,
                           onClick: async () => {
-                            // Re-enhance must never fall back to /enhance: it needs
-                            // the persisted prompt id supplied by the page handler.
                             if (!onReenhance || isReenhancing || isOptimizing) return;
                             setIsReenhancing(true);
                             try {
@@ -897,15 +944,17 @@ export default function ComparisonBlock({
                           style={{
                             width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
                             borderRadius: '50%', cursor: disabled ? 'not-allowed' : 'pointer', transition: 'all 250ms ease',
-                            background: primary ? 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)' : '#F3F4F6',
-                            border: primary ? 'none' : '1px solid rgba(0,0,0,0.07)',
-                            color: primary ? 'white' : '#6B7280',
+                            background: primary
+                              ? 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)'
+                              : (isDark ? 'rgba(255,255,255,0.06)' : '#F3F4F6'),
+                            border: primary ? 'none' : `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)'}`,
+                            color: primary ? 'white' : (isDark ? D.textSecondary : '#6B7280'),
                             boxShadow: primary ? '0 4px 16px rgba(124,58,237,0.35)' : 'none',
                             opacity: disabled ? 0.7 : 1,
                           }}
                           className={disabled ? '' : (primary
                             ? 'hover:brightness-110 hover:translate-y-[-2px] hover:scale-[1.08] hover:shadow-[0_8px_24px_rgba(124,58,237,0.45)]'
-                            : 'hover:!bg-[rgba(255,255,255,0.70)] hover:!text-[var(--color-primary)] hover:translate-y-[-2px] hover:scale-[1.05] hover:shadow-[0_6px_16px_rgba(124,58,237,0.10)]')}
+                            : 'hover:translate-y-[-2px] hover:scale-[1.05]')}
                         >
                           {copySuccess && id === 'copy' ? (
                             <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-success)' }}>✓</span>
@@ -920,9 +969,7 @@ export default function ComparisonBlock({
 
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative', minHeight: 0 }}>
                   {isOptimizing && streamingText ? (
-                    /* Live token stream — raw deltas cleaned on the fly, with a
-                       typing caret. Swapped for the fully formatted viewer once
-                       the `done` frame delivers the authoritative text. */
+                    /* Live token stream */
                     <div
                       ref={streamScrollRef}
                       className="custom-scrollbar"
@@ -933,13 +980,13 @@ export default function ComparisonBlock({
                         lineHeight: 1.6,
                         overflowY: 'auto',
                         paddingRight: isMobile ? 4 : 16,
-                        color: 'var(--color-text-primary)',
+                        color: isDark ? D.textPrimary : 'var(--color-text-primary)',
                         letterSpacing: '0.01em',
                         whiteSpace: 'pre-wrap',
                         wordBreak: 'break-word',
                         animation: 'fadeInRise 300ms ease-out forwards',
                         scrollbarWidth: 'thin',
-                        scrollbarColor: 'rgba(124,58,237,0.25) transparent',
+                        scrollbarColor: isDark ? 'rgba(139,92,246,0.3) transparent' : 'rgba(124,58,237,0.25) transparent',
                         WebkitOverflowScrolling: 'touch',
                       }}
                     >
@@ -982,17 +1029,17 @@ export default function ComparisonBlock({
                         animation: 'fadeInRise 400ms ease-out forwards',
                         overflowY: 'auto',
                         paddingRight: isMobile ? 4 : 16,
-                        color: 'var(--color-text-primary)',
+                        color: isDark ? D.textPrimary : 'var(--color-text-primary)',
                         letterSpacing: '0.01em',
                         scrollbarWidth: 'thin',
-                        scrollbarColor: 'rgba(124,58,237,0.25) transparent',
+                        scrollbarColor: isDark ? 'rgba(139,92,246,0.3) transparent' : 'rgba(124,58,237,0.25) transparent',
                         WebkitOverflowScrolling: 'touch',
                       }}
                     >
                       <FormattedPromptViewer content={optimizationResult?.enhanced_prompt || ''} />
                     </div>
                   ) : (
-                    <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(17,24,39,0.18)' }}>
+                    <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(17,24,39,0.18)' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
                         <ArrowRightToLine size={32} strokeWidth={1} />
                         <p style={{ fontSize: 15, fontWeight: 500 }}>Your optimized prompt will appear here</p>
