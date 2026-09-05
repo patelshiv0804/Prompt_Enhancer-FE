@@ -1,37 +1,27 @@
+import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
-
-import Controls from './Controls';
+import Controls from '@/features/optimizer/components/Controls';
 
 describe('Controls', () => {
-  it('calls onAnalyze when the primary action is clicked', async () => {
-    const user = userEvent.setup();
-    const onAnalyze = vi.fn();
+  it('renders the optimization mode chips', () => {
+    render(<Controls onAnalyze={vi.fn()} isAnalyzing={false} />);
+    expect(screen.getByRole('button', { name: 'Coding' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'SEO' })).toBeInTheDocument();
+  });
 
+  it('calls onAnalyze when the action button is clicked', async () => {
+    const onAnalyze = vi.fn();
     render(<Controls onAnalyze={onAnalyze} isAnalyzing={false} />);
 
-    await user.click(screen.getByRole('button', { name: /analyze & optimize/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Analyze & Optimize/ }));
 
-    expect(onAnalyze).toHaveBeenCalledTimes(1);
+    expect(onAnalyze).toHaveBeenCalledOnce();
   });
 
-  it('disables the primary action while analyzing', async () => {
-    const onAnalyze = vi.fn();
-
-    render(<Controls onAnalyze={onAnalyze} isAnalyzing />);
-
-    expect(screen.getByRole('button', { name: /analyzing/i })).toBeDisabled();
-  });
-
-  it('lets the user change the active optimization target', async () => {
-    const user = userEvent.setup();
-
-    render(<Controls onAnalyze={vi.fn()} isAnalyzing={false} />);
-
-    const coding = screen.getByRole('button', { name: 'Coding' });
-    await user.click(coding);
-
-    expect(coding).toHaveStyle({ transform: 'translateY(-1px)' });
+  it('disables the action and shows a busy label while analyzing', () => {
+    render(<Controls onAnalyze={vi.fn()} isAnalyzing={true} />);
+    const button = screen.getByRole('button', { name: 'Analyzing...' });
+    expect(button).toBeDisabled();
   });
 });

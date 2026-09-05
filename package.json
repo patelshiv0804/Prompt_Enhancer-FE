@@ -9,8 +9,9 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test",
-    "test:e2e:live": "playwright test tests/e2e/live-stub-flow.spec.ts"
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test --project=mocked",
+    "test:e2e:live": "playwright test --project=live"
   },
   "dependencies": {
     "framer-motion": "^12.40.0",
@@ -29,12 +30,14 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6.1.1",
+    "@vitest/coverage-v8": "^4.1.11",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "jsdom": "^29.1.1",
     "msw": "^2.15.0",
     "tailwindcss": "^4",
     "typescript": "^5",
+    "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^4.1.11"
   }
 }

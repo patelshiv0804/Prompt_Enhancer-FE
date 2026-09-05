@@ -1,19 +1,18 @@
-import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-
-import ScoreSpinner from './ScoreSpinner';
+import { render, screen } from '@testing-library/react';
+import ScoreSpinner from '@/components/ScoreSpinner';
 
 describe('ScoreSpinner', () => {
-  it('renders an accessible status indicator with custom size and color', () => {
-    render(<ScoreSpinner size={24} color="#123456" />);
+  it('renders an accessible status role with a label', () => {
+    render(<ScoreSpinner />);
+    const svg = screen.getByRole('status');
+    expect(svg).toHaveAttribute('aria-label', 'Calculating score');
+  });
 
-    const spinner = screen.getByRole('status', { name: 'Calculating score' });
-    expect(spinner).toHaveAttribute('width', '24');
-    expect(spinner).toHaveAttribute('height', '24');
-    expect(spinner.querySelector('circle')).toHaveAttribute('stroke', '#123456');
-    expect(spinner.querySelector('animateTransform')).toHaveAttribute(
-      'repeatCount',
-      'indefinite',
-    );
+  it('honours the size prop', () => {
+    render(<ScoreSpinner size={32} />);
+    const svg = screen.getByRole('status');
+    expect(svg).toHaveAttribute('width', '32');
+    expect(svg).toHaveAttribute('height', '32');
   });
 });

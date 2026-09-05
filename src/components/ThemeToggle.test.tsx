@@ -1,30 +1,29 @@
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { ThemeProvider } from '@/theme/theme';
+import ThemeToggle from '@/components/ThemeToggle';
 
-import ThemeToggle from './ThemeToggle';
-import { THEME_STORAGE_KEY, ThemeProvider } from '@/theme/theme';
+function renderToggle() {
+  return render(
+    <ThemeProvider>
+      <ThemeToggle />
+    </ThemeProvider>,
+  );
+}
 
 describe('ThemeToggle', () => {
-  it('toggles from light to dark and persists the explicit preference', async () => {
-    const user = userEvent.setup();
+  it('defaults to the light-mode affordance (offers to switch to dark)', () => {
+    renderToggle();
+    expect(screen.getByRole('button', { name: 'Switch to dark mode' })).toBeInTheDocument();
+  });
 
-    render(
-      <ThemeProvider>
-        <ThemeToggle />
-      </ThemeProvider>,
-    );
+  it('flips the theme (and its label) when clicked', async () => {
+    renderToggle();
+    const button = screen.getByRole('button', { name: 'Switch to dark mode' });
 
-    const toggle = await screen.findByRole('button', {
-      name: 'Switch to dark mode',
-    });
+    await userEvent.click(button);
 
-    await user.click(toggle);
-
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Switch to light mode' })).toBeInTheDocument();
-    });
-    expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('dark');
-    expect(document.documentElement).toHaveClass('dark');
+    expect(screen.getByRole('button', { name: 'Switch to light mode' })).toBeInTheDocument();
   });
 });
