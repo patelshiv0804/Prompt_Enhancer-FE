@@ -17,7 +17,7 @@ import { ROLES, ROLE_MODES, getModeIcon } from '@/constants/roles';
 import { presetAvatarGradients, getInitials, renderPresetAvatar } from '@/constants/avatars';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import SettingsSkeleton from './SettingsSkeleton';
-import { useTheme, D } from '@/theme/theme';
+import { useTheme, D, hasUserSelectedThemeThisSession } from '@/theme/theme';
 
 /* ── Custom iOS / macOS Switch Component ── */
 interface ToggleSwitchProps {
@@ -215,10 +215,18 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
         if (settingsData) {
           if (settingsData.theme) {
             const t = settingsData.theme.toLowerCase();
-            setTheme(t as any);
-            // Adopt the saved preference globally, including "system" so the
-            // account's choice follows the user across devices on load.
-            if (t === 'dark' || t === 'light' || t === 'system') setAppTheme(t);
+            if (t === 'dark' || t === 'light' || t === 'system') {
+              // Reflect the account's saved theme, but never override a choice
+              // the user just made on another page this session (e.g. toggled
+              // on the optimizer). In that case the live provider preference is
+              // fresher and wins — the `appPreference` → local `theme` effect
+              // above already shows the right pill. Otherwise adopt the server
+              // value so the account theme follows the user onto a fresh device.
+              if (!hasUserSelectedThemeThisSession()) {
+                setTheme(t);
+                setAppTheme(t);
+              }
+            }
           }
           
           const roleKey = userRole.toLowerCase();

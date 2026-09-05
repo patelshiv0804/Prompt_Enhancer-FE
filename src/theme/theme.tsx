@@ -141,6 +141,25 @@ function resolvePreference(pref: ThemePreference): Theme {
   return pref === "system" ? getSystemTheme() : pref;
 }
 
+/**
+ * In-memory (per page-load) flag: has the user EXPLICITLY chosen a theme since
+ * this document loaded? Flipped only by the public mutators (setPreference /
+ * toggleTheme), never by the automatic mount-sync or OS-follow.
+ *
+ * Account-level loaders (e.g. the Settings page, which fetches the saved theme
+ * from the backend) read this to avoid clobbering a fresh choice the user just
+ * made on another page with a possibly-older server value: while it is true the
+ * live provider preference wins. It resets on reload — by then the choice lives
+ * in localStorage and has been synced to the account, so the server copy is
+ * safe to adopt again (that path seeds a fresh device with the account theme).
+ */
+let userSelectedThemeThisSession = false;
+
+/** True once the user has explicitly picked a theme since this page loaded. */
+export function hasUserSelectedThemeThisSession(): boolean {
+  return userSelectedThemeThisSession;
+}
+
 interface ThemeContextValue {
   /** Resolved theme that paints — "light" | "dark". Original meaning kept. */
   theme: Theme;
@@ -222,12 +241,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [preference, mounted]);
 
   const setPreference = useCallback((pref: ThemePreference) => {
+    // An explicit choice on any page — remember it beat the server for this
+    // session so an account-settings load can't revert it.
+    userSelectedThemeThisSession = true;
     setPreferenceState(pref);
   }, []);
 
   const toggleTheme = useCallback(() => {
     // The quick toggle always lands on an explicit light/dark (leaving "system"
     // to the Settings menu), flipping whatever is currently showing.
+    userSelectedThemeThisSession = true;
     setPreferenceState(resolvedTheme === "dark" ? "light" : "dark");
   }, [resolvedTheme]);
 
