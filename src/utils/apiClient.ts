@@ -212,6 +212,20 @@ export async function streamEnhance<TDone = EnhanceStreamDone>(
     handlers.onError?.(error);
   };
 
+  // Auth resilience: send the Bearer token from localStorage in addition to the
+  // httpOnly cookie (credentials: 'include'). The cookie is cross-site here
+  // (frontend :3000 → API :8000), and mobile browsers frequently block cross-site
+  // cookies (iOS Safari "Prevent Cross-Site Tracking" is on by default; a non-HTTPS
+  // LAN origin also rejects a SameSite=None;Secure cookie). Without a token header
+  // the stream then 401s and silently falls back to the blocking endpoint, so the
+  // live token streaming never shows on mobile/tablet. The backend's stream routes
+  // accept the Authorization header first, then the cookie, so this mirrors the
+  // blocking apiRequest path and is a no-op when no token is stored (desktop
+  // behavior unchanged — the cookie is still sent regardless).
+  const token = typeof window !== 'undefined'
+    ? (localStorage.getItem('token') || localStorage.getItem('promptiq_access_token'))
+    : null;
+
   let response: Response;
   try {
     response = await fetch(url, {
@@ -219,6 +233,7 @@ export async function streamEnhance<TDone = EnhanceStreamDone>(
       headers: {
         'Content-Type': 'application/json',
         Accept: 'text/event-stream',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify(body),
       credentials: 'include',

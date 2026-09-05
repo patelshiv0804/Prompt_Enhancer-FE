@@ -2,8 +2,11 @@
 
 import React from 'react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useTheme } from '@/theme/theme';
 
 export default function TemplatesHubSkeleton() {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const isTablet = useMediaQuery('(max-width: 1024px) and (min-width: 640px)');
   const isPhone = useMediaQuery('(max-width: 639px)');
   const isSmall = useMediaQuery('(max-width: 420px)');
@@ -230,9 +233,9 @@ export default function TemplatesHubSkeleton() {
                     style={{
                       width: 'min(82vw, 290px)',
                       flexShrink: 0,
-                      background: '#FFFFFF',
+                      background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
                       borderRadius: 16,
-                      border: '1px solid rgba(124,58,237,0.10)',
+                      border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.10)'}`,
                       padding: isSmall ? 14 : 16,
                       display: 'flex',
                       flexDirection: 'column',
@@ -280,9 +283,9 @@ export default function TemplatesHubSkeleton() {
                   <div
                     key={cardIndex}
                     style={{
-                      background: '#FFFFFF',
+                      background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
                       borderRadius: 18,
-                      border: '1px solid rgba(124,58,237,0.10)',
+                      border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.10)'}`,
                       padding: 18,
                       display: 'flex',
                       flexDirection: 'column',

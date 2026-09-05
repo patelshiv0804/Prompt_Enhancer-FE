@@ -5,6 +5,8 @@ import { motion, AnimatePresence, Variants } from "framer-motion";
 import { LogOut, Menu, X, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme, D } from "@/theme/theme";
+import ThemeToggle from "@/components/ThemeToggle";
 
 /* ── Brand tokens (mirrors the homepage / BentoFeatures) ── */
 const INK = "#09090B";
@@ -32,6 +34,8 @@ const navLinks: NavItem[] = [
  *  Premium CTA — ink pill matching the Hero button, with an Apple-style
  *  lift + soft purple glow on hover. Driven by framer variants (NOT CSS
  *  :hover) because inline styles win over hover classes in this project.
+ *  In dark mode the near-black pill inverts to a soft-white pill so it
+ *  stays high-contrast against the dark canvas.
  * ═══════════════════════════════════════════════════════════════════ */
 function PremiumCTA({
   href,
@@ -44,6 +48,9 @@ function PremiumCTA({
   id?: string;
   onClick?: () => void;
 }) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
   const glow: Variants = {
     rest: { opacity: 0, scale: 0.8 },
     hover: { opacity: 1, scale: 1 },
@@ -81,10 +88,11 @@ function PremiumCTA({
           href={href}
           id={id}
           onClick={onClick}
-          className="relative inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white"
+          className="relative inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold"
           style={{
-            background: INK,
-            boxShadow: "0 6px 22px rgba(13,13,26,0.22)",
+            background: isDark ? D.ctaBg : INK,
+            color: isDark ? D.ctaText : "#fff",
+            boxShadow: isDark ? D.ctaShadow : "0 6px 22px rgba(13,13,26,0.22)",
             letterSpacing: "-0.01em",
             textDecoration: "none",
           }}
@@ -105,6 +113,13 @@ export default function Navbar() {
   const isClickScrolling = useRef(false);
   const clickScrollTimer = useRef<NodeJS.Timeout | null>(null);
   const { isAuthenticated, loading, logout } = useAuth();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
+  /* Theme-aware text tones (brand VIOLET stays constant across themes). */
+  const inkText = isDark ? D.textPrimary : INK;
+  const mutedText = isDark ? D.textSecondary : MUTED;
+  const skeletonBg = isDark ? "rgba(255,255,255,0.08)" : undefined;
 
   /* The pill rests on the active section, and glides to whatever the
      cursor is hovering — so it doubles as both hover + active indicator. */
@@ -195,8 +210,16 @@ export default function Navbar() {
     if (loading) {
       return (
         <>
-          <div className="h-5 w-16 animate-pulse rounded-full bg-gray-200/80" aria-hidden="true" />
-          <div className="h-10 w-28 animate-pulse rounded-full bg-gray-200/80" aria-hidden="true" />
+          <div
+            className="h-5 w-16 animate-pulse rounded-full bg-gray-200/80"
+            style={skeletonBg ? { background: skeletonBg } : undefined}
+            aria-hidden="true"
+          />
+          <div
+            className="h-10 w-28 animate-pulse rounded-full bg-gray-200/80"
+            style={skeletonBg ? { background: skeletonBg } : undefined}
+            aria-hidden="true"
+          />
         </>
       );
     }
@@ -207,7 +230,8 @@ export default function Navbar() {
           <button
             type="button"
             onClick={logout}
-            className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 transition-colors duration-200 hover:text-gray-900"
+            className="inline-flex items-center gap-2 text-sm font-medium transition-colors duration-200"
+            style={{ color: mutedText }}
           >
             <LogOut size={16} />
             Log out
@@ -221,7 +245,8 @@ export default function Navbar() {
       <>
         <Link
           href="/auth"
-          className="text-sm font-medium text-gray-500 transition-colors duration-200 hover:text-gray-900"
+          className="text-sm font-medium transition-colors duration-200"
+          style={{ color: mutedText }}
         >
           Log in
         </Link>
@@ -234,8 +259,16 @@ export default function Navbar() {
     if (loading) {
       return (
         <>
-          <div className="h-10 w-full animate-pulse rounded-lg bg-gray-100" aria-hidden="true" />
-          <div className="h-11 w-full animate-pulse rounded-full bg-gray-200/90" aria-hidden="true" />
+          <div
+            className="h-10 w-full animate-pulse rounded-lg bg-gray-100"
+            style={skeletonBg ? { background: skeletonBg } : undefined}
+            aria-hidden="true"
+          />
+          <div
+            className="h-11 w-full animate-pulse rounded-full bg-gray-200/90"
+            style={skeletonBg ? { background: skeletonBg } : undefined}
+            aria-hidden="true"
+          />
         </>
       );
     }
@@ -245,7 +278,8 @@ export default function Navbar() {
         <>
           <button
             type="button"
-            className="rounded-xl px-4 py-2.5 text-center text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            className="rounded-xl px-4 py-2.5 text-center text-sm font-medium transition-colors"
+            style={{ color: isDark ? D.textSecondary : "#374151" }}
             onClick={() => {
               setMobileOpen(false);
               logout();
@@ -255,8 +289,12 @@ export default function Navbar() {
           </button>
           <Link
             href="/dashboard"
-            className="inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-white"
-            style={{ background: INK, boxShadow: "0 6px 22px rgba(13,13,26,0.22)" }}
+            className="inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold"
+            style={{
+              background: isDark ? D.ctaBg : INK,
+              color: isDark ? D.ctaText : "#fff",
+              boxShadow: isDark ? D.ctaShadow : "0 6px 22px rgba(13,13,26,0.22)",
+            }}
             onClick={() => setMobileOpen(false)}
           >
             Open dashboard
@@ -270,15 +308,20 @@ export default function Navbar() {
       <>
         <Link
           href="/auth"
-          className="rounded-xl px-4 py-2.5 text-center text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+          className="rounded-xl px-4 py-2.5 text-center text-sm font-medium transition-colors"
+          style={{ color: isDark ? D.textSecondary : "#374151" }}
           onClick={() => setMobileOpen(false)}
         >
           Log in
         </Link>
         <Link
           href="/auth"
-          className="inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-white"
-          style={{ background: INK, boxShadow: "0 6px 22px rgba(13,13,26,0.22)" }}
+          className="inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold"
+          style={{
+            background: isDark ? D.ctaBg : INK,
+            color: isDark ? D.ctaText : "#fff",
+            boxShadow: isDark ? D.ctaShadow : "0 6px 22px rgba(13,13,26,0.22)",
+          }}
           onClick={() => setMobileOpen(false)}
         >
           Get started
@@ -295,12 +338,28 @@ export default function Navbar() {
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       className="sticky top-0 z-[1000] w-full"
       style={{
-        backgroundColor: scrolled ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.65)",
+        backgroundColor: isDark
+          ? scrolled
+            ? D.glassScrolled
+            : D.glassTop
+          : scrolled
+            ? "rgba(255,255,255,0.85)"
+            : "rgba(255,255,255,0.65)",
         backdropFilter: "blur(20px) saturate(180%)",
         WebkitBackdropFilter: "blur(20px) saturate(180%)",
-        borderBottom: `1px solid ${scrolled ? "rgba(139,92,246,0.10)" : "rgba(9,9,11,0.05)"}`,
+        borderBottom: `1px solid ${
+          isDark
+            ? scrolled
+              ? "rgba(167,139,250,0.16)"
+              : "rgba(255,255,255,0.07)"
+            : scrolled
+              ? "rgba(139,92,246,0.10)"
+              : "rgba(9,9,11,0.05)"
+        }`,
         boxShadow: scrolled
-          ? "0 10px 30px -12px rgba(13,13,26,0.12)"
+          ? isDark
+            ? "0 10px 30px -12px rgba(0,0,0,0.6)"
+            : "0 10px 30px -12px rgba(13,13,26,0.12)"
           : "0 0 0 0 rgba(0,0,0,0)",
         transition:
           "background-color 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease",
@@ -316,7 +375,7 @@ export default function Navbar() {
             id="navbar-logo"
           >
             <img src="/logo_1.svg" alt="AURE Logo" className="h-7 w-7 rounded-md object-contain" />
-            <span className="text-[17px] font-bold tracking-tight" style={{ color: INK }}>
+            <span className="text-[17px] font-bold tracking-tight" style={{ color: inkText }}>
               AURE
             </span>
           </Link>
@@ -340,7 +399,7 @@ export default function Navbar() {
                 aria-current={isActive ? "page" : undefined}
                 className="relative px-3.5 py-1.5 xl:px-4 xl:py-2 text-sm font-medium"
                 style={{
-                  color: isActive ? VIOLET : isHot ? INK : MUTED,
+                  color: isActive ? VIOLET : isHot ? inkText : mutedText,
                   fontWeight: isActive ? 600 : 500,
                   letterSpacing: "-0.01em",
                   transition: "color 0.2s ease",
@@ -366,18 +425,23 @@ export default function Navbar() {
 
         {/* Right side — Desktop */}
         <div className="hidden shrink-0 items-center gap-3 xl:gap-4 lg:flex">
+          <ThemeToggle />
           {renderDesktopAuth()}
         </div>
 
-        {/* Mobile & Tablet Hamburger Toggle */}
-        <button
-          className="flex h-10 w-10 items-center justify-center rounded-xl text-gray-600 transition-colors hover:bg-purple-50 hover:text-purple-700 lg:hidden"
-          onClick={() => setMobileOpen(!mobileOpen)}
-          aria-label="Toggle menu"
-          id="navbar-mobile-toggle"
-        >
-          {mobileOpen ? <X size={20} /> : <Menu size={20} />}
-        </button>
+        {/* Mobile & Tablet controls */}
+        <div className="flex items-center gap-2 lg:hidden">
+          <ThemeToggle />
+          <button
+            className="flex h-10 w-10 items-center justify-center rounded-xl transition-colors"
+            style={{ color: isDark ? D.textSecondary : "#4B5563" }}
+            onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label="Toggle menu"
+            id="navbar-mobile-toggle"
+          >
+            {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile & Tablet Dropdown Menu */}
@@ -388,7 +452,11 @@ export default function Navbar() {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="overflow-hidden border-b border-gray-100 bg-white/95 backdrop-blur-xl lg:hidden"
+            className="overflow-hidden backdrop-blur-xl lg:hidden"
+            style={{
+              borderBottom: `1px solid ${isDark ? "rgba(255,255,255,0.08)" : "#F3F4F6"}`,
+              background: isDark ? "rgba(14,13,20,0.96)" : "rgba(255,255,255,0.95)",
+            }}
           >
             <div className="flex flex-col gap-1 px-6 py-4">
               {navLinks.map((link) => {
@@ -401,7 +469,7 @@ export default function Navbar() {
                     aria-current={isActive ? "page" : undefined}
                     className="relative rounded-xl px-4 py-3 text-sm font-medium transition-colors"
                     style={{
-                      color: isActive ? VIOLET : "#4B5563",
+                      color: isActive ? VIOLET : isDark ? D.textSecondary : "#4B5563",
                       fontWeight: isActive ? 600 : 500,
                       background: isActive ? "rgba(139,92,246,0.08)" : "transparent",
                     }}
@@ -417,7 +485,10 @@ export default function Navbar() {
                   </a>
                 );
               })}
-              <div className="mt-2 flex flex-col gap-2 border-t border-gray-100 pt-3">
+              <div
+                className="mt-2 flex flex-col gap-2 pt-3"
+                style={{ borderTop: `1px solid ${isDark ? "rgba(255,255,255,0.08)" : "#F3F4F6"}` }}
+              >
                 {renderMobileAuth()}
               </div>
             </div>

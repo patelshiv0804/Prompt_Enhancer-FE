@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
+import { useTheme, D } from "@/theme/theme";
 
 /* ═══════════════════════════════════════════════════════════════════
  *  BentoFeatures — Handcrafted editorial Bento Grid
@@ -27,8 +28,8 @@ import { motion, useInView, AnimatePresence } from "framer-motion";
  *  └──────────────── cta (12/12) ───────────────────┘ row 5: auto
  * ═══════════════════════════════════════════════════════════════════ */
 
-/* ── Design Tokens ── */
-const P = {
+/* ── Design Tokens (light base — unchanged) ── */
+const P_LIGHT = {
   purple: "#8B5CF6",
   lav: "#A78BFA",
   violet: "#7C3AED",
@@ -43,12 +44,38 @@ const P = {
   g200: "#E5E7EB",
   g100: "#F4F4F5",
   bg: "#FAFAFC",
+  card: "#ffffff",
+  cardBorder: "rgba(9,9,11,0.055)",
 };
+
+/* Dark palette — brand hues unchanged; grays/surfaces mapped to the D system. */
+const P_DARK = {
+  purple: "#8B5CF6",
+  lav: "#A78BFA",
+  violet: "#7C3AED",
+  pink: "#EC4899",
+  ink: D.textPrimary,
+  g800: "#E4E3ED",
+  g700: D.textSecondary,
+  g600: D.textSecondary,
+  g500: D.textSecondary,
+  g400: D.textMuted,
+  g300: D.textMuted,
+  g200: D.border,
+  g100: D.surface2,
+  bg: D.bg,
+  card: D.surface,
+  cardBorder: D.border,
+};
+
+/* Module-scope alias: keeps the brand-color references in the data arrays
+   below valid and light-valued (brand hues are identical in dark). */
+const P = P_LIGHT;
 
 const GRAD = "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 55%, #EC4899 100%)";
 
 /* ── Card shell — MUST have height:100% to fill grid cell ── */
-const CARD: React.CSSProperties = {
+const CARD_BASE: React.CSSProperties = {
   background: "#ffffff",
   borderRadius: 32,
   border: "1px solid rgba(9,9,11,0.055)",
@@ -62,8 +89,24 @@ const CARD: React.CSSProperties = {
   overflow: "hidden" as const,
 };
 
-/* Compact variant for 240px-row cards */
-const CARD_SM: React.CSSProperties = { ...CARD, padding: "22px 24px" };
+/* ── Theme-aware token/shell provider ──
+   Light mode returns byte-identical CARD_BASE; dark mode swaps the canvas
+   surfaces and text ramp while leaving brand gradients/accents untouched. */
+function useBento() {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+  const P = isDark ? P_DARK : P_LIGHT;
+  const CARD: React.CSSProperties = isDark
+    ? {
+        ...CARD_BASE,
+        background: P.card,
+        border: `1px solid ${P.cardBorder}`,
+        boxShadow: "0 10px 30px rgba(0,0,0,0.5), 0 0 0 0.5px rgba(255,255,255,0.04)",
+      }
+    : CARD_BASE;
+  const CARD_SM: React.CSSProperties = { ...CARD, padding: "22px 24px" };
+  return { isDark, P, CARD, CARD_SM };
+}
 
 /* ── Fade-up entrance ── */
 const FU = {
@@ -97,6 +140,7 @@ function Sp({ size = 14, c = P.purple }: { size?: number; c?: string }) {
 const ROLES = ["Doctor", "Developer", "Farmer", "Businessman", "Teacher", "Designer", "Student", "Marketer", "Writer"];
 
 function CardStyleRole() {
+  const { isDark, P, CARD } = useBento();
   const [active, setActive] = useState("Doctor");
   const [on, setOn] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
@@ -137,7 +181,7 @@ function CardStyleRole() {
         {ROLES.map(r => (
           <button key={r} onClick={() => setActive(r)} style={{
             padding: "5px 13px", borderRadius: 999,
-            border: active === r ? "1.5px solid rgba(139,92,246,0.30)" : "1.5px solid rgba(0,0,0,0.07)",
+            border: active === r ? "1.5px solid rgba(139,92,246,0.30)" : isDark ? "1.5px solid rgba(255,255,255,0.12)" : "1.5px solid rgba(0,0,0,0.07)",
             background: active === r ? "rgba(167,139,250,0.10)" : "transparent",
             color: active === r ? P.violet : P.g600,
             fontSize: 12.5, fontWeight: active === r ? 620 : 450,
@@ -148,7 +192,7 @@ function CardStyleRole() {
 
       {/* Active profile chip */}
       <div style={{
-        background: "#FAFAFD", borderRadius: 18, border: "1px solid rgba(139,92,246,0.08)",
+        background: isDark ? P.g100 : "#FAFAFD", borderRadius: 18, border: "1px solid rgba(139,92,246,0.08)",
         padding: "12px 16px", display: "flex", alignItems: "center", gap: 12, marginBottom: 10,
       }}>
         <div style={{
@@ -250,6 +294,7 @@ const RADIAL_MODELS = [
 const HUB_CENTER = { x: 230, y: 145 };
 
 function CardMultiModel() {
+  const { P, CARD } = useBento();
   return (
     <div style={CARD}>
       {/* Deep ambient glow — bottom-left */}
@@ -664,6 +709,7 @@ const TIMEFRAME_DATA: Record<string, { label: string; summary: string; values: {
 };
 
 function HeroBigChart() {
+  const { isDark, P } = useBento();
   const containerRef = useRef<HTMLDivElement>(null);
   const inView = useInView(containerRef, { once: true });
   const [timeframe, setTimeframe] = useState<"7D" | "30D" | "90D" | "All">("30D");
@@ -766,10 +812,10 @@ function HeroBigChart() {
           <div style={{
             display: "flex",
             alignItems: "center",
-            background: "rgba(0,0,0,0.04)",
+            background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
             padding: "2px",
             borderRadius: 10,
-            border: "1px solid rgba(0,0,0,0.04)",
+            border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.04)",
           }}>
             {(["7D", "30D", "90D", "All"] as const).map((t) => {
               const isSelected = timeframe === t;
@@ -797,7 +843,7 @@ function HeroBigChart() {
                       style={{
                         position: "absolute",
                         inset: 0,
-                        background: "#FFFFFF",
+                        background: isDark ? D.surfaceElevated : "#FFFFFF",
                         borderRadius: 8,
                         boxShadow: "0 1px 4px rgba(0,0,0,0.08), 0 0.5px 1px rgba(0,0,0,0.06)",
                         zIndex: -1,
@@ -1006,6 +1052,7 @@ function HeroBigChart() {
 }
 
 function CardAnalytics() {
+  const { isDark, P, CARD } = useBento();
   return (
     <div style={CARD}>
       {/* Refined ambient Apple-style glow layers */}
@@ -1065,10 +1112,10 @@ function CardAnalytics() {
             transition={{ delay: i * 0.07, duration: 0.45 }}
             whileHover={{ y: -3, transition: { duration: 0.18 } }}
             style={{
-              background: "linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(249,248,255,0.92) 100%)",
+              background: isDark ? D.surfaceElevated : "linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(249,248,255,0.92) 100%)",
               borderRadius: 16,
               border: `1px solid ${m.c}22`,
-              boxShadow: "0 2px 10px rgba(0,0,0,0.02), inset 0 1px 0 rgba(255,255,255,0.9)",
+              boxShadow: isDark ? "0 2px 10px rgba(0,0,0,0.35)" : "0 2px 10px rgba(0,0,0,0.02), inset 0 1px 0 rgba(255,255,255,0.9)",
               padding: "11px 13px",
               display: "flex",
               flexDirection: "column",
@@ -1137,6 +1184,7 @@ const STAGS = [
 ];
 
 function CardSearch() {
+  const { P, CARD_SM } = useBento();
   const fullText = "Search prompts, templates\u2026";
   const [charIdx, setCharIdx] = useState(0);
 
@@ -1238,6 +1286,7 @@ const VCARDS = [
 ];
 
 function CardVault() {
+  const { isDark, P, CARD } = useBento();
   return (
     <div style={CARD}>
       <div style={{
@@ -1269,9 +1318,9 @@ function CardVault() {
               y: { duration: 3.5 + i * 0.5, repeat: Infinity, ease: "easeInOut", delay: 0.8 + i * 0.3 },
             }}
             style={{
-              background: "#fff", borderRadius: 20,
+              background: isDark ? D.surfaceElevated : "#fff", borderRadius: 20,
               border: "1px solid rgba(139,92,246,0.07)",
-              boxShadow: `0 ${2 + i * 2}px ${6 + i * 5}px rgba(0,0,0,${0.03 + i * 0.01})`,
+              boxShadow: `0 ${2 + i * 2}px ${6 + i * 5}px rgba(0,0,0,${isDark ? 0.4 + i * 0.05 : 0.03 + i * 0.01})`,
               padding: "14px 16px",
               // Scale creates depth / stacked-paper illusion
               transform: `scale(${1 - i * 0.012})`, transformOrigin: "top center",
@@ -1329,6 +1378,7 @@ const VTAGS = [
 ];
 
 function CardSmartTags() {
+  const { P, CARD_SM } = useBento();
   return (
     <div style={CARD_SM}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
@@ -1400,6 +1450,7 @@ const FORMAT_OPTIONS = [
 ];
 
 function CardExport() {
+  const { isDark, P, CARD_SM } = useBento();
   const [activeFmt, setActiveFmt] = useState(FORMAT_OPTIONS[0]);
   const [copied, setCopied] = useState(false);
 
@@ -1472,10 +1523,10 @@ function CardExport() {
         style={{
           display: "flex",
           gap: 4,
-          background: "rgba(0,0,0,0.03)",
+          background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.03)",
           padding: 3,
           borderRadius: 10,
-          border: "1px solid rgba(0,0,0,0.04)",
+          border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.04)",
           marginBottom: 10,
         }}
       >
@@ -1491,7 +1542,7 @@ function CardExport() {
                 fontSize: 11,
                 fontWeight: isActive ? 650 : 500,
                 color: isActive ? P.ink : P.g500,
-                background: isActive ? "#FFFFFF" : "transparent",
+                background: isActive ? (isDark ? D.surfaceElevated : "#FFFFFF") : "transparent",
                 borderRadius: 7,
                 border: "none",
                 cursor: "pointer",
@@ -1523,7 +1574,7 @@ function CardExport() {
       <div
         style={{
           flex: 1,
-          background: "linear-gradient(135deg, rgba(245,243,255,0.75) 0%, rgba(253,244,255,0.85) 100%)",
+          background: isDark ? D.surface2 : "linear-gradient(135deg, rgba(245,243,255,0.75) 0%, rgba(253,244,255,0.85) 100%)",
           border: "1px solid rgba(139,92,246,0.14)",
           borderRadius: 12,
           padding: "9px 11px",
@@ -1559,7 +1610,7 @@ function CardExport() {
               margin: 0,
               fontSize: 10.5,
               fontFamily: "ui-monospace, monospace",
-              color: "#1E1B4B",
+              color: isDark ? "#C7D2FE" : "#1E1B4B",
               fontWeight: 500,
               lineHeight: 1.45,
               whiteSpace: "pre-wrap",
@@ -1633,6 +1684,7 @@ const HIST = [
 ];
 
 function CardHistory() {
+  const { isDark, P, CARD } = useBento();
   return (
     <div style={{ ...CARD, padding: "28px" }}>
       {/* Ambient corner glows */}
@@ -1719,8 +1771,8 @@ function CardHistory() {
             <motion.div
               whileHover={{ y: -2, boxShadow: "0 6px 20px rgba(139,92,246,0.12)", borderColor: "rgba(139,92,246,0.18)" }}
               style={{
-                background: h.active ? "rgba(139,92,246,0.03)" : "#fff",
-                border: `1px solid ${h.active ? "rgba(139,92,246,0.12)" : "rgba(9,9,11,0.06)"}`,
+                background: h.active ? "rgba(139,92,246,0.03)" : (isDark ? D.surfaceElevated : "#fff"),
+                border: `1px solid ${h.active ? "rgba(139,92,246,0.12)" : (isDark ? D.border : "rgba(9,9,11,0.06)")}`,
                 borderRadius: 14, padding: "12px 14px",
                 cursor: "pointer", transition: "all 200ms ease",
               }}
@@ -1729,7 +1781,7 @@ function CardHistory() {
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{
                     fontSize: 10, fontWeight: 750, padding: "2px 8px", borderRadius: 999,
-                    background: h.active ? "rgba(139,92,246,0.12)" : "rgba(0,0,0,0.04)",
+                    background: h.active ? "rgba(139,92,246,0.12)" : (isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)"),
                     color: h.active ? P.purple : P.g400,
                   }}>{h.v}</span>
                   <span style={{ fontSize: 13, fontWeight: 620, color: h.active ? P.ink : P.g600, letterSpacing: "-0.01em" }}>{h.label}</span>
@@ -1808,6 +1860,7 @@ const STAGES = [
 ];
 
 function CardBatch() {
+  const { P, CARD } = useBento();
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true });
   const [prog, setProg] = useState(0);
@@ -1988,6 +2041,7 @@ const TCAT_PILLS = [
 ];
 
 function CardTemplates() {
+  const { isDark, P, CARD } = useBento();
   return (
     <div style={{ ...CARD, padding: "28px" }}>
       {/* Ambient background glows */}
@@ -2079,7 +2133,7 @@ function CardTemplates() {
             }}
             style={{
               background: t.gradient,
-              border: "1px solid rgba(9,9,11,0.06)",
+              border: `1px solid ${isDark ? D.border : "rgba(9,9,11,0.06)"}`,
               borderRadius: 16,
               padding: "16px",
               cursor: "pointer",
@@ -2154,6 +2208,7 @@ function CardTemplates() {
  *  MAIN SECTION EXPORT
  * ═══════════════════════════════════════════════════════════════════ */
 export default function BentoFeatures() {
+  const { isDark, P, CARD } = useBento();
   return (
     <section id="features" className="bento-section" style={{ background: P.bg, padding: "100px 0 90px", position: "relative", overflow: "hidden" }}>
 
@@ -2346,9 +2401,9 @@ export default function BentoFeatures() {
                   whileHover={{ scale: 1.025 }} whileTap={{ scale: 0.975 }}
                   style={{
                     position: "relative", display: "inline-flex", alignItems: "center", gap: 10,
-                    background: P.ink, color: "#fff", borderRadius: 999, padding: "15px 30px",
+                    background: P.ink, color: isDark ? D.ctaText : "#fff", borderRadius: 999, padding: "15px 30px",
                     fontSize: 15, fontWeight: 640, textDecoration: "none",
-                    boxShadow: "0 4px 20px rgba(13,13,26,0.18)", letterSpacing: "-0.01em", whiteSpace: "nowrap",
+                    boxShadow: isDark ? D.ctaShadow : "0 4px 20px rgba(13,13,26,0.18)", letterSpacing: "-0.01em", whiteSpace: "nowrap",
                   }}>
                   Enhance your first prompt
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

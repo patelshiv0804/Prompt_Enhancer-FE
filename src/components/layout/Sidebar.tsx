@@ -14,6 +14,7 @@ import {
 import { fetchHistory, deleteHistoryItem } from '@/features/history/services/historyService';
 import ScoreSpinner from '@/components/ScoreSpinner';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useTheme, D } from '@/theme/theme';
 
 export type ActivePage = 'optimizer' | 'templates' | 'vault' | 'style-memory' | 'chaining' | 'settings' | 'chat';
 
@@ -55,6 +56,8 @@ export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   
   // Collapse state
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
@@ -242,13 +245,13 @@ export default function Sidebar() {
           margin: isMobile ? 0 : 12,
           borderRadius: isMobile ? 0 : 16,
           overflow: 'hidden',
-          background: 'rgba(250, 248, 255, 0.88)',
+          background: isDark ? 'rgba(14, 13, 20, 0.88)' : 'rgba(250, 248, 255, 0.88)',
           backdropFilter: 'blur(24px) saturate(160%)',
           WebkitBackdropFilter: 'blur(24px) saturate(160%)',
-          border: '1px solid rgba(139, 92, 246, 0.10)',
+          border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(139, 92, 246, 0.10)'}`,
           boxShadow: isMobile
-            ? '0 8px 40px rgba(15,23,42,0.20)'
-            : '0 2px 20px rgba(109,40,217,0.06), 0 1px 3px rgba(0,0,0,0.03)',
+            ? (isDark ? '0 8px 40px rgba(0,0,0,0.60)' : '0 8px 40px rgba(15,23,42,0.20)')
+            : (isDark ? '0 4px 28px rgba(0,0,0,0.6), 0 0 20px rgba(139,92,246,0.06)' : '0 2px 20px rgba(109,40,217,0.06), 0 1px 3px rgba(0,0,0,0.03)'),
           transform: isMobile ? (isMobileOpen ? 'translateX(0)' : 'translateX(-100%)') : undefined,
           transition: isMobile
             ? 'transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1)'
@@ -260,7 +263,7 @@ export default function Sidebar() {
           style={{
             padding: showCollapsed ? '14px 8px 12px' : '14px 14px 12px 16px',
             flexShrink: 0,
-            borderBottom: '1px solid rgba(124,58,237,0.06)',
+            borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(124,58,237,0.06)'}`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: showCollapsed ? 'center' : 'space-between',
@@ -283,7 +286,7 @@ export default function Sidebar() {
                 justifyContent: 'center',
                 background: 'transparent',
                 border: 'none',
-                color: 'rgba(45,27,105,0.75)',
+                color: isDark ? D.textSecondary : 'rgba(45,27,105,0.75)',
                 cursor: 'pointer',
                 position: 'relative',
               }}
@@ -315,7 +318,7 @@ export default function Sidebar() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#4C1D95',
+                  color: isDark ? '#C084FC' : '#4C1D95',
                   transition: 'opacity 140ms ease, transform 140ms ease',
                   pointerEvents: 'none',
                 }}
@@ -341,7 +344,7 @@ export default function Sidebar() {
                   style={{
                     fontSize: 14,
                     fontWeight: 750,
-                    color: '#2D1B69',
+                    color: isDark ? D.textPrimary : '#2D1B69',
                     letterSpacing: '1px',
                     textTransform: 'uppercase',
                   }}
@@ -364,10 +367,10 @@ export default function Sidebar() {
                   justifyContent: 'center',
                   border: 'none',
                   background: 'transparent',
-                  color: 'rgba(45,27,105,0.55)',
+                  color: isDark ? D.textMuted : 'rgba(45,27,105,0.55)',
                   cursor: 'pointer',
                 }}
-                className="aure-soft-btn hover:!text-[#4C1D95]"
+                className="aure-soft-btn"
               >
                 {isMobile
                   ? <X size={18} strokeWidth={1.9} />
@@ -516,7 +519,7 @@ export default function Sidebar() {
                       style={{
                         width: 24,
                         height: 1,
-                        background: 'rgba(124,58,237,0.08)',
+                        background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(124,58,237,0.08)',
                         margin: '3px 0',
                       }}
                     />
@@ -541,8 +544,8 @@ export default function Sidebar() {
                           justifyContent: 'center',
                           cursor: 'pointer',
                           border: 'none',
-                          background: active ? 'rgba(124,58,237,0.10)' : 'transparent',
-                          color: active ? '#7C3AED' : 'rgba(45,27,105,0.70)',
+                          background: active ? (isDark ? 'rgba(139,92,246,0.22)' : 'rgba(124,58,237,0.10)') : 'transparent',
+                          color: active ? (isDark ? '#C084FC' : '#7C3AED') : (isDark ? D.textSecondary : 'rgba(45,27,105,0.70)'),
                         }}
                         className={`aure-rail-btn ${active ? 'is-active' : ''}`}
                       >
@@ -558,7 +561,7 @@ export default function Sidebar() {
                 style={{
                   width: 24,
                   height: 1,
-                  background: 'rgba(124,58,237,0.08)',
+                  background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(124,58,237,0.08)',
                   margin: '3px 0',
                 }}
               />
@@ -579,8 +582,8 @@ export default function Sidebar() {
                     justifyContent: 'center',
                     cursor: 'pointer',
                     border: 'none',
-                    background: showRecentFlyout ? 'rgba(124,58,237,0.10)' : 'transparent',
-                    color: showRecentFlyout ? '#7C3AED' : 'rgba(45,27,105,0.70)',
+                    background: showRecentFlyout ? (isDark ? 'rgba(139,92,246,0.22)' : 'rgba(124,58,237,0.10)') : 'transparent',
+                    color: showRecentFlyout ? (isDark ? '#C084FC' : '#7C3AED') : (isDark ? D.textSecondary : 'rgba(45,27,105,0.70)'),
                   }}
                   className={`aure-rail-btn ${showRecentFlyout ? 'is-active' : ''}`}
                 >
@@ -597,9 +600,9 @@ export default function Sidebar() {
                       width: 260,
                       maxHeight: 'calc(100vh - 180px)',
                       borderRadius: 12,
-                      background: '#FFFFFF',
-                      border: '1px solid rgba(124,58,237,0.12)',
-                      boxShadow: '0 16px 36px rgba(109,40,217,0.12), 0 3px 10px rgba(0,0,0,0.05)',
+                      background: isDark ? 'rgba(20, 19, 32, 0.96)' : '#FFFFFF',
+                      border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(124,58,237,0.12)'}`,
+                      boxShadow: isDark ? '0 16px 36px rgba(0,0,0,0.6)' : '0 16px 36px rgba(109,40,217,0.12), 0 3px 10px rgba(0,0,0,0.05)',
                       zIndex: 9999,
                       display: 'flex',
                       flexDirection: 'column',
@@ -610,11 +613,11 @@ export default function Sidebar() {
                     <div
                       style={{
                         padding: '10px 12px 8px',
-                        borderBottom: '1px solid rgba(124,58,237,0.06)',
+                        borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(124,58,237,0.06)'}`,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        background: 'rgba(248, 245, 255, 0.5)',
+                        background: isDark ? 'rgba(14, 13, 20, 0.6)' : 'rgba(248, 245, 255, 0.5)',
                       }}
                     >
                       <span
@@ -623,7 +626,7 @@ export default function Sidebar() {
                           fontWeight: 700,
                           textTransform: 'uppercase',
                           letterSpacing: '0.6px',
-                          color: 'rgba(45,27,105,0.50)',
+                          color: isDark ? D.textMuted : 'rgba(45,27,105,0.50)',
                         }}
                       >
                         Recent Prompts
@@ -636,7 +639,7 @@ export default function Sidebar() {
                         style={{
                           fontSize: 11,
                           fontWeight: 600,
-                          color: '#6D28D9',
+                          color: isDark ? '#C084FC' : '#6D28D9',
                           background: 'none',
                           border: 'none',
                           cursor: 'pointer',
@@ -658,7 +661,7 @@ export default function Sidebar() {
                       }}
                     >
                       {recentItems.length === 0 ? (
-                        <div style={{ padding: '20px 10px', textAlign: 'center', fontSize: 12, color: '#64748B' }}>
+                        <div style={{ padding: '20px 10px', textAlign: 'center', fontSize: 12, color: isDark ? D.textMuted : '#64748B' }}>
                           No recent prompts
                         </div>
                       ) : (
@@ -679,7 +682,7 @@ export default function Sidebar() {
                                 gap: 8,
                                 padding: '6px 8px',
                                 borderRadius: 6,
-                                background: active ? 'rgba(124,58,237,0.08)' : 'transparent',
+                                background: active ? (isDark ? 'rgba(139,92,246,0.18)' : 'rgba(124,58,237,0.08)') : 'transparent',
                                 cursor: 'pointer',
                                 transition: 'background 120ms ease',
                               }}
@@ -690,7 +693,7 @@ export default function Sidebar() {
                                 style={{
                                   fontSize: 12.5,
                                   fontWeight: active ? 600 : 450,
-                                  color: active ? '#4C1D95' : 'rgba(45,27,105,0.85)',
+                                  color: active ? (isDark ? '#F5F4F8' : '#4C1D95') : (isDark ? D.textSecondary : 'rgba(45,27,105,0.85)'),
                                   margin: 0,
                                   whiteSpace: 'nowrap',
                                   overflow: 'hidden',
@@ -730,12 +733,12 @@ export default function Sidebar() {
                       }}
                       className="aure-soft-btn"
                     >
-                      <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'capitalize', letterSpacing: '0.2px', color: 'rgba(45,27,105,0.45)', flex: 1 }}>
+                      <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'capitalize', letterSpacing: '0.2px', color: isDark ? D.textMuted : 'rgba(45,27,105,0.45)', flex: 1 }}>
                         {group.label}
                       </span>
                       {isGroupCollapsed
-                        ? <ChevronRight size={11} style={{ color: 'rgba(109,40,217,0.30)', flexShrink: 0 }} />
-                        : <ChevronDown size={11} style={{ color: 'rgba(109,40,217,0.30)', flexShrink: 0 }} />
+                        ? <ChevronRight size={11} style={{ color: isDark ? 'rgba(255,255,255,0.30)' : 'rgba(109,40,217,0.30)', flexShrink: 0 }} />
+                        : <ChevronDown size={11} style={{ color: isDark ? 'rgba(255,255,255,0.30)' : 'rgba(109,40,217,0.30)', flexShrink: 0 }} />
                       }
                     </button>
 
@@ -753,19 +756,20 @@ export default function Sidebar() {
                                 display: 'flex', alignItems: 'center', gap: 9, padding: '7px 8px',
                                 borderRadius: 8, fontSize: 13.5, fontWeight: active ? 600 : 450,
                                 cursor: 'pointer', border: 'none', width: '100%', textAlign: 'left',
-                                color: active ? '#4C1D95' : 'rgba(45,27,105,0.78)',
-                                background: active ? 'rgba(124,58,237,0.09)' : 'transparent',
+                                color: active ? (isDark ? '#F5F4F8' : '#4C1D95') : (isDark ? D.textSecondary : 'rgba(45,27,105,0.78)'),
+                                background: active ? (isDark ? 'linear-gradient(90deg, rgba(139, 92, 246, 0.22) 0%, rgba(168, 85, 247, 0.10) 100%)' : 'rgba(124,58,237,0.09)') : 'transparent',
+                                boxShadow: active && isDark ? 'inset 0 0 0 1px rgba(167, 139, 250, 0.30)' : 'none',
                               }}
                               className={`aure-nav-item ${active ? 'is-active' : ''}`}
                             >
-                              <Icon className="aure-nav-icon" size={17} strokeWidth={active ? 2 : 1.75} style={{ color: active ? '#7C3AED' : 'rgba(109,40,217,0.55)', flexShrink: 0 }} />
+                              <Icon className="aure-nav-icon" size={17} strokeWidth={active ? 2 : 1.75} style={{ color: active ? (isDark ? '#C084FC' : '#7C3AED') : (isDark ? '#A78BFA' : 'rgba(109,40,217,0.55)'), flexShrink: 0 }} />
                               <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                 {item.label}
                               </span>
                               {item.shortcut && (
                                 <span
                                   className="aure-nav-shortcut"
-                                  style={{ fontSize: 10, fontWeight: 500, color: 'rgba(109,40,217,0.30)' }}
+                                  style={{ fontSize: 10, fontWeight: 500, color: isDark ? D.textMuted : 'rgba(109,40,217,0.30)' }}
                                 >
                                   {item.shortcut}
                                 </span>
@@ -782,7 +786,7 @@ export default function Sidebar() {
               {/* Section Divider */}
               <div style={{
                 height: 1, margin: '4px 4px 6px', flexShrink: 0,
-                background: 'rgba(124,58,237,0.07)',
+                background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(124,58,237,0.07)',
               }} />
 
               {/* Recent History */}
@@ -799,19 +803,19 @@ export default function Sidebar() {
                   }}
                   className="aure-soft-btn"
                 >
-                  <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'capitalize', letterSpacing: '0.2px', color: 'rgba(45,27,105,0.45)', flex: 1 }}>Recent</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'capitalize', letterSpacing: '0.2px', color: isDark ? D.textMuted : 'rgba(45,27,105,0.45)', flex: 1 }}>Recent</span>
                   <button
                     id="sidebar-history-view-all"
                     onClick={e => { e.stopPropagation(); router.push('/dashboard/vault'); }}
                     style={{
-                      fontSize: 10.5, fontWeight: 600, color: '#6D28D9', background: 'none', border: 'none',
+                      fontSize: 10.5, fontWeight: 600, color: isDark ? '#C084FC' : '#6D28D9', background: 'none', border: 'none',
                       cursor: 'pointer', padding: '1px 4px', borderRadius: 4, marginRight: 2,
                     }}
-                    className="aure-soft-btn hover:!text-[#5B21B6]"
+                    className="aure-soft-btn"
                   >View all</button>
                   {recentCollapsed
-                    ? <ChevronRight size={11} style={{ color: 'rgba(109,40,217,0.30)', flexShrink: 0 }} />
-                    : <ChevronDown size={11} style={{ color: 'rgba(109,40,217,0.30)', flexShrink: 0 }} />
+                    ? <ChevronRight size={11} style={{ color: isDark ? 'rgba(255,255,255,0.30)' : 'rgba(109,40,217,0.30)', flexShrink: 0 }} />
+                    : <ChevronDown size={11} style={{ color: isDark ? 'rgba(255,255,255,0.30)' : 'rgba(109,40,217,0.30)', flexShrink: 0 }} />
                   }
                 </div>
 
@@ -823,7 +827,7 @@ export default function Sidebar() {
                           padding: '16px 8px',
                           textAlign: 'center',
                           fontSize: 12,
-                          color: 'rgba(45,27,105,0.45)',
+                          color: isDark ? D.textMuted : 'rgba(45,27,105,0.45)',
                         }}
                       >
                         No recent prompts.
@@ -850,7 +854,7 @@ export default function Sidebar() {
                             style={{
                               display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px',
                               borderRadius: 8,
-                              background: active ? 'rgba(124,58,237,0.09)' : 'transparent',
+                              background: active ? (isDark ? 'rgba(139,92,246,0.18)' : 'rgba(124,58,237,0.09)') : 'transparent',
                               cursor: 'pointer', width: '100%', textAlign: 'left',
                               flexShrink: 0,
                             }}
@@ -861,7 +865,7 @@ export default function Sidebar() {
                               <p
                                 style={{
                                   fontSize: 13, fontWeight: active ? 600 : 450,
-                                  color: active ? '#4C1D95' : 'rgba(45,27,105,0.80)',
+                                  color: active ? (isDark ? '#F5F4F8' : '#4C1D95') : (isDark ? D.textSecondary : 'rgba(45,27,105,0.80)'),
                                   margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3,
                                   flex: 1,
                                 }}
@@ -874,7 +878,7 @@ export default function Sidebar() {
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                               <span
                                 style={{
-                                  fontSize: 10, fontWeight: 600, color: accent, opacity: 0.75,
+                                  fontSize: 10, fontWeight: 600, color: accent, opacity: 0.85,
                                   padding: '1px 3px', borderRadius: 4,
                                 }}
                                 className="group-hover/chatitem:hidden"
@@ -915,7 +919,7 @@ export default function Sidebar() {
         {/* Footer (Desktop & Tablet only — mobile profile is at the top) */}
         {!isMobile && (
           <div style={{ flexShrink: 0, padding: showCollapsed ? '0 6px 10px' : '0 8px 10px' }}>
-            <div style={{ height: 1, background: 'rgba(124,58,237,0.06)', margin: '0 0 8px' }} />
+            <div style={{ height: 1, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(124,58,237,0.06)', margin: '0 0 8px' }} />
             {showCollapsed ? (
               /* Collapsed Footer: Avatar circular button (Matching Image 2 SH avatar) */
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
@@ -932,14 +936,14 @@ export default function Sidebar() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    background: '#2D1B69',
+                    background: isDark ? '#1E1A2E' : '#2D1B69',
                     color: '#FFFFFF',
-                    border: 'none',
+                    border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'transparent'}`,
                     cursor: 'pointer',
                     transition: 'transform 260ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 260ms cubic-bezier(0.22, 1, 0.36, 1)',
                     overflow: 'hidden',
                   }}
-                  className="hover:scale-105 hover:shadow-[0_6px_16px_rgba(45,27,105,0.28)]"
+                  className="hover:scale-105"
                 >
                   {user?.avatar_url ? (
                     <img
@@ -969,9 +973,10 @@ export default function Sidebar() {
                   className="aure-soft-btn"
                 >
                   <div style={{
-                    background: '#2D1B69', color: '#FFFFFF',
+                    background: isDark ? '#1E1A2E' : '#2D1B69', color: '#FFFFFF',
                     width: 28, height: 28, borderRadius: '50%',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'transparent'}`,
                     flexShrink: 0, overflow: 'hidden',
                   }}>
                     {user?.avatar_url ? (
@@ -987,12 +992,14 @@ export default function Sidebar() {
                     )}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: '#2D1B69', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: isDark ? D.textPrimary : '#2D1B69', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {user?.display_name || user?.email || 'Dev Patel'}
                     </span>
                     <span style={{
                       fontSize: 9, fontWeight: 700, textTransform: 'uppercase',
-                      background: 'rgba(124,58,237,0.12)', color: '#7C3AED',
+                      background: isDark ? 'rgba(139,92,246,0.2)' : 'rgba(124,58,237,0.12)',
+                      color: isDark ? '#C084FC' : '#7C3AED',
+                      border: isDark ? '1px solid rgba(139,92,246,0.3)' : 'none',
                       padding: '1px 6px', borderRadius: 4, flexShrink: 0,
                     }}>{user?.plan || 'Free'}</span>
                   </div>
@@ -1003,7 +1010,7 @@ export default function Sidebar() {
                   style={{
                     width: 28, height: 28, borderRadius: 6, display: 'flex', alignItems: 'center',
                     justifyContent: 'center', cursor: 'pointer', background: 'transparent',
-                    border: 'none', color: 'rgba(45,27,105,0.50)',
+                    border: 'none', color: isDark ? D.textMuted : 'rgba(45,27,105,0.50)',
                     transition: 'all 200ms cubic-bezier(0.22, 1, 0.36, 1)',
                   }}
                   className="hover:!bg-[rgba(239,68,68,0.10)] hover:!text-[#DC2626]"
@@ -1032,12 +1039,12 @@ export default function Sidebar() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'rgba(250, 248, 255, 0.92)',
+            background: isDark ? 'rgba(20, 19, 32, 0.92)' : 'rgba(250, 248, 255, 0.92)',
             backdropFilter: 'blur(12px) saturate(160%)',
             WebkitBackdropFilter: 'blur(12px) saturate(160%)',
-            border: '1px solid rgba(139, 92, 246, 0.18)',
-            boxShadow: '0 4px 14px rgba(109,40,217,0.12)',
-            color: '#4C1D95',
+            border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(139, 92, 246, 0.18)'}`,
+            boxShadow: isDark ? '0 4px 14px rgba(0,0,0,0.5)' : '0 4px 14px rgba(109,40,217,0.12)',
+            color: isDark ? D.textPrimary : '#4C1D95',
             cursor: 'pointer',
             zIndex: 998,
           }}
@@ -1054,9 +1061,9 @@ export default function Sidebar() {
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(15, 23, 42, 0.40)',
-            backdropFilter: 'blur(2px)',
-            WebkitBackdropFilter: 'blur(2px)',
+            background: 'rgba(0, 0, 0, 0.60)',
+            backdropFilter: 'blur(3px)',
+            WebkitBackdropFilter: 'blur(3px)',
             zIndex: 999,
             animation: 'dropdownFadeIn 160ms ease-out',
           }}
@@ -1071,7 +1078,7 @@ export default function Sidebar() {
             left: 74,
             top: activeTooltip.top,
             transform: 'translateY(-50%)',
-            background: '#1A1033',
+            background: isDark ? '#1E1A2E' : '#1A1033',
             color: '#F8F5FF',
             padding: '5px 9px',
             borderRadius: 6,
@@ -1082,7 +1089,7 @@ export default function Sidebar() {
             display: 'flex',
             alignItems: 'center',
             gap: 6,
-            boxShadow: '0 8px 20px rgba(0, 0, 0, 0.3)',
+            boxShadow: '0 8px 20px rgba(0, 0, 0, 0.4)',
             border: '1px solid rgba(167, 139, 250, 0.20)',
             whiteSpace: 'nowrap',
             animation: 'dropdownFadeIn 120ms ease-out',
@@ -1110,33 +1117,35 @@ export default function Sidebar() {
       {/* Logout confirmation modal */}
       {showLogoutConfirm && mounted && createPortal(
         <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.4)',
+          position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.65)',
           backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center',
           justifyContent: 'center', zIndex: 99999,
         }}>
           <div style={{
-            background: '#FFFFFF', borderRadius: 16, padding: '24px 28px',
-            maxWidth: 340, width: '90%', border: '1px solid rgba(124,58,237,0.15)',
-            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            background: isDark ? '#141320' : '#FFFFFF', borderRadius: 16, padding: '24px 28px',
+            maxWidth: 340, width: '90%', border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(124,58,237,0.15)'}`,
+            boxShadow: isDark ? '0 20px 50px rgba(0, 0, 0, 0.6)' : '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
             textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 16,
           }}>
             <div style={{
-              width: 48, height: 48, borderRadius: '50%', background: 'rgba(239, 68, 68, 0.08)',
+              width: 48, height: 48, borderRadius: '50%', background: 'rgba(239, 68, 68, 0.12)',
               color: '#EF4444', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              margin: '0 auto', border: '1px solid rgba(239, 68, 68, 0.15)'
+              margin: '0 auto', border: '1px solid rgba(239, 68, 68, 0.25)'
             }}>
               <LogOut size={18} strokeWidth={2} />
             </div>
             <div>
-              <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1E293B', margin: '0 0 6px' }}>Confirm Logout</h3>
-              <p style={{ fontSize: 13, color: '#64748B', margin: 0, lineHeight: 1.5 }}>Are you sure you want to log out of your account?</p>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: isDark ? D.textPrimary : '#1E293B', margin: '0 0 6px' }}>Confirm Logout</h3>
+              <p style={{ fontSize: 13, color: isDark ? D.textSecondary : '#64748B', margin: 0, lineHeight: 1.5 }}>Are you sure you want to log out of your account?</p>
             </div>
             <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
               <button
                 onClick={() => setShowLogoutConfirm(false)}
                 style={{
-                  flex: 1, padding: '10px 0', borderRadius: 10, border: '1px solid #E2E8F0',
-                  background: '#FFFFFF', color: '#64748B', fontWeight: 600, fontSize: 13,
+                  flex: 1, padding: '10px 0', borderRadius: 10,
+                  border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : '#E2E8F0'}`,
+                  background: isDark ? 'rgba(255,255,255,0.06)' : '#FFFFFF',
+                  color: isDark ? D.textPrimary : '#64748B', fontWeight: 600, fontSize: 13,
                   cursor: 'pointer', transition: 'all 160ms ease',
                 }}
               >
@@ -1168,7 +1177,7 @@ export default function Sidebar() {
             position: 'fixed',
             inset: 0,
             zIndex: 99999,
-            background: 'rgba(15, 23, 42, 0.45)',
+            background: 'rgba(0, 0, 0, 0.65)',
             backdropFilter: 'blur(4px)',
             display: 'flex',
             alignItems: 'center',
@@ -1183,9 +1192,9 @@ export default function Sidebar() {
             style={{
               width: 'min(100%, 440px)',
               borderRadius: 20,
-              border: '1px solid rgba(124,58,237,0.12)',
-              background: '#FFFFFF',
-              boxShadow: '0 24px 80px rgba(15, 23, 42, 0.25)',
+              border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(124,58,237,0.12)'}`,
+              background: isDark ? '#141320' : '#FFFFFF',
+              boxShadow: isDark ? '0 24px 80px rgba(0, 0, 0, 0.7)' : '0 24px 80px rgba(15, 23, 42, 0.25)',
               padding: 24,
               display: 'flex',
               flexDirection: 'column',
@@ -1202,16 +1211,16 @@ export default function Sidebar() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: 'rgba(124,58,237,0.10)',
-                color: '#7C3AED',
+                background: isDark ? 'rgba(239, 68, 68, 0.15)' : 'rgba(124,58,237,0.10)',
+                color: isDark ? '#F87171' : '#7C3AED',
               }}>
                 <Trash2 size={18} />
               </div>
               <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-                <h3 style={{ margin: '0 0 6px', fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary, #1A1033)' }}>
+                <h3 style={{ margin: '0 0 6px', fontSize: 18, fontWeight: 700, color: isDark ? D.textPrimary : 'var(--color-text-primary, #1A1033)' }}>
                   Delete prompt?
                 </h3>
-                <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: 'var(--color-text-secondary, #6B6B8A)' }}>
+                <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: isDark ? D.textSecondary : 'var(--color-text-secondary, #6B6B8A)' }}>
                   Do you want to permanently remove this prompt? This cannot be undone.
                 </p>
               </div>
@@ -1224,14 +1233,13 @@ export default function Sidebar() {
                 style={{
                   padding: '10px 16px',
                   borderRadius: 10,
-                  border: '1px solid rgba(124,58,237,0.14)',
-                  background: '#FFFFFF',
-                  color: 'var(--color-text-primary, #1A1033)',
+                  border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(124,58,237,0.14)'}`,
+                  background: isDark ? 'rgba(255,255,255,0.06)' : '#FFFFFF',
+                  color: isDark ? D.textPrimary : 'var(--color-text-primary, #1A1033)',
                   fontSize: 13,
                   fontWeight: 600,
                   cursor: 'pointer',
                 }}
-                className="hover:bg-[rgba(124,58,237,0.04)]"
               >
                 Cancel
               </button>

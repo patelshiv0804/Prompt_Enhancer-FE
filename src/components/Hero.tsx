@@ -4,12 +4,17 @@ import { motion } from "framer-motion";
 import { ArrowRight, Play } from "lucide-react";
 import TrustLogos from "./TrustLogos";
 import PromptIQUniverse from "./PromptIQUniverse";
+import { useTheme, D } from "@/theme/theme";
 
 export default function Hero() {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
   return (
     <section
       id="hero"
       className="hero-shell relative overflow-hidden bg-white"
+      style={{ background: isDark ? D.bg : undefined }}
     >
       {/* ── Full-screen 3D canvas (absolute, fills whole hero) ── */}
       <PromptIQUniverse />
@@ -45,7 +50,7 @@ export default function Hero() {
             fontWeight: 800,
             lineHeight: 1.05,
             letterSpacing: "-0.025em",
-            color: "#0A0A0A",
+            color: isDark ? D.textPrimary : "#0A0A0A",
             margin: 0,
             textAlign: "center",
             maxWidth: 820,
@@ -74,11 +79,11 @@ export default function Hero() {
             className="group w-full sm:w-auto"
             style={{
               display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 10,
-              background: "#0D0D1A", color: "#fff",
+              background: isDark ? D.ctaBg : "#0D0D1A", color: isDark ? D.ctaText : "#fff",
               borderRadius: 999, padding: "14px 28px",
               fontSize: 15, fontWeight: 600,
               textDecoration: "none",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+              boxShadow: isDark ? D.ctaShadow : "0 4px 20px rgba(0,0,0,0.15)",
               transition: "all 0.2s ease",
             }}
           >
@@ -91,17 +96,17 @@ export default function Hero() {
             className="w-full py-2 sm:w-auto sm:py-0"
             style={{
               display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 10,
-              color: "#374151", fontSize: 15, fontWeight: 500,
+              color: isDark ? D.textSecondary : "#374151", fontSize: 15, fontWeight: 500,
               textDecoration: "none",
             }}
           >
             <span style={{
               display: "flex", alignItems: "center", justifyContent: "center",
               width: 36, height: 36, borderRadius: "50%",
-              border: "1.5px solid #E5E7EB",
-              background: "rgba(255,255,255,0.85)",
+              border: `1.5px solid ${isDark ? D.border : "#E5E7EB"}`,
+              background: isDark ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.85)",
             }}>
-              <Play size={12} style={{ marginLeft: 2, color: "#6B7280" }} />
+              <Play size={12} style={{ marginLeft: 2, color: isDark ? D.textSecondary : "#6B7280" }} />
             </span>
             See how it works
           </a>

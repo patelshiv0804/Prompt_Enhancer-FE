@@ -11,7 +11,7 @@ import FAQSection from "@/components/FAQSection";
 import Footer from "@/components/Footer";
 
 const TransformationEngine = dynamic(() => import("@/components/TransformationEngine"), {
-  loading: () => <div style={{ minHeight: "100vh" }} className="bg-[#FAFBFC]" />,
+  loading: () => <div style={{ minHeight: "100vh" }} className="landing-engine-fallback" />,
 });
 
 export default function Home() {
@@ -24,7 +24,7 @@ export default function Home() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col bg-white">
+    <main className="landing-root flex min-h-screen flex-col">
       <Navbar />
       <Hero />
       <WorksEverywhere />

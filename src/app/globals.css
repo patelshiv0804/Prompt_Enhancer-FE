@@ -41,7 +41,9 @@ body {
 }
 
 /* Hide scrollbars across all browsers by default while allowing scrolling */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   -ms-overflow-style: none !important;
   scrollbar-width: none !important;
 }
@@ -105,6 +107,7 @@ button:focus-visible {
 
 /* ── Respect reduced motion preferences ── */
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
@@ -132,6 +135,7 @@ button:focus-visible {
 }
 
 @media (max-width: 767px) {
+
   /* Phones: let the copy define the height instead of forcing a tall
      viewport box, so nothing is ever clipped on short screens. */
   .hero-shell {
@@ -159,23 +163,23 @@ button:focus-visible {
   0% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
+
   100% {
     background-position: 0% 50%;
   }
 }
 
 .animated-remarkable-gradient {
-  background: linear-gradient(
-    115deg,
-    #6366F1 0%,
-    #8B5CF6 25%,
-    #EC4899 50%,
-    #8B5CF6 75%,
-    #6366F1 100%
-  );
+  background: linear-gradient(115deg,
+      #6366F1 0%,
+      #8B5CF6 25%,
+      #EC4899 50%,
+      #8B5CF6 75%,
+      #6366F1 100%);
   background-size: 250% 250%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -186,31 +190,37 @@ button:focus-visible {
 
 /* ── Floating animation ── */
 @keyframes float {
+
   0%,
   100% {
     transform: translate3d(0, 0, 0);
   }
+
   50% {
     transform: translate3d(0, -12px, 0);
   }
 }
 
 @keyframes float-delayed {
+
   0%,
   100% {
     transform: translate3d(0, 0, 0);
   }
+
   50% {
     transform: translate3d(0, -8px, 0);
   }
 }
 
 @keyframes pulse-glow {
+
   0%,
   100% {
     opacity: 0.15;
     transform: scale3d(1, 1, 1);
   }
+
   50% {
     opacity: 0.3;
     transform: scale3d(1.05, 1.05, 1);
@@ -266,11 +276,13 @@ button:focus-visible {
 
 /* ── Platform ring pulse ── */
 @keyframes pulse-ring {
+
   0%,
   100% {
     opacity: 0.5;
     transform: translate3d(-50%, -50%, 0) scale3d(1, 1, 1);
   }
+
   50% {
     opacity: 0.8;
     transform: translate3d(-50%, -50%, 0) scale3d(1.04, 1.04, 1);
@@ -320,12 +332,15 @@ button:focus-visible {
 .dashboard-root {
   /* ── 60-30-10 Color System ── */
   --color-canvas: #FAFAFC;
-  --color-dark-surface: #0E0B18;
-  --color-dark-surface-2: #160F26;
-  --color-dark-surface-3: #1E1535;
-  --color-dark-border: rgba(167, 139, 250, 0.12);
-  --color-dark-text-primary: #EDE9FE;
-  --color-dark-text-secondary: rgba(221, 214, 254, 0.45);
+
+  /* ── Dark surface defaults — kept in sync with D tokens in theme.tsx
+     so that html.dark .dashboard-root overrides always win cleanly. ── */
+  --color-dark-surface:        #0A0A0F;   /* D.bg */
+  --color-dark-surface-2:      #141320;   /* D.surface */
+  --color-dark-surface-3:      #1A1827;   /* D.surfaceElevated */
+  --color-dark-border:         rgba(255, 255, 255, 0.09); /* D.border */
+  --color-dark-text-primary:   #F5F4F8;   /* D.textPrimary */
+  --color-dark-text-secondary: #ABA9BC;   /* D.textSecondary */
 
   /* ── Accent ── */
   --color-primary: #7C3AED;
@@ -373,6 +388,31 @@ button:focus-visible {
   display: flex;
   height: 100vh;
   width: 100vw;
+  transition: background 0.4s ease, color 0.4s ease;
+}
+
+html.dark .dashboard-root {
+  --color-canvas: #0A0A0F;
+  --color-text-primary: #F5F4F8;
+  --color-text-secondary: #ABA9BC;
+  --color-surface: #141320;
+  --glass-bg: rgba(20, 19, 32, 0.75);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.3);
+  --glass-inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+  --color-dark-surface: #0A0A0F;
+  --color-dark-surface-2: #141320;
+  --color-dark-surface-3: #1A1827;
+  --color-dark-border: rgba(255, 255, 255, 0.09);
+  --color-dark-text-primary: #F5F4F8;
+  --color-dark-text-secondary: #ABA9BC;
+
+  background-color: #0A0A0F;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 10% 0%, rgba(139, 92, 246, 0.15), transparent 55%),
+    radial-gradient(ellipse 60% 50% at 90% 90%, rgba(236, 72, 153, 0.10), transparent 55%),
+    linear-gradient(180deg, #0A0A0F 0%, #0D0C14 50%, #0A0A0F 100%);
 }
 
 /* ── Dashboard Layout ── */
@@ -424,9 +464,11 @@ button:focus-visible {
   0% {
     transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
   }
+
   50% {
     transform: translate3d(30px, 20px, 0) scale3d(1.1, 1.1, 1);
   }
+
   100% {
     transform: translate3d(-20px, 30px, 0) scale3d(0.95, 0.95, 1);
   }
@@ -436,6 +478,7 @@ button:focus-visible {
   0% {
     background-position: -200% 0;
   }
+
   100% {
     background-position: 200% 0;
   }
@@ -446,6 +489,7 @@ button:focus-visible {
     opacity: 0;
     transform: translate3d(0, -8px, 0);
   }
+
   to {
     opacity: 1;
     transform: translate3d(0, 0, 0);
@@ -457,6 +501,7 @@ button:focus-visible {
     opacity: 0;
     transform: translate3d(0, -6px, 0) scale3d(0.97, 0.97, 1);
   }
+
   to {
     opacity: 1;
     transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
@@ -467,6 +512,7 @@ button:focus-visible {
   0% {
     transform: translate3d(-140%, 0, 0);
   }
+
   100% {
     transform: translate3d(240%, 0, 0);
   }
@@ -476,16 +522,19 @@ button:focus-visible {
   0% {
     transform: translate3d(-100%, 0, 0);
   }
+
   100% {
     transform: translate3d(200%, 0, 0);
   }
 }
 
 @keyframes ringPulse {
+
   0%,
   100% {
     opacity: 0.25;
   }
+
   50% {
     opacity: 0.4;
   }
@@ -496,6 +545,7 @@ button:focus-visible {
     opacity: 0;
     transform: translate3d(0, 12px, 0);
   }
+
   to {
     opacity: 1;
     transform: translate3d(0, 0, 0);
@@ -507,6 +557,7 @@ button:focus-visible {
     opacity: 0;
     transform: translate3d(0, 14px, 0) scale3d(0.97, 0.97, 1);
   }
+
   to {
     opacity: 1;
     transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
@@ -518,10 +569,12 @@ button:focus-visible {
     transform: scale3d(1, 1, 1);
     opacity: 1;
   }
+
   50% {
     transform: scale3d(1.15, 1.15, 1);
     opacity: 0.7;
   }
+
   100% {
     transform: scale3d(1, 1, 1);
     opacity: 1;
@@ -533,6 +586,7 @@ button:focus-visible {
     opacity: 0;
     transform: translate3d(0, 10px, 0);
   }
+
   to {
     opacity: 1;
     transform: translate3d(0, 0, 0);
@@ -541,10 +595,14 @@ button:focus-visible {
 
 /* Blinking caret for the live token-streaming view in the optimizer. */
 @keyframes streamCaretBlink {
-  0%, 45% {
+
+  0%,
+  45% {
     opacity: 1;
   }
-  55%, 100% {
+
+  55%,
+  100% {
     opacity: 0;
   }
 }
@@ -580,6 +638,12 @@ button:focus-visible {
   background-size: 200% 100%;
   animation: shimmer 2s infinite linear;
   border-radius: 6px;
+}
+
+html.dark .skeleton,
+html.dark .dashboard-root .skeleton {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 25%, rgba(139, 92, 246, 0.12) 50%, rgba(255, 255, 255, 0.03) 75%);
+  background-size: 200% 100%;
 }
 
 @media (max-width: 1024px) {
@@ -621,6 +685,12 @@ button:focus-visible {
   box-shadow: 0 4px 14px rgba(124, 58, 237, 0.08);
 }
 
+html.dark .aure-nav-item:hover:not(.is-active) {
+  background: linear-gradient(90deg, rgba(139, 92, 246, 0.18) 0%, rgba(168, 85, 247, 0.08) 100%) !important;
+  color: #F5F4F8 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
 .aure-nav-item:active:not(.is-active) {
   transform: translateX(4px) scale(0.985);
   transition-duration: 120ms;
@@ -635,6 +705,10 @@ button:focus-visible {
 .aure-nav-item:hover:not(.is-active) .aure-nav-icon {
   color: #7C3AED !important;
   transform: scale(1.1);
+}
+
+html.dark .aure-nav-item:hover:not(.is-active) .aure-nav-icon {
+  color: #A78BFA !important;
 }
 
 /* Shortcut hint — slides + fades in when hovering its own row */
@@ -666,6 +740,10 @@ button:focus-visible {
   transform: translateX(3px);
 }
 
+html.dark .aure-recent-item:hover:not(.is-active) {
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
 .aure-recent-item:active:not(.is-active) {
   transform: translateX(3px) scale(0.99);
   transition-duration: 110ms;
@@ -688,6 +766,12 @@ button:focus-visible {
   box-shadow: 0 6px 16px rgba(124, 58, 237, 0.14);
 }
 
+html.dark .aure-rail-btn:hover:not(.is-active) {
+  background: rgba(139, 92, 246, 0.18) !important;
+  color: #A78BFA !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
 .aure-rail-btn:active {
   transform: translateY(-1px) scale(0.97);
   transition-duration: 110ms;
@@ -705,11 +789,16 @@ button:focus-visible {
   background: rgba(124, 58, 237, 0.07) !important;
 }
 
+html.dark .aure-soft-btn:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
 .aure-soft-btn:active {
   transform: scale(0.97);
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .aure-nav-item,
   .aure-nav-icon,
   .aure-nav-shortcut,
@@ -718,5 +807,80 @@ button:focus-visible {
   .aure-soft-btn {
     transition: none !important;
     transform: none !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   Dark mode — base canvas
+   Applies app-wide: the ThemeProvider (mounted once at the app root) adds
+   `.dark` to <html> on every route, and the no-flash script sets it before
+   paint. These rules handle the base canvas so the switch is flash-free;
+   individual section components pick their own colours via useTheme(). Light
+   mode is untouched — none of this applies without `.dark`.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Fallback shown while the optimizer chunk lazy-loads. */
+.landing-engine-fallback {
+  background: #FAFBFC;
+}
+
+html.dark {
+  --background: #0A0A0F;
+  --foreground: #F5F4F8;
+  color-scheme: dark;
+}
+
+/* Override Tailwind's bg-white utility that layout.tsx applies to <body>.
+   The !important is intentional — Tailwind utility classes generate
+   `background-color: #fff` which would otherwise win over this rule. */
+html.dark body {
+  background-color: #0A0A0F !important;
+  background: #0A0A0F !important;
+  color: #F5F4F8 !important;
+}
+
+html.dark .landing-root,
+html.dark .auth-root {
+  background: #0A0A0F;
+}
+
+html.dark .landing-engine-fallback {
+  background: #0A0A0F;
+}
+
+/* Softer scrollbar thumb on the dark canvas. */
+html.dark ::-webkit-scrollbar-thumb {
+  background: #2A2740;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #3A3652;
+}
+
+/* Smooth cross-fade when toggling. Only colour-family properties are
+   transitioned, so framer-motion transforms/opacity and the animated brand
+   gradients are unaffected. */
+.landing-root,
+.landing-root *:not(canvas):not(svg):not(svg *),
+.auth-root,
+.auth-root *:not(canvas):not(svg):not(svg *),
+.dashboard-root,
+.dashboard-root *:not(canvas):not(svg):not(svg *) {
+  transition:
+    background-color 0.4s ease,
+    border-color 0.4s ease,
+    color 0.4s ease,
+    fill 0.4s ease,
+    box-shadow 0.4s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-root,
+  .landing-root *,
+  .auth-root,
+  .auth-root *,
+  .dashboard-root,
+  .dashboard-root * {
+    transition: none !important;
   }
 }

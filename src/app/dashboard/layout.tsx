@@ -7,6 +7,7 @@ import Header from '@/components/layout/Header';
 import AuthGuard from '@/components/layout/AuthGuard';
 import { useAuth } from '@/context/AuthContext';
 import { OnboardingModal } from '@/features/onboarding/components/OnboardingModal';
+import ThemeBackendSync from '@/components/ThemeBackendSync';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -49,6 +50,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <AuthGuard>
+      {/* Persists any theme change made in the authenticated app to the account. */}
+      <ThemeBackendSync />
       <div className="dashboard-root">
         <div className="app-container">
           <Sidebar />

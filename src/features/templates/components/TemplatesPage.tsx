@@ -14,6 +14,7 @@ import {
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { loadTemplates, type Template } from '../services/templatesService';
 import TemplatesHubSkeleton from './TemplatesHubSkeleton';
+import { useTheme, D } from '@/theme/theme';
 
 /* ── Category & Role Icon Taxonomy ── */
 const CATEGORY_ICON_MAP: Record<string, React.ElementType> = {
@@ -40,20 +41,25 @@ const CATEGORY_ICON_MAP: Record<string, React.ElementType> = {
   business: Briefcase,
 };
 
-const CATEGORY_COLOR_MAP: Record<string, { bg: string; text: string; border: string }> = {
-  developer: { bg: 'rgba(59, 130, 246, 0.08)', text: '#2563EB', border: 'rgba(59, 130, 246, 0.20)' },
-  marketer: { bg: 'rgba(236, 72, 153, 0.08)', text: '#DB2777', border: 'rgba(236, 72, 153, 0.20)' },
-  researcher: { bg: 'rgba(139, 92, 246, 0.08)', text: '#7C3AED', border: 'rgba(139, 92, 246, 0.20)' },
-  consultant: { bg: 'rgba(16, 185, 129, 0.08)', text: '#059669', border: 'rgba(16, 185, 129, 0.20)' },
-  entrepreneur: { bg: 'rgba(245, 158, 11, 0.08)', text: '#D97706', border: 'rgba(245, 158, 11, 0.20)' },
-  educator: { bg: 'rgba(14, 165, 233, 0.08)', text: '#0284C7', border: 'rgba(14, 165, 233, 0.20)' },
-  writer: { bg: 'rgba(168, 85, 247, 0.08)', text: '#9333EA', border: 'rgba(168, 85, 247, 0.20)' },
-  student: { bg: 'rgba(20, 184, 166, 0.08)', text: '#0D9488', border: 'rgba(20, 184, 166, 0.20)' },
-  general: { bg: 'rgba(124, 58, 237, 0.08)', text: '#7C3AED', border: 'rgba(124, 58, 237, 0.20)' },
+const CATEGORY_COLOR_MAP: Record<string, { bg: string; darkBg: string; text: string; darkText: string; border: string; darkBorder: string }> = {
+  developer: { bg: 'rgba(59, 130, 246, 0.08)', darkBg: 'rgba(59, 130, 246, 0.16)', text: '#2563EB', darkText: '#60A5FA', border: 'rgba(59, 130, 246, 0.20)', darkBorder: 'rgba(59, 130, 246, 0.35)' },
+  marketer: { bg: 'rgba(236, 72, 153, 0.08)', darkBg: 'rgba(236, 72, 153, 0.16)', text: '#DB2777', darkText: '#F472B6', border: 'rgba(236, 72, 153, 0.20)', darkBorder: 'rgba(236, 72, 153, 0.35)' },
+  researcher: { bg: 'rgba(139, 92, 246, 0.08)', darkBg: 'rgba(139, 92, 246, 0.16)', text: '#7C3AED', darkText: '#C084FC', border: 'rgba(139, 92, 246, 0.20)', darkBorder: 'rgba(139, 92, 246, 0.35)' },
+  consultant: { bg: 'rgba(16, 185, 129, 0.08)', darkBg: 'rgba(16, 185, 129, 0.16)', text: '#059669', darkText: '#34D399', border: 'rgba(16, 185, 129, 0.20)', darkBorder: 'rgba(16, 185, 129, 0.35)' },
+  entrepreneur: { bg: 'rgba(245, 158, 11, 0.08)', darkBg: 'rgba(245, 158, 11, 0.16)', text: '#D97706', darkText: '#FBBF24', border: 'rgba(245, 158, 11, 0.20)', darkBorder: 'rgba(245, 158, 11, 0.35)' },
+  educator: { bg: 'rgba(14, 165, 233, 0.08)', darkBg: 'rgba(14, 165, 233, 0.16)', text: '#0284C7', darkText: '#38BDF8', border: 'rgba(14, 165, 233, 0.20)', darkBorder: 'rgba(14, 165, 233, 0.35)' },
+  writer: { bg: 'rgba(168, 85, 247, 0.08)', darkBg: 'rgba(168, 85, 247, 0.16)', text: '#9333EA', darkText: '#E879F9', border: 'rgba(168, 85, 247, 0.20)', darkBorder: 'rgba(168, 85, 247, 0.35)' },
+  student: { bg: 'rgba(20, 184, 166, 0.08)', darkBg: 'rgba(20, 184, 166, 0.16)', text: '#0D9488', darkText: '#2DD4BF', border: 'rgba(20, 184, 166, 0.20)', darkBorder: 'rgba(20, 184, 166, 0.35)' },
+  general: { bg: 'rgba(124, 58, 237, 0.08)', darkBg: 'rgba(124, 58, 237, 0.16)', text: '#7C3AED', darkText: '#A78BFA', border: 'rgba(124, 58, 237, 0.20)', darkBorder: 'rgba(124, 58, 237, 0.35)' },
 };
 
-function getCategoryColor(category: string) {
-  return CATEGORY_COLOR_MAP[category.toLowerCase()] || CATEGORY_COLOR_MAP.general;
+function getCategoryColor(category: string, isDark: boolean = false) {
+  const meta = CATEGORY_COLOR_MAP[category.toLowerCase()] || CATEGORY_COLOR_MAP.general;
+  return {
+    bg: isDark ? meta.darkBg : meta.bg,
+    text: isDark ? meta.darkText : meta.text,
+    border: isDark ? meta.darkBorder : meta.border,
+  };
 }
 
 function categoryLabel(id: string): string {
@@ -573,16 +579,18 @@ function NotionTemplateCard({
   onSelectTag: (tag: string) => void;
   isSmall: boolean;
 }) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const Icon = CATEGORY_ICON_MAP[template.category] || Sparkles;
-  const categoryStyle = getCategoryColor(template.category);
+  const categoryStyle = getCategoryColor(template.category, isDark);
 
   return (
     <div
       id={`template-card-${template.id}`}
       onClick={() => onQuickLook(template)}
       style={{
-        background: '#FFFFFF',
-        border: '1px solid rgba(124,58,237,0.10)',
+        background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
+        border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.10)'}`,
         borderRadius: 20,
         padding: isSmall ? '16px 16px' : '18px 20px',
         display: 'flex',
@@ -590,10 +598,10 @@ function NotionTemplateCard({
         gap: 12,
         position: 'relative',
         cursor: 'pointer',
-        boxShadow: '0 2px 8px rgba(109,40,217,0.03)',
+        boxShadow: isDark ? '0 4px 16px rgba(0,0,0,0.35)' : '0 2px 8px rgba(109,40,217,0.03)',
         transition: 'all 220ms cubic-bezier(0.16, 1, 0.3, 1)',
       }}
-      className="group hover:translate-y-[-3px] hover:shadow-[0_12px_32px_rgba(109,40,217,0.12)] hover:!border-[rgba(124,58,237,0.28)]"
+      className={isDark ? 'group hover:translate-y-[-3px] hover:shadow-[0_12px_32px_rgba(0,0,0,0.6)] hover:!border-[rgba(167,139,250,0.35)]' : 'group hover:translate-y-[-3px] hover:shadow-[0_12px_32px_rgba(109,40,217,0.12)] hover:!border-[rgba(124,58,237,0.28)]'}
     >
       {/* Top row: Icon, Category Pill, Bookmark */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
@@ -646,10 +654,10 @@ function NotionTemplateCard({
             border: 'none',
             cursor: 'pointer',
             transition: 'all 180ms ease',
-            background: isBookmarked ? 'rgba(124,58,237,0.12)' : 'transparent',
-            color: isBookmarked ? 'var(--color-primary)' : 'rgba(107,107,138,0.45)',
+            background: isBookmarked ? (isDark ? 'rgba(139, 92, 246, 0.20)' : 'rgba(124,58,237,0.12)') : 'transparent',
+            color: isBookmarked ? (isDark ? '#C084FC' : 'var(--color-primary)') : (isDark ? D.textMuted : 'rgba(107,107,138,0.45)'),
           }}
-          className={!isBookmarked ? 'hover:!bg-[rgba(124,58,237,0.08)] hover:!text-[var(--color-primary)]' : ''}
+          className={!isBookmarked ? (isDark ? 'hover:!bg-[rgba(255,255,255,0.08)] hover:!text-[#C084FC]' : 'hover:!bg-[rgba(124,58,237,0.08)] hover:!text-[var(--color-primary)]') : ''}
           title={isBookmarked ? 'Saved in bookmarks' : 'Bookmark'}
         >
           {isBookmarked ? <BookmarkCheck size={14} strokeWidth={2.2} /> : <Bookmark size={14} strokeWidth={2} />}
@@ -662,19 +670,19 @@ function NotionTemplateCard({
           style={{
             fontSize: 15,
             fontWeight: 700,
-            color: 'var(--color-text-primary)',
+            color: isDark ? D.textPrimary : 'var(--color-text-primary)',
             margin: '0 0 6px',
             letterSpacing: -0.2,
             lineHeight: 1.35,
           }}
-          className="group-hover:text-[var(--color-primary)] transition-colors"
+          className={isDark ? 'group-hover:text-[#C084FC] transition-colors' : 'group-hover:text-[var(--color-primary)] transition-colors'}
         >
           {template.title}
         </h3>
         <p
           style={{
             fontSize: 13,
-            color: 'var(--color-text-secondary)',
+            color: isDark ? D.textSecondary : 'var(--color-text-secondary)',
             lineHeight: 1.5,
             margin: 0,
             display: '-webkit-box',
@@ -701,12 +709,12 @@ function NotionTemplateCard({
               fontWeight: 500,
               padding: '3px 10px',
               borderRadius: 9999,
-              background: 'rgba(124,58,237,0.06)',
-              color: 'var(--color-text-secondary)',
+              background: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(124,58,237,0.06)',
+              color: isDark ? D.textSecondary : 'var(--color-text-secondary)',
               cursor: 'pointer',
               transition: 'all 150ms ease',
             }}
-            className="hover:!bg-[rgba(124,58,237,0.12)] hover:!text-[var(--color-primary)]"
+            className={isDark ? 'hover:!bg-[rgba(255,255,255,0.12)] hover:!text-[#FFFFFF]' : 'hover:!bg-[rgba(124,58,237,0.12)] hover:!text-[var(--color-primary)]'}
           >
             #{tag}
           </span>
@@ -718,9 +726,9 @@ function NotionTemplateCard({
               fontWeight: 700,
               padding: '3px 8px',
               borderRadius: 9999,
-              background: 'rgba(16,185,129,0.10)',
-              color: '#059669',
-              border: '1px solid rgba(16,185,129,0.20)',
+              background: isDark ? 'rgba(16,185,129,0.18)' : 'rgba(16,185,129,0.10)',
+              color: isDark ? '#34D399' : '#059669',
+              border: `1px solid ${isDark ? 'rgba(16,185,129,0.35)' : 'rgba(16,185,129,0.20)'}`,
               textTransform: 'uppercase',
             }}
           >
@@ -737,7 +745,7 @@ function NotionTemplateCard({
           justifyContent: 'space-between',
           marginTop: 'auto',
           paddingTop: 10,
-          borderTop: '1px solid rgba(124,58,237,0.07)',
+          borderTop: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.07)'}`,
           flexWrap: 'nowrap',
           gap: 6,
         }}
@@ -749,7 +757,7 @@ function NotionTemplateCard({
             gap: 4,
             fontSize: 11.5,
             fontWeight: 500,
-            color: 'var(--color-text-secondary)',
+            color: isDark ? D.textMuted : 'var(--color-text-secondary)',
             whiteSpace: 'nowrap',
           }}
         >
@@ -772,13 +780,13 @@ function NotionTemplateCard({
               borderRadius: 8,
               fontSize: 11.5,
               fontWeight: 600,
-              border: '1px solid rgba(124,58,237,0.14)',
-              background: '#FFFFFF',
-              color: 'var(--color-text-secondary)',
+              border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(124,58,237,0.14)'}`,
+              background: isDark ? 'rgba(255, 255, 255, 0.06)' : '#FFFFFF',
+              color: isDark ? D.textSecondary : 'var(--color-text-secondary)',
               cursor: 'pointer',
               transition: 'all 150ms ease',
             }}
-            className="hover:!text-[var(--color-primary)] hover:!border-[rgba(124,58,237,0.30)] hover:!bg-[rgba(124,58,237,0.04)]"
+            className={isDark ? 'hover:!text-[#FFFFFF] hover:!border-[rgba(255,255,255,0.22)] hover:!bg-[rgba(255,255,255,0.10)]' : 'hover:!text-[var(--color-primary)] hover:!border-[rgba(124,58,237,0.30)] hover:!bg-[rgba(124,58,237,0.04)]'}
           >
             <Eye size={12} />
             <span>Preview</span>
@@ -834,15 +842,17 @@ function NotionListRow({
   isPhone: boolean;
   isSmall: boolean;
 }) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const Icon = CATEGORY_ICON_MAP[template.category] || Sparkles;
-  const categoryStyle = getCategoryColor(template.category);
+  const categoryStyle = getCategoryColor(template.category, isDark);
 
   return (
     <div
       onClick={() => onQuickLook(template)}
       style={{
-        background: '#FFFFFF',
-        border: '1px solid rgba(124,58,237,0.08)',
+        background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
+        border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.08)'}`,
         borderRadius: 14,
         padding: isSmall ? '10px 12px' : isPhone ? '12px 14px' : '14px 20px',
         display: 'flex',
@@ -852,7 +862,7 @@ function NotionListRow({
         cursor: 'pointer',
         transition: 'all 160ms ease',
       }}
-      className="hover:!border-[rgba(124,58,237,0.22)] hover:!bg-[rgba(124,58,237,0.02)] hover:shadow-sm"
+      className={isDark ? 'hover:!border-[rgba(167,139,250,0.3)] hover:!bg-[rgba(255,255,255,0.04)] hover:shadow-sm' : 'hover:!border-[rgba(124,58,237,0.22)] hover:!bg-[rgba(124,58,237,0.02)] hover:shadow-sm'}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: isSmall ? 9 : 14, minWidth: 0, flex: 1 }}>
         <div
@@ -865,6 +875,7 @@ function NotionListRow({
             justifyContent: 'center',
             background: categoryStyle.bg,
             color: categoryStyle.text,
+            border: `1px solid ${categoryStyle.border}`,
             flexShrink: 0,
           }}
         >
@@ -877,7 +888,7 @@ function NotionListRow({
               style={{
                 fontSize: isSmall ? 13 : 14,
                 fontWeight: 700,
-                color: 'var(--color-text-primary)',
+                color: isDark ? D.textPrimary : 'var(--color-text-primary)',
                 margin: 0,
                 letterSpacing: -0.1,
               }}
@@ -903,7 +914,7 @@ function NotionListRow({
             <p
               style={{
                 fontSize: 12,
-                color: 'var(--color-text-secondary)',
+                color: isDark ? D.textSecondary : 'var(--color-text-secondary)',
                 margin: '2px 0 0',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
@@ -931,8 +942,8 @@ function NotionListRow({
             borderRadius: 7,
             border: 'none',
             cursor: 'pointer',
-            background: isBookmarked ? 'rgba(124,58,237,0.12)' : 'transparent',
-            color: isBookmarked ? 'var(--color-primary)' : 'rgba(107,107,138,0.45)',
+            background: isBookmarked ? (isDark ? 'rgba(139, 92, 246, 0.20)' : 'rgba(124,58,237,0.12)') : 'transparent',
+            color: isBookmarked ? (isDark ? '#C084FC' : 'var(--color-primary)') : (isDark ? D.textMuted : 'rgba(107,107,138,0.45)'),
           }}
         >
           {isBookmarked ? <BookmarkCheck size={14} strokeWidth={2.2} /> : <Bookmark size={14} strokeWidth={2} />}
@@ -982,11 +993,13 @@ function QuickLookModal({
   onToggleBookmark: (id: string) => void;
   isSmall: boolean;
 }) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const [copied, setCopied] = useState(false);
 
   if (!template) return null;
   const Icon = CATEGORY_ICON_MAP[template.category] || Sparkles;
-  const categoryStyle = getCategoryColor(template.category);
+  const categoryStyle = getCategoryColor(template.category, isDark);
 
   const handleCopyTitle = () => {
     navigator.clipboard.writeText(`${template.title} — ${template.description}`);
@@ -1000,7 +1013,7 @@ function QuickLookModal({
         position: 'fixed',
         inset: 0,
         zIndex: 9999,
-        background: 'rgba(9, 9, 11, 0.50)',
+        background: 'rgba(9, 9, 11, 0.70)',
         backdropFilter: 'blur(8px)',
         WebkitBackdropFilter: 'blur(8px)',
         display: 'flex',
@@ -1013,13 +1026,13 @@ function QuickLookModal({
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: '#FFFFFF',
+          background: isDark ? '#141320' : '#FFFFFF',
           borderRadius: isSmall ? 20 : 24,
           maxWidth: 580,
           width: '100%',
           maxHeight: '92vh',
           overflowY: 'auto',
-          boxShadow: '0 25px 60px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(124, 58, 237, 0.15)',
+          boxShadow: isDark ? '0 25px 60px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.12)' : '0 25px 60px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(124, 58, 237, 0.15)',
           position: 'relative',
         }}
       >
@@ -1068,7 +1081,7 @@ function QuickLookModal({
                     {categoryLabel(template.category)}
                   </span>
                 </div>
-                <h2 style={{ fontSize: isSmall ? 18 : 20, fontWeight: 800, color: 'var(--color-text-primary)', margin: 0, letterSpacing: -0.3 }}>
+                <h2 style={{ fontSize: isSmall ? 18 : 20, fontWeight: 800, color: isDark ? D.textPrimary : 'var(--color-text-primary)', margin: 0, letterSpacing: -0.3 }}>
                   {template.title}
                 </h2>
               </div>
@@ -1081,15 +1094,15 @@ function QuickLookModal({
                 height: 32,
                 borderRadius: 8,
                 border: 'none',
-                background: 'rgba(0,0,0,0.05)',
+                background: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0,0,0,0.05)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: 'var(--color-text-secondary)',
+                color: isDark ? D.textSecondary : 'var(--color-text-secondary)',
                 flexShrink: 0,
               }}
-              className="hover:!bg-[rgba(0,0,0,0.10)]"
+              className={isDark ? 'hover:!bg-[rgba(255,255,255,0.15)] hover:!text-[#FFFFFF]' : 'hover:!bg-[rgba(0,0,0,0.10)]'}
             >
               <X size={16} />
             </button>
@@ -1100,38 +1113,38 @@ function QuickLookModal({
             style={{
               padding: '14px 16px',
               borderRadius: 14,
-              background: 'rgba(124, 58, 237, 0.03)',
-              border: '1px solid rgba(124, 58, 237, 0.08)',
+              background: isDark ? 'rgba(14, 13, 20, 0.75)' : 'rgba(124, 58, 237, 0.03)',
+              border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124, 58, 237, 0.08)'}`,
               marginBottom: 18,
             }}
           >
-            <h4 style={{ fontSize: 11.5, fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-primary)', letterSpacing: '0.05em', margin: '0 0 6px' }}>
+            <h4 style={{ fontSize: 11.5, fontWeight: 700, textTransform: 'uppercase', color: isDark ? '#C084FC' : 'var(--color-primary)', letterSpacing: '0.05em', margin: '0 0 6px' }}>
               About this Template
             </h4>
-            <p style={{ fontSize: 13.5, lineHeight: 1.6, color: 'var(--color-text-primary)', margin: 0 }}>
+            <p style={{ fontSize: 13.5, lineHeight: 1.6, color: isDark ? D.textPrimary : 'var(--color-text-primary)', margin: 0 }}>
               {template.description}
             </p>
           </div>
 
           {/* Highlights / Best For */}
           <div style={{ marginBottom: 18 }}>
-            <h4 style={{ fontSize: 11.5, fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-secondary)', letterSpacing: '0.05em', margin: '0 0 10px' }}>
+            <h4 style={{ fontSize: 11.5, fontWeight: 700, textTransform: 'uppercase', color: isDark ? D.textMuted : 'var(--color-text-secondary)', letterSpacing: '0.05em', margin: '0 0 10px' }}>
               Included Capabilities
             </h4>
             <div style={{ display: 'grid', gridTemplateColumns: isSmall ? '1fr' : '1fr 1fr', gap: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: 'var(--color-text-secondary)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: isDark ? D.textSecondary : 'var(--color-text-secondary)' }}>
                 <CheckCircle2 size={15} style={{ color: '#10B981', flexShrink: 0 }} />
                 <span>Multi-turn prompt guidance</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: 'var(--color-text-secondary)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: isDark ? D.textSecondary : 'var(--color-text-secondary)' }}>
                 <CheckCircle2 size={15} style={{ color: '#10B981', flexShrink: 0 }} />
                 <span>Zero-shot precision tuning</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: 'var(--color-text-secondary)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: isDark ? D.textSecondary : 'var(--color-text-secondary)' }}>
                 <CheckCircle2 size={15} style={{ color: '#10B981', flexShrink: 0 }} />
                 <span>Role-specialized context</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: 'var(--color-text-secondary)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: isDark ? D.textSecondary : 'var(--color-text-secondary)' }}>
                 <CheckCircle2 size={15} style={{ color: '#10B981', flexShrink: 0 }} />
                 <span>High token efficiency</span>
               </div>
@@ -1149,12 +1162,12 @@ function QuickLookModal({
                     fontWeight: 500,
                     padding: '3px 10px',
                     borderRadius: 9999,
-                    background: 'rgba(124,58,237,0.06)',
-                    color: 'var(--color-text-secondary)',
+                    background: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(124,58,237,0.06)',
+                    color: isDark ? D.textSecondary : 'var(--color-text-secondary)',
                     cursor: 'pointer',
                     transition: 'all 150ms ease',
                   }}
-                  className="hover:!bg-[rgba(124,58,237,0.12)] hover:!text-[var(--color-primary)]"
+                  className={isDark ? 'hover:!bg-[rgba(255,255,255,0.12)] hover:!text-[#FFFFFF]' : 'hover:!bg-[rgba(124,58,237,0.12)] hover:!text-[var(--color-primary)]'}
                 >
                   #{tag}
                 </span>
@@ -1163,7 +1176,7 @@ function QuickLookModal({
           )}
 
           {/* Action Buttons */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, borderTop: '1px solid rgba(0,0,0,0.07)', paddingTop: 18, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, borderTop: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0,0,0,0.07)'}`, paddingTop: 18, flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', gap: 7, flex: isSmall ? '1 1 100%' : '0 0 auto' }}>
               <button
                 onClick={handleCopyTitle}
@@ -1176,13 +1189,13 @@ function QuickLookModal({
                   borderRadius: 10,
                   fontSize: 13,
                   fontWeight: 600,
-                  border: '1px solid rgba(0,0,0,0.12)',
-                  background: '#FFFFFF',
-                  color: 'var(--color-text-secondary)',
+                  border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0,0,0,0.12)'}`,
+                  background: isDark ? 'rgba(255, 255, 255, 0.06)' : '#FFFFFF',
+                  color: isDark ? D.textSecondary : 'var(--color-text-secondary)',
                   cursor: 'pointer',
                   flex: isSmall ? '1 1 auto' : undefined,
                 }}
-                className="hover:!bg-gray-50"
+                className={isDark ? 'hover:!bg-[rgba(255,255,255,0.10)] hover:!text-[#FFFFFF]' : 'hover:!bg-gray-50'}
               >
                 {copied ? <Check size={14} color="#10B981" /> : <Copy size={14} />}
                 <span>{copied ? 'Copied' : 'Copy'}</span>
@@ -1199,9 +1212,9 @@ function QuickLookModal({
                   borderRadius: 10,
                   fontSize: 13,
                   fontWeight: 600,
-                  border: '1px solid rgba(124,58,237,0.20)',
-                  background: isBookmarked ? 'rgba(124,58,237,0.10)' : 'transparent',
-                  color: isBookmarked ? 'var(--color-primary)' : 'var(--color-text-secondary)',
+                  border: `1px solid ${isDark ? 'rgba(167, 139, 250, 0.3)' : 'rgba(124,58,237,0.20)'}`,
+                  background: isBookmarked ? (isDark ? 'rgba(139, 92, 246, 0.20)' : 'rgba(124,58,237,0.10)') : 'transparent',
+                  color: isBookmarked ? (isDark ? '#C084FC' : 'var(--color-primary)') : (isDark ? D.textSecondary : 'var(--color-text-secondary)'),
                   cursor: 'pointer',
                   flex: isSmall ? '1 1 auto' : undefined,
                 }}
@@ -1247,6 +1260,8 @@ function QuickLookModal({
 /* ── Main Templates Page Component ── */
 export default function TemplatesPage() {
   const router = useRouter();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1439,7 +1454,7 @@ export default function TemplatesPage() {
               style={{
                 fontSize: isSmall ? 20 : isPhone ? 22 : 25,
                 fontWeight: 800,
-                color: 'var(--color-text-primary)',
+                color: isDark ? D.textPrimary : 'var(--color-text-primary)',
                 letterSpacing: -0.4,
                 margin: 0,
               }}
@@ -1450,17 +1465,17 @@ export default function TemplatesPage() {
               style={{
                 fontSize: 10.5,
                 fontWeight: 700,
-                background: 'rgba(124,58,237,0.08)',
-                color: 'var(--color-primary)',
+                background: isDark ? 'rgba(139, 92, 246, 0.18)' : 'rgba(124,58,237,0.08)',
+                color: isDark ? '#C084FC' : 'var(--color-primary)',
                 padding: '3px 8px',
                 borderRadius: 9999,
-                border: '1px solid rgba(124,58,237,0.18)',
+                border: `1px solid ${isDark ? 'rgba(167, 139, 250, 0.3)' : 'rgba(124,58,237,0.18)'}`,
               }}
             >
               {templates.length} Curated
             </span>
           </div>
-          <p style={{ fontSize: isSmall ? 12.5 : 13.5, color: 'var(--color-text-secondary)', margin: 0 }}>
+          <p style={{ fontSize: isSmall ? 12.5 : 13.5, color: isDark ? D.textSecondary : 'var(--color-text-secondary)', margin: 0 }}>
             Masterfully engineered prompt recipes for industry-leading AI models
           </p>
         </div>
@@ -1476,7 +1491,7 @@ export default function TemplatesPage() {
                 left: 12,
                 top: '50%',
                 transform: 'translateY(-50%)',
-                color: 'var(--color-text-secondary)',
+                color: isDark ? D.textMuted : 'var(--color-text-secondary)',
                 pointerEvents: 'none',
               }}
             />
@@ -1491,14 +1506,14 @@ export default function TemplatesPage() {
                 width: '100%',
                 padding: '9px 32px 9px 36px',
                 fontSize: 13,
-                background: '#FFFFFF',
-                border: '1px solid rgba(124,58,237,0.14)',
+                background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
+                border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(124,58,237,0.14)'}`,
                 borderRadius: 10,
                 outline: 'none',
-                color: 'var(--color-text-primary)',
+                color: isDark ? D.textPrimary : 'var(--color-text-primary)',
                 transition: 'all 200ms ease',
               }}
-              className="focus:!border-[rgba(124,58,237,0.4)] focus:shadow-[0_0_0_3px_rgba(124,58,237,0.08)]"
+              className={isDark ? 'focus:!border-[rgba(167,139,250,0.5)] focus:shadow-[0_0_0_3px_rgba(139,92,246,0.15)]' : 'focus:!border-[rgba(124,58,237,0.4)] focus:shadow-[0_0_0_3px_rgba(124,58,237,0.08)]'}
             />
             {searchQuery && (
               <button
@@ -1511,7 +1526,7 @@ export default function TemplatesPage() {
                   background: 'none',
                   border: 'none',
                   cursor: 'pointer',
-                  color: 'var(--color-text-secondary)',
+                  color: isDark ? D.textSecondary : 'var(--color-text-secondary)',
                   padding: 2,
                 }}
               >
@@ -1524,10 +1539,10 @@ export default function TemplatesPage() {
           <div
             style={{
               display: 'flex',
-              background: 'rgba(124,58,237,0.06)',
+              background: isDark ? 'rgba(20, 19, 32, 0.85)' : 'rgba(124,58,237,0.06)',
               padding: 3,
               borderRadius: 10,
-              border: '1px solid rgba(124,58,237,0.10)',
+              border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.10)'}`,
               flexShrink: 0,
             }}
           >
@@ -1538,9 +1553,9 @@ export default function TemplatesPage() {
                 borderRadius: 7,
                 border: 'none',
                 cursor: 'pointer',
-                background: viewMode === 'grid' ? '#FFFFFF' : 'transparent',
-                color: viewMode === 'grid' ? 'var(--color-primary)' : 'var(--color-text-secondary)',
-                boxShadow: viewMode === 'grid' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
+                background: viewMode === 'grid' ? (isDark ? 'rgba(255, 255, 255, 0.12)' : '#FFFFFF') : 'transparent',
+                color: viewMode === 'grid' ? (isDark ? '#C084FC' : 'var(--color-primary)') : (isDark ? D.textMuted : 'var(--color-text-secondary)'),
+                boxShadow: viewMode === 'grid' ? '0 1px 4px rgba(0,0,0,0.15)' : 'none',
                 display: 'flex',
                 alignItems: 'center',
               }}
@@ -1555,9 +1570,9 @@ export default function TemplatesPage() {
                 borderRadius: 7,
                 border: 'none',
                 cursor: 'pointer',
-                background: viewMode === 'list' ? '#FFFFFF' : 'transparent',
-                color: viewMode === 'list' ? 'var(--color-primary)' : 'var(--color-text-secondary)',
-                boxShadow: viewMode === 'list' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
+                background: viewMode === 'list' ? (isDark ? 'rgba(255, 255, 255, 0.12)' : '#FFFFFF') : 'transparent',
+                color: viewMode === 'list' ? (isDark ? '#C084FC' : 'var(--color-primary)') : (isDark ? D.textMuted : 'var(--color-text-secondary)'),
+                boxShadow: viewMode === 'list' ? '0 1px 4px rgba(0,0,0,0.15)' : 'none',
                 display: 'flex',
                 alignItems: 'center',
               }}
@@ -1575,7 +1590,7 @@ export default function TemplatesPage() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          borderBottom: '1px solid rgba(124,58,237,0.10)',
+          borderBottom: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.10)'}`,
           marginBottom: 22,
           flexWrap: 'wrap',
           gap: 10,
@@ -1604,16 +1619,16 @@ export default function TemplatesPage() {
                   padding: isSmall ? '8px 10px' : '9px 14px',
                   borderRadius: '10px 10px 0 0',
                   border: 'none',
-                  borderBottom: active ? '2px solid var(--color-primary)' : '2px solid transparent',
+                  borderBottom: active ? `2px solid ${isDark ? '#8B5CF6' : 'var(--color-primary)'}` : '2px solid transparent',
                   background: 'transparent',
-                  color: active ? 'var(--color-primary)' : 'var(--color-text-secondary)',
+                  color: active ? (isDark ? '#C084FC' : 'var(--color-primary)') : (isDark ? D.textSecondary : 'var(--color-text-secondary)'),
                   fontWeight: active ? 700 : 500,
                   fontSize: isSmall ? 12 : 13,
                   cursor: 'pointer',
                   transition: 'all 160ms ease',
                   whiteSpace: 'nowrap',
                 }}
-                className={!active ? 'hover:!text-[var(--color-text-primary)]' : ''}
+                className={!active ? (isDark ? 'hover:!text-[#FFFFFF]' : 'hover:!text-[var(--color-text-primary)]') : ''}
               >
                 <Icon size={14} strokeWidth={active ? 2.2 : 1.8} />
                 <span>{tab.label}</span>
@@ -1637,15 +1652,15 @@ export default function TemplatesPage() {
                       borderRadius: 999,
                       fontSize: 11.5,
                       fontWeight: active ? 700 : 500,
-                      border: active ? '1px solid var(--color-primary)' : '1px solid rgba(124,58,237,0.10)',
-                      background: active ? 'var(--color-primary)' : '#FFFFFF',
-                      color: active ? '#FFFFFF' : 'var(--color-text-secondary)',
+                      border: active ? `1px solid ${isDark ? '#8B5CF6' : 'var(--color-primary)'}` : `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.10)'}`,
+                      background: active ? (isDark ? 'linear-gradient(135deg, #7C3AED, #A855F7)' : 'var(--color-primary)') : (isDark ? 'rgba(255, 255, 255, 0.05)' : '#FFFFFF'),
+                      color: active ? '#FFFFFF' : (isDark ? D.textSecondary : 'var(--color-text-secondary)'),
                       cursor: 'pointer',
                       transition: 'all 150ms ease',
                       whiteSpace: 'nowrap',
                       flexShrink: 0,
                     }}
-                    className={!active ? 'hover:!border-[rgba(124,58,237,0.25)] hover:!text-[var(--color-text-primary)]' : ''}
+                    className={!active ? (isDark ? 'hover:!border-[rgba(167,139,250,0.35)] hover:!text-[#FFFFFF]' : 'hover:!border-[rgba(124,58,237,0.25)] hover:!text-[var(--color-text-primary)]') : ''}
                   >
                     {categoryLabel(cat)}
                   </button>
@@ -1666,10 +1681,10 @@ export default function TemplatesPage() {
             alignItems: 'center',
             gap: 14,
             padding: '80px 0',
-            color: 'var(--color-text-secondary)',
+            color: isDark ? D.textSecondary : 'var(--color-text-secondary)',
           }}
         >
-          <Loader2 size={32} strokeWidth={2} className="animate-spin" style={{ color: 'var(--color-primary)' }} />
+          <Loader2 size={32} strokeWidth={2} className="animate-spin" style={{ color: isDark ? '#C084FC' : 'var(--color-primary)' }} />
           <p style={{ fontSize: 14, fontWeight: 500, margin: 0 }}>Loading curated template library…</p>
         </div>
       ) : error ? (
@@ -1692,16 +1707,16 @@ export default function TemplatesPage() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              background: 'rgba(239,68,68,0.08)',
-              color: '#dc2626',
+              background: 'rgba(239,68,68,0.12)',
+              color: '#F87171',
             }}
           >
             <AlertCircle size={30} strokeWidth={1.5} />
           </div>
-          <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: isDark ? D.textPrimary : 'var(--color-text-primary)', margin: 0 }}>
             Unable to load templates
           </h3>
-          <p style={{ fontSize: 14, color: 'var(--color-text-secondary)', margin: 0, maxWidth: 420 }}>{error}</p>
+          <p style={{ fontSize: 14, color: isDark ? D.textSecondary : 'var(--color-text-secondary)', margin: 0, maxWidth: 420 }}>{error}</p>
           <button
             id="templates-retry-btn"
             onClick={fetchData}
@@ -1714,10 +1729,10 @@ export default function TemplatesPage() {
               borderRadius: 10,
               fontSize: 13,
               fontWeight: 600,
-              border: '1px solid rgba(124,58,237,0.20)',
+              border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(124,58,237,0.20)'}`,
               cursor: 'pointer',
-              background: '#FFFFFF',
-              color: 'var(--color-primary)',
+              background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
+              color: isDark ? '#C084FC' : 'var(--color-primary)',
             }}
           >
             <RefreshCw size={14} /> Retry
@@ -1746,7 +1761,7 @@ export default function TemplatesPage() {
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <TrendingUp size={18} strokeWidth={2.2} style={{ color: '#F59E0B' }} />
-                      <h2 style={{ fontSize: isSmall ? 15 : 17, fontWeight: 800, color: 'var(--color-text-primary)', margin: 0 }}>
+                      <h2 style={{ fontSize: isSmall ? 15 : 17, fontWeight: 800, color: isDark ? D.textPrimary : 'var(--color-text-primary)', margin: 0 }}>
                         Trending Prompt Recipes
                       </h2>
                     </div>
@@ -1758,7 +1773,7 @@ export default function TemplatesPage() {
                         gap: 4,
                         fontSize: 12.5,
                         fontWeight: 600,
-                        color: 'var(--color-primary)',
+                        color: isDark ? '#C084FC' : 'var(--color-primary)',
                         background: 'none',
                         border: 'none',
                         cursor: 'pointer',
@@ -1842,13 +1857,13 @@ export default function TemplatesPage() {
               <section style={{ marginBottom: 40 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Sparkles size={18} strokeWidth={2.2} style={{ color: 'var(--color-primary)' }} />
-                    <h2 style={{ fontSize: isSmall ? 15 : 17, fontWeight: 800, color: 'var(--color-text-primary)', margin: 0 }}>
+                    <Sparkles size={18} strokeWidth={2.2} style={{ color: isDark ? '#C084FC' : 'var(--color-primary)' }} />
+                    <h2 style={{ fontSize: isSmall ? 15 : 17, fontWeight: 800, color: isDark ? D.textPrimary : 'var(--color-text-primary)', margin: 0 }}>
                       Role & Workflow Collections
                     </h2>
                   </div>
                   {isPhone && (
-                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-secondary)' }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: isDark ? D.textSecondary : 'var(--color-text-secondary)' }}>
                       Swipe →
                     </span>
                   )}
@@ -1857,21 +1872,21 @@ export default function TemplatesPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: isSmall ? 18 : isPhone ? 22 : 30 }}>
                   {Array.from(groupedByCategory.entries()).map(([cat, list]) => {
                     const Icon = CATEGORY_ICON_MAP[cat] || Sparkles;
-                    const style = getCategoryColor(cat);
+                    const style = getCategoryColor(cat, isDark);
                     const itemsToShow = isTablet ? 4 : isPhone ? 6 : 6;
                     return (
-                      <div key={cat} style={{ background: 'rgba(250,250,252,0.6)', borderRadius: isSmall ? 16 : 20, padding: isSmall ? 12 : isPhone ? 16 : 22, border: '1px solid rgba(124,58,237,0.06)' }}>
+                      <div key={cat} style={{ background: isDark ? 'rgba(20, 19, 32, 0.65)' : 'rgba(250,250,252,0.6)', borderRadius: isSmall ? 16 : 20, padding: isSmall ? 12 : isPhone ? 16 : 22, border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.06)'}` }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <div style={{ width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: style.bg, color: style.text, flexShrink: 0 }}>
+                            <div style={{ width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: style.bg, color: style.text, border: `1px solid ${style.border}`, flexShrink: 0 }}>
                               <Icon size={14} strokeWidth={2} />
                             </div>
                             <div>
-                              <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>
+                              <h3 style={{ fontSize: 14, fontWeight: 700, color: isDark ? D.textPrimary : 'var(--color-text-primary)', margin: 0 }}>
                                 {categoryLabel(cat)} Specialists
                               </h3>
                             </div>
-                            <span style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--color-text-secondary)', background: '#FFFFFF', padding: '2px 7px', borderRadius: 99, border: '1px solid rgba(0,0,0,0.06)' }}>
+                            <span style={{ fontSize: 10.5, fontWeight: 700, color: isDark ? D.textSecondary : 'var(--color-text-secondary)', background: isDark ? 'rgba(255, 255, 255, 0.08)' : '#FFFFFF', padding: '2px 7px', borderRadius: 99, border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0,0,0,0.06)'}` }}>
                               {list.length}
                             </span>
                           </div>
@@ -1884,7 +1899,7 @@ export default function TemplatesPage() {
                             style={{
                               fontSize: 12,
                               fontWeight: 600,
-                              color: 'var(--color-primary)',
+                              color: isDark ? '#C084FC' : 'var(--color-primary)',
                               background: 'none',
                               border: 'none',
                               cursor: 'pointer',
@@ -1977,7 +1992,7 @@ export default function TemplatesPage() {
             <div>
               {/* Header result counter */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-secondary)' }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: isDark ? D.textSecondary : 'var(--color-text-secondary)' }}>
                   Showing {processedTemplates.length} {processedTemplates.length === 1 ? 'template' : 'templates'}
                   {activeCategory !== 'all' && ` in ${categoryLabel(activeCategory)}`}
                   {searchQuery && ` matching "${searchQuery}"`}
@@ -2025,16 +2040,16 @@ export default function TemplatesPage() {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      background: 'rgba(124,58,237,0.08)',
-                      color: 'var(--color-primary)',
+                      background: isDark ? 'rgba(139, 92, 246, 0.18)' : 'rgba(124,58,237,0.08)',
+                      color: isDark ? '#C084FC' : 'var(--color-primary)',
                     }}
                   >
                     <Search size={28} strokeWidth={1.5} />
                   </div>
-                  <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>
+                  <h3 style={{ fontSize: 16, fontWeight: 700, color: isDark ? D.textPrimary : 'var(--color-text-primary)', margin: 0 }}>
                     {navTab === 'saved' ? 'No saved templates yet' : 'No templates match your filter'}
                   </h3>
-                  <p style={{ fontSize: 14, color: 'var(--color-text-secondary)', margin: 0 }}>
+                  <p style={{ fontSize: 14, color: isDark ? D.textSecondary : 'var(--color-text-secondary)', margin: 0 }}>
                     {navTab === 'saved'
                       ? 'Click the bookmark icon on any template card to save it for quick access.'
                       : 'Try resetting your search or choosing a different category.'}
@@ -2051,10 +2066,10 @@ export default function TemplatesPage() {
                       borderRadius: 10,
                       fontSize: 13,
                       fontWeight: 600,
-                      border: '1px solid rgba(124,58,237,0.20)',
+                      border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(124,58,237,0.20)'}`,
                       cursor: 'pointer',
-                      background: '#FFFFFF',
-                      color: 'var(--color-primary)',
+                      background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
+                      color: isDark ? '#C084FC' : 'var(--color-primary)',
                     }}
                   >
                     Reset filters

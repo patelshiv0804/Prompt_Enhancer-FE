@@ -2,8 +2,11 @@
 
 import React from 'react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useTheme } from '@/theme/theme';
 
 export default function StyleMemorySkeleton() {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const isMobile = useMediaQuery('(max-width: 620px)');
   const isTablet = useMediaQuery('(max-width: 1024px)');
   const isSmall = useMediaQuery('(max-width: 420px)');
@@ -98,30 +101,28 @@ export default function StyleMemorySkeleton() {
             <div
               className="skeleton"
               style={{
-                width: 115,
+                width: 110,
                 height: 24,
                 borderRadius: 9999,
-                background: 'rgba(255,255,255,0.12)',
                 marginBottom: 16,
               }}
             />
             <div
               className="skeleton"
               style={{
-                width: isMobile ? '70%' : '45%',
-                height: isMobile ? 22 : 26,
-                borderRadius: 8,
-                background: 'rgba(255,255,255,0.18)',
+                width: isMobile ? '80%' : 260,
+                height: isMobile ? 22 : 28,
+                borderRadius: 6,
                 marginBottom: 10,
               }}
             />
             <div
               className="skeleton"
               style={{
-                width: isMobile ? '100%' : '75%',
+                width: '100%',
+                maxWidth: 480,
                 height: 14,
-                borderRadius: 6,
-                background: 'rgba(255,255,255,0.08)',
+                borderRadius: 4,
               }}
             />
           </div>
@@ -131,25 +132,23 @@ export default function StyleMemorySkeleton() {
             style={{
               display: 'flex',
               flexDirection: 'row',
-              alignItems: 'center',
+              alignItems: isTablet ? 'flex-start' : 'center',
               justifyContent: 'center',
-              gap: isMobile ? 12 : 28,
+              gap: 0,
               padding: '8px 0 4px',
             }}
           >
-            {[
-              { label: 85, color: 'rgba(56,189,248,0.25)' },
-              { label: 90, color: 'rgba(192,132,252,0.25)' },
-              { label: 110, color: 'rgba(52,211,153,0.25)' },
-            ].map((node, i) => (
-              <React.Fragment key={i}>
+            {[1, 2, 3].map((step, i) => (
+              <React.Fragment key={step}>
                 <div
                   style={{
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    gap: isMobile ? 8 : 12,
-                    flex: '0 0 auto',
+                    gap: isMobile ? 10 : 14,
+                    flex: isTablet ? '1 1 0' : '0 0 auto',
+                    minWidth: 0,
+                    maxWidth: isTablet ? 120 : undefined,
                   }}
                 >
                   <div
@@ -158,23 +157,60 @@ export default function StyleMemorySkeleton() {
                       width: nodeSize,
                       height: nodeSize,
                       borderRadius: '50%',
-                      background: node.color,
-                    }}
-                  />
-                  <div className="skeleton" style={{ width: isMobile ? 65 : node.label, height: 12, borderRadius: 4, background: 'rgba(255,255,255,0.14)' }} />
-                  <div className="skeleton" style={{ width: isMobile ? 50 : 80, height: 10, borderRadius: 4, background: 'rgba(255,255,255,0.08)' }} />
-                </div>
-                {i < 2 && (
-                  <div
-                    className="skeleton"
-                    style={{
-                      width: isMobile ? 24 : 48,
-                      height: 4,
-                      borderRadius: 9999,
-                      background: 'rgba(255,255,255,0.10)',
                       flexShrink: 0,
                     }}
                   />
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: 4,
+                      width: '100%',
+                    }}
+                  >
+                    <div
+                      className="skeleton"
+                      style={{
+                        width: isMobile ? 60 : 80,
+                        height: isMobile ? 12 : 14,
+                        borderRadius: 4,
+                      }}
+                    />
+                    <div
+                      className="skeleton"
+                      style={{
+                        width: isMobile ? 80 : 100,
+                        height: isMobile ? 10 : 12,
+                        borderRadius: 4,
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {i < 2 && (
+                  <div
+                    style={{
+                      flex: isTablet ? '1 1 0' : '0 0 100px',
+                      minWidth: isTablet ? 16 : 60,
+                      height: isTablet ? 16 : 20,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: isTablet ? 0 : '0 12px',
+                      marginBottom: isTablet ? undefined : 40,
+                      marginTop: isTablet ? nodeSize / 2 - 8 : undefined,
+                    }}
+                  >
+                    <div
+                      className="skeleton"
+                      style={{
+                        width: '100%',
+                        height: 2,
+                        borderRadius: 2,
+                      }}
+                    />
+                  </div>
                 )}
               </React.Fragment>
             ))}
@@ -190,12 +226,12 @@ export default function StyleMemorySkeleton() {
           gap: 16,
         }}
       >
-        {Array.from({ length: 3 }).map((_, cardIndex) => (
+        {[1, 2, 3, 4, 5].map((i) => (
           <div
-            key={cardIndex}
+            key={i}
             style={{
-              background: '#FFFFFF',
-              border: '1px solid rgba(124,58,237,0.10)',
+              background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
+              border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.10)'}`,
               borderRadius: 16,
               padding: '24px',
               display: 'flex',

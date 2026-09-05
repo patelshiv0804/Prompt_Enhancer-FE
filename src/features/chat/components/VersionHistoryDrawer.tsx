@@ -14,6 +14,7 @@ import {
   ArrowUpRight,
   CheckCircle2,
 } from 'lucide-react';
+import { useTheme, D } from '@/theme/theme';
 
 interface VersionHistoryDrawerProps {
   isOpen: boolean;
@@ -31,10 +32,10 @@ interface VersionHistoryDrawerProps {
   onHoverVersion?: (index: number | null) => void;
 }
 
-function getScoreBadge(score: number) {
-  if (score >= 85) return { color: '#059669', bg: 'rgba(16, 185, 129, 0.10)', border: 'rgba(16, 185, 129, 0.22)' };
-  if (score >= 70) return { color: '#7C3AED', bg: 'rgba(124, 58, 237, 0.10)', border: 'rgba(124, 58, 237, 0.22)' };
-  return { color: '#D97706', bg: 'rgba(245, 158, 11, 0.10)', border: 'rgba(245, 158, 11, 0.22)' };
+function getScoreBadge(score: number, isDark = false) {
+  if (score >= 85) return { color: '#10B981', bg: isDark ? 'rgba(16, 185, 129, 0.18)' : 'rgba(16, 185, 129, 0.10)', border: 'rgba(16, 185, 129, 0.28)' };
+  if (score >= 70) return { color: '#A78BFA', bg: isDark ? 'rgba(124, 58, 237, 0.22)' : 'rgba(124, 58, 237, 0.10)', border: 'rgba(124, 58, 237, 0.28)' };
+  return { color: '#F59E0B', bg: isDark ? 'rgba(245, 158, 11, 0.18)' : 'rgba(245, 158, 11, 0.10)', border: 'rgba(245, 158, 11, 0.28)' };
 }
 
 export default function VersionHistoryDrawer({
@@ -46,6 +47,8 @@ export default function VersionHistoryDrawer({
   onToggleStar,
   onHoverVersion,
 }: VersionHistoryDrawerProps) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'starred' | 'improved'>('all');
 
@@ -95,7 +98,7 @@ export default function VersionHistoryDrawer({
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(15, 7, 32, 0.45)',
+            background: isDark ? 'rgba(0, 0, 0, 0.75)' : 'rgba(15, 7, 32, 0.45)',
             backdropFilter: 'blur(12px)',
             WebkitBackdropFilter: 'blur(12px)',
             zIndex: 1000,
@@ -105,7 +108,7 @@ export default function VersionHistoryDrawer({
             padding: 20,
           }}
         >
-          {/* Centered Apple/Notion/Stripe Modal Card */}
+          {/* Centered Modal Card */}
           <motion.div
             initial={{ scale: 0.94, opacity: 0, y: 14 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -117,12 +120,16 @@ export default function VersionHistoryDrawer({
               maxWidth: 680,
               maxHeight: '85vh',
               zIndex: 1001,
-              background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(250, 248, 255, 0.96) 100%)',
+              background: isDark
+                ? 'linear-gradient(180deg, #141320 0%, #171526 100%)'
+                : 'linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(250, 248, 255, 0.96) 100%)',
               backdropFilter: 'blur(28px) saturate(180%)',
               WebkitBackdropFilter: 'blur(28px) saturate(180%)',
               borderRadius: 24,
-              border: '1px solid rgba(124, 58, 237, 0.16)',
-              boxShadow: '0 24px 80px rgba(109, 40, 217, 0.22), 0 4px 24px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255,255,255,0.9)',
+              border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(124, 58, 237, 0.16)'}`,
+              boxShadow: isDark
+                ? '0 24px 80px rgba(0, 0, 0, 0.8), 0 4px 24px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255,255,255,0.06)'
+                : '0 24px 80px rgba(109, 40, 217, 0.22), 0 4px 24px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255,255,255,0.9)',
               display: 'flex',
               flexDirection: 'column',
               overflow: 'hidden',
@@ -132,7 +139,7 @@ export default function VersionHistoryDrawer({
             <div
               style={{
                 padding: '24px 28px 18px',
-                borderBottom: '1px solid rgba(124, 58, 237, 0.08)',
+                borderBottom: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124, 58, 237, 0.08)'}`,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
@@ -144,12 +151,12 @@ export default function VersionHistoryDrawer({
                     width: 40,
                     height: 40,
                     borderRadius: 12,
-                    background: 'linear-gradient(135deg, rgba(124,58,237,0.12), rgba(168,85,247,0.15))',
-                    border: '1px solid rgba(124,58,237,0.18)',
+                    background: isDark ? 'rgba(139,92,246,0.18)' : 'linear-gradient(135deg, rgba(124,58,237,0.12), rgba(168,85,247,0.15))',
+                    border: `1px solid ${isDark ? 'rgba(167,139,250,0.3)' : 'rgba(124,58,237,0.18)'}`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#7C3AED',
+                    color: isDark ? '#C084FC' : '#7C3AED',
                   }}
                 >
                   <Layers size={20} strokeWidth={2.2} />
@@ -159,7 +166,7 @@ export default function VersionHistoryDrawer({
                     style={{
                       fontSize: 17,
                       fontWeight: 700,
-                      color: '#1E1B4B',
+                      color: isDark ? D.textPrimary : '#1E1B4B',
                       margin: 0,
                       letterSpacing: '-0.01em',
                       display: 'flex',
@@ -182,7 +189,7 @@ export default function VersionHistoryDrawer({
                       {versions.length}
                     </span>
                   </h2>
-                  <p style={{ fontSize: 12.5, color: '#64748B', margin: '2px 0 0', fontWeight: 500 }}>
+                  <p style={{ fontSize: 12.5, color: isDark ? D.textSecondary : '#64748B', margin: '2px 0 0', fontWeight: 500 }}>
                     Select any iteration to load its prompt state and breakdown metrics
                   </p>
                 </div>
@@ -195,26 +202,26 @@ export default function VersionHistoryDrawer({
                   height: 34,
                   borderRadius: 10,
                   border: 'none',
-                  background: 'rgba(124,58,237,0.06)',
-                  color: '#64748B',
+                  background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(124,58,237,0.06)',
+                  color: isDark ? D.textSecondary : '#64748B',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer',
                   transition: 'all 180ms ease',
                 }}
-                className="hover:!bg-[rgba(124,58,237,0.12)] hover:!text-[#4C1D95]"
+                className={isDark ? 'hover:!bg-[rgba(255,255,255,0.12)] hover:!text-[#FFFFFF]' : 'hover:!bg-[rgba(124,58,237,0.12)] hover:!text-[#4C1D95]'}
               >
                 <X size={18} />
               </button>
             </div>
 
-            {/* Apple / Notion Stat Highlights Bar */}
+            {/* Stat Highlights Bar */}
             <div
               style={{
                 padding: '14px 28px',
-                background: 'rgba(124, 58, 237, 0.03)',
-                borderBottom: '1px solid rgba(124, 58, 237, 0.06)',
+                background: isDark ? 'rgba(0, 0, 0, 0.25)' : 'rgba(124, 58, 237, 0.03)',
+                borderBottom: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(124, 58, 237, 0.06)'}`,
                 display: 'grid',
                 gridTemplateColumns: 'repeat(3, 1fr)',
                 gap: 12,
@@ -222,45 +229,45 @@ export default function VersionHistoryDrawer({
             >
               <div
                 style={{
-                  background: 'white',
+                  background: isDark ? 'rgba(20, 19, 32, 0.8)' : 'white',
                   borderRadius: 12,
                   padding: '10px 14px',
-                  border: '1px solid rgba(124, 58, 237, 0.08)',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
+                  border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124, 58, 237, 0.08)'}`,
+                  boxShadow: isDark ? '0 2px 6px rgba(0,0,0,0.3)' : '0 2px 6px rgba(0,0,0,0.02)',
                 }}
               >
-                <span style={{ fontSize: 10.5, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <span style={{ fontSize: 10.5, fontWeight: 600, color: isDark ? D.textMuted : '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                   Total Iterations
                 </span>
-                <div style={{ fontSize: 17, fontWeight: 800, color: '#1E1B4B', marginTop: 2 }}>{versions.length}</div>
+                <div style={{ fontSize: 17, fontWeight: 800, color: isDark ? D.textPrimary : '#1E1B4B', marginTop: 2 }}>{versions.length}</div>
               </div>
               <div
                 style={{
-                  background: 'white',
+                  background: isDark ? 'rgba(20, 19, 32, 0.8)' : 'white',
                   borderRadius: 12,
                   padding: '10px 14px',
-                  border: '1px solid rgba(124, 58, 237, 0.08)',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
+                  border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124, 58, 237, 0.08)'}`,
+                  boxShadow: isDark ? '0 2px 6px rgba(0,0,0,0.3)' : '0 2px 6px rgba(0,0,0,0.02)',
                 }}
               >
-                <span style={{ fontSize: 10.5, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <span style={{ fontSize: 10.5, fontWeight: 600, color: isDark ? D.textMuted : '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                   Highest Score
                 </span>
                 <div style={{ fontSize: 17, fontWeight: 800, color: '#10B981', marginTop: 2 }}>{highestScore}</div>
               </div>
               <div
                 style={{
-                  background: 'white',
+                  background: isDark ? 'rgba(20, 19, 32, 0.8)' : 'white',
                   borderRadius: 12,
                   padding: '10px 14px',
-                  border: '1px solid rgba(124, 58, 237, 0.08)',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
+                  border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124, 58, 237, 0.08)'}`,
+                  boxShadow: isDark ? '0 2px 6px rgba(0,0,0,0.3)' : '0 2px 6px rgba(0,0,0,0.02)',
                 }}
               >
-                <span style={{ fontSize: 10.5, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <span style={{ fontSize: 10.5, fontWeight: 600, color: isDark ? D.textMuted : '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                   Max Improvement
                 </span>
-                <div style={{ fontSize: 17, fontWeight: 800, color: '#7C3AED', marginTop: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+                <div style={{ fontSize: 17, fontWeight: 800, color: isDark ? '#C084FC' : '#7C3AED', marginTop: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
                   <ArrowUpRight size={15} />+{peakDelta}
                 </div>
               </div>
@@ -274,15 +281,15 @@ export default function VersionHistoryDrawer({
                   position: 'relative',
                   display: 'flex',
                   alignItems: 'center',
-                  background: '#FFFFFF',
+                  background: isDark ? 'rgba(14, 13, 20, 0.85)' : '#FFFFFF',
                   borderRadius: 12,
-                  border: '1px solid rgba(124, 58, 237, 0.14)',
-                  boxShadow: '0 2px 8px rgba(109, 40, 217, 0.04)',
+                  border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(124, 58, 237, 0.14)'}`,
+                  boxShadow: isDark ? 'none' : '0 2px 8px rgba(109, 40, 217, 0.04)',
                   transition: 'all 200ms ease',
                 }}
                 className="focus-within:!border-[rgba(124,58,237,0.35)] focus-within:!shadow-[0_0_0_3px_rgba(124,58,237,0.10)]"
               >
-                <Search size={14} style={{ position: 'absolute', left: 14, color: '#94A3B8', pointerEvents: 'none' }} />
+                <Search size={14} style={{ position: 'absolute', left: 14, color: isDark ? D.textMuted : '#94A3B8', pointerEvents: 'none' }} />
                 <input
                   type="text"
                   placeholder="Filter versions by prompt or v2..."
@@ -296,7 +303,7 @@ export default function VersionHistoryDrawer({
                     border: 'none',
                     outline: 'none',
                     background: 'transparent',
-                    color: '#1E1B4B',
+                    color: isDark ? D.textPrimary : '#1E1B4B',
                   }}
                 />
                 {searchQuery && (
@@ -305,7 +312,7 @@ export default function VersionHistoryDrawer({
                     style={{
                       position: 'absolute',
                       right: 12,
-                      background: 'rgba(148, 163, 184, 0.2)',
+                      background: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(148, 163, 184, 0.2)',
                       border: 'none',
                       borderRadius: '50%',
                       width: 18,
@@ -314,7 +321,7 @@ export default function VersionHistoryDrawer({
                       alignItems: 'center',
                       justifyContent: 'center',
                       cursor: 'pointer',
-                      color: '#475569',
+                      color: isDark ? '#FFFFFF' : '#475569',
                       padding: 0,
                     }}
                   >
@@ -328,10 +335,10 @@ export default function VersionHistoryDrawer({
                 style={{
                   display: 'flex',
                   gap: 6,
-                  background: 'rgba(124, 58, 237, 0.06)',
+                  background: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(124, 58, 237, 0.06)',
                   padding: 4,
                   borderRadius: 12,
-                  border: '1px solid rgba(124, 58, 237, 0.08)',
+                  border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124, 58, 237, 0.08)'}`,
                 }}
               >
                 {[
@@ -353,9 +360,9 @@ export default function VersionHistoryDrawer({
                         border: 'none',
                         cursor: 'pointer',
                         transition: 'all 200ms ease',
-                        background: isActive ? '#FFFFFF' : 'transparent',
-                        color: isActive ? '#6D28D9' : '#64748B',
-                        boxShadow: isActive ? '0 2px 6px rgba(109,40,217,0.10)' : 'none',
+                        background: isActive ? (isDark ? '#211E30' : '#FFFFFF') : 'transparent',
+                        color: isActive ? (isDark ? '#C084FC' : '#6D28D9') : (isDark ? D.textSecondary : '#64748B'),
+                        boxShadow: isActive ? (isDark ? '0 2px 8px rgba(0,0,0,0.4)' : '0 2px 6px rgba(109,40,217,0.10)') : 'none',
                       }}
                     >
                       {tab.label}
@@ -381,7 +388,7 @@ export default function VersionHistoryDrawer({
                   style={{
                     textAlign: 'center',
                     padding: '60px 20px',
-                    color: '#94A3B8',
+                    color: isDark ? D.textMuted : '#94A3B8',
                     fontSize: 13.5,
                     display: 'flex',
                     flexDirection: 'column',
@@ -389,20 +396,20 @@ export default function VersionHistoryDrawer({
                     gap: 10,
                   }}
                 >
-                  <Sparkles size={26} style={{ color: '#C4B5FD' }} />
+                  <Sparkles size={26} style={{ color: isDark ? '#A78BFA' : '#C4B5FD' }} />
                   <span>No matching versions found</span>
                 </div>
               ) : (
                 filteredVersions.map(v => {
                   const isCurrent = v.originalIndex === activeIndex;
-                  const badge = getScoreBadge(v.overallScore);
+                  const badge = getScoreBadge(v.overallScore, isDark);
                   const deltaIcon =
                     v.delta > 0 ? (
                       <TrendingUp size={13} style={{ color: '#10B981' }} />
                     ) : v.delta < 0 ? (
                       <TrendingDown size={13} style={{ color: '#EF4444' }} />
                     ) : (
-                      <Minus size={13} style={{ color: '#94A3B8' }} />
+                      <Minus size={13} style={{ color: isDark ? D.textMuted : '#94A3B8' }} />
                     );
 
                   return (
@@ -421,14 +428,14 @@ export default function VersionHistoryDrawer({
                         borderRadius: 16,
                         cursor: 'pointer',
                         background: isCurrent
-                          ? 'linear-gradient(135deg, rgba(124, 58, 237, 0.09) 0%, rgba(168, 85, 247, 0.05) 100%)'
-                          : '#FFFFFF',
+                          ? (isDark ? 'rgba(139, 92, 246, 0.22)' : 'linear-gradient(135deg, rgba(124, 58, 237, 0.09) 0%, rgba(168, 85, 247, 0.05) 100%)')
+                          : (isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF'),
                         border: isCurrent
-                          ? '1px solid rgba(124, 58, 237, 0.32)'
-                          : '1px solid rgba(124, 58, 237, 0.09)',
+                          ? `1px solid ${isDark ? 'rgba(167, 139, 250, 0.5)' : 'rgba(124, 58, 237, 0.32)'}`
+                          : `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124, 58, 237, 0.09)'}`,
                         boxShadow: isCurrent
-                          ? '0 4px 20px rgba(124, 58, 237, 0.12), inset 0 1px 0 rgba(255,255,255,0.9)'
-                          : '0 2px 8px rgba(0, 0, 0, 0.02)',
+                          ? (isDark ? '0 4px 20px rgba(0, 0, 0, 0.5)' : '0 4px 20px rgba(124, 58, 237, 0.12), inset 0 1px 0 rgba(255,255,255,0.9)')
+                          : (isDark ? '0 2px 10px rgba(0, 0, 0, 0.3)' : '0 2px 8px rgba(0, 0, 0, 0.02)'),
                         display: 'flex',
                         alignItems: 'center',
                         gap: 14,
@@ -451,7 +458,7 @@ export default function VersionHistoryDrawer({
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          color: v.isStarred ? '#F59E0B' : '#CBD5E1',
+                          color: v.isStarred ? '#F59E0B' : (isDark ? 'rgba(255,255,255,0.25)' : '#CBD5E1'),
                           transition: 'all 150ms ease',
                         }}
                         className="hover:scale-110"
@@ -469,12 +476,12 @@ export default function VersionHistoryDrawer({
                             style={{
                               fontSize: 14,
                               fontWeight: 700,
-                              color: isCurrent ? '#6D28D9' : '#1E1B4B',
+                              color: isCurrent ? (isDark ? '#C084FC' : '#6D28D9') : (isDark ? D.textPrimary : '#1E1B4B'),
                             }}
                           >
                             v{v.versionNumber}
                           </span>
-                          <span style={{ fontSize: 11.5, color: '#94A3B8', fontWeight: 500 }}>
+                          <span style={{ fontSize: 11.5, color: isDark ? D.textMuted : '#94A3B8', fontWeight: 500 }}>
                             {v.timestamp}
                           </span>
 
@@ -503,7 +510,7 @@ export default function VersionHistoryDrawer({
                         <div
                           style={{
                             fontSize: 12.5,
-                            color: '#64748B',
+                            color: isDark ? D.textSecondary : '#64748B',
                             fontWeight: 500,
                             whiteSpace: 'nowrap',
                             overflow: 'hidden',
@@ -548,7 +555,7 @@ export default function VersionHistoryDrawer({
                             gap: 3,
                             fontSize: 11.5,
                             fontWeight: 700,
-                            color: v.delta > 0 ? '#10B981' : v.delta < 0 ? '#EF4444' : '#94A3B8',
+                            color: v.delta > 0 ? '#10B981' : v.delta < 0 ? '#EF4444' : (isDark ? D.textMuted : '#94A3B8'),
                           }}
                         >
                           {deltaIcon}
