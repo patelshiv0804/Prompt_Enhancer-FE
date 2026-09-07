@@ -1,0 +1,43 @@
+{
+  "cookies": [
+    {
+      "name": "g_state",
+      "value": "{\"i_l\":0,\"i_ll\":1788581677590,\"i_b\":\"MYUHabiXsuRC2kcidbTPqKC2mxcqJuJJopjz2/MLx4g\",\"i_e\":{\"enable_itp_optimization\":24},\"i_et\":1788581677590}",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1804133677,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "promptiq_access_token",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NmRmNWQ2Ny05MTFlLTRhYjYtOGVjMC1iZWUzMTc2ZTliNGQiLCJleHAiOjE3ODg1ODM0Nzh9.q_Y0hTSd3fSzsbTgnSWC3GfkQmjZHIdF-HJyYsXh3zU",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1788583478.526702,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": [
+    {
+      "origin": "http://localhost:3000",
+      "localStorage": [
+        {
+          "name": "aure-theme-preference",
+          "value": "system"
+        },
+        {
+          "name": "token",
+          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NmRmNWQ2Ny05MTFlLTRhYjYtOGVjMC1iZWUzMTc2ZTliNGQiLCJleHAiOjE3ODg1ODM0Nzh9.q_Y0hTSd3fSzsbTgnSWC3GfkQmjZHIdF-HJyYsXh3zU"
+        },
+        {
+          "name": "promptiq_access_token",
+          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NmRmNWQ2Ny05MTFlLTRhYjYtOGVjMC1iZWUzMTc2ZTliNGQiLCJleHAiOjE3ODg1ODM0Nzh9.q_Y0hTSd3fSzsbTgnSWC3GfkQmjZHIdF-HJyYsXh3zU"
+        }
+      ]
+    }
+  ]
+}

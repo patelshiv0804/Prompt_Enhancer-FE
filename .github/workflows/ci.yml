@@ -1,0 +1,122 @@
+# PromptIQ frontend CI.
+#
+# Four jobs. Three of them gate a merge; `lint` does not, and that is deliberate
+# rather than an oversight — see the note on that job.
+#
+#   typecheck    tsc --noEmit over the app and the test files.
+#   unit         Vitest (jsdom + MSW): unit, component and integration tiers.
+#   e2e-mocked   Playwright against a real Next dev server with every
+#                **/api/v1/** request fulfilled in-browser. No backend, no
+#                database, no LLM, so it is deterministic enough to block on.
+#   lint         reports only.
+#
+# The `live` Playwright project is intentionally absent: it needs the docker
+# backend and a deterministic LLM provider, so it belongs to a manually
+# dispatched workflow, not to PR CI.
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+concurrency:
+  group: frontend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - name: tsc --noEmit
+        run: npx tsc --noEmit
+
+  unit:
+    name: Unit / component / integration (Vitest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - name: Vitest with coverage
+        run: npm run test:coverage
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: coverage/
+          if-no-files-found: warn
+
+  e2e-mocked:
+    name: E2E (mocked API)
+    runs-on: ubuntu-latest
+    needs: [typecheck, unit]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+
+      - name: Install Chromium
+        # Only chromium: both projects pin devices['Desktop Chrome'], so the
+        # firefox/webkit downloads would be dead weight.
+        run: npx playwright install --with-deps chromium
+
+      - name: Run the mocked project
+        # playwright.config.ts owns the dev server (webServer). CI is set, so
+        # reuseExistingServer is false and Playwright starts and stops its own —
+        # no manual `npm run dev &` and no port races.
+        #
+        # A dev server rather than `next build && next start`: the mocked project
+        # never exercises production output, and `next build` runs ESLint, which
+        # this repository does not currently pass (see the lint job).
+        run: npm run test:e2e
+
+      - name: Upload the Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  lint:
+    name: Lint (report only)
+    runs-on: ubuntu-latest
+    # NOT a merge gate, on purpose. As of 2026-09-02 `npm run lint` exits 1 with
+    # 312 problems (161 errors, 151 warnings); almost every error is
+    # @typescript-eslint/no-explicit-any in pre-existing application code.
+    # Turning that into a required check would either block every PR or invite
+    # someone to weaken the rule; both are worse than reporting it. Flip
+    # continue-on-error to false once the backlog is cleared — the job is here so
+    # the count is visible on every run and cannot quietly grow.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
