@@ -33,7 +33,6 @@ export default function FormattedPromptViewer({ content }: FormattedPromptViewer
     .replace(/\\([*_`])/g, '$1')
     .replace(/\\?\*{2,}/g, '')
     .replace(/\\?_{2,}/g, '')
-    .replace(/\\?`/g, '')
     .replace(/(?<!\*)\*([^*\n]+?)\*(?!\*)/g, '$1')
     .replace(/(?<!_)_([^_\n]+?)_(?!_)/g, '$1');
 
