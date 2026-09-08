@@ -1,6 +1,7 @@
 import React from 'react';
 import { Check } from 'lucide-react';
 import { ROLES, ROLE_MODES } from '@/constants/roles';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 interface RoleStepProps {
   selectedRole: string;
@@ -13,15 +14,33 @@ export const RoleStep: React.FC<RoleStepProps> = ({
   onSelectRole,
   isDark,
 }) => {
+  const isMobile = useMediaQuery('(max-width: 640px)');
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', width: '100%', height: '100%', boxSizing: 'border-box' }}>
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: 8,
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
         width: '100%',
+        height: '100%',
         boxSizing: 'border-box',
-      }}>
+        padding: isMobile ? '4px 2px' : '8px 4px',
+      }}
+    >
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+          gap: isMobile ? 8 : 12,
+          maxHeight: isMobile ? 315 : undefined,
+          overflowY: isMobile ? 'auto' : undefined,
+          padding: isMobile ? '6px 6px 8px' : '10px 8px 10px',
+          width: '100%',
+          boxSizing: 'border-box',
+          scrollbarWidth: 'thin',
+        }}
+      >
         {ROLES.map((role) => {
           const Icon = role.icon;
           const isSelected = selectedRole.toLowerCase() === role.id.toLowerCase() || selectedRole.toLowerCase() === role.label.toLowerCase();
@@ -33,26 +52,39 @@ export const RoleStep: React.FC<RoleStepProps> = ({
               type="button"
               onClick={() => onSelectRole(role.id)}
               style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                gap: 5, padding: '10px 6px', borderRadius: 14, border: 'none', cursor: 'pointer',
-                textAlign: 'center', position: 'relative', minHeight: 74, boxSizing: 'border-box',
-                transition: 'all 180ms cubic-bezier(0.2, 0.8, 0.2, 1)',
+                display: 'flex',
+                flexDirection: isMobile ? 'row' : 'column',
+                alignItems: 'center',
+                justifyContent: isMobile ? 'flex-start' : 'center',
+                gap: isMobile ? 8 : 6,
+                padding: isMobile ? '8px 10px' : '12px 8px',
+                borderRadius: 14,
+                border: isSelected
+                  ? '2px solid #6366F1'
+                  : `1.5px solid ${isDark ? 'rgba(255,255,255,0.10)' : '#E4E4E7'}`,
+                outline: 'none',
+                cursor: 'pointer',
+                textAlign: isMobile ? 'left' : 'center',
+                position: 'relative',
+                minHeight: isMobile ? 52 : 74,
+                boxSizing: 'border-box',
+                transition: 'all 180ms cubic-bezier(0.16, 1, 0.3, 1)',
                 background: isSelected
                   ? (isDark ? 'rgba(99, 102, 241, 0.18)' : '#F5F3FF')
                   : (isDark ? 'rgba(255,255,255,0.04)' : '#FFFFFF'),
                 color: isSelected ? (isDark ? '#A5B4FC' : '#4C1D95') : (isDark ? '#FFFFFF' : '#18181B'),
-                outline: isSelected
-                  ? '2px solid #6366F1'
-                  : `1.5px solid ${isDark ? 'rgba(255,255,255,0.10)' : '#E4E4E7'}`,
                 boxShadow: isSelected
-                  ? '0 3px 10px rgba(99, 102, 241, 0.18)'
-                  : '0 1px 2px rgba(0,0,0,0.02)',
+                  ? '0 4px 14px rgba(99, 102, 241, 0.20)'
+                  : (isDark ? '0 1px 3px rgba(0,0,0,0.15)' : '0 1px 3px rgba(0,0,0,0.02)'),
               }}
-              className="interactive-card hover:scale-[1.02] active:scale-[0.98]"
+              className="interactive-card hover:scale-[1.025] active:scale-[0.98]"
             >
               {/* Icon */}
               <div style={{
-                width: 32, height: 32, borderRadius: 10,
+                width: isMobile ? 28 : 32,
+                height: isMobile ? 28 : 32,
+                borderRadius: 8,
+                flexShrink: 0,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 background: isSelected
                   ? (isDark ? 'rgba(99, 102, 241, 0.3)' : 'rgba(99, 102, 241, 0.12)')
@@ -60,20 +92,30 @@ export const RoleStep: React.FC<RoleStepProps> = ({
                 color: isSelected ? '#6366F1' : (isDark ? 'rgba(255,255,255,0.8)' : '#71717A'),
                 transition: 'all 180ms ease',
               }}>
-                <Icon size={16} strokeWidth={2} />
+                <Icon size={isMobile ? 14 : 16} strokeWidth={2} />
               </div>
 
               {/* Title & Modes count */}
-              <div>
-                <span style={{ fontSize: 12.5, fontWeight: 700, display: 'block', lineHeight: 1.1 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <span style={{
+                  fontSize: isMobile ? 11.5 : 12.5,
+                  fontWeight: 700,
+                  display: 'block',
+                  lineHeight: 1.15,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: isMobile ? 'nowrap' : 'normal',
+                }}>
                   {role.label}
                 </span>
                 <span style={{
-                  fontSize: 10.5, fontWeight: 500,
+                  fontSize: isMobile ? 10 : 10.5,
+                  fontWeight: 500,
                   color: isSelected
                     ? (isDark ? 'rgba(165, 180, 252, 0.85)' : '#6D28D9')
                     : (isDark ? 'rgba(255,255,255,0.5)' : '#71717A'),
-                  display: 'block', marginTop: 2,
+                  display: 'block',
+                  marginTop: 2,
                 }}>
                   {modeCount} modes
                 </span>
@@ -82,13 +124,13 @@ export const RoleStep: React.FC<RoleStepProps> = ({
               {/* Selected Checkmark Badge */}
               {isSelected && (
                 <div style={{
-                  position: 'absolute', top: 6, right: 6,
-                  width: 16, height: 16, borderRadius: '50%',
+                  position: 'absolute', top: 5, right: 5,
+                  width: 15, height: 15, borderRadius: '50%',
                   background: '#6366F1', color: '#FFFFFF',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   boxShadow: '0 2px 5px rgba(99, 102, 241, 0.4)',
                 }}>
-                  <Check size={10} strokeWidth={3.5} />
+                  <Check size={9} strokeWidth={3.5} />
                 </div>
               )}
             </button>

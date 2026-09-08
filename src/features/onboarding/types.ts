@@ -17,4 +17,8 @@ export interface OnboardingStepConfig {
   subtitle: string;
   shortLabel: string;
   isOptional?: boolean;
+  motivationalTitle?: string;
+  motivationalSubtitle?: string;
+  quote?: string;
+  badgeEmoji?: string;
 }

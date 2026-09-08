@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/theme/theme';
 import { apiClient } from '@/utils/apiClient';
@@ -15,6 +15,7 @@ import { ThemeStep } from './steps/ThemeStep';
 import { CompletionStep } from './steps/CompletionStep';
 import { ROLE_MODES } from '@/constants/roles';
 import { AlertCircle, Check, HelpCircle, ArrowRight } from 'lucide-react';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 interface OnboardingModalProps {
   isOpen: boolean;
@@ -28,6 +29,9 @@ const getUserStorageKey = (u?: any): string => {
 };
 
 export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClose }) => {
+  const isMobile = useMediaQuery('(max-width: 640px)');
+  const isTablet = useMediaQuery('(max-width: 1024px)');
+  const isSmall = useMediaQuery('(max-width: 420px)');
   const { user, refreshUserProfile } = useAuth();
   const { theme: appResolvedTheme, preference: appPreference, setPreference: setAppPreference } = useTheme();
 
@@ -44,6 +48,9 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isDark, setIsDark] = useState<boolean>(() => appResolvedTheme === 'dark');
 
+  // Guard to ensure draft is loaded strictly once per modal session to prevent resetting state on theme changes
+  const loadedDraftKeyRef = useRef<string | null>(null);
+
   // Synchronize dark mode state based on selected theme & system scheme
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -57,7 +64,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
       return;
     }
 
-    // theme === 'system': follow operating system color scheme live
+    // theme === 'system': follow operating scheme live
     const mql = window.matchMedia('(prefers-color-scheme: dark)');
     const update = () => setIsDark(mql.matches);
     update();
@@ -70,11 +77,19 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
     return () => mql.removeListener(update);
   }, [theme]);
 
-  // Load existing user-scoped draft or initialize fresh state for THIS specific user (Light theme by default)
+  // Load existing user-scoped draft or initialize fresh state for THIS specific user
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      loadedDraftKeyRef.current = null;
+      return;
+    }
 
     const storageKey = getUserStorageKey(user);
+    if (loadedDraftKeyRef.current === storageKey) {
+      // Already initialized for this modal session
+      return;
+    }
+    loadedDraftKeyRef.current = storageKey;
 
     // Clean up old non-user-scoped global draft if present
     try {
@@ -96,8 +111,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
         if (parsed.avatarPreset !== undefined) setAvatarPreset(parsed.avatarPreset);
         if (parsed.theme && (parsed.theme === 'light' || parsed.theme === 'dark' || parsed.theme === 'system')) {
           setTheme(parsed.theme);
-        } else {
-          setTheme(appPreference || 'system');
+        } else if (appPreference) {
+          setTheme(appPreference);
         }
         if (typeof parsed.currentStepIndex === 'number' && parsed.currentStepIndex < ONBOARDING_STEPS.length) {
           setCurrentStepIndex(parsed.currentStepIndex);
@@ -117,10 +132,10 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
       setAvatarUrl(user?.avatar_url || null);
       setAvatarPreset(0);
       setAvatarFile(null);
-      setTheme(appPreference || 'system'); // Follow system/app preference by default
-      setCurrentStepIndex(0); // Start at Step 1 for new user
+      setTheme(appPreference || 'system');
+      setCurrentStepIndex(0);
     }
-  }, [isOpen, user, appPreference]);
+  }, [isOpen, user]); // Note: appPreference excluded so changing theme does not reset draft state!
 
   // Persist user-scoped draft progress whenever state updates
   useEffect(() => {
@@ -151,10 +166,18 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
     }
   };
 
-  // Handle Theme selection & update app preference live
+  // Handle Theme selection & update app preference live with instant persistence (1-tap selection)
   const handleSelectTheme = (newTheme: 'light' | 'dark' | 'system') => {
     setTheme(newTheme);
     setAppPreference(newTheme);
+    try {
+      const storageKey = getUserStorageKey(user);
+      const savedDraft = localStorage.getItem(storageKey);
+      const parsed = savedDraft ? JSON.parse(savedDraft) : {};
+      localStorage.setItem(storageKey, JSON.stringify({ ...parsed, theme: newTheme }));
+    } catch (e) {
+      // Ignore
+    }
   };
 
   const currentStep = ONBOARDING_STEPS[currentStepIndex];
@@ -174,24 +197,53 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
       case 'complete':
         return true;
       default:
-        return true;
+        return false;
     }
   };
 
   const handleNextStep = () => {
-    if (!isStepValid()) return;
-    setErrorMessage(null);
     if (currentStepIndex < ONBOARDING_STEPS.length - 1) {
       setCurrentStepIndex((prev) => prev + 1);
     }
   };
 
   const handlePrevStep = () => {
-    setErrorMessage(null);
     if (currentStepIndex > 0) {
       setCurrentStepIndex((prev) => prev - 1);
     }
   };
+
+  // Apple / Notion style keyboard navigation: Enter to continue, Alt+ArrowLeft to go back
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        // Do not intercept if user is typing multiline or focused on an interactive button
+        if (e.target instanceof HTMLTextAreaElement) return;
+        if (e.target instanceof HTMLButtonElement && e.target.type !== 'submit') return;
+
+        e.preventDefault();
+        if (currentStepIndex < ONBOARDING_STEPS.length - 1) {
+          if (isStepValid()) {
+            handleNextStep();
+          }
+        } else {
+          if (!isSubmitting) {
+            handleFinishOnboarding();
+          }
+        }
+      } else if (e.key === 'ArrowLeft' && (e.altKey || e.metaKey)) {
+        e.preventDefault();
+        if (currentStepIndex > 0) {
+          handlePrevStep();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, currentStepIndex, displayName, role, mode, theme, isSubmitting]);
 
   // Skip Onboarding Action Handler
   const handleSkipOnboarding = async () => {
@@ -300,10 +352,24 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
         animation: 'fadeIn 240ms ease-out',
       }}
     >
+      <style>{`
+        @keyframes stepContentIn {
+          0% {
+            opacity: 0;
+            transform: translateY(6px) scale(0.995);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+      `}</style>
+
       {/* Top Navbar Header */}
       <header
         style={{
-          width: '100%', padding: '14px 40px',
+          width: '100%',
+          padding: isMobile ? '12px 16px' : isTablet ? '14px 24px' : '14px 40px',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           boxSizing: 'border-box', flexShrink: 0,
         }}
@@ -317,38 +383,23 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
           </span>
         </div>
 
-        {/* Right Header Actions: Skip Onboarding & Need Help */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button
-            type="button"
-            onClick={handleSkipOnboarding}
-            disabled={isSubmitting}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 5,
-              padding: '6px 14px', borderRadius: 99, fontSize: 12.5, fontWeight: 600,
-              background: isDark ? 'rgba(99, 102, 241, 0.15)' : '#F5F3FF',
-              color: '#6366F1', border: `1.5px solid ${isDark ? 'rgba(99, 102, 241, 0.3)' : '#C7D2FE'}`,
-              cursor: isSubmitting ? 'wait' : 'pointer', transition: 'all 180ms ease'
-            }}
-            className="hover:!bg-[#6366F1] hover:!text-white active:scale-95"
-            title="Skip setup and configure preferences later in Settings"
-          >
-            Skip for now <ArrowRight size={13} />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => window.open('https://support.promptiq.com', '_blank')}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 5,
-              background: 'none', border: 'none', cursor: 'pointer',
-              fontSize: 12.5, fontWeight: 600, color: colors.textSecondary,
-              transition: 'color 180ms ease'
-            }}
-            className="hover:!text-[#6366F1]"
-          >
-            <HelpCircle size={14} /> Need help?
-          </button>
+        {/* Right Header Actions: Need Help */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 12 }}>
+          {!isSmall && (
+            <button
+              type="button"
+              onClick={() => window.open('https://support.promptiq.com', '_blank')}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                background: 'none', border: 'none', cursor: 'pointer',
+                fontSize: isMobile ? 11.5 : 12.5, fontWeight: 600, color: colors.textSecondary,
+                transition: 'color 180ms ease'
+              }}
+              className="hover:!text-[#6366F1]"
+            >
+              <HelpCircle size={13} /> {isMobile ? 'Help' : 'Need help?'}
+            </button>
+          )}
         </div>
       </header>
 
@@ -356,43 +407,122 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
       <main
         style={{
           flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: '8px 24px 20px', boxSizing: 'border-box', width: '100%', overflow: 'hidden'
+          padding: isMobile ? '4px 12px 14px' : isTablet ? '8px 20px 20px' : '8px 24px 20px',
+          boxSizing: 'border-box', width: '100%',
+          overflowY: 'auto',
         }}
       >
         <div
           style={{
-            width: '100%', maxWidth: 840, height: 590, maxHeight: 'calc(100vh - 75px)',
+            width: '100%',
+            maxWidth: 840,
+            minHeight: isMobile ? 'auto' : 540,
+            maxHeight: isMobile ? 'calc(100dvh - 65px)' : 'calc(100vh - 75px)',
             background: colors.cardBg,
             border: `1.5px solid ${colors.cardBorder}`,
-            borderRadius: 24,
+            borderRadius: isMobile ? 18 : 24,
             boxShadow: isDark
               ? '0 20px 60px rgba(0,0,0,0.45)'
               : '0 16px 50px rgba(124, 58, 237, 0.08), 0 1px 3px rgba(0,0,0,0.02)',
             display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
             boxSizing: 'border-box',
-            padding: '32px 44px 28px',
+            padding: isMobile
+              ? (isSmall ? '16px 14px 14px' : '20px 18px 16px')
+              : isTablet
+                ? '24px 28px 22px'
+                : '32px 44px 28px',
+            overflowY: isMobile ? 'auto' : 'hidden',
             animation: 'dropdownFadeIn 280ms cubic-bezier(0.2, 0.8, 0.2, 1)',
           }}
         >
-          {/* Header Step Progress Timeline */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, boxSizing: 'border-box', flexShrink: 0 }}>
-            <OnboardingProgress steps={ONBOARDING_STEPS} currentStepIndex={currentStepIndex} isDark={isDark} />
+          {/* Header Motivational Title, Subtitle & Progress Card */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 10 : 14, boxSizing: 'border-box', flexShrink: 0 }}>
+            {/* Top Motivational Greeting & Subtitle + Top-Right Skip Button */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              gap: 12,
+              boxSizing: 'border-box',
+              width: '100%',
+            }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h1 style={{
+                  fontSize: isMobile ? 18 : isTablet ? 21 : 24,
+                  fontWeight: 800,
+                  color: colors.textPrimary,
+                  margin: 0,
+                  letterSpacing: '-0.35px',
+                  lineHeight: 1.25,
+                }}>
+                  {currentStep.id === 'complete'
+                    ? `You're all set, ${displayName.trim().split(/\s+/)[0] || 'there'}! 🎊`
+                    : currentStep.motivationalTitle || currentStep.title}
+                </h1>
+                <p style={{
+                  fontSize: isMobile ? 12 : 13.5,
+                  color: colors.textSecondary,
+                  margin: '4px 0 0',
+                  lineHeight: 1.4,
+                }}>
+                  {currentStep.motivationalSubtitle || currentStep.subtitle}
+                </p>
+              </div>
 
-            <div style={{ boxSizing: 'border-box', marginTop: 2 }}>
-              <h1 style={{ fontSize: 23, fontWeight: 800, color: colors.textPrimary, margin: 0, letterSpacing: '-0.3px' }}>
-                {currentStep.id === 'complete' ? `You're all set, ${displayName.trim().split(/\s+/)[0] || 'there'}!` : currentStep.title}
-              </h1>
-              <p style={{ fontSize: 13.5, color: colors.textSecondary, margin: '4px 0 0', lineHeight: 1.4 }}>
-                {currentStep.subtitle}
-              </p>
+              {/* Top Most Right-side "Skip" button */}
+              {currentStep.id !== 'complete' && (
+                <button
+                  type="button"
+                  onClick={handleSkipOnboarding}
+                  disabled={isSubmitting}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: isMobile ? '4px 10px' : '5px 14px',
+                    borderRadius: 99,
+                    fontSize: isMobile ? 11.5 : 12.5,
+                    fontWeight: 600,
+                    background: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9',
+                    border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : '#E2E8F0'}`,
+                    color: colors.textSecondary,
+                    cursor: isSubmitting ? 'wait' : 'pointer',
+                    transition: 'all 180ms cubic-bezier(0.16, 1, 0.3, 1)',
+                    flexShrink: 0,
+                    lineHeight: 1,
+                  }}
+                  className="hover:!text-[#6366F1] hover:!border-[#6366F1] hover:!bg-[#6366F1]/10 active:scale-95"
+                  title="Skip onboarding"
+                >
+                  Skip
+                </button>
+              )}
             </div>
+
+            {/* Motivational Progress Card with interactive jump-to-step support */}
+            <OnboardingProgress
+              steps={ONBOARDING_STEPS}
+              currentStepIndex={currentStepIndex}
+              isDark={isDark}
+              onSelectStep={(idx) => setCurrentStepIndex(idx)}
+            />
           </div>
 
-          {/* Body Step Content Container with spacious 360px height */}
+          {/* Body Step Content Container - Uniform fixed height on mobile across all 6 steps */}
           <div style={{
-            margin: '18px 0', flex: 1, height: 360, boxSizing: 'border-box',
-            display: 'flex', flexDirection: 'column', justifyContent: 'center',
-            width: '100%', overflow: 'hidden'
+            margin: isMobile ? '8px 0' : '12px 0',
+            padding: isMobile ? '2px 2px' : '8px 4px',
+            flex: isMobile ? 'none' : 1,
+            height: isMobile ? 325 : undefined,
+            minHeight: isMobile ? 325 : 280,
+            maxHeight: isMobile ? 325 : 380,
+            boxSizing: 'border-box',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            width: '100%',
+            overflowY: isMobile ? 'auto' : 'visible',
+            scrollbarWidth: 'thin',
           }}>
             {errorMessage && (
               <div style={{
@@ -405,117 +535,115 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
               </div>
             )}
 
-            {currentStep.id === 'display_name' && (
-              <DisplayNameStep
-                value={displayName}
-                onChange={setDisplayName}
-                onEnter={handleNextStep}
-                isDark={isDark}
-              />
-            )}
+            <div
+              key={currentStep.id}
+              style={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                boxSizing: 'border-box',
+                animation: 'stepContentIn 220ms cubic-bezier(0.16, 1, 0.3, 1)',
+              }}
+            >
+              {currentStep.id === 'display_name' && (
+                <DisplayNameStep
+                  value={displayName}
+                  onChange={setDisplayName}
+                  onEnter={handleNextStep}
+                  isDark={isDark}
+                />
+              )}
 
-            {currentStep.id === 'role' && (
-              <RoleStep
-                selectedRole={role}
-                onSelectRole={handleSelectRole}
-                isDark={isDark}
-              />
-            )}
+              {currentStep.id === 'role' && (
+                <RoleStep
+                  selectedRole={role}
+                  onSelectRole={handleSelectRole}
+                  isDark={isDark}
+                />
+              )}
 
-            {currentStep.id === 'mode' && (
-              <ModeStep
-                selectedRole={role}
-                selectedMode={mode}
-                onSelectMode={setMode}
-                isDark={isDark}
-              />
-            )}
+              {currentStep.id === 'mode' && (
+                <ModeStep
+                  selectedRole={role}
+                  selectedMode={mode}
+                  onSelectMode={setMode}
+                  isDark={isDark}
+                />
+              )}
 
-            {currentStep.id === 'avatar' && (
-              <AvatarStep
-                displayName={displayName}
-                avatarUrl={avatarUrl}
-                avatarPreset={avatarPreset}
-                onUploadFile={(file) => {
-                  setAvatarFile(file);
-                  const reader = new FileReader();
-                  reader.onloadend = () => {
-                    setAvatarUrl(reader.result as string);
-                  };
-                  reader.readAsDataURL(file);
-                }}
-                onSelectPreset={(idx) => {
-                  setAvatarPreset(idx);
-                  setAvatarUrl(null);
-                  setAvatarFile(null);
-                }}
-                onRemovePhoto={() => {
-                  setAvatarUrl(null);
-                  setAvatarFile(null);
-                }}
-                isDark={isDark}
-              />
-            )}
+              {currentStep.id === 'avatar' && (
+                <AvatarStep
+                  displayName={displayName}
+                  avatarUrl={avatarUrl}
+                  avatarPreset={avatarPreset}
+                  onUploadFile={(file) => {
+                    setAvatarFile(file);
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      setAvatarUrl(reader.result as string);
+                    };
+                    reader.readAsDataURL(file);
+                  }}
+                  onSelectPreset={(idx) => {
+                    setAvatarPreset(idx);
+                    setAvatarUrl(null);
+                    setAvatarFile(null);
+                  }}
+                  onRemovePhoto={() => {
+                    setAvatarUrl(null);
+                    setAvatarFile(null);
+                  }}
+                  isDark={isDark}
+                />
+              )}
 
-            {currentStep.id === 'theme' && (
-              <ThemeStep
-                selectedTheme={theme}
-                onSelectTheme={handleSelectTheme}
-                isDark={isDark}
-              />
-            )}
+              {currentStep.id === 'theme' && (
+                <ThemeStep
+                  selectedTheme={theme}
+                  onSelectTheme={handleSelectTheme}
+                  isDark={isDark}
+                />
+              )}
 
-            {currentStep.id === 'complete' && (
-              <CompletionStep
-                displayName={displayName}
-                role={role}
-                mode={mode}
-                avatarUrl={avatarUrl}
-                avatarPreset={avatarPreset}
-                theme={theme}
-                isDark={isDark}
-              />
-            )}
+              {currentStep.id === 'complete' && (
+                <CompletionStep
+                  displayName={displayName}
+                  role={role}
+                  mode={mode}
+                  avatarUrl={avatarUrl}
+                  avatarPreset={avatarPreset}
+                  theme={theme}
+                  isDark={isDark}
+                />
+              )}
+            </div>
           </div>
 
           {/* Footer Navigation Buttons */}
           <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            paddingTop: 16, borderTop: `1px solid ${colors.divider}`,
-            boxSizing: 'border-box', width: '100%',
+            display: 'flex', alignItems: 'center', justifyContent: currentStepIndex > 0 ? 'space-between' : 'flex-end',
+            paddingTop: isMobile ? 12 : 16, borderTop: `1px solid ${colors.divider}`,
+            boxSizing: 'border-box', width: '100%', gap: 8, flexShrink: 0,
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              {currentStepIndex > 0 && (
-                <button
-                  type="button"
-                  onClick={handlePrevStep}
-                  disabled={isSubmitting}
-                  style={{
-                    padding: '9.5px 20px', borderRadius: 10, fontSize: 13.5, fontWeight: 600,
-                    background: isDark ? 'rgba(255,255,255,0.06)' : '#F1F5F9',
-                    border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : '#E2E8F0'}`,
-                    color: colors.textPrimary, cursor: 'pointer', transition: 'all 180ms ease'
-                  }}
-                  className="hover:opacity-85 active:scale-95"
-                >
-                  ← Back
-                </button>
-              )}
-
+            {currentStepIndex > 0 && (
               <button
                 type="button"
-                onClick={handleSkipOnboarding}
+                onClick={handlePrevStep}
                 disabled={isSubmitting}
                 style={{
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  fontSize: 13, fontWeight: 600, color: colors.textSecondary,
-                  transition: 'color 180ms ease'
+                  padding: isMobile ? '8px 14px' : '9.5px 20px', borderRadius: 10,
+                  fontSize: isMobile ? 12.5 : 13.5, fontWeight: 600,
+                  background: isDark ? 'rgba(255,255,255,0.06)' : '#F1F5F9',
+                  border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : '#E2E8F0'}`,
+                  color: colors.textPrimary, cursor: 'pointer', transition: 'all 180ms ease'
                 }}
-                className="hover:!text-[#6366F1]"
+                className="hover:opacity-85 active:scale-95"
               >
-                Skip Onboarding
+                ← Back
               </button>
-            </div>
+            )}
 
             {currentStepIndex < ONBOARDING_STEPS.length - 1 ? (
               <button
@@ -524,17 +652,34 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
                 disabled={!isStepValid()}
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 6,
-                  padding: '10.5px 26px', borderRadius: 10, fontSize: 13.5, fontWeight: 700,
+                  padding: isMobile ? '9px 18px' : '10.5px 24px', borderRadius: 10,
+                  fontSize: isMobile ? 12.5 : 13.5, fontWeight: 700,
                   background: isStepValid() ? '#6366F1' : 'rgba(99, 102, 241, 0.3)',
                   color: '#FFFFFF', border: 'none',
                   cursor: isStepValid() ? 'pointer' : 'not-allowed',
                   boxShadow: isStepValid() ? '0 5px 15px rgba(99, 102, 241, 0.35)' : 'none',
                   opacity: isStepValid() ? 1 : 0.6,
-                  transition: 'all 180ms ease'
+                  transition: 'all 180ms ease',
+                  whiteSpace: 'nowrap',
                 }}
                 className="hover:brightness-105 active:scale-95"
               >
-                Continue →
+                <span>Continue →</span>
+                {!isMobile && (
+                  <kbd style={{
+                    fontSize: 10,
+                    padding: '1.5px 5px',
+                    borderRadius: 4,
+                    background: 'rgba(255, 255, 255, 0.22)',
+                    fontWeight: 700,
+                    letterSpacing: '0.3px',
+                    border: '1px solid rgba(255, 255, 255, 0.30)',
+                    lineHeight: 1,
+                    display: 'inline-block',
+                  }}>
+                    ↵ Enter
+                  </kbd>
+                )}
               </button>
             ) : (
               <button
@@ -543,16 +688,34 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
                 disabled={isSubmitting}
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 6,
-                  padding: '10.5px 26px', borderRadius: 10, fontSize: 13.5, fontWeight: 700,
+                  padding: isMobile ? '9px 18px' : '10.5px 26px', borderRadius: 10,
+                  fontSize: isMobile ? 12.5 : 13.5, fontWeight: 700,
                   background: '#6366F1',
                   color: '#FFFFFF', border: 'none', cursor: isSubmitting ? 'wait' : 'pointer',
                   boxShadow: '0 5px 16px rgba(99, 102, 241, 0.40)',
                   opacity: isSubmitting ? 0.7 : 1,
-                  transition: 'all 180ms ease'
+                  transition: 'all 180ms ease',
+                  whiteSpace: 'nowrap',
                 }}
                 className="hover:brightness-110 active:scale-95"
               >
-                {isSubmitting ? 'Saving Setup...' : 'Complete Setup'} <Check size={15} strokeWidth={3} />
+                <span>{isSubmitting ? 'Saving...' : 'Complete Setup'}</span>
+                <Check size={14} strokeWidth={3} />
+                {!isMobile && !isSubmitting && (
+                  <kbd style={{
+                    fontSize: 10,
+                    padding: '1.5px 5px',
+                    borderRadius: 4,
+                    background: 'rgba(255, 255, 255, 0.22)',
+                    fontWeight: 700,
+                    letterSpacing: '0.3px',
+                    border: '1px solid rgba(255, 255, 255, 0.30)',
+                    lineHeight: 1,
+                    display: 'inline-block',
+                  }}>
+                    ↵ Enter
+                  </kbd>
+                )}
               </button>
             )}
           </div>
