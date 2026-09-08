@@ -870,7 +870,9 @@ export default function ComparisonBlock({
                                       role="menuitem"
                                       onClick={() => {
                                         setIsVersionMenuOpen(false);
-                                        onRestoreVersion?.(version.version_number);
+                                        if (!isActive) {
+                                          onRestoreVersion?.(version.version_number);
+                                        }
                                       }}
                                       style={{
                                         width: '100%', padding: '7px 12px', border: 'none', borderRadius: 9,

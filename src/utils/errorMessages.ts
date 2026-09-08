@@ -60,6 +60,9 @@ export function getUserMessage(
   }
 
   if (status === 409) {
+    if (rawMsg && !rawMsg.includes('Object') && !rawMsg.includes('Error') && rawMsg.length < 150) {
+      return rawMsg;
+    }
     return 'An account or resource with this detail already exists.';
   }
 

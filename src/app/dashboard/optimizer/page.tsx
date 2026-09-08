@@ -158,6 +158,7 @@ function OptimizerPageContent() {
 
   const handleRestoreVersion = async (versionNumber: number) => {
     if (!loadedPromptId) return;
+    if (activeVersionNumber === versionNumber) return;
     setError(null);
     setIsOptimizing(true);
     try {
