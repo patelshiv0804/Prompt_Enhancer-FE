@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, Search, HelpCircle, Sparkles, ArrowRight, ShieldCheck, Zap, Layers } from "lucide-react";
 import Link from "next/link";
-import { useTheme, D } from "@/theme/theme";
+import { useIsDark, D } from "@/theme/theme";
 
 interface FAQItem {
   id: string;
@@ -81,8 +81,7 @@ const CATEGORIES = [
 ];
 
 export default function FAQSection() {
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
+  const isDark = useIsDark();
   const [openId, setOpenId] = useState<string | null>("faq-1");
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");

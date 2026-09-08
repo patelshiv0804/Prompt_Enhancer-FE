@@ -4,11 +4,10 @@ import { motion } from "framer-motion";
 import { ArrowRight, Play } from "lucide-react";
 import TrustLogos from "./TrustLogos";
 import PromptIQUniverse from "./PromptIQUniverse";
-import { useTheme, D } from "@/theme/theme";
+import { useIsDark, D } from "@/theme/theme";
 
 export default function Hero() {
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
+  const isDark = useIsDark();
 
   return (
     <section

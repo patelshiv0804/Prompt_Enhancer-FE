@@ -1,10 +1,11 @@
 'use client';
+import './auth.css';
 import Script from 'next/script';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, CheckCircle, Eye, EyeOff, KeyRound, Lock, Mail, RefreshCw, Sparkles, User, Zap } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme, D } from '@/theme/theme';
+import { useIsDark, D } from '@/theme/theme';
 import { getUserMessage } from '@/utils/errorMessages';
 
 declare global {
@@ -47,8 +48,7 @@ function AuthContent() {
   const googleInitRef = useRef(false);
   const googleButtonRef = useRef<HTMLDivElement | null>(null);
 
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
+  const isDark = useIsDark();
 
   const { login, register, loginWithGoogle, loading,
     sendPasswordResetOtp, verifyPasswordResetOtp, resetPassword } = useAuth();
@@ -352,458 +352,8 @@ function AuthContent() {
     if (timerRef.current) clearInterval(timerRef.current);
   };
 
-  const sharedStyles = `
-    @import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600&display=swap');
-    
-    .glass-floating { 
-      background: ${isDark ? 'rgba(20, 19, 32, 0.88)' : 'rgba(255,255,255,0.9)'}; 
-      backdrop-filter: blur(32px); 
-      -webkit-backdrop-filter: blur(32px); 
-      box-shadow: ${isDark ? '0 10px 30px rgba(0,0,0,0.5), 0 0 20px rgba(139,92,246,0.06)' : '0 10px 20px rgba(23,26,43,0.04)'}; 
-      border: 1px solid ${isDark ? 'rgba(255,255,255,0.09)' : 'rgba(236,234,245,0.5)'}; 
-    }
-    
-    .glass-panel { 
-      background: ${isDark ? 'rgba(20, 19, 32, 0.75)' : 'rgba(255,255,255,0.7)'}; 
-      backdrop-filter: blur(20px); 
-      -webkit-backdrop-filter: blur(20px); 
-      border: 1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#ECEAF5'}; 
-    }
-    
-    .fluid-shape { 
-      animation: morph 8s ease-in-out infinite; 
-      background: ${isDark ? 'rgba(26, 24, 39, 0.45)' : 'rgba(255,255,255,0.6)'}; 
-      backdrop-filter: blur(16px); 
-      -webkit-backdrop-filter: blur(16px); 
-      box-shadow: ${isDark ? '0 20px 60px rgba(0,0,0,0.55)' : '0 20px 60px rgba(23,26,43,0.08)'}; 
-      border: 1px solid ${isDark ? 'rgba(139,92,246,0.18)' : 'rgba(255,255,255,0.5)'}; 
-    }
-    
-    @keyframes morph { 0% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; } 50% { border-radius: 30% 70% 70% 30% / 30% 60% 40% 70%; } 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; } }
-    .signup-field { overflow: hidden; transition: max-height 0.35s ease, opacity 0.3s ease, margin 0.3s ease; }
-    .signup-field.visible { max-height: 120px; opacity: 1; }
-    .signup-field.hidden { max-height: 0; opacity: 0; margin-top: 0 !important; margin-bottom: 0 !important; pointer-events: none; }
-    
-    .orb1 { background: radial-gradient(circle, ${isDark ? 'rgba(139,92,246,0.3)' : 'rgba(139,92,246,0.4)'} 0%, rgba(139,92,246,0) 70%); }
-    .orb2 { background: radial-gradient(circle, ${isDark ? 'rgba(236,72,153,0.22)' : 'rgba(236,72,153,0.3)'} 0%, rgba(236,72,153,0) 70%); }
-    
-    .input-glow:focus { 
-      box-shadow: 0 0 0 2px rgba(139,92,246,0.35); 
-      border-color: #8B5CF6 !important; 
-      outline: none; 
-    }
-    
-    @keyframes bounceA { 0%,100%{transform:rotate(3deg) translateY(0)} 50%{transform:rotate(3deg) translateY(-10px)} }
-    @keyframes bounceB { 0%,100%{transform:rotate(-2deg) translateY(0)} 50%{transform:rotate(-2deg) translateY(-10px)} }
-    @keyframes pulse2 { 0%,100%{opacity:1} 50%{opacity:0.5} }
-    .badge-a { animation: bounceA 5s ease-in-out infinite; }
-    .badge-b { animation: bounceB 6s ease-in-out infinite reverse; }
-    .pulse { animation: pulse2 2s ease-in-out infinite; }
-    .card-hover { transition: transform 0.5s; }
-    .card-hover:hover { transform: scale(1.02); }
-    
-    .btn-main { 
-      width: 100%; 
-      background: ${isDark ? D.ctaBg : '#09090B'}; 
-      color: ${isDark ? D.ctaText : '#fff'}; 
-      border: none; 
-      border-radius: 9999px; 
-      padding: 12px 0; 
-      font-size: 14px; 
-      font-weight: 600; 
-      letter-spacing: -0.01em; 
-      cursor: pointer; 
-      display: flex; 
-      align-items: center; 
-      justify-content: center; 
-      gap: 8px; 
-      box-shadow: ${isDark ? D.ctaShadow : '0 6px 22px rgba(13,13,26,0.20)'}; 
-      transition: transform 0.25s cubic-bezier(0.22,1,0.36,1), box-shadow 0.25s ease, background 0.3s ease; 
-      margin-top: 4px; 
-      font-family: 'Geist', sans-serif; 
-    }
-    .btn-main:hover:not(:disabled) { 
-      transform: translateY(-2px) scale(1.02); 
-      box-shadow: ${isDark ? '0 10px 30px rgba(139,92,246,0.4), 0 6px 24px rgba(0,0,0,0.6)' : '0 10px 30px rgba(139,92,246,0.35), 0 6px 22px rgba(13,13,26,0.22)'}; 
-    }
-    .btn-main:disabled { opacity: 0.7; cursor: not-allowed; }
-    
-    .btn-secondary { 
-      width: 100%; 
-      background: transparent; 
-      color: ${isDark ? D.textPrimary : '#09090B'}; 
-      border: 1.5px solid ${isDark ? 'rgba(255,255,255,0.15)' : 'rgba(23,26,43,0.15)'}; 
-      border-radius: 9999px; 
-      padding: 13px 0; 
-      font-size: 14px; 
-      font-weight: 600; 
-      letter-spacing: 0.02em; 
-      cursor: pointer; 
-      display: flex; 
-      align-items: center; 
-      justify-content: center; 
-      gap: 8px; 
-      transition: all 0.2s; 
-      font-family: 'Geist', sans-serif; 
-    }
-    .btn-secondary:hover:not(:disabled) { 
-      border-color: #8B5CF6; 
-      color: #8B5CF6; 
-      background: rgba(139,92,246,0.08); 
-    }
-    .btn-secondary:disabled { opacity: 0.6; cursor: not-allowed; }
-    
-    .arrow-icon { display: inline-block; transition: transform 0.2s; }
-    .btn-main:hover .arrow-icon { transform: translateX(4px); }
-    
-    .tab-btn { 
-      flex: 1; 
-      padding: 11px 0; 
-      background: none; 
-      border: none; 
-      border-bottom: 2px solid transparent; 
-      cursor: pointer; 
-      font-size: 14px; 
-      font-family: 'Geist', sans-serif; 
-      letter-spacing: 0.02em; 
-      transition: all 0.2s; 
-    }
-    .tab-active { 
-      border-bottom-color: #8B5CF6; 
-      color: ${isDark ? D.textPrimary : '#09090B'}; 
-      font-weight: 700; 
-    }
-    .tab-inactive { 
-      color: ${isDark ? D.textMuted : 'rgba(70,70,76,0.6)'}; 
-      font-weight: 500; 
-    }
-    .tab-inactive:hover {
-      color: ${isDark ? D.textSecondary : '#09090B'};
-    }
-    
-    .input-wrap { position: relative; width: 100%; }
-    .field-input { 
-      width: 100%; 
-      box-sizing: border-box; 
-      padding: 11px 16px 11px 44px; 
-      background: ${isDark ? 'rgba(14, 13, 20, 0.85)' : 'rgba(255,255,255,0.9)'}; 
-      border: 1px solid ${isDark ? 'rgba(255,255,255,0.12)' : '#ECEAF5'}; 
-      border-radius: 12px; 
-      font-size: 15px; 
-      color: ${isDark ? D.textPrimary : '#111'}; 
-      font-family: 'Inter', sans-serif; 
-      transition: border-color 0.3s, box-shadow 0.3s, background 0.3s, color 0.3s; 
-    }
-    .field-input::placeholder { color: ${isDark ? 'rgba(171,169,188,0.45)' : 'rgba(70,70,76,0.4)'}; }
-    .field-input.has-right { padding-right: 48px; }
-    
-    .field-icon-left { 
-      position: absolute; 
-      left: 14px; 
-      top: 50%; 
-      transform: translateY(-50%); 
-      color: ${isDark ? D.textMuted : 'rgba(70,70,76,0.5)'}; 
-      font-size: 20px; 
-      pointer-events: none; 
-      transition: color 0.2s;
-    }
-    .field-icon-right { 
-      position: absolute; 
-      right: 14px; 
-      top: 50%; 
-      transform: translateY(-50%); 
-      background: none; 
-      border: none; 
-      cursor: pointer; 
-      color: ${isDark ? D.textMuted : 'rgba(70,70,76,0.5)'}; 
-      font-size: 20px; 
-      display: flex; 
-      align-items: center; 
-      transition: color 0.2s; 
-    }
-    .field-icon-right:hover { color: ${isDark ? D.textPrimary : '#09090B'}; }
-    
-    .link-style { 
-      background: none; 
-      border: none; 
-      cursor: pointer; 
-      font-weight: 700; 
-      color: ${isDark ? '#A78BFA' : '#09090B'}; 
-      font-size: 14px; 
-      font-family: 'Inter', sans-serif; 
-      padding: 0; 
-      transition: color 0.2s; 
-    }
-    .link-style:hover { color: ${isDark ? '#C084FC' : '#8B5CF6'}; }
-    
-    .forgot-link { 
-      font-size: 12px; 
-      font-weight: 600; 
-      color: ${isDark ? '#A78BFA' : '#8B5CF6'}; 
-      text-decoration: none; 
-      letter-spacing: 0.05em; 
-      transition: color 0.2s; 
-      background: none; 
-      border: none; 
-      cursor: pointer; 
-      font-family: 'Inter', sans-serif; 
-      padding: 0; 
-    }
-    .forgot-link:hover { color: ${isDark ? '#C084FC' : '#09090B'}; }
-    
-    @media(min-width:768px) { .badge-a-wrap { display:flex !important; } .badge-b-wrap { display:flex !important; } }
-    @media(max-width:767px) { .badge-a-wrap { display:none !important; } .badge-b-wrap { display:none !important; } }
-    
-    @media (max-width: 1023px) {
-      .auth-container { flex-direction:column !important; align-items:center !important; justify-content:center !important; gap:16px !important; }
-      .auth-left { width:100% !important; align-items:center !important; flex:0 0 auto !important; }
-      .auth-headline { text-align:center !important; margin-bottom:0 !important; }
-      .auth-hero-visual { display:none !important; }
-      .auth-right { width:100% !important; max-width:440px !important; flex:0 0 auto !important; }
-    }
-    @media (max-width: 639px) {
-      .auth-main { padding: 68px 14px 28px !important; }
-      .auth-home-link { top: 14px !important; left: 12px !important; padding: 6px 12px !important; }
-      .auth-home-link span { font-size: 11px !important; }
-      .auth-top-right { top: 14px !important; right: 12px !important; gap: 8px !important; }
-      .auth-token-badge { display: none !important; }
-      .auth-container { gap: 14px !important; }
-      .auth-headline h1 { font-size: clamp(30px, 8.5vw, 40px) !important; line-height: 1.12 !important; margin-bottom: 6px !important; letter-spacing: -0.035em !important; }
-      .auth-card-inner { padding: 22px 18px !important; border-radius: 24px !important; }
-      .fluid-shape { display: none !important; }
-      .field-input { padding: 10px 14px 10px 40px !important; font-size: 14px !important; border-radius: 10px !important; }
-      .btn-main { padding: 11px 0 !important; font-size: 13.5px !important; }
-      .google-button-shell, .google-button-host, .google-fallback { min-height: 42px !important; }
-    }
-    @media (max-width: 520px) {
-      .auth-token-badge { display:none !important; }
-    }
-    
-    .auth-home-link { 
-      cursor: pointer; 
-      transition: transform 0.2s, box-shadow 0.2s, background 0.3s, border-color 0.3s; 
-    }
-    .auth-home-link:hover { 
-      transform: translateY(-1px); 
-      box-shadow: ${isDark ? '0 12px 24px rgba(0,0,0,0.6)' : '0 12px 24px rgba(23,26,43,0.1)'}; 
-    }
-    .auth-home-link .auth-home-arrow { transition: transform 0.2s; }
-    .auth-home-link:hover .auth-home-arrow { transform: translateX(-3px); }
-    
-    .oauth-divider { 
-      display: flex; 
-      align-items: center; 
-      gap: 12px; 
-      margin-top: 6px; 
-      color: ${isDark ? D.textMuted : 'rgba(70,70,76,0.45)'}; 
-      font-size: 11.5px; 
-      font-weight: 600; 
-      letter-spacing: 0.08em; 
-      text-transform: uppercase; 
-    }
-    .oauth-divider::before, .oauth-divider::after { 
-      content: ''; 
-      flex: 1; 
-      height: 1px; 
-      background: ${isDark ? 'rgba(255,255,255,0.09)' : 'rgba(229,225,227,0.8)'}; 
-    }
-    
-    .google-fallback { 
-      width: 100%; 
-      min-height: 44px; 
-      border-radius: 9999px; 
-      border: 1.5px solid ${isDark ? 'rgba(255,255,255,0.12)' : '#E5E7EB'}; 
-      background: ${isDark ? 'rgba(14, 13, 20, 0.85)' : '#fff'}; 
-      color: ${isDark ? D.textPrimary : '#09090B'}; 
-      font-family: 'Geist', sans-serif; 
-      font-size: 14px; 
-      font-weight: 600; 
-      letter-spacing: 0.01em; 
-      display: flex; 
-      align-items: center; 
-      justify-content: center; 
-      gap: 10px; 
-      padding: 10px 16px; 
-      box-sizing: border-box; 
-      box-shadow: ${isDark ? '0 2px 8px rgba(0,0,0,0.4)' : '0 1px 2px rgba(17,24,39,0.04)'}; 
-      cursor: pointer; 
-      transition: all 0.2s; 
-    }
-    .google-fallback:hover { 
-      background: ${isDark ? 'rgba(26, 24, 39, 0.95)' : '#F9FAFB'}; 
-      border-color: ${isDark ? 'rgba(139,92,246,0.4)' : '#D1D5DB'}; 
-    }
-    .google-hint { 
-      margin-top: 6px; 
-      font-size: 11px; 
-      line-height: 1.4; 
-      color: ${isDark ? D.textMuted : 'rgba(70,70,76,0.62)'}; 
-      text-align: center; 
-    }
-    .google-hint code {
-      background: ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'};
-      padding: 2px 5px;
-      border-radius: 4px;
-      color: ${isDark ? '#C084FC' : '#8B5CF6'};
-    }
-    
-    .inline-skeleton { 
-      width: 100%; 
-      border-radius: 9999px; 
-      background: ${isDark ? 'linear-gradient(90deg, #1A1827 0%, #29263D 50%, #1A1827 100%)' : 'linear-gradient(90deg, #F3F4F6 0%, #E5E7EB 50%, #F3F4F6 100%)'}; 
-      background-size: 200% 100%; 
-      animation: shimmer 1.4s linear infinite; 
-    }
-    .inline-skeleton.btn { height: 44px; margin-top: 6px; }
-    .inline-skeleton.google { height: 44px; margin-top: 2px; }
-    .google-button-shell { position: relative; width: 100%; min-height: 44px; display: flex; justify-content: center; }
-    .google-button-host { width: 100%; min-height: 44px; display: flex; justify-content: center; }
-    .google-button-host > div, .google-button-host iframe { width: 100% !important; max-width: 100% !important; border-radius: 9999px !important; }
-    .google-button-skeleton { position: absolute; inset: 0; z-index: 3; }
-
-    /* Dark mode: mask Google's mismatched personalized button with our own themed pill.
-       The real GIS button stays on top but transparent, so it still handles the click
-       and the id_token credential flow is unchanged — only the visuals are ours. */
-    .google-button-shell.google-masked { align-items: center; }
-    .google-masked .google-button-host {
-      position: absolute;
-      inset: 0;
-      z-index: 2;
-      opacity: 0;
-      overflow: hidden;
-    }
-    .google-styled-btn {
-      position: absolute;
-      inset: 0;
-      z-index: 1;
-      pointer-events: none;
-      border-radius: 9999px;
-      border: 1.5px solid rgba(255,255,255,0.12);
-      background: rgba(14, 13, 20, 0.85);
-      color: ${D.textPrimary};
-      font-family: 'Geist', sans-serif;
-      font-size: 14px;
-      font-weight: 600;
-      letter-spacing: 0.01em;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      box-sizing: border-box;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-      transition: background 0.2s, border-color 0.2s;
-    }
-    .google-masked:hover .google-styled-btn {
-      background: rgba(26, 24, 39, 0.95);
-      border-color: rgba(139,92,246,0.4);
-    }
-    
-    .auth-loading-overlay { 
-      position: absolute; 
-      inset: 0; 
-      z-index: 80; 
-      display: flex; 
-      flex-direction: column; 
-      align-items: center; 
-      justify-content: center; 
-      gap: 18px; 
-      background: ${isDark ? 'rgba(10, 10, 15, 0.78)' : 'rgba(250,250,252,0.42)'}; 
-      backdrop-filter: blur(10px); 
-      -webkit-backdrop-filter: blur(10px); 
-      border-radius: 40px; 
-    }
-    .auth-loading-spinner { 
-      width: 42px; 
-      height: 42px; 
-      border-radius: 50%; 
-      border: 3px solid rgba(139,92,246,0.22); 
-      border-top-color: ${isDark ? '#F5F4F8' : '#09090B'}; 
-      animation: spin 0.8s linear infinite; 
-    }
-    .auth-loading-title { 
-      font-family: 'Geist', sans-serif; 
-      font-size: 15px; 
-      font-weight: 600; 
-      letter-spacing: 0.02em; 
-      color: ${isDark ? D.textPrimary : '#09090B'}; 
-      text-align: center; 
-    }
-    .auth-loading-copy { font-size: 13px; color: ${isDark ? D.textSecondary : 'rgba(70,70,76,0.68)'}; text-align: center; }
-    
-    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-    
-    /* OTP boxes */
-    .otp-box { 
-      width: clamp(30px, 8.5vw, 44px); 
-      height: clamp(42px, 11vw, 54px); 
-      text-align: center; 
-      font-size: clamp(18px, 5.2vw, 22px); 
-      font-weight: 700; 
-      font-family: 'Geist', sans-serif; 
-      color: ${isDark ? D.textPrimary : '#09090B'}; 
-      background: ${isDark ? 'rgba(14, 13, 20, 0.85)' : 'rgba(255,255,255,0.95)'}; 
-      border: 1.5px solid ${isDark ? 'rgba(255,255,255,0.12)' : '#ECEAF5'}; 
-      border-radius: 12px; 
-      outline: none; 
-      transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s, background 0.2s; 
-      caret-color: #8B5CF6; 
-    }
-    .otp-box:focus { border-color: #8B5CF6; box-shadow: 0 0 0 3px rgba(139,92,246,0.25); transform: scale(1.06); }
-    .otp-box.filled { 
-      border-color: #8B5CF6; 
-      background: ${isDark ? 'rgba(139,92,246,0.18)' : 'linear-gradient(135deg,rgba(139,92,246,0.06),rgba(236,72,153,0.04))'}; 
-    }
-    
-    /* OTP timer */
-    .otp-timer { font-size: 13px; font-family: 'Geist', sans-serif; font-weight: 600; color: ${isDark ? D.textSecondary : 'rgba(70,70,76,0.7)'}; text-align: center; }
-    .otp-timer span { color: #8B5CF6; }
-    
-    /* Back button */
-    .back-btn { 
-      display: inline-flex; 
-      align-items: center; 
-      gap: 6px; 
-      background: none; 
-      border: none; 
-      cursor: pointer; 
-      font-size: 13px; 
-      font-weight: 600; 
-      color: ${isDark ? D.textSecondary : 'rgba(70,70,76,0.6)'}; 
-      font-family: 'Geist', sans-serif; 
-      padding: 0; 
-      letter-spacing: 0.02em; 
-      transition: color 0.2s; 
-      margin-bottom: 20px; 
-    }
-    .back-btn:hover { color: #8B5CF6; }
-    
-    /* Success check animation */
-    @keyframes scaleIn { 0%{transform:scale(0);opacity:0} 70%{transform:scale(1.15)} 100%{transform:scale(1);opacity:1} }
-    @keyframes fadeUp { 0%{opacity:0;transform:translateY(16px)} 100%{opacity:1;transform:translateY(0)} }
-    .success-icon { animation: scaleIn 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards; }
-    .success-text { animation: fadeUp 0.4s 0.3s ease both; }
-    
-    /* Step indicator */
-    .step-dot { width: 8px; height: 8px; border-radius: 50%; transition: all 0.3s; }
-    .step-dot.active { background: #8B5CF6; transform: scale(1.25); }
-    .step-dot.done { background: #8B5CF6; opacity: 0.4; }
-    .step-dot.upcoming { background: ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(70,70,76,0.2)'}; }
-    
-    .fp-view { animation: fadeUp 0.3s ease both; }
-  `;
-
   const errorBox = (msg: string) => (
-    <div style={{
-      padding: '12px 16px',
-      background: isDark ? 'rgba(239, 68, 68, 0.12)' : 'rgba(239, 68, 68, 0.08)',
-      border: `1px solid ${isDark ? 'rgba(239, 68, 68, 0.25)' : 'rgba(239, 68, 68, 0.15)'}`,
-      borderRadius: 12,
-      color: '#f87171',
-      fontSize: 14,
-      fontWeight: 500,
-      marginBottom: 20,
-    }}>
+    <div className="auth-error-box">
       {msg}
     </div>
   );
@@ -833,18 +383,20 @@ function AuthContent() {
       </button>
       {renderStepDots()}
       <div style={{ textAlign: 'center', marginBottom: 28 }}>
-        <div style={{ width: 52, height: 52, borderRadius: '50%', background: isDark ? 'linear-gradient(135deg,rgba(139,92,246,0.25),rgba(236,72,153,0.15))' : 'linear-gradient(135deg,rgba(139,92,246,0.15),rgba(236,72,153,0.1))', border: '1px solid rgba(139,92,246,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+        <div className="auth-key-wrap">
           <KeyRound size={22} color="#8B5CF6" />
         </div>
-        <h2 style={{ fontFamily: "'Geist',sans-serif", fontSize: 22, fontWeight: 700, color: isDark ? D.textPrimary : '#111', marginBottom: 6, letterSpacing: '-0.02em' }}>Forgot Password?</h2>
-        <p style={{ fontSize: 14, color: isDark ? D.textSecondary : 'rgba(70,70,76,0.65)', lineHeight: 1.6 }}>
+        <h2 className="auth-card-title" style={{ fontSize: 22, fontWeight: 700, marginBottom: 6, letterSpacing: '-0.02em' }}>
+          Forgot Password?
+        </h2>
+        <p className="auth-card-sub" style={{ fontSize: 14, lineHeight: 1.6 }}>
           Enter your registered email and we&apos;ll send a 6-digit code to reset your password.
         </p>
       </div>
       {fpError && errorBox(fpError)}
       <form onSubmit={handleSendOtp}>
         <div style={{ marginBottom: 20 }}>
-          <label style={{ fontFamily: "'Geist',sans-serif", fontSize: 14, fontWeight: 500, color: isDark ? D.textPrimary : '#111', display: 'block', marginBottom: 6, marginLeft: 4 }}>Email address</label>
+          <label className="auth-input-label" style={{ fontSize: 14, marginBottom: 6, marginLeft: 4 }}>Email address</label>
           <div className="input-wrap">
             <Mail size={18} className="field-icon-left" />
             <input
@@ -874,12 +426,14 @@ function AuthContent() {
       </button>
       {renderStepDots()}
       <div style={{ textAlign: 'center', marginBottom: 28 }}>
-        <div style={{ width: 52, height: 52, borderRadius: '50%', background: isDark ? 'linear-gradient(135deg,rgba(139,92,246,0.25),rgba(236,72,153,0.15))' : 'linear-gradient(135deg,rgba(139,92,246,0.15),rgba(236,72,153,0.1))', border: '1px solid rgba(139,92,246,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+        <div className="auth-key-wrap">
           <Mail size={22} color="#8B5CF6" />
         </div>
-        <h2 style={{ fontFamily: "'Geist',sans-serif", fontSize: 22, fontWeight: 700, color: isDark ? D.textPrimary : '#111', marginBottom: 6, letterSpacing: '-0.02em' }}>Check your inbox</h2>
-        <p style={{ fontSize: 14, color: isDark ? D.textSecondary : 'rgba(70,70,76,0.65)', lineHeight: 1.6 }}>
-          We sent a 6-digit code to <strong style={{ color: isDark ? D.textPrimary : '#09090B' }}>{fpEmail}</strong>
+        <h2 className="auth-card-title" style={{ fontSize: 22, fontWeight: 700, marginBottom: 6, letterSpacing: '-0.02em' }}>
+          Check your inbox
+        </h2>
+        <p className="auth-card-sub" style={{ fontSize: 14, lineHeight: 1.6 }}>
+          We sent a 6-digit code to <strong style={{ color: 'var(--auth-text-primary)' }}>{fpEmail}</strong>
         </p>
       </div>
       {fpError && errorBox(fpError)}
@@ -907,7 +461,7 @@ function AuthContent() {
         <div className="otp-timer" style={{ marginBottom: 20 }}>
           {otpTimer > 0
             ? <>Code expires in <span>{formatTimer(otpTimer)}</span></>
-            : <span style={{ color: isDark ? D.textMuted : 'rgba(70,70,76,0.6)' }}>Code expired</span>}
+            : <span style={{ color: 'var(--auth-text-muted)' }}>Code expired</span>}
         </div>
 
         <button type="submit" className="btn-main" disabled={fpLoading || fpOtp.join('').length < OTP_LENGTH}>
@@ -921,7 +475,7 @@ function AuthContent() {
             <RefreshCw size={13} /> Resend code
           </button>
         ) : (
-          <span style={{ fontSize: 13, color: isDark ? D.textMuted : 'rgba(70,70,76,0.5)' }}>Didn&apos;t receive it? Resend available when timer expires</span>
+          <span style={{ fontSize: 13, color: 'var(--auth-text-muted)' }}>Didn&apos;t receive it? Resend available when timer expires</span>
         )}
       </div>
     </div>
@@ -931,11 +485,13 @@ function AuthContent() {
     <div className="fp-view">
       {renderStepDots()}
       <div style={{ textAlign: 'center', marginBottom: 28 }}>
-        <div style={{ width: 52, height: 52, borderRadius: '50%', background: isDark ? 'linear-gradient(135deg,rgba(139,92,246,0.25),rgba(236,72,153,0.15))' : 'linear-gradient(135deg,rgba(139,92,246,0.15),rgba(236,72,153,0.1))', border: '1px solid rgba(139,92,246,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+        <div className="auth-key-wrap">
           <Lock size={22} color="#8B5CF6" />
         </div>
-        <h2 style={{ fontFamily: "'Geist',sans-serif", fontSize: 22, fontWeight: 700, color: isDark ? D.textPrimary : '#111', marginBottom: 6, letterSpacing: '-0.02em' }}>Set new password</h2>
-        <p style={{ fontSize: 14, color: isDark ? D.textSecondary : 'rgba(70,70,76,0.65)', lineHeight: 1.6 }}>
+        <h2 className="auth-card-title" style={{ fontSize: 22, fontWeight: 700, marginBottom: 6, letterSpacing: '-0.02em' }}>
+          Set new password
+        </h2>
+        <p className="auth-card-sub" style={{ fontSize: 14, lineHeight: 1.6 }}>
           Choose a strong password with at least 8 characters.
         </p>
       </div>
@@ -943,7 +499,7 @@ function AuthContent() {
       <form onSubmit={handleResetPassword}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
           <div>
-            <label style={{ fontFamily: "'Geist',sans-serif", fontSize: 14, fontWeight: 500, color: isDark ? D.textPrimary : '#111', display: 'block', marginBottom: 6, marginLeft: 4 }}>New Password</label>
+            <label className="auth-input-label" style={{ fontSize: 14, marginBottom: 6, marginLeft: 4 }}>New Password</label>
             <div className="input-wrap">
               <Lock size={18} className="field-icon-left" />
               <input
@@ -968,14 +524,14 @@ function AuthContent() {
                   const strength = fpNewPass.length >= 12 ? 4 : fpNewPass.length >= 10 ? 3 : fpNewPass.length >= 8 ? 2 : 1;
                   const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e'];
                   return (
-                    <div key={i} style={{ flex: 1, height: 3, borderRadius: 9999, background: i < strength ? colors[strength - 1] : (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(70,70,76,0.1)'), transition: 'background 0.3s' }} />
+                    <div key={i} style={{ flex: 1, height: 3, borderRadius: 9999, background: i < strength ? colors[strength - 1] : 'var(--auth-bar-inactive)', transition: 'background 0.3s' }} />
                   );
                 })}
               </div>
             )}
           </div>
           <div>
-            <label style={{ fontFamily: "'Geist',sans-serif", fontSize: 14, fontWeight: 500, color: isDark ? D.textPrimary : '#111', display: 'block', marginBottom: 6, marginLeft: 4 }}>Confirm Password</label>
+            <label className="auth-input-label" style={{ fontSize: 14, marginBottom: 6, marginLeft: 4 }}>Confirm Password</label>
             <div className="input-wrap">
               <Lock size={18} className="field-icon-left" />
               <input
@@ -1009,10 +565,10 @@ function AuthContent() {
         <CheckCircle size={64} color="#22c55e" strokeWidth={1.5} />
       </div>
       <div className="success-text">
-        <h2 style={{ fontFamily: "'Geist',sans-serif", fontSize: 22, fontWeight: 700, color: isDark ? D.textPrimary : '#111', marginBottom: 10, letterSpacing: '-0.02em' }}>
+        <h2 className="auth-card-title" style={{ fontSize: 22, fontWeight: 700, marginBottom: 10, letterSpacing: '-0.02em' }}>
           Password Reset!
         </h2>
-        <p style={{ fontSize: 14, color: isDark ? D.textSecondary : 'rgba(70,70,76,0.65)', lineHeight: 1.6, marginBottom: 32 }}>
+        <p className="auth-card-sub" style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 32 }}>
           Your password has been updated successfully. You can now sign in with your new password.
         </p>
         <button className="btn-main" onClick={handleBackToSignIn}>
@@ -1028,8 +584,6 @@ function AuthContent() {
       className="auth-root"
       style={{
         fontFamily: "'Inter', sans-serif",
-        background: isDark ? D.bg : '#FAFAFC',
-        color: isDark ? D.textPrimary : '#111',
         minHeight: '100vh',
         display: 'flex',
         flexDirection: 'column',
@@ -1043,12 +597,12 @@ function AuthContent() {
         strategy="afterInteractive"
         onLoad={() => setGoogleReady(true)}
       />
-      <style>{sharedStyles}</style>
+      {/* auth styles are now statically bundled via auth.css import */}
 
       {/* Top Left — Back to Home */}
       <Link
         href="/"
-        className="glass-floating auth-home-link"
+        className="auth-home-link"
         style={{
           position: 'absolute',
           top: 24,
@@ -1062,15 +616,15 @@ function AuthContent() {
           textDecoration: 'none',
         }}
       >
-        <ArrowLeft size={16} color={isDark ? D.textPrimary : '#09090B'} className="auth-home-arrow" />
-        <span style={{ fontFamily: "'Geist',sans-serif", fontSize: 12, fontWeight: 600, letterSpacing: '0.05em', color: isDark ? D.textPrimary : '#09090B' }}>Back to home</span>
+        <ArrowLeft size={16} className="auth-home-arrow" />
+        <span className="auth-home-text">Back to home</span>
       </Link>
 
       {/* Top Right Controls: Token Badge */}
       <div className="auth-top-right" style={{ position: 'absolute', top: 24, right: 24, zIndex: 50, display: 'flex', alignItems: 'center', gap: 12 }}>
-        <div className="glass-floating auth-token-badge" style={{ padding: '8px 16px', borderRadius: 9999, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="auth-token-badge" style={{ padding: '8px 16px', borderRadius: 9999, display: 'flex', alignItems: 'center', gap: 8 }}>
           <Zap size={16} color="#8B5CF6" />
-          <span style={{ fontFamily: "'Geist',sans-serif", fontSize: 12, fontWeight: 600, letterSpacing: '0.05em', color: isDark ? D.textPrimary : '#09090B' }}>Token Efficiency: 94%</span>
+          <span className="auth-token-text">Token Efficiency: 94%</span>
         </div>
       </div>
 
@@ -1078,21 +632,9 @@ function AuthContent() {
 
         {/* Background Ambient Effects */}
         <div style={{ position: 'absolute', inset: 0, zIndex: 0, overflow: 'hidden', pointerEvents: 'none' }}>
-          <div className="orb1" style={{ position: 'absolute', top: '25%', left: -128, width: 384, height: 384, borderRadius: '50%', filter: 'blur(64px)', opacity: isDark ? 0.45 : 0.5 }} />
-          <div className="orb2" style={{ position: 'absolute', bottom: '25%', right: -128, width: 500, height: 500, borderRadius: '50%', filter: 'blur(64px)', opacity: isDark ? 0.35 : 0.5 }} />
-          <div style={{
-            position: 'absolute',
-            top: 0,
-            right: 0,
-            width: '120vw',
-            height: '120vh',
-            background: isDark ? 'rgba(20, 19, 32, 0.4)' : 'rgba(255,255,255,0.4)',
-            backdropFilter: 'blur(48px)',
-            transform: 'rotate(12deg) translate(33%,-25%)',
-            borderRadius: 100,
-            border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.2)'}`,
-            boxShadow: isDark ? '0 25px 60px rgba(0,0,0,0.5)' : '0 25px 50px rgba(0,0,0,0.08)',
-          }} />
+          <div className="orb1" style={{ position: 'absolute', top: '25%', left: -128, width: 384, height: 384, borderRadius: '50%', filter: 'blur(64px)' }} />
+          <div className="orb2" style={{ position: 'absolute', bottom: '25%', right: -128, width: 500, height: 500, borderRadius: '50%', filter: 'blur(64px)' }} />
+          <div className="auth-ambient-diagonal" />
         </div>
 
         {/* Main Container */}
@@ -1101,7 +643,7 @@ function AuthContent() {
           {/* LEFT: Branding & Preview */}
           <div className="auth-left" style={{ flex: '1 1 400px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
             <div className="auth-headline" style={{ marginBottom: 24, textAlign: 'left' }}>
-              <h1 style={{ fontFamily: "'Geist',sans-serif", fontSize: 'clamp(32px,4vw,48px)', lineHeight: 1.15, fontWeight: 700, letterSpacing: '-0.04em', color: isDark ? D.textPrimary : '#111', marginBottom: 8 }}>
+              <h1 className="auth-headline-title">
                 Architect your <br />
                 <span className="animated-remarkable-gradient">intelligence.</span>
               </h1>
@@ -1109,49 +651,49 @@ function AuthContent() {
 
             <div className="auth-hero-visual" style={{ position: 'relative', width: '100%', maxWidth: 448 }}>
               {/* PromptScore Badge */}
-              <div className="badge-a-wrap glass-floating badge-a" style={{ position: 'absolute', top: -32, right: -64, zIndex: 40, padding: '14px 16px', borderRadius: 14, alignItems: 'center', gap: 14, border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.5)'}`, backdropFilter: 'blur(48px)' }}>
+              <div className="badge-a-wrap badge-a auth-badge auth-prompt-badge">
                 <div style={{ position: 'relative', width: 48, height: 48 }}>
                   <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
-                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke={isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb'} strokeWidth="3" />
+                    <path className="auth-badge-circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" strokeWidth="3" />
                     <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#8B5CF6" strokeWidth="3" strokeDasharray="98,100" />
                   </svg>
-                  <span style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', fontFamily: "'Geist',sans-serif", fontWeight: 700, fontSize: 13, color: isDark ? D.textPrimary : '#09090B' }}>98</span>
+                  <span className="auth-badge-score-text">98</span>
                 </div>
                 <div>
-                  <p style={{ fontFamily: "'Geist',sans-serif", fontSize: 10, fontWeight: 600, letterSpacing: '0.05em', color: isDark ? D.textMuted : 'rgba(70,70,76,0.7)', textTransform: 'uppercase', marginBottom: 4 }}>PromptScore</p>
+                  <p className="auth-badge-title">PromptScore</p>
                   <div style={{ display: 'flex', gap: 6 }}>
-                    <span style={{ fontSize: 9, background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.6)', padding: '2px 8px', borderRadius: 9999, color: isDark ? D.textSecondary : '#4b5563', border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : '#f3f4f6'}` }}>Clarity</span>
-                    <span style={{ fontSize: 9, background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.6)', padding: '2px 8px', borderRadius: 9999, color: isDark ? D.textSecondary : '#4b5563', border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : '#f3f4f6'}` }}>Context</span>
+                    <span className="auth-badge-pill">Clarity</span>
+                    <span className="auth-badge-pill">Context</span>
                   </div>
                 </div>
               </div>
 
               {/* Main Dashboard Card */}
-              <div className="glass-floating card-hover" style={{ borderRadius: 20, border: `1px solid ${isDark ? 'rgba(167,139,250,0.18)' : 'rgba(255,255,255,0.6)'}`, boxShadow: isDark ? '0 25px 60px rgba(0,0,0,0.5), 0 0 35px rgba(139,92,246,0.08)' : '0 25px 50px rgba(0,0,0,0.08)', padding: 24, position: 'relative', overflow: 'hidden', zIndex: 30, backdropFilter: 'blur(48px)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, paddingBottom: 16, borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#f3f4f6'}` }}>
+              <div className="card-hover auth-hero-card">
+                <div className="auth-hero-card-header">
                   <div style={{ display: 'flex', gap: 6 }}>
                     <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#f87171' }} />
                     <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#fbbf24' }} />
                     <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#4ade80' }} />
                   </div>
-                  <span style={{ fontFamily: "'Geist',sans-serif", fontSize: 10, color: isDark ? D.textMuted : '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Prompt Optimizer v2.4</span>
+                  <span className="auth-hero-version">Prompt Optimizer v2.4</span>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  <div style={{ background: isDark ? 'rgba(14, 13, 20, 0.7)' : 'rgba(249,250,251,0.5)', padding: 16, borderRadius: 12, border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(243,244,246,0.5)'}`, position: 'relative' }}>
-                    <span style={{ position: 'absolute', top: -10, left: 14, background: isDark ? '#1A1827' : '#fff', padding: '0 8px', fontSize: 10, fontWeight: 700, color: isDark ? D.textMuted : '#9ca3af', borderRadius: 9999, border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : '#f3f4f6'}` }}>Input Node</span>
-                    <p style={{ fontFamily: 'monospace', fontSize: 13, color: isDark ? D.textSecondary : '#6b7280', marginTop: 4 }}>&ldquo;Write a react component for a login page...&rdquo;</p>
+                  <div className="auth-hero-node">
+                    <span className="auth-hero-node-tag">Input Node</span>
+                    <p className="auth-hero-node-text">&ldquo;Write a react component for a login page...&rdquo;</p>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'center', margin: '-8px 0' }}>
                     <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,#8B5CF6,#EC4899)', padding: 1, zIndex: 10 }}>
-                      <div style={{ width: '100%', height: '100%', background: isDark ? '#141320' : '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div className="auth-hero-sparkle-center">
                         <Sparkles size={16} strokeWidth={2.2} color="#8B5CF6" className="pulse" />
                       </div>
                     </div>
                   </div>
-                  <div style={{ background: isDark ? 'linear-gradient(135deg,rgba(139,92,246,0.14),rgba(236,72,153,0.08))' : 'linear-gradient(135deg,rgba(139,92,246,0.1),rgba(236,72,153,0.05))', padding: 16, borderRadius: 12, border: `1px solid ${isDark ? 'rgba(139,92,246,0.35)' : 'rgba(139,92,246,0.3)'}`, position: 'relative' }}>
-                    <span style={{ position: 'absolute', top: -10, left: 14, background: isDark ? '#1A1827' : '#fff', padding: '0 8px', fontSize: 10, fontWeight: 700, color: isDark ? '#C084FC' : '#8B5CF6', borderRadius: 9999, border: `1px solid ${isDark ? 'rgba(139,92,246,0.4)' : 'rgba(139,92,246,0.3)'}`, boxShadow: '0 1px 4px rgba(139,92,246,0.2)' }}>Optimized Output</span>
-                    <p style={{ fontFamily: 'monospace', fontSize: 13, color: isDark ? D.textPrimary : '#09090B', lineHeight: 1.6, marginTop: 4 }}>
-                      <span style={{ color: isDark ? '#C084FC' : '#8B5CF6' }}>You are an expert Frontend Engineer.</span><br />
+                  <div className="auth-hero-output">
+                    <span className="auth-hero-output-tag">Optimized Output</span>
+                    <p className="auth-hero-output-text">
+                      <span className="auth-hero-output-lead">You are an expert Frontend Engineer.</span><br />
                       Create a highly accessible, responsive React login component using Tailwind CSS...
                     </p>
                   </div>
@@ -1159,13 +701,13 @@ function AuthContent() {
               </div>
 
               {/* Model Badge */}
-              <div className="badge-b-wrap glass-floating badge-b" style={{ position: 'absolute', bottom: -24, left: -48, zIndex: 40, padding: '10px 14px', borderRadius: 14, alignItems: 'center', gap: 10, border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.5)'}`, backdropFilter: 'blur(48px)' }}>
+              <div className="badge-b-wrap badge-b auth-badge auth-model-badge">
                 <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,#8B5CF6,#EC4899)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Sparkles size={16} color="#fff" />
                 </div>
                 <div>
-                  <p style={{ fontFamily: "'Geist',sans-serif", fontSize: 10, fontWeight: 600, letterSpacing: '0.05em', color: isDark ? D.textMuted : 'rgba(70,70,76,0.7)', textTransform: 'uppercase' }}>Target Model</p>
-                  <p style={{ fontFamily: "'Geist',sans-serif", fontSize: 12, fontWeight: 700, color: isDark ? D.textPrimary : '#09090B' }}>Claude 3.5 Sonnet</p>
+                  <p className="auth-badge-title">Target Model</p>
+                  <p className="auth-model-title">Claude 3.5 Sonnet</p>
                 </div>
               </div>
             </div>
@@ -1177,11 +719,11 @@ function AuthContent() {
               position: 'absolute', top: '50%', left: '50%',
               width: '110%', height: '110%',
               transform: 'translate(-50%,-50%)',
-              zIndex: 0, opacity: isDark ? 0.75 : 0.85
+              zIndex: 0,
             }} />
 
             {/* Card */}
-            <div className="glass-floating auth-card-inner" style={{ position: 'relative', borderRadius: 32, padding: 'clamp(20px, 2.5vh, 32px) clamp(20px, 3vw, 36px)', overflow: 'hidden', zIndex: 1, backdropFilter: 'blur(48px)' }}>
+            <div className="auth-card-inner">
               {showSubmitOverlay && (
                 <div className="auth-loading-overlay">
                   <div className="auth-loading-spinner" />
@@ -1207,16 +749,16 @@ function AuthContent() {
               {view === 'auth' && (
                 <>
                   <div style={{ textAlign: 'center', marginBottom: 12 }}>
-                    <h2 style={{ fontFamily: "'Geist',sans-serif", fontSize: 22, fontWeight: 600, letterSpacing: '-0.01em', color: isDark ? D.textPrimary : '#111', marginBottom: 4 }}>
+                    <h2 className="auth-card-title">
                       {tab === 'signin' ? 'Welcome back' : 'Create Account'}
                     </h2>
-                    <p style={{ fontSize: 13.5, color: isDark ? D.textSecondary : 'rgba(70,70,76,0.6)' }}>
+                    <p className="auth-card-sub">
                       {tab === 'signin' ? 'Sign in to continue to AURE' : 'Register your profile'}
                     </p>
                   </div>
 
                   {/* Tabs */}
-                  <div style={{ display: 'flex', borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#f3f4f6'}`, marginBottom: 14 }}>
+                  <div className="auth-tabs-bar">
                     <button type="button" className={`tab-btn ${tab === 'signin' ? 'tab-active' : 'tab-inactive'}`} onClick={() => { setTab('signin'); setError(null); }}>Sign In</button>
                     <button type="button" className={`tab-btn ${tab === 'signup' ? 'tab-active' : 'tab-inactive'}`} onClick={() => { setTab('signup'); setError(null); }}>Create Account</button>
                   </div>
@@ -1229,7 +771,7 @@ function AuthContent() {
 
                       {/* Full Name — signup only */}
                       <div className={`signup-field ${tab === 'signup' ? 'visible' : 'hidden'}`}>
-                        <label style={{ fontFamily: "'Geist',sans-serif", fontSize: 13.5, fontWeight: 500, letterSpacing: '0.02em', color: isDark ? D.textPrimary : '#111', display: 'block', marginBottom: 6, marginLeft: 4 }}>Full Name</label>
+                        <label className="auth-input-label">Full Name</label>
                         <div className="input-wrap">
                           <User size={18} className="field-icon-left" />
                           <input
@@ -1246,7 +788,7 @@ function AuthContent() {
 
                       {/* Email */}
                       <div>
-                        <label style={{ fontFamily: "'Geist',sans-serif", fontSize: 13.5, fontWeight: 500, letterSpacing: '0.02em', color: isDark ? D.textPrimary : '#111', display: 'block', marginBottom: 6, marginLeft: 4 }}>Email address</label>
+                        <label className="auth-input-label">Email address</label>
                         <div className="input-wrap">
                           <Mail size={18} className="field-icon-left" />
                           <input
@@ -1264,7 +806,7 @@ function AuthContent() {
                       {/* Password Field */}
                       <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, marginLeft: 4 }}>
-                          <label style={{ fontFamily: "'Geist',sans-serif", fontSize: 13.5, fontWeight: 500, letterSpacing: '0.02em', color: isDark ? D.textPrimary : '#111' }}>Password</label>
+                          <label className="auth-input-label" style={{ marginBottom: 0, marginLeft: 0 }}>Password</label>
                           <button
                             type="button"
                             className="forgot-link"
@@ -1294,7 +836,7 @@ function AuthContent() {
                       {/* Confirm Password Field — signup only */}
                       {tab === 'signup' && (
                         <div>
-                          <label style={{ fontFamily: "'Geist',sans-serif", fontSize: 13.5, fontWeight: 500, letterSpacing: '0.02em', color: isDark ? D.textPrimary : '#111', display: 'block', marginBottom: 6, marginLeft: 4 }}>Confirm Password</label>
+                          <label className="auth-input-label">Confirm Password</label>
                           <div className="input-wrap">
                             <Lock size={18} className="field-icon-left" />
                             <input
@@ -1328,8 +870,8 @@ function AuthContent() {
                       <div className="oauth-divider">or continue with</div>
 
                       {googleClientId ? (
-                        <div className={`google-button-shell${isDark ? ' google-masked' : ''}`}>
-                          {isDark && !showGoogleSkeleton && (
+                        <div className="google-button-shell">
+                          {!showGoogleSkeleton && (
                             <div className="google-styled-btn" aria-hidden="true">
                               <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
                                 <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.654 32.657 29.221 36 24 36c-6.627 0-12-5.373-12-12S17.373 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.278 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917Z" />
@@ -1366,8 +908,8 @@ function AuthContent() {
                         </div>
                       )}
 
-                      <div style={{ marginTop: 4, paddingTop: 12, borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(229,225,227,0.5)'}`, textAlign: 'center' }}>
-                        <p style={{ fontSize: 13.5, color: isDark ? D.textSecondary : 'rgba(70,70,76,0.8)' }}>
+                      <div className="auth-card-footer">
+                        <p className="auth-card-footer-text">
                           {tab === 'signin' ? (
                             <>Don&apos;t have an account? <button type="button" className="link-style" onClick={() => { setTab('signup'); setError(null); }}>Get Started</button></>
                           ) : (

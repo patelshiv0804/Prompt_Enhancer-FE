@@ -11,15 +11,15 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { Sun, Moon } from "lucide-react";
-import { useTheme } from "@/theme/theme";
+import { useTheme, useIsDark } from "@/theme/theme";
 
 export default function ThemeToggle({
   className = "",
 }: {
   className?: string;
 }) {
-  const { theme, toggleTheme } = useTheme();
-  const isDark = theme === "dark";
+  const { toggleTheme } = useTheme();
+  const isDark = useIsDark();
 
   return (
     <motion.button

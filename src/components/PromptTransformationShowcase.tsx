@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { motion, useInView, Variants } from "framer-motion";
-import { useTheme, D } from "@/theme/theme";
+import { useIsDark, D } from "@/theme/theme";
 
 // Upward Arrow Icon component (↗)
 const ArrowUpRight = ({ className = "text-emerald-400" }: { className?: string }) => (
@@ -78,8 +78,7 @@ export default function PromptTransformationShowcase({
   enhancedAnalysis,
 }: PromptTransformationShowcaseProps) {
   const [copied, setCopied] = useState(false);
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
+  const isDark = useIsDark();
 
   const handleCopy = async () => {
     try {

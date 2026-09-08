@@ -5,7 +5,7 @@ import { motion, AnimatePresence, Variants } from "framer-motion";
 import { LogOut, Menu, X, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import { useTheme, D } from "@/theme/theme";
+import { useTheme, D, useIsDark } from "@/theme/theme";
 import ThemeToggle from "@/components/ThemeToggle";
 
 /* ── Brand tokens (mirrors the homepage / BentoFeatures) ── */
@@ -48,8 +48,7 @@ function PremiumCTA({
   id?: string;
   onClick?: () => void;
 }) {
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
+  const isDark = useIsDark();
 
   const glow: Variants = {
     rest: { opacity: 0, scale: 0.8 },
@@ -110,11 +109,11 @@ export default function Navbar() {
   const [activeId, setActiveId] = useState<string>("extension");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const isClickScrolling = useRef(false);
   const clickScrollTimer = useRef<NodeJS.Timeout | null>(null);
   const { isAuthenticated, loading, logout } = useAuth();
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
+  const isDark = useIsDark();
 
   /* Theme-aware text tones (brand VIOLET stays constant across themes). */
   const inkText = isDark ? D.textPrimary : INK;

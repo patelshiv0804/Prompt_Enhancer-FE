@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
-import { useTheme, D } from "@/theme/theme";
+import { D, useIsDark } from "@/theme/theme";
 
 /* ═══════════════════════════════════════════════════════════════════
  *  BentoFeatures — Handcrafted editorial Bento Grid
@@ -93,8 +93,7 @@ const CARD_BASE: React.CSSProperties = {
    Light mode returns byte-identical CARD_BASE; dark mode swaps the canvas
    surfaces and text ramp while leaving brand gradients/accents untouched. */
 function useBento() {
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
+  const isDark = useIsDark();
   const P = isDark ? P_DARK : P_LIGHT;
   const CARD: React.CSSProperties = isDark
     ? {

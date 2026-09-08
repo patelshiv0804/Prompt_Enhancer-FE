@@ -11,7 +11,7 @@ import AnimatedParticleFlow, {
 } from "./AnimatedParticleFlow";
 import { MobileTopFlow, MobileBottomFlow } from "./MobileParticleFlow";
 import OptimizedForCard from "./OptimizedForCard";
-import { useTheme, D } from "@/theme/theme";
+import { useIsDark, D } from "@/theme/theme";
 
 /* ─────────────────────────────────────────────
  * TransformationEngine — The second "page" section.
@@ -43,8 +43,7 @@ export default function TransformationEngine({
 }: TransformationEngineProps) {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
+  const isDark = useIsDark();
 
   useEffect(() => {
     const observer = new IntersectionObserver(

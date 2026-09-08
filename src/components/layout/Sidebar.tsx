@@ -14,7 +14,7 @@ import {
 import { fetchHistory, deleteHistoryItem } from '@/features/history/services/historyService';
 import ScoreSpinner from '@/components/ScoreSpinner';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
-import { useTheme, D } from '@/theme/theme';
+import { useIsDark, D } from '@/theme/theme';
 
 export type ActivePage = 'optimizer' | 'templates' | 'vault' | 'style-memory' | 'chaining' | 'settings' | 'chat';
 
@@ -56,8 +56,7 @@ export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
   const { user, logout } = useAuth();
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
+  const isDark = useIsDark();
   
   // Collapse state
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);

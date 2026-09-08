@@ -5,7 +5,7 @@ import { ChevronDown } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 
-import { useTheme, D } from '@/theme/theme';
+import { useIsDark, D } from '@/theme/theme';
 import ThemeToggle from '@/components/ThemeToggle';
 
 interface HeaderProps {
@@ -24,8 +24,7 @@ export default function Header({ activeTab = 'Draft', onTabChange }: HeaderProps
     setActiveEngine,
   } = useAuth();
 
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
+  const isDark = useIsDark();
 
   const [showStyleDropdown, setShowStyleDropdown] = useState(false);
   const [showTargetDropdown, setShowTargetDropdown] = useState(false);

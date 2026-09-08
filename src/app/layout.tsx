@@ -47,8 +47,8 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col text-foreground">
-        {/* No-flash theme bootstrap. Runs synchronously before paint so a
+      <head>
+        {/* No-flash theme bootstrap. Runs synchronously in <head> before paint so a
             visitor loads straight into the correct theme with no white flash on
             any route. Resolves the same preference the ThemeProvider does:
             "light"/"dark" are used as-is; anything else (missing key or
@@ -60,6 +60,8 @@ export default function RootLayout({
               "(function(){try{var p=localStorage.getItem('aure-theme-preference');var dark;if(p==='light'){dark=false;}else if(p==='dark'){dark=true;}else{dark=!!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);}var d=document.documentElement;if(dark){d.classList.add('dark');d.style.colorScheme='dark';}else{d.classList.remove('dark');d.style.colorScheme='light';}}catch(e){}})();",
           }}
         />
+      </head>
+      <body className="min-h-full flex flex-col text-foreground">
         <ThemeProvider>
           <AuthProvider>
             {children}

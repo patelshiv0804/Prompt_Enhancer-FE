@@ -6,7 +6,7 @@ import {
   Sparkles, BookOpen, Cpu, Layers, FileText, Search, TrendingUp, Terminal,
   type LucideIcon,
 } from "lucide-react";
-import { useTheme, D } from "@/theme/theme";
+import { useIsDark, D } from "@/theme/theme";
 
 /* ═══════════════════════════════════════════════════════════════
  * AUREUniverse — Unabyss-Style Gravity Wells & Light Theme
@@ -287,8 +287,7 @@ function drawGrid(
 // ══════════════════════════════════════════════════════════════
 
 export default function PromptIQUniverse() {
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
+  const isDark = useIsDark();
   const isDarkRef = useRef(isDark);
   useEffect(() => { isDarkRef.current = isDark; }, [isDark]);
 
