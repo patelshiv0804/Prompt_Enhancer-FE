@@ -116,6 +116,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const handleUnauthorized = () => {
       setUser(null);
       setToken(null);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+        localStorage.removeItem('promptiq_access_token');
+        localStorage.removeItem('promptiq_refresh_token');
+      }
       setStyleProfiles([]);
       setActiveStyle({ id: null, name: 'None' });
       // Clearing auth state above is always correct on a 401. Only force a
@@ -151,10 +156,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       formData.append('username', email);
       formData.append('password', password);
 
-      const response = await apiClient.post<{ access_token: string }>('/api/v1/auth/login', formData);
+      const response = await apiClient.post<{ access_token: string; refresh_token?: string }>('/api/v1/auth/login', formData);
       if (response.access_token) {
         localStorage.setItem('token', response.access_token);
         localStorage.setItem('promptiq_access_token', response.access_token);
+      }
+      if (response.refresh_token) {
+        localStorage.setItem('promptiq_refresh_token', response.refresh_token);
       }
       await finalizeAuthentication(response.access_token);
     } catch (err) {
@@ -183,12 +191,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loginWithGoogle = async (idToken: string) => {
     setLoading(true);
     try {
-      const response = await apiClient.post<{ access_token: string }>('/api/v1/auth/google', {
+      const response = await apiClient.post<{ access_token: string; refresh_token?: string }>('/api/v1/auth/google', {
         id_token: idToken,
       });
       if (response.access_token) {
         localStorage.setItem('token', response.access_token);
         localStorage.setItem('promptiq_access_token', response.access_token);
+      }
+      if (response.refresh_token) {
+        localStorage.setItem('promptiq_refresh_token', response.refresh_token);
       }
       await finalizeAuthentication(response.access_token);
     } catch (err) {
@@ -208,6 +219,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     localStorage.removeItem('token');
     localStorage.removeItem('promptiq_access_token');
+    localStorage.removeItem('promptiq_refresh_token');
     setToken(null);
     setUser(null);
     setStyleProfiles([]);

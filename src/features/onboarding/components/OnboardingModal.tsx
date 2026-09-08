@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/theme/theme';
 import { apiClient } from '@/utils/apiClient';
 import { getUserMessage } from '@/utils/errorMessages';
 import { ONBOARDING_STEPS } from '../config/stepsConfig';
@@ -28,6 +29,7 @@ const getUserStorageKey = (u?: any): string => {
 
 export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClose }) => {
   const { user, refreshUserProfile } = useAuth();
+  const { theme: appResolvedTheme, preference: appPreference, setPreference: setAppPreference } = useTheme();
 
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
   const [displayName, setDisplayName] = useState<string>('');
@@ -36,24 +38,36 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarPreset, setAvatarPreset] = useState<number>(0);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('light');
+  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>(() => appPreference || 'system');
 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isDark, setIsDark] = useState<boolean>(false);
+  const [isDark, setIsDark] = useState<boolean>(() => appResolvedTheme === 'dark');
 
-  // Detect dark mode preference based on selected theme (Light is default)
+  // Synchronize dark mode state based on selected theme & system scheme
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      if (theme === 'light') {
-        setIsDark(false);
-      } else if (theme === 'dark') {
-        setIsDark(true);
-      } else {
-        const matchDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        setIsDark(matchDark);
-      }
+    if (typeof window === 'undefined') return;
+
+    if (theme === 'light') {
+      setIsDark(false);
+      return;
     }
+    if (theme === 'dark') {
+      setIsDark(true);
+      return;
+    }
+
+    // theme === 'system': follow operating system color scheme live
+    const mql = window.matchMedia('(prefers-color-scheme: dark)');
+    const update = () => setIsDark(mql.matches);
+    update();
+
+    if (mql.addEventListener) {
+      mql.addEventListener('change', update);
+      return () => mql.removeEventListener('change', update);
+    }
+    mql.addListener(update);
+    return () => mql.removeListener(update);
   }, [theme]);
 
   // Load existing user-scoped draft or initialize fresh state for THIS specific user (Light theme by default)
@@ -83,7 +97,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
         if (parsed.theme && (parsed.theme === 'light' || parsed.theme === 'dark' || parsed.theme === 'system')) {
           setTheme(parsed.theme);
         } else {
-          setTheme('light');
+          setTheme(appPreference || 'system');
         }
         if (typeof parsed.currentStepIndex === 'number' && parsed.currentStepIndex < ONBOARDING_STEPS.length) {
           setCurrentStepIndex(parsed.currentStepIndex);
@@ -94,7 +108,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
       console.warn('Failed to parse user onboarding draft:', e);
     }
 
-    // If no draft exists for THIS specific user, initialize a brand new light-theme onboarding flow
+    // If no draft exists for THIS specific user, initialize a brand new onboarding flow matching system/app theme
     if (!loadedFromDraft) {
       const defaultName = user?.display_name || (user?.email ? user.email.split('@')[0] : '');
       setDisplayName(defaultName || '');
@@ -103,10 +117,10 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
       setAvatarUrl(user?.avatar_url || null);
       setAvatarPreset(0);
       setAvatarFile(null);
-      setTheme('light'); // Light theme by default
+      setTheme(appPreference || 'system'); // Follow system/app preference by default
       setCurrentStepIndex(0); // Start at Step 1 for new user
     }
-  }, [isOpen, user]);
+  }, [isOpen, user, appPreference]);
 
   // Persist user-scoped draft progress whenever state updates
   useEffect(() => {
@@ -135,6 +149,12 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
     if (!availableModes.includes(mode)) {
       setMode(availableModes[0] || 'Study');
     }
+  };
+
+  // Handle Theme selection & update app preference live
+  const handleSelectTheme = (newTheme: 'light' | 'dark' | 'system') => {
+    setTheme(newTheme);
+    setAppPreference(newTheme);
   };
 
   const currentStep = ONBOARDING_STEPS[currentStepIndex];
@@ -229,6 +249,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
       }
 
       try {
+        setAppPreference(theme);
         await apiClient.patch('/api/v1/settings/theme', { theme });
       } catch (err) {
         console.warn('Backend theme update warning:', err);
@@ -439,7 +460,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
             {currentStep.id === 'theme' && (
               <ThemeStep
                 selectedTheme={theme}
-                onSelectTheme={setTheme}
+                onSelectTheme={handleSelectTheme}
                 isDark={isDark}
               />
             )}
