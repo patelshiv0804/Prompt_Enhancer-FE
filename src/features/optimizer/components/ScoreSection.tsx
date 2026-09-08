@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { CheckCircle2, AlertTriangle, Minus, TrendingUp, Sparkles } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Minus, TrendingUp, Sparkles, Wand2 } from 'lucide-react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
-import { useTheme, D } from '@/theme/theme';
+import { useIsDark, D } from '@/theme/theme';
 
 function useCountUp(target: number, active: boolean, duration = 1200): number {
   const [value, setValue] = useState(0);
@@ -37,14 +37,21 @@ function scoreLabel(s: number) {
 interface ScoreSectionProps {
   isAnalyzed: boolean;
   isOptimized: boolean;
+  isEvaluating?: boolean;
   originalAnalysis?: any;
   enhancedAnalysis?: any;
   toolRecommendations?: any;
 }
 
-export default function ScoreSection({ isAnalyzed, isOptimized, originalAnalysis, enhancedAnalysis, toolRecommendations }: ScoreSectionProps) {
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
+export default function ScoreSection({
+  isAnalyzed,
+  isOptimized,
+  isEvaluating = false,
+  originalAnalysis,
+  enhancedAnalysis,
+  toolRecommendations,
+}: ScoreSectionProps) {
+  const isDark = useIsDark();
   const [ready, setReady] = useState(false);
   const isMobile = useMediaQuery('(max-width: 768px)');
 
@@ -60,21 +67,203 @@ export default function ScoreSection({ isAnalyzed, isOptimized, originalAnalysis
   const displayScore = isOptimized ? (enhScore ?? 90) : (origScore ?? 55);
   const animatedScore = useCountUp(displayScore, ready);
 
-  if (!isAnalyzed && !isOptimized) return null;
+  const isEvaluatingState = isEvaluating || (isOptimized && !enhancedAnalysis);
 
-  if (isOptimized && !enhancedAnalysis) {
+  if (!isAnalyzed && !isOptimized && !isEvaluating) return null;
+
+  if (isEvaluatingState) {
+    const evaluatingDimensions = [
+      { label: 'Clarity', desc: 'Evaluating instruction precision & ambiguity…' },
+      { label: 'Context', desc: 'Assessing background information & domain scope…' },
+      { label: 'Role', desc: 'Analyzing persona definition and tone…' },
+      { label: 'Format', desc: 'Checking structure and output constraints…' },
+      { label: 'Constraints', desc: 'Evaluating guardrails and negative rules…' },
+      { label: 'Examples', desc: 'Reviewing demonstration and few-shot patterns…' },
+    ];
+
     return (
-      <div style={{ width: '100%', marginTop: 32, animation: 'fadeInRise 400ms ease-out forwards' }}>
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14,
-          padding: '28px 36px', background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
-          border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(124,58,237,0.14)'}`,
-          borderRadius: 24, boxShadow: isDark ? '0 4px 24px rgba(0,0,0,0.4)' : '0 4px 24px rgba(109,40,217,0.06)',
-        }}>
-          <Sparkles size={20} style={{ color: 'var(--color-primary)', animation: 'spin 2s linear infinite' }} />
-          <span style={{ fontSize: 14, fontWeight: 600, color: isDark ? D.textSecondary : 'var(--color-text-secondary)', fontFamily: "'Geist', sans-serif" }}>
-            Calculating deep quality scores & multi-dimensional analysis...
-          </span>
+      <div style={{ width: '100%', marginTop: 32, animation: 'fadeInRise 500ms ease-out forwards' }}>
+        <style>{`
+          @keyframes evaluatingSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+          @keyframes evaluatingPulse {
+            0%, 100% { opacity: 1; transform: scaleX(1); }
+            50% { opacity: 0.4; transform: scaleX(0.7); }
+          }
+        `}</style>
+        <div
+          style={{
+            display: 'flex', flexDirection: 'column', background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
+            border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.09)' : 'rgba(124,58,237,0.10)'}`,
+            borderRadius: isMobile ? 20 : 28,
+            boxShadow: isDark
+              ? '0 4px 28px rgba(0,0,0,0.5), 0 0 20px rgba(139,92,246,0.04)'
+              : '0 4px 24px rgba(109,40,217,0.07), 0 1px 4px rgba(0,0,0,0.04)',
+            padding: isMobile ? 20 : 32, position: 'relative', overflow: 'hidden',
+          }}
+        >
+          {/* Top evaluating ring and 6 dimension cards */}
+          <div style={{ display: 'flex', gap: isMobile ? 24 : 40, flexWrap: 'wrap', width: '100%', marginBottom: 8 }}>
+            {/* Left: Evaluating Ring */}
+            <div style={{
+              flex: isMobile ? '1 1 100%' : '0 0 200px', display: 'flex', flexDirection: 'column', alignItems: 'center',
+              borderRight: isMobile ? 'none' : `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)'}`, paddingRight: isMobile ? 0 : 40,
+              borderBottom: isMobile ? `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)'}` : 'none', paddingBottom: isMobile ? 24 : 0,
+            }}>
+              <div style={{ position: 'relative', width: 110, height: 110, marginBottom: 16 }}>
+                <svg width="110" height="110" viewBox="0 0 110 110" style={{ transform: 'rotate(-90deg)' }}>
+                  <defs>
+                    <linearGradient id="scoreRingGradEval" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stopColor="#7C3AED" />
+                      <stop offset="100%" stopColor="#A855F7" />
+                    </linearGradient>
+                  </defs>
+                  <circle cx="55" cy="55" r="46" fill="none" stroke={isDark ? 'rgba(255,255,255,0.08)' : 'rgba(124,58,237,0.10)'} strokeWidth="7" />
+                  <circle
+                    cx="55" cy="55" r="46" fill="none" stroke="url(#scoreRingGradEval)" strokeWidth="7"
+                    strokeLinecap="round" strokeDasharray="90 200"
+                    style={{ animation: 'evaluatingSpin 2s linear infinite', transformOrigin: 'center' }}
+                  />
+                </svg>
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Wand2 size={24} style={{ color: '#8B5CF6', animation: 'evaluatingSpin 3s linear infinite' }} />
+                </div>
+              </div>
+
+              {/* Label */}
+              <span style={{ fontSize: 16, fontWeight: 800, color: isDark ? '#C084FC' : '#7C3AED', letterSpacing: '-0.01em', marginBottom: 12 }}>
+                Evaluating…
+              </span>
+
+              {/* In Progress Badge */}
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 12px',
+                background: isDark ? 'rgba(139,92,246,0.18)' : 'rgba(124,58,237,0.10)',
+                color: isDark ? '#C084FC' : '#7C3AED', borderRadius: 9999, fontSize: 12, fontWeight: 700, marginBottom: 16,
+              }}>
+                <Sparkles size={12} />
+                <span>In Progress</span>
+              </div>
+
+              {/* Before / After */}
+              <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: isDark ? D.textSecondary : 'var(--color-text-secondary)', fontWeight: 600 }}>
+                  <span>Before</span>
+                  <span style={{ fontWeight: 700, color: isDark ? D.textMuted : 'var(--color-text-secondary)' }}>
+                    {origScore}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: isDark ? D.textSecondary : 'var(--color-text-secondary)', fontWeight: 600 }}>
+                  <span>After</span>
+                  <span style={{ fontWeight: 900, color: isDark ? '#C084FC' : '#7C3AED', fontSize: 14 }}>—</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right: 3×2 Dimension Cards with Image 1 Loading Bar */}
+            <div style={{ flex: 1, display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: 16, alignContent: 'start', minWidth: isMobile ? 0 : 280 }}>
+              {evaluatingDimensions.map((d) => (
+                <div
+                  key={d.label}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: isMobile ? 10 : 12,
+                    padding: isMobile ? 13 : 16,
+                    minWidth: 0,
+                    background: isDark ? '#141320' : '#FFFFFF',
+                    borderRadius: 12,
+                    border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0'}`,
+                    borderLeft: '4px solid #8B5CF6',
+                    boxShadow: isDark ? '0 4px 12px rgba(0, 0, 0, 0.3)' : '0 4px 12px rgba(15, 23, 42, 0.03)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{
+                        width: 22, height: 22, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: isDark ? 'rgba(139,92,246,0.18)' : 'rgba(124,58,237,0.10)', color: isDark ? '#C084FC' : '#7C3AED',
+                      }}>
+                        <Sparkles size={12} style={{ animation: 'evaluatingSpin 2s linear infinite' }} />
+                      </div>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: isDark ? D.textPrimary : 'var(--color-text-primary)' }}>{d.label}</span>
+                    </div>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: isDark ? '#C084FC' : '#7C3AED' }}>Analyzing…</span>
+                  </div>
+
+                  {/* Horizontal Loading Bar */}
+                  <div style={{ height: 4, background: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9', borderRadius: 99, overflow: 'hidden', margin: '2px 0 2px' }}>
+                    <div style={{
+                      height: '100%', width: '60%', background: 'linear-gradient(90deg, #7C3AED, #A855F7)',
+                      borderRadius: 99, animation: 'evaluatingPulse 1.5s infinite ease-in-out',
+                      transformOrigin: 'left',
+                    }} />
+                  </div>
+
+                  <p style={{ fontSize: 11.5, color: isDark ? D.textSecondary : 'var(--color-text-secondary)', margin: 0, lineHeight: 1.45, fontWeight: 500 }}>
+                    {d.desc}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Recommended AI Tools */}
+          {toolRecommendations && toolRecommendations.tools && toolRecommendations.tools.length > 0 && (
+            <div style={{ marginTop: 28, paddingTop: 20, borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)'}`, width: '100%' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Sparkles size={16} style={{ color: '#8B5CF6' }} />
+                  <h3 style={{ fontSize: 15, fontWeight: 700, color: isDark ? D.textPrimary : 'var(--color-text-primary)', margin: 0, fontFamily: "'Geist', sans-serif" }}>
+                    Recommended AI Tools for Best Execution
+                  </h3>
+                  {toolRecommendations.matched_task && (
+                    <span style={{ fontSize: 11, fontWeight: 600, color: isDark ? '#C084FC' : '#6D28D9', background: isDark ? 'rgba(139,92,246,0.18)' : 'rgba(124,58,237,0.08)', padding: '2px 8px', borderRadius: 9999 }}>
+                      Task: {toolRecommendations.matched_task}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                {toolRecommendations.tools.map((t: any) => (
+                  <div
+                    key={t.name}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 12, padding: '12px 18px',
+                      background: t.rank === 1
+                        ? (isDark ? 'linear-gradient(135deg, rgba(139,92,246,0.18) 0%, rgba(168,85,247,0.08) 100%)' : 'linear-gradient(135deg, rgba(124,58,237,0.09) 0%, rgba(167,139,250,0.04) 100%)')
+                        : (isDark ? 'rgba(255,255,255,0.04)' : 'rgba(124,58,237,0.03)'),
+                      border: t.rank === 1
+                        ? `1px solid ${isDark ? 'rgba(167,139,250,0.35)' : 'rgba(124,58,237,0.22)'}`
+                        : `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(124,58,237,0.08)'}`,
+                      borderRadius: 14, flex: '1 1 180px', minWidth: 160,
+                      boxShadow: t.rank === 1 ? (isDark ? '0 4px 14px rgba(0,0,0,0.4)' : '0 4px 14px rgba(124,58,237,0.08)') : 'none',
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: 24, height: 24, borderRadius: '50%',
+                        background: t.rank === 1 ? '#7C3AED' : t.rank === 2 ? '#9333EA' : '#C084FC',
+                        color: '#FFFFFF', fontSize: 11, fontWeight: 800,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                      }}
+                    >
+                      #{t.rank}
+                    </span>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: isDark ? D.textPrimary : 'var(--color-text-primary)' }}>{t.name}</span>
+                      <span style={{ fontSize: 11, color: isDark ? D.textSecondary : 'var(--color-text-secondary)' }}>
+                        {t.rank === 1 ? 'Primary Recommendation' : `Alternative #${t.rank}`}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
