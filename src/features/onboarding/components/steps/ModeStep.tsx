@@ -31,7 +31,7 @@ export const ModeStep: React.FC<ModeStepProps> = ({
   );
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: isMobile ? 10 : 14, width: '100%', height: '100%', boxSizing: 'border-box' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', gap: isMobile ? 10 : 14, width: '100%', boxSizing: 'border-box' }}>
       {/* Selected Role Indicator & Search Bar Row */}
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -84,7 +84,7 @@ export const ModeStep: React.FC<ModeStepProps> = ({
       {/* Mode Pills Container */}
       <div style={{
         display: 'flex', gap: isMobile ? 6 : 8, flexWrap: 'wrap',
-        maxHeight: isMobile ? 190 : 220, overflowY: 'auto',
+        maxHeight: isMobile ? undefined : 220, overflowY: isMobile ? undefined : 'auto',
         padding: '4px 6px 6px 4px',
         width: '100%', boxSizing: 'border-box',
         scrollbarWidth: 'thin',

@@ -428,15 +428,10 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
   const stepContent = (
     <div
       style={{
-        flex: 1,
-        minHeight: isDesktop ? 300 : isMobile ? 320 : 300,
+        width: '100%',
         display: 'flex',
         flexDirection: 'column',
-        width: '100%',
-        overflowY: 'auto',
-        overflowX: 'hidden',
         boxSizing: 'border-box',
-        scrollbarWidth: 'thin',
       }}
     >
       <AnimatePresence mode="wait" custom={direction} initial={false}>
@@ -450,8 +445,6 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
           transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
           style={{
             width: '100%',
-            marginTop: 'auto',
-            marginBottom: 'auto',
             display: 'flex',
             flexDirection: 'column',
           }}
@@ -694,7 +687,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
         style={{
           fontSize: isMobile ? 12.5 : 14,
           color: colors.textSecondary,
-          margin: '6px 0 0',
+          margin: isMobile ? '4px 0 0' : '6px 0 0',
           lineHeight: 1.45,
           maxWidth: 560,
         }}
@@ -819,9 +812,33 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
               gap: 18,
             }}
           >
-            {stepHeader}
-            {errorBanner}
-            {stepContent}
+            <div
+              style={{
+                flex: 1,
+                minHeight: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                width: '100%',
+                overflowY: 'auto',
+                boxSizing: 'border-box',
+                scrollbarWidth: 'thin',
+              }}
+            >
+              <div
+                style={{
+                  width: '100%',
+                  margin: 'auto 0',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 16,
+                  boxSizing: 'border-box',
+                }}
+              >
+                {stepHeader}
+                {errorBanner}
+                {stepContent}
+              </div>
+            </div>
             {footerNav}
           </section>
         </div>
@@ -831,8 +848,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
           style={{
             width: '100%',
             maxWidth: 640,
-            height: isMobile ? '100vh' : 'min(720px, calc(100vh - 40px))',
-            maxHeight: '100vh',
+            height: isMobile ? '100svh' : 'min(720px, calc(100vh - 40px))',
+            maxHeight: isMobile ? '100svh' : '100vh',
             background: colors.cardBg,
             border: isMobile ? 'none' : `1.5px solid ${colors.cardBorder}`,
             borderRadius: isMobile ? 0 : 22,
@@ -840,14 +857,14 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
             display: 'flex',
             flexDirection: 'column',
             boxSizing: 'border-box',
-            padding: isMobile ? (isSmall ? '16px 14px' : '18px 18px') : '24px 28px',
-            gap: isMobile ? 12 : 14,
+            padding: isMobile ? (isSmall ? '14px 14px 12px' : '16px 16px 14px') : '24px 28px',
+            gap: 0,
             overflow: 'hidden',
             animation: 'onbCardIn 300ms cubic-bezier(0.2, 0.8, 0.2, 1)',
           }}
         >
-          {/* Top bar: brand + skip */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexShrink: 0 }}>
+          {/* ── Pinned top brand bar ── */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexShrink: 0, paddingBottom: isMobile ? 14 : 0 }}>
             {brandMark}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               {!isSmall && helpLink}
@@ -855,8 +872,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
             </div>
           </div>
 
-          {/* Horizontal progress */}
-          <div style={{ flexShrink: 0 }}>
+          {/* ── Pinned: Progress bar ── */}
+          <div style={{ flexShrink: 0, paddingBottom: isMobile ? 14 : 0 }}>
             <OnboardingProgress
               steps={ONBOARDING_STEPS}
               currentStepIndex={currentStepIndex}
@@ -866,10 +883,33 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
             />
           </div>
 
-          {stepHeader}
-          {errorBanner}
-          {stepContent}
-          {footerNav}
+          {/* ── Pinned: Step title + subtitle ── */}
+          <div style={{ flexShrink: 0, paddingBottom: isMobile ? 12 : 0 }}>
+            {stepHeader}
+            {errorBanner}
+          </div>
+
+          {/* ── Scrollable: Step-specific content only ── */}
+          <div
+            style={{
+              flex: 1,
+              minHeight: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              width: '100%',
+              overflowY: 'auto',
+              overflowX: 'hidden',
+              boxSizing: 'border-box',
+              scrollbarWidth: 'thin',
+            }}
+          >
+            {stepContent}
+          </div>
+
+          {/* ── Pinned bottom footer nav ── */}
+          <div style={{ flexShrink: 0, paddingTop: isMobile ? 10 : 0 }}>
+            {footerNav}
+          </div>
         </div>
       )}
     </div>

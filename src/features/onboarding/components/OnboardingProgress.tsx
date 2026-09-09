@@ -41,13 +41,13 @@ export const OnboardingProgress: React.FC<OnboardingProgressProps> = ({
   const header = (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxSizing: 'border-box', gap: 8 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 8 }}>
-        <span style={{ fontSize: isMobile ? 12.5 : 13.5, fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A', letterSpacing: '-0.2px' }}>
+        <span style={{ fontSize: isMobile ? 13.5 : 13.5, fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A', letterSpacing: '-0.2px' }}>
           Your Progress
         </span>
         <span style={{
-          fontSize: isMobile ? 10.5 : 11,
+          fontSize: isMobile ? 11.5 : 11,
           fontWeight: 700,
-          padding: isMobile ? '1.5px 6px' : '2px 8px',
+          padding: isMobile ? '2px 7px' : '2px 8px',
           borderRadius: 99,
           background: isDark ? 'rgba(255, 255, 255, 0.08)' : '#EEF2F6',
           color: isDark ? 'rgba(255, 255, 255, 0.70)' : '#64748B',
@@ -69,10 +69,10 @@ export const OnboardingProgress: React.FC<OnboardingProgressProps> = ({
         transition: 'all 200ms ease',
         flexShrink: 0,
       }}>
-        <span style={{ fontSize: isMobile ? 12 : 13, fontWeight: 800, color: isDark ? '#FB923C' : '#C2410C', letterSpacing: '-0.2px', lineHeight: 1 }}>
+        <span style={{ fontSize: isMobile ? 13 : 13, fontWeight: 800, color: isDark ? '#FB923C' : '#C2410C', letterSpacing: '-0.2px', lineHeight: 1 }}>
           {progressPercent}%
         </span>
-        <StepIcon size={isMobile ? 12 : 13.5} strokeWidth={2.4} style={{ color: isDark ? '#FB923C' : '#C2410C', flexShrink: 0 }} />
+        <StepIcon size={isMobile ? 13.5 : 13.5} strokeWidth={2.4} style={{ color: isDark ? '#FB923C' : '#C2410C', flexShrink: 0 }} />
       </div>
     </div>
   );
@@ -83,7 +83,7 @@ export const OnboardingProgress: React.FC<OnboardingProgressProps> = ({
       display: 'flex',
       alignItems: 'center',
       gap: 6,
-      padding: isMobile ? '5px 9px' : '7px 11px',
+      padding: isMobile ? '4px 8px' : '7px 11px',
       borderRadius: 10,
       background: isDark ? 'rgba(124, 58, 237, 0.12)' : 'rgba(99, 102, 241, 0.05)',
       border: `1px solid ${isDark ? 'rgba(124, 58, 237, 0.20)' : 'rgba(99, 102, 241, 0.10)'}`,
@@ -236,8 +236,8 @@ export const OnboardingProgress: React.FC<OnboardingProgressProps> = ({
       gap: isMobile ? 9 : 12,
       width: '100%',
       boxSizing: 'border-box',
-      padding: isMobile ? '10px 12px' : '12px 18px',
-      borderRadius: 16,
+      padding: isMobile ? '11px 13px' : '12px 18px',
+      borderRadius: isMobile ? 14 : 16,
       background: isDark ? 'rgba(99, 102, 241, 0.08)' : '#F8FAFC',
       border: `1px solid ${isDark ? 'rgba(124, 58, 237, 0.22)' : '#E2E8F0'}`,
       boxShadow: isDark
@@ -249,7 +249,7 @@ export const OnboardingProgress: React.FC<OnboardingProgressProps> = ({
 
       {/* Progress bar */}
       <div style={{
-        height: isMobile ? 5 : 6,
+        height: isMobile ? 7 : 6,
         width: '100%',
         borderRadius: 99,
         background: isDark ? 'rgba(255, 255, 255, 0.10)' : '#E2E8F0',
@@ -280,7 +280,7 @@ export const OnboardingProgress: React.FC<OnboardingProgressProps> = ({
           const isDone = idx < currentStepIndex;
           const isCurrent = idx === currentStepIndex;
           const isClickable = isDone && Boolean(onSelectStep);
-          const circleSize = isMobile ? 18 : 22;
+          const circleSize = isMobile ? 22 : 22;
 
           return (
             <div
@@ -306,17 +306,17 @@ export const OnboardingProgress: React.FC<OnboardingProgressProps> = ({
                   background: isDark ? 'rgba(16, 185, 129, 0.25)' : '#E6F4EA',
                   color: '#10B981', border: '1.5px solid #10B981',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: isMobile ? 9 : 11, fontWeight: 800, flexShrink: 0,
+                  fontSize: isMobile ? 11 : 11, fontWeight: 800, flexShrink: 0,
                   transition: 'all 180ms ease',
                 }}>
-                  <Check size={isMobile ? 9 : 12} strokeWidth={3.5} />
+                  <Check size={isMobile ? 11 : 12} strokeWidth={3.5} />
                 </div>
               ) : isCurrent ? (
                 <div style={{
                   width: circleSize, height: circleSize, borderRadius: '50%',
                   background: '#6366F1', color: '#FFFFFF',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: isMobile ? 9.5 : 11, fontWeight: 800, flexShrink: 0,
+                  fontSize: isMobile ? 11 : 11, fontWeight: 800, flexShrink: 0,
                   boxShadow: '0 2px 8px rgba(99, 102, 241, 0.4)',
                 }}>
                   {idx + 1}
@@ -328,7 +328,7 @@ export const OnboardingProgress: React.FC<OnboardingProgressProps> = ({
                   color: isDark ? 'rgba(255,255,255,0.4)' : '#94A3B8',
                   border: `1.5px solid ${isDark ? 'rgba(255,255,255,0.2)' : '#CBD5E1'}`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: isMobile ? 9.5 : 11, fontWeight: 700, flexShrink: 0,
+                  fontSize: isMobile ? 11 : 11, fontWeight: 700, flexShrink: 0,
                 }}>
                   {idx + 1}
                 </div>
@@ -345,7 +345,7 @@ export const OnboardingProgress: React.FC<OnboardingProgressProps> = ({
                   {step.shortLabel}
                 </span>
               ) : isCurrent ? (
-                <span style={{ fontSize: 10.5, fontWeight: 700, color: isDark ? '#FFFFFF' : '#0F172A', whiteSpace: 'nowrap' }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: isDark ? '#FFFFFF' : '#0F172A', whiteSpace: 'nowrap' }}>
                   {step.shortLabel}
                 </span>
               ) : null}

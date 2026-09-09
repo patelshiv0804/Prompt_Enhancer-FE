@@ -21,11 +21,10 @@ export const RoleStep: React.FC<RoleStepProps> = ({
       style={{
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         width: '100%',
-        height: '100%',
         boxSizing: 'border-box',
-        padding: isMobile ? '4px 2px' : '8px 4px',
+        padding: isMobile ? '2px 2px' : '8px 4px',
       }}
     >
       <div
@@ -33,12 +32,9 @@ export const RoleStep: React.FC<RoleStepProps> = ({
           display: 'grid',
           gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
           gap: isMobile ? 8 : 12,
-          maxHeight: isMobile ? 315 : undefined,
-          overflowY: isMobile ? 'auto' : undefined,
-          padding: isMobile ? '6px 6px 8px' : '10px 8px 10px',
+          padding: isMobile ? '2px 2px 6px' : '10px 8px 10px',
           width: '100%',
           boxSizing: 'border-box',
-          scrollbarWidth: 'thin',
         }}
       >
         {ROLES.map((role) => {
