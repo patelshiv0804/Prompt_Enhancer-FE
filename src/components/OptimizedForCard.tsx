@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { useTheme, D } from "@/theme/theme";
+import { useIsDark, D } from "@/theme/theme";
 
 /* ─────────────────────────────────────────────
  * OptimizedForCard — Shows all target AI platforms
@@ -25,8 +25,7 @@ const apps = [
 ];
 
 const OptimizedForCard = React.memo(function OptimizedForCard() {
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
+  const isDark = useIsDark();
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}

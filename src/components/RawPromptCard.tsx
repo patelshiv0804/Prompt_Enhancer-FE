@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { useTheme, D } from "@/theme/theme";
+import { useIsDark, D } from "@/theme/theme";
 
 interface RawPromptCardProps {
   value: string;
@@ -17,8 +17,7 @@ const RawPromptCard = React.memo(function RawPromptCard({
   onSubmit,
   isEnhancing,
 }: RawPromptCardProps) {
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
+  const isDark = useIsDark();
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}

@@ -2,11 +2,10 @@
 
 import React from 'react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
-import { useTheme } from '@/theme/theme';
+import { useIsDark } from '@/theme/theme';
 
 export default function TemplatesHubSkeleton() {
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
+  const isDark = useIsDark();
   const isTablet = useMediaQuery('(max-width: 1024px) and (min-width: 640px)');
   const isPhone = useMediaQuery('(max-width: 639px)');
   const isSmall = useMediaQuery('(max-width: 420px)');

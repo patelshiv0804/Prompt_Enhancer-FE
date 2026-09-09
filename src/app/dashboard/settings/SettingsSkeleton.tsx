@@ -2,15 +2,14 @@
 
 import React from 'react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
-import { useTheme } from '@/theme/theme';
+import { useIsDark } from '@/theme/theme';
 
 export interface SettingsSkeletonProps {
   activeTab?: 'settings' | 'profile';
 }
 
 export default function SettingsSkeleton({ activeTab = 'settings' }: SettingsSkeletonProps) {
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
+  const isDark = useIsDark();
   const isDesktop = useMediaQuery('(min-width: 1081px)');
   const isTablet = useMediaQuery('(max-width: 1080px) and (min-width: 641px)');
   const isMobile = useMediaQuery('(max-width: 640px)');

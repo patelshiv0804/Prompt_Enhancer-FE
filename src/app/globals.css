@@ -3,6 +3,43 @@
 :root {
   --background: #ffffff;
   --foreground: #0a0a0a;
+  --authguard-bg: #FAFAFC;
+  --authguard-text: rgba(70, 70, 76, 0.6);
+  --authguard-spinner-track: rgba(124, 58, 237, 0.1);
+  --authguard-spinner-head: #7C3AED;
+}
+
+html.dark,
+.dark {
+  --background: #0A0A0F;
+  --foreground: #F5F4F8;
+  --authguard-bg: #0A0A0F;
+  --authguard-text: #ABA9BC;
+  --authguard-spinner-track: rgba(139, 92, 246, 0.2);
+  --authguard-spinner-head: #A855F7;
+}
+
+html.dark body {
+  background: #0A0A0F;
+  color: #F5F4F8;
+}
+
+/* AuthGuard Loading Screen immediate theme styling */
+.authguard-loading-container {
+  background: var(--authguard-bg);
+}
+
+html.dark .authguard-loading-container {
+  background: #0A0A0F !important;
+}
+
+html.dark .authguard-spinner {
+  border-color: rgba(139, 92, 246, 0.2) !important;
+  border-top-color: #A855F7 !important;
+}
+
+html.dark .authguard-loading-text {
+  color: #ABA9BC !important;
 }
 
 @theme inline {
@@ -857,30 +894,29 @@ html.dark ::-webkit-scrollbar-thumb:hover {
   background: #3A3652;
 }
 
-/* Smooth cross-fade when toggling. Only colour-family properties are
-   transitioned, so framer-motion transforms/opacity and the animated brand
-   gradients are unaffected. */
-.landing-root,
-.landing-root *:not(canvas):not(svg):not(svg *),
-.auth-root,
-.auth-root *:not(canvas):not(svg):not(svg *),
-.dashboard-root,
-.dashboard-root *:not(canvas):not(svg):not(svg *) {
+/* Smooth cross-fade only when actively toggling themes.
+   Disabled during initial load and refresh to prevent the white flash. */
+html.theme-transitioning .landing-root,
+html.theme-transitioning .landing-root *:not(canvas):not(svg):not(svg *),
+html.theme-transitioning .auth-root,
+html.theme-transitioning .auth-root *:not(canvas):not(svg):not(svg *),
+html.theme-transitioning .dashboard-root,
+html.theme-transitioning .dashboard-root *:not(canvas):not(svg):not(svg *) {
   transition:
-    background-color 0.4s ease,
-    border-color 0.4s ease,
-    color 0.4s ease,
-    fill 0.4s ease,
-    box-shadow 0.4s ease;
+    background-color 0.35s ease,
+    border-color 0.35s ease,
+    color 0.35s ease,
+    fill 0.35s ease,
+    box-shadow 0.35s ease;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .landing-root,
-  .landing-root *,
-  .auth-root,
-  .auth-root *,
-  .dashboard-root,
-  .dashboard-root * {
+  html.theme-transitioning .landing-root,
+  html.theme-transitioning .landing-root *,
+  html.theme-transitioning .auth-root,
+  html.theme-transitioning .auth-root *,
+  html.theme-transitioning .dashboard-root,
+  html.theme-transitioning .dashboard-root * {
     transition: none !important;
   }
 }

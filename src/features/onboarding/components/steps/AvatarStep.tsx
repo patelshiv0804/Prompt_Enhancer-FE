@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { X, Upload, RotateCw, ZoomIn, Check, Crop } from 'lucide-react';
 import { presetAvatarGradients, renderPresetAvatar, getInitials } from '@/constants/avatars';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 interface AvatarStepProps {
   displayName: string;
@@ -10,6 +11,9 @@ interface AvatarStepProps {
   onSelectPreset: (presetIdx: number) => void;
   onRemovePhoto: () => void;
   isDark: boolean;
+  /** When embedded inside another step (e.g. ProfileStep) the component
+   *  should size to its content instead of filling the full step height. */
+  embedded?: boolean;
 }
 
 export const AvatarStep: React.FC<AvatarStepProps> = ({
@@ -20,7 +24,10 @@ export const AvatarStep: React.FC<AvatarStepProps> = ({
   onSelectPreset,
   onRemovePhoto,
   isDark,
+  embedded = false,
 }) => {
+  const isMobile = useMediaQuery('(max-width: 640px)');
+  const isTablet = useMediaQuery('(max-width: 900px)');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // WhatsApp-style Photo Adjuster Modal State
@@ -146,14 +153,35 @@ export const AvatarStep: React.FC<AvatarStepProps> = ({
     maskOverlay: isDark ? 'rgba(10, 4, 26, 0.80)' : 'rgba(241, 245, 249, 0.85)',
   };
 
+  const avatarCircleSize = isMobile ? 64 : 80;
+
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr', gap: 20, width: '100%', height: '100%', alignItems: 'center', boxSizing: 'border-box' }}>
-      {/* Left Column: Avatar Preview & Name */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, textAlign: 'center' }}>
-        <div style={{ position: 'relative' }}>
+    <div style={{
+      display: isMobile ? 'flex' : 'grid',
+      flexDirection: isMobile ? 'column' : undefined,
+      gridTemplateColumns: isMobile ? undefined : isTablet ? '120px 1fr' : '140px 1fr',
+      gap: isMobile ? 12 : 20,
+      width: '100%',
+      height: embedded ? 'auto' : '100%',
+      alignItems: isMobile ? 'stretch' : 'center',
+      boxSizing: 'border-box',
+      overflowY: embedded ? undefined : isMobile ? 'auto' : undefined,
+      maxHeight: embedded ? undefined : isMobile ? 315 : undefined,
+      scrollbarWidth: 'thin',
+    }}>
+      {/* Avatar Preview & Name */}
+      <div style={{
+        display: 'flex',
+        flexDirection: isMobile ? 'row' : 'column',
+        alignItems: 'center',
+        justifyContent: isMobile ? 'center' : 'center',
+        gap: isMobile ? 12 : 8,
+        textAlign: isMobile ? 'left' : 'center'
+      }}>
+        <div style={{ position: 'relative', flexShrink: 0 }}>
           {avatarUrl ? (
             <div style={{
-              width: 80, height: 80, borderRadius: '50%', overflow: 'hidden',
+              width: avatarCircleSize, height: avatarCircleSize, borderRadius: '50%', overflow: 'hidden',
               border: '3px solid #6366F1', boxShadow: '0 4px 14px rgba(99, 102, 241, 0.25)',
               position: 'relative', background: isDark ? '#0A041A' : '#F8FAFC'
             }}>
@@ -169,16 +197,16 @@ export const AvatarStep: React.FC<AvatarStepProps> = ({
             </div>
           ) : avatarPreset === 0 ? (
             <div style={{
-              width: 80, height: 80, borderRadius: '50%',
+              width: avatarCircleSize, height: avatarCircleSize, borderRadius: '50%',
               background: 'linear-gradient(135deg, rgba(99,102,241,0.18), rgba(168,85,247,0.12))',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 26, fontWeight: 800, color: '#6366F1',
+              fontSize: isMobile ? 20 : 26, fontWeight: 800, color: '#6366F1',
               border: '3px solid #6366F1',
             }}>
               {getInitials(displayName)}
             </div>
           ) : (
-            renderPresetAvatar(avatarPreset, 80, 32)
+            renderPresetAvatar(avatarPreset, avatarCircleSize, isMobile ? 24 : 32)
           )}
 
           {/* Floating Edit Icon Badge beside profile image circle */}
@@ -189,7 +217,7 @@ export const AvatarStep: React.FC<AvatarStepProps> = ({
               title="Edit / Crop photo"
               style={{
                 position: 'absolute', bottom: -2, right: -2,
-                width: 26, height: 26, borderRadius: '50%',
+                width: isMobile ? 22 : 26, height: isMobile ? 22 : 26, borderRadius: '50%',
                 background: '#6366F1', color: '#FFFFFF',
                 border: `2px solid ${isDark ? '#140C2C' : '#FFFFFF'}`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -198,18 +226,26 @@ export const AvatarStep: React.FC<AvatarStepProps> = ({
               }}
               className="hover:scale-110 active:scale-95"
             >
-              <Crop size={13} strokeWidth={2.2} />
+              <Crop size={isMobile ? 11 : 13} strokeWidth={2.2} />
             </button>
           )}
         </div>
 
-        <span style={{ fontSize: 13.5, fontWeight: 700, color: isDark ? '#FFFFFF' : '#18181B' }}>
-          {displayName || 'Shiv Patel'}
-        </span>
+        <div>
+          <span style={{ fontSize: isMobile ? 12.5 : 13.5, fontWeight: 700, color: isDark ? '#FFFFFF' : '#18181B', display: 'block' }}>
+            {displayName || 'Shiv Patel'}
+          </span>
+          {isMobile && (
+            <span style={{ fontSize: 11, color: isDark ? 'rgba(255,255,255,0.5)' : '#71717A', display: 'block' }}>
+              Your profile preview
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Right Column: Upload Box + Preset Selection */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {/* Right Column (or Bottom on Mobile): Upload Box + Preset Selection */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 10 : 12, flex: 1 }}>
+
         {/* Upload Box */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <span style={{ fontSize: 12, fontWeight: 700, color: isDark ? '#FFFFFF' : '#18181B' }}>
@@ -392,7 +428,7 @@ export const AvatarStep: React.FC<AvatarStepProps> = ({
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
               style={{
-                width: '100%', height: 280, background: modalColors.viewportBg,
+                width: '100%', height: isMobile ? 220 : 280, background: modalColors.viewportBg,
                 position: 'relative', overflow: 'hidden',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 cursor: isDragging ? 'grabbing' : 'grab', userSelect: 'none',

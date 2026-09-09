@@ -182,13 +182,22 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
+function getInitialClientPreference(): ThemePreference {
+  if (typeof window === "undefined") return "system";
+  return getStoredPreference();
+}
+
+function getInitialClientResolvedTheme(): Theme {
+  if (typeof window === "undefined") return "light";
+  if (typeof document !== "undefined" && document.documentElement.classList.contains("dark")) {
+    return "dark";
+  }
+  return resolvePreference(getStoredPreference());
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  // Start with SSR-safe defaults that match the server-rendered document (no
-  // .dark class, "system" preference). The mount effect below syncs to the
-  // real stored value — which is exactly what the no-flash script already
-  // applied to <html> — so there is no visible change on hydration.
-  const [preference, setPreferenceState] = useState<ThemePreference>("system");
-  const [resolvedTheme, setResolvedTheme] = useState<Theme>("light");
+  const [preference, setPreferenceState] = useState<ThemePreference>(getInitialClientPreference);
+  const [resolvedTheme, setResolvedTheme] = useState<Theme>(getInitialClientResolvedTheme);
   const [mounted, setMounted] = useState(false);
 
   // Sync from whatever the no-flash script / localStorage already decided.
@@ -240,10 +249,20 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   }, [preference, mounted]);
 
+  function enableThemeTransition() {
+    if (typeof document === "undefined") return;
+    const root = document.documentElement;
+    root.classList.add("theme-transitioning");
+    window.setTimeout(() => {
+      root.classList.remove("theme-transitioning");
+    }, 450);
+  }
+
   const setPreference = useCallback((pref: ThemePreference) => {
     // An explicit choice on any page — remember it beat the server for this
     // session so an account-settings load can't revert it.
     userSelectedThemeThisSession = true;
+    enableThemeTransition();
     setPreferenceState(pref);
   }, []);
 
@@ -251,6 +270,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     // The quick toggle always lands on an explicit light/dark (leaving "system"
     // to the Settings menu), flipping whatever is currently showing.
     userSelectedThemeThisSession = true;
+    enableThemeTransition();
     setPreferenceState(resolvedTheme === "dark" ? "light" : "dark");
   }, [resolvedTheme]);
 
@@ -291,4 +311,24 @@ export function useTheme(): ThemeContextValue {
     };
   }
   return ctx;
+}
+
+/**
+ * Returns `true` only when the app is mounted on the client AND the resolved
+ * theme is dark. Returns `false` during SSR and on the first synchronous client
+ * render so that the server-produced HTML and the initial client render are
+ * identical — eliminating React hydration mismatches.
+ *
+ * Drop-in replacement for `theme === "dark"` in any component:
+ *
+ *   // Before (causes hydration mismatch):
+ *   const { theme } = useTheme();
+ *   const isDark = theme === "dark";
+ *
+ *   // After (no mismatch):
+ *   const isDark = useIsDark();
+ */
+export function useIsDark(): boolean {
+  const { mounted, resolvedTheme } = useTheme();
+  return mounted && resolvedTheme === "dark";
 }

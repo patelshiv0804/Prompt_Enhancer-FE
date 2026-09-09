@@ -188,10 +188,21 @@ export default function VersionHeader({
       >
         {/* Tooltip */}
         <div style={{
-          position: 'absolute', bottom: 'calc(100% + 10px)', left: '50%', transform: 'translateX(-50%)',
-          background: 'rgba(30, 16, 53, 0.95)', color: 'white', borderRadius: 10, padding: '6px 12px',
-          fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap', pointerEvents: 'none',
-          opacity: isHovered || isSearched ? 1 : 0, transition: 'opacity 150ms ease', zIndex: 10,
+          position: 'absolute',
+          bottom: 'calc(100% + 10px)',
+          left: idx === 0 ? 0 : '50%',
+          transform: idx === 0 ? 'none' : 'translateX(-50%)',
+          background: 'rgba(30, 16, 53, 0.95)',
+          color: 'white',
+          borderRadius: 10,
+          padding: '6px 12px',
+          fontSize: 11,
+          fontWeight: 600,
+          whiteSpace: 'nowrap',
+          pointerEvents: 'none',
+          opacity: isHovered || isSearched ? 1 : 0,
+          transition: 'opacity 150ms ease',
+          zIndex: 10,
           boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(124, 58, 237, 0.15)',
           border: '1px solid rgba(167, 139, 250, 0.25)',
         }}>
@@ -334,7 +345,7 @@ export default function VersionHeader({
           ref={scrollRef} onScroll={handleScroll}
           style={{
             display: 'flex', alignItems: 'center', gap: 0, overflowX: 'auto', overflowY: 'visible',
-            paddingBottom: 16, paddingTop: 40,
+            paddingBottom: 16, paddingTop: 40, paddingLeft: 6, paddingRight: 40,
             scrollbarWidth: 'none', msOverflowStyle: 'none',
           }}
         >

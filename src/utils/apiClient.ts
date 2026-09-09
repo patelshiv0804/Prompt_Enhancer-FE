@@ -2,6 +2,91 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
 interface RequestOptions extends RequestInit {
   params?: Record<string, string>;
+  _retry?: boolean;
+}
+
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (token: string | null) => void;
+  reject: (err: any) => void;
+}> = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
+/**
+ * Exchange the stored refresh token for a fresh access token and refresh token.
+ * Resolves with the new access token, or throws if refresh fails.
+ */
+export async function refreshAuthTokens(): Promise<string> {
+  if (isRefreshing) {
+    return new Promise((resolve, reject) => {
+      failedQueue.push({
+        resolve: (token) => {
+          if (token) resolve(token);
+          else reject(new Error('Token refresh failed'));
+        },
+        reject,
+      });
+    });
+  }
+
+  isRefreshing = true;
+
+  try {
+    const refreshToken =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('promptiq_refresh_token')
+        : null;
+
+    const response = await fetch(`${API_URL}/api/v1/auth/refresh`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(refreshToken ? { refresh_token: refreshToken } : {}),
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      throw new Error(`Refresh failed with status ${response.status}`);
+    }
+
+    const data = await response.json();
+    const newAccessToken = data.access_token;
+    const newRefreshToken = data.refresh_token;
+
+    if (typeof window !== 'undefined') {
+      if (newAccessToken) {
+        localStorage.setItem('token', newAccessToken);
+        localStorage.setItem('promptiq_access_token', newAccessToken);
+      }
+      if (newRefreshToken) {
+        localStorage.setItem('promptiq_refresh_token', newRefreshToken);
+      }
+    }
+
+    processQueue(null, newAccessToken);
+    return newAccessToken;
+  } catch (err) {
+    processQueue(err, null);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      localStorage.removeItem('promptiq_access_token');
+      localStorage.removeItem('promptiq_refresh_token');
+    }
+    throw err;
+  } finally {
+    isRefreshing = false;
+  }
 }
 
 export async function apiRequest<T = any>(
@@ -58,11 +143,23 @@ export async function apiRequest<T = any>(
         path.startsWith('/api/v1/auth/login') ||
         path.startsWith('/api/v1/auth/register') ||
         path.startsWith('/api/v1/auth/google') ||
+        path.startsWith('/api/v1/auth/refresh') ||
         path.startsWith('/api/v1/auth/verify-reset-otp') ||
         path.startsWith('/api/v1/auth/reset-password') ||
         path.startsWith('/api/v1/auth/forgot-password');
 
-      if (!isAuthEndpoint) {
+      if (!isAuthEndpoint && !options._retry) {
+        try {
+          await refreshAuthTokens();
+          return await apiRequest<T>(path, { ...options, _retry: true });
+        } catch {
+          window.dispatchEvent(new CustomEvent('aure_unauthorized', { detail: { path } }));
+          window.dispatchEvent(new CustomEvent('promptiq:unauthorized', { detail: { path } }));
+          if (window.location.pathname.startsWith('/dashboard')) {
+            window.location.href = '/auth';
+          }
+        }
+      } else if (!isAuthEndpoint || path.startsWith('/api/v1/auth/refresh')) {
         window.dispatchEvent(new CustomEvent('aure_unauthorized', { detail: { path } }));
         window.dispatchEvent(new CustomEvent('promptiq:unauthorized', { detail: { path } }));
         // Only bounce to /auth from protected (dashboard) routes. On public
@@ -201,7 +298,8 @@ function parseSSEFrame(frame: string): { event: string; data: any } {
 export async function streamEnhance<TDone = EnhanceStreamDone>(
   path: string,
   body: any,
-  handlers: StreamEnhanceHandlers<TDone>
+  handlers: StreamEnhanceHandlers<TDone>,
+  streamOptions?: { _retry?: boolean }
 ): Promise<void> {
   const url = `${API_URL}${path}`;
   let settled = false; // guards against onDone + onError both firing
@@ -246,6 +344,14 @@ export async function streamEnhance<TDone = EnhanceStreamDone>(
   }
 
   if (!response.ok) {
+    if (response.status === 401 && typeof window !== 'undefined' && !streamOptions?._retry) {
+      try {
+        await refreshAuthTokens();
+        return streamEnhance(path, body, handlers, { _retry: true });
+      } catch {
+        // Fall back to handling error below
+      }
+    }
     // Pre-stream failures (auth, validation, bad template) arrive as a normal
     // JSON error body with a real status code — surface the detail.
     let errorDetail = response.statusText;

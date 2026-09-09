@@ -158,8 +158,13 @@ function OptimizerPageContent() {
 
   const handleRestoreVersion = async (versionNumber: number) => {
     if (!loadedPromptId) return;
+    if (activeVersionNumber === versionNumber) return;
     setError(null);
     setIsOptimizing(true);
+    setOptimizationResult((prev: any) => ({
+      ...prev,
+      enhanced_analysis: null,
+    }));
     try {
       await apiClient.post(`/api/v1/prompts/${loadedPromptId}/restore/${versionNumber}`, {});
       await loadPromptDetails(loadedPromptId);
@@ -391,6 +396,10 @@ function OptimizerPageContent() {
     setIsOptimizing(true);
     setStreamingText('');
     setError(null);
+    setOptimizationResult((prev: any) => ({
+      ...prev,
+      enhanced_analysis: null,
+    }));
 
     const pId = loadedPromptId;
     // Track whether a terminal frame (done/error) settled the stream, so the
@@ -489,12 +498,13 @@ function OptimizerPageContent() {
         templateName={appliedTemplateName}
         onClearTemplate={() => setTemplateDismissed(true)}
       />
-      {(isAnalyzed || isOptimized) && (
+      {(isAnalyzed || isOptimized || isOptimizing) && (
         <ScoreSection
           isAnalyzed={isAnalyzed}
           isOptimized={isOptimized}
+          isEvaluating={isOptimizing}
           originalAnalysis={optimizationResult?.original_analysis || analysisResult}
-          enhancedAnalysis={optimizationResult?.enhanced_analysis}
+          enhancedAnalysis={isOptimizing ? null : optimizationResult?.enhanced_analysis}
           toolRecommendations={optimizationResult?.tool_recommendations}
         />
       )}

@@ -16,24 +16,39 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
-        background: '#FAFAFC',
-        fontFamily: "'Geist', sans-serif"
-      }}>
+      <div
+        className="authguard-loading-container"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '100vh',
+          background: 'var(--authguard-bg)',
+          fontFamily: "'Geist', sans-serif",
+        }}
+      >
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
-          <div style={{
-            width: 48,
-            height: 48,
-            borderRadius: '50%',
-            border: '3px solid rgba(124, 58, 237, 0.1)',
-            borderTopColor: '#7C3AED',
-            animation: 'spin 1s linear infinite'
-          }} />
-          <p style={{ color: 'rgba(70,70,76,0.6)', fontSize: 14, fontWeight: 500 }}>Initializing session...</p>
+          <div
+            className="authguard-spinner"
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: '50%',
+              border: '3px solid var(--authguard-spinner-track)',
+              borderTopColor: 'var(--authguard-spinner-head)',
+              animation: 'spin 1s linear infinite',
+            }}
+          />
+          <p
+            className="authguard-loading-text"
+            style={{
+              color: 'var(--authguard-text)',
+              fontSize: 14,
+              fontWeight: 500,
+            }}
+          >
+            Initializing session...
+          </p>
         </div>
         <style>{`
           @keyframes spin {

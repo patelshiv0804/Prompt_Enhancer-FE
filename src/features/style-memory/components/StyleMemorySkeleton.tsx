@@ -2,11 +2,10 @@
 
 import React from 'react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
-import { useTheme } from '@/theme/theme';
+import { useIsDark } from '@/theme/theme';
 
 export default function StyleMemorySkeleton() {
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
+  const isDark = useIsDark();
   const isMobile = useMediaQuery('(max-width: 620px)');
   const isTablet = useMediaQuery('(max-width: 1024px)');
   const isSmall = useMediaQuery('(max-width: 420px)');
