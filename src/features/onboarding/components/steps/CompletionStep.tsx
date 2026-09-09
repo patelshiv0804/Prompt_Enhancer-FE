@@ -12,6 +12,9 @@ interface CompletionStepProps {
   avatarPreset: number;
   theme: 'light' | 'dark' | 'system';
   isDark: boolean;
+  /** When embedded inside another step (e.g. FinishStep) size to content
+   *  instead of filling and centering the full step height. */
+  embedded?: boolean;
 }
 
 const CONFETTI_PIECES = [
@@ -46,6 +49,7 @@ export const CompletionStep: React.FC<CompletionStepProps> = ({
   avatarPreset,
   theme,
   isDark,
+  embedded = false,
 }) => {
   const isMobile = useMediaQuery('(max-width: 640px)');
 
@@ -61,10 +65,10 @@ export const CompletionStep: React.FC<CompletionStepProps> = ({
     <div style={{
       display: 'flex',
       flexDirection: 'column',
-      justifyContent: 'center',
+      justifyContent: embedded ? 'flex-start' : 'center',
       gap: isMobile ? 12 : 14,
       width: '100%',
-      height: '100%',
+      height: embedded ? 'auto' : '100%',
       alignItems: 'center',
       textAlign: 'center',
       boxSizing: 'border-box',

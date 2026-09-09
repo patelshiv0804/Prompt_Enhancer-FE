@@ -11,6 +11,9 @@ interface AvatarStepProps {
   onSelectPreset: (presetIdx: number) => void;
   onRemovePhoto: () => void;
   isDark: boolean;
+  /** When embedded inside another step (e.g. ProfileStep) the component
+   *  should size to its content instead of filling the full step height. */
+  embedded?: boolean;
 }
 
 export const AvatarStep: React.FC<AvatarStepProps> = ({
@@ -21,6 +24,7 @@ export const AvatarStep: React.FC<AvatarStepProps> = ({
   onSelectPreset,
   onRemovePhoto,
   isDark,
+  embedded = false,
 }) => {
   const isMobile = useMediaQuery('(max-width: 640px)');
   const isTablet = useMediaQuery('(max-width: 900px)');
@@ -158,11 +162,11 @@ export const AvatarStep: React.FC<AvatarStepProps> = ({
       gridTemplateColumns: isMobile ? undefined : isTablet ? '120px 1fr' : '140px 1fr',
       gap: isMobile ? 12 : 20,
       width: '100%',
-      height: '100%',
+      height: embedded ? 'auto' : '100%',
       alignItems: isMobile ? 'stretch' : 'center',
       boxSizing: 'border-box',
-      overflowY: isMobile ? 'auto' : undefined,
-      maxHeight: isMobile ? 315 : undefined,
+      overflowY: embedded ? undefined : isMobile ? 'auto' : undefined,
+      maxHeight: embedded ? undefined : isMobile ? 315 : undefined,
       scrollbarWidth: 'thin',
     }}>
       {/* Avatar Preview & Name */}

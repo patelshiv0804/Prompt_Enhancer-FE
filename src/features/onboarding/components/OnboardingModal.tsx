@@ -1,20 +1,19 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/theme/theme';
 import { apiClient } from '@/utils/apiClient';
 import { getUserMessage } from '@/utils/errorMessages';
 import { ONBOARDING_STEPS } from '../config/stepsConfig';
 import { OnboardingProgress } from './OnboardingProgress';
-import { DisplayNameStep } from './steps/DisplayNameStep';
+import { ProfileStep } from './steps/ProfileStep';
 import { RoleStep } from './steps/RoleStep';
 import { ModeStep } from './steps/ModeStep';
-import { AvatarStep } from './steps/AvatarStep';
-import { ThemeStep } from './steps/ThemeStep';
-import { CompletionStep } from './steps/CompletionStep';
+import { FinishStep } from './steps/FinishStep';
 import { ROLE_MODES } from '@/constants/roles';
-import { AlertCircle, Check, HelpCircle, ArrowRight } from 'lucide-react';
+import { AlertCircle, Check, HelpCircle, ArrowRight, ArrowLeft } from 'lucide-react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 interface OnboardingModalProps {
@@ -32,10 +31,15 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
   const isMobile = useMediaQuery('(max-width: 640px)');
   const isTablet = useMediaQuery('(max-width: 1024px)');
   const isSmall = useMediaQuery('(max-width: 420px)');
+  const prefersReduced = useReducedMotion();
   const { user, refreshUserProfile } = useAuth();
   const { theme: appResolvedTheme, preference: appPreference, setPreference: setAppPreference } = useTheme();
 
+  // Desktop (> 1024px) gets the two-column rail layout; below that, single column.
+  const isDesktop = !isTablet;
+
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
+  const [direction, setDirection] = useState<number>(1);
   const [displayName, setDisplayName] = useState<string>('');
   const [role, setRole] = useState<string>('student');
   const [mode, setMode] = useState<string>('Learnings');
@@ -184,18 +188,14 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
 
   const isStepValid = (): boolean => {
     switch (currentStep.id) {
-      case 'display_name':
+      case 'profile':
         return displayName.trim().length >= 2;
       case 'role':
         return Boolean(role);
-      case 'mode':
+      case 'focus':
         return Boolean(mode);
-      case 'avatar':
-        return true;
-      case 'theme':
+      case 'finish':
         return Boolean(theme);
-      case 'complete':
-        return true;
       default:
         return false;
     }
@@ -203,14 +203,22 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
 
   const handleNextStep = () => {
     if (currentStepIndex < ONBOARDING_STEPS.length - 1) {
+      setDirection(1);
       setCurrentStepIndex((prev) => prev + 1);
     }
   };
 
   const handlePrevStep = () => {
     if (currentStepIndex > 0) {
+      setDirection(-1);
       setCurrentStepIndex((prev) => prev - 1);
     }
+  };
+
+  const handleJumpToStep = (idx: number) => {
+    if (idx === currentStepIndex) return;
+    setDirection(idx > currentStepIndex ? 1 : -1);
+    setCurrentStepIndex(idx);
   };
 
   // Apple / Notion style keyboard navigation: Enter to continue, Alt+ArrowLeft to go back
@@ -333,394 +341,537 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
 
   if (!isOpen) return null;
 
+  const isLastStep = currentStepIndex === ONBOARDING_STEPS.length - 1;
+  const firstName = displayName.trim().split(/\s+/)[0] || 'there';
+
   const colors = {
     pageBg: isDark ? '#0A041A' : '#F6F5FB',
     cardBg: isDark ? '#140C2C' : '#FFFFFF',
+    railBg: isDark
+      ? 'linear-gradient(165deg, #1B1140 0%, #140C2C 55%, #120A26 100%)'
+      : 'linear-gradient(165deg, #F5F3FF 0%, #FBFAFF 55%, #FFFFFF 100%)',
     textPrimary: isDark ? '#FFFFFF' : '#0F172A',
     textSecondary: isDark ? 'rgba(255, 255, 255, 0.65)' : '#64748B',
     cardBorder: isDark ? 'rgba(124, 58, 237, 0.20)' : '#E2E8F0',
+    railBorder: isDark ? 'rgba(124, 58, 237, 0.24)' : '#ECE9FB',
     divider: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9',
   };
+
+  // ── Framer Motion step transition variants ──────────────────────────────
+  const offset = prefersReduced ? 0 : 28;
+  const stepVariants = {
+    enter: (dir: number) => ({ opacity: 0, x: dir > 0 ? offset : -offset }),
+    center: { opacity: 1, x: 0 },
+    exit: (dir: number) => ({ opacity: 0, x: dir > 0 ? -offset : offset }),
+  };
+
+  // ── Shared: current step title + subtitle ───────────────────────────────
+  const stepTitle = isLastStep
+    ? `You're all set, ${firstName}! 🎊`
+    : currentStep.motivationalTitle || currentStep.title;
+  const stepSubtitle = currentStep.motivationalSubtitle || currentStep.subtitle;
+
+  // ── Shared: the active step component ────────────────────────────────────
+  const renderStepInner = () => {
+    switch (currentStep.id) {
+      case 'profile':
+        return (
+          <ProfileStep
+            displayName={displayName}
+            onChangeName={setDisplayName}
+            onEnter={handleNextStep}
+            avatarUrl={avatarUrl}
+            avatarPreset={avatarPreset}
+            onUploadFile={(file) => {
+              setAvatarFile(file);
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                setAvatarUrl(reader.result as string);
+              };
+              reader.readAsDataURL(file);
+            }}
+            onSelectPreset={(idx) => {
+              setAvatarPreset(idx);
+              setAvatarUrl(null);
+              setAvatarFile(null);
+            }}
+            onRemovePhoto={() => {
+              setAvatarUrl(null);
+              setAvatarFile(null);
+            }}
+            isDark={isDark}
+          />
+        );
+      case 'role':
+        return <RoleStep selectedRole={role} onSelectRole={handleSelectRole} isDark={isDark} />;
+      case 'focus':
+        return <ModeStep selectedRole={role} selectedMode={mode} onSelectMode={setMode} isDark={isDark} />;
+      case 'finish':
+        return (
+          <FinishStep
+            displayName={displayName}
+            role={role}
+            mode={mode}
+            avatarUrl={avatarUrl}
+            avatarPreset={avatarPreset}
+            theme={theme}
+            onSelectTheme={handleSelectTheme}
+            isDark={isDark}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
+  // ── Shared: animated step content region ─────────────────────────────────
+  const stepContent = (
+    <div
+      style={{
+        flex: 1,
+        minHeight: isDesktop ? 300 : isMobile ? 320 : 300,
+        display: 'flex',
+        flexDirection: 'column',
+        width: '100%',
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        boxSizing: 'border-box',
+        scrollbarWidth: 'thin',
+      }}
+    >
+      <AnimatePresence mode="wait" custom={direction} initial={false}>
+        <motion.div
+          key={currentStep.id}
+          custom={direction}
+          variants={stepVariants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+          style={{
+            width: '100%',
+            marginTop: 'auto',
+            marginBottom: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          {renderStepInner()}
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+
+  // ── Shared: footer navigation (Back / Continue / Complete) ───────────────
+  const footerNav = (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: currentStepIndex > 0 ? 'space-between' : 'flex-end',
+        paddingTop: isMobile ? 12 : 16,
+        borderTop: `1px solid ${colors.divider}`,
+        boxSizing: 'border-box',
+        width: '100%',
+        gap: 8,
+        flexShrink: 0,
+      }}
+    >
+      {currentStepIndex > 0 && (
+        <button
+          type="button"
+          onClick={handlePrevStep}
+          disabled={isSubmitting}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: isMobile ? '8px 14px' : '9.5px 20px',
+            borderRadius: 10,
+            fontSize: isMobile ? 12.5 : 13.5,
+            fontWeight: 600,
+            background: isDark ? 'rgba(255,255,255,0.06)' : '#F1F5F9',
+            border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : '#E2E8F0'}`,
+            color: colors.textPrimary,
+            cursor: 'pointer',
+            transition: 'all 180ms ease',
+          }}
+          className="hover:opacity-85 active:scale-95"
+        >
+          <ArrowLeft size={14} /> Back
+        </button>
+      )}
+
+      {!isLastStep ? (
+        <button
+          type="button"
+          onClick={handleNextStep}
+          disabled={!isStepValid()}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: isMobile ? '9px 18px' : '10.5px 24px',
+            borderRadius: 10,
+            fontSize: isMobile ? 12.5 : 13.5,
+            fontWeight: 700,
+            background: isStepValid() ? '#6366F1' : 'rgba(99, 102, 241, 0.3)',
+            color: '#FFFFFF',
+            border: 'none',
+            cursor: isStepValid() ? 'pointer' : 'not-allowed',
+            boxShadow: isStepValid() ? '0 5px 15px rgba(99, 102, 241, 0.35)' : 'none',
+            opacity: isStepValid() ? 1 : 0.6,
+            transition: 'all 180ms ease',
+            whiteSpace: 'nowrap',
+          }}
+          className="hover:brightness-105 active:scale-95"
+        >
+          <span>Continue</span>
+          <ArrowRight size={15} />
+          {!isMobile && (
+            <kbd
+              style={{
+                fontSize: 10,
+                padding: '1.5px 5px',
+                borderRadius: 4,
+                background: 'rgba(255, 255, 255, 0.22)',
+                fontWeight: 700,
+                letterSpacing: '0.3px',
+                border: '1px solid rgba(255, 255, 255, 0.30)',
+                lineHeight: 1,
+                display: 'inline-block',
+              }}
+            >
+              ↵ Enter
+            </kbd>
+          )}
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={handleFinishOnboarding}
+          disabled={isSubmitting}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: isMobile ? '9px 18px' : '10.5px 26px',
+            borderRadius: 10,
+            fontSize: isMobile ? 12.5 : 13.5,
+            fontWeight: 700,
+            background: '#6366F1',
+            color: '#FFFFFF',
+            border: 'none',
+            cursor: isSubmitting ? 'wait' : 'pointer',
+            boxShadow: '0 5px 16px rgba(99, 102, 241, 0.40)',
+            opacity: isSubmitting ? 0.7 : 1,
+            transition: 'all 180ms ease',
+            whiteSpace: 'nowrap',
+          }}
+          className="hover:brightness-110 active:scale-95"
+        >
+          <span>{isSubmitting ? 'Saving...' : 'Complete Setup'}</span>
+          <Check size={14} strokeWidth={3} />
+          {!isMobile && !isSubmitting && (
+            <kbd
+              style={{
+                fontSize: 10,
+                padding: '1.5px 5px',
+                borderRadius: 4,
+                background: 'rgba(255, 255, 255, 0.22)',
+                fontWeight: 700,
+                letterSpacing: '0.3px',
+                border: '1px solid rgba(255, 255, 255, 0.30)',
+                lineHeight: 1,
+                display: 'inline-block',
+              }}
+            >
+              ↵ Enter
+            </kbd>
+          )}
+        </button>
+      )}
+    </div>
+  );
+
+  const brandMark = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/logo_1.svg" alt="AURE Logo" style={{ width: 28, height: 28, borderRadius: 8, objectFit: 'contain' }} />
+      <span style={{ fontSize: 16, fontWeight: 800, color: colors.textPrimary, letterSpacing: '1.2px', textTransform: 'uppercase' }}>
+        AURE
+      </span>
+    </div>
+  );
+
+  const skipButton = (
+    <button
+      type="button"
+      onClick={handleSkipOnboarding}
+      disabled={isSubmitting}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: isMobile ? '4px 10px' : '5px 14px',
+        borderRadius: 99,
+        fontSize: isMobile ? 11.5 : 12.5,
+        fontWeight: 600,
+        background: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9',
+        border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : '#E2E8F0'}`,
+        color: colors.textSecondary,
+        cursor: isSubmitting ? 'wait' : 'pointer',
+        transition: 'all 180ms cubic-bezier(0.16, 1, 0.3, 1)',
+        flexShrink: 0,
+        lineHeight: 1,
+      }}
+      className="hover:!text-[#6366F1] hover:!border-[#6366F1] active:scale-95"
+      title="Skip onboarding"
+    >
+      Skip for now
+    </button>
+  );
+
+  const helpLink = (
+    <button
+      type="button"
+      onClick={() => window.open('https://support.promptiq.com', '_blank')}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 4,
+        background: 'none',
+        border: 'none',
+        cursor: 'pointer',
+        fontSize: isMobile ? 11.5 : 12.5,
+        fontWeight: 600,
+        color: colors.textSecondary,
+        transition: 'color 180ms ease',
+        padding: 0,
+      }}
+      className="hover:!text-[#6366F1]"
+    >
+      <HelpCircle size={13} /> Need help?
+    </button>
+  );
+
+  const errorBanner = errorMessage ? (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        padding: '10px 14px',
+        borderRadius: 10,
+        background: 'rgba(239, 68, 68, 0.1)',
+        border: '1px solid rgba(239, 68, 68, 0.25)',
+        color: '#EF4444',
+        fontSize: 12.5,
+        marginBottom: 12,
+        flexShrink: 0,
+      }}
+    >
+      <AlertCircle size={15} style={{ flexShrink: 0 }} />
+      <span>{errorMessage}</span>
+    </div>
+  ) : null;
+
+  const stepHeader = (
+    <div style={{ flexShrink: 0 }}>
+      <h1
+        style={{
+          fontSize: isMobile ? 19 : isTablet ? 22 : 25,
+          fontWeight: 800,
+          color: colors.textPrimary,
+          margin: 0,
+          letterSpacing: '-0.4px',
+          lineHeight: 1.2,
+        }}
+      >
+        {stepTitle}
+      </h1>
+      <p
+        style={{
+          fontSize: isMobile ? 12.5 : 14,
+          color: colors.textSecondary,
+          margin: '6px 0 0',
+          lineHeight: 1.45,
+          maxWidth: 560,
+        }}
+      >
+        {stepSubtitle}
+      </p>
+    </div>
+  );
 
   return (
     <div
       style={{
-        position: 'fixed', inset: 0, zIndex: 99999,
+        position: 'fixed',
+        inset: 0,
+        zIndex: 99999,
         background: colors.pageBg,
-        display: 'flex', flexDirection: 'column',
-        height: '100vh', overflow: 'hidden', boxSizing: 'border-box',
-        animation: 'fadeIn 240ms ease-out',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100vh',
+        overflow: 'hidden',
+        boxSizing: 'border-box',
+        padding: isMobile ? '0' : isTablet ? '20px' : '28px',
+        animation: 'onbOverlayIn 240ms ease-out',
       }}
     >
       <style>{`
-        @keyframes stepContentIn {
-          0% {
-            opacity: 0;
-            transform: translateY(6px) scale(0.995);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
+        @keyframes onbOverlayIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes onbCardIn {
+          from { opacity: 0; transform: translateY(10px) scale(0.99); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
         }
       `}</style>
 
-      {/* Top Navbar Header */}
-      <header
-        style={{
-          width: '100%',
-          padding: isMobile ? '12px 16px' : isTablet ? '14px 24px' : '14px 40px',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          boxSizing: 'border-box', flexShrink: 0,
-        }}
-      >
-        {/* Brand Logo & Name: AURE */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo_1.svg" alt="AURE Logo" style={{ width: 28, height: 28, borderRadius: 8, objectFit: 'contain' }} />
-          <span style={{ fontSize: 16, fontWeight: 800, color: colors.textPrimary, letterSpacing: '1.2px', textTransform: 'uppercase' }}>
-            AURE
-          </span>
-        </div>
-
-        {/* Right Header Actions: Need Help */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 12 }}>
-          {!isSmall && (
-            <button
-              type="button"
-              onClick={() => window.open('https://support.promptiq.com', '_blank')}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 4,
-                background: 'none', border: 'none', cursor: 'pointer',
-                fontSize: isMobile ? 11.5 : 12.5, fontWeight: 600, color: colors.textSecondary,
-                transition: 'color 180ms ease'
-              }}
-              className="hover:!text-[#6366F1]"
-            >
-              <HelpCircle size={13} /> {isMobile ? 'Help' : 'Need help?'}
-            </button>
-          )}
-        </div>
-      </header>
-
-      {/* Main Centered Full-Screen Onboarding Page Container */}
-      <main
-        style={{
-          flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: isMobile ? '4px 12px 14px' : isTablet ? '8px 20px 20px' : '8px 24px 20px',
-          boxSizing: 'border-box', width: '100%',
-          overflowY: 'auto',
-        }}
-      >
+      {/* ── DESKTOP: two-column card with branded left rail ── */}
+      {isDesktop ? (
         <div
           style={{
             width: '100%',
-            maxWidth: 840,
-            minHeight: isMobile ? 'auto' : 540,
-            maxHeight: isMobile ? 'calc(100dvh - 65px)' : 'calc(100vh - 75px)',
+            maxWidth: 980,
+            height: 'min(660px, calc(100vh - 56px))',
             background: colors.cardBg,
             border: `1.5px solid ${colors.cardBorder}`,
-            borderRadius: isMobile ? 18 : 24,
-            boxShadow: isDark
-              ? '0 20px 60px rgba(0,0,0,0.45)'
-              : '0 16px 50px rgba(124, 58, 237, 0.08), 0 1px 3px rgba(0,0,0,0.02)',
-            display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+            borderRadius: 24,
+            boxShadow: isDark ? '0 24px 70px rgba(0,0,0,0.5)' : '0 20px 60px rgba(124, 58, 237, 0.1), 0 2px 8px rgba(0,0,0,0.03)',
+            display: 'flex',
+            overflow: 'hidden',
             boxSizing: 'border-box',
-            padding: isMobile
-              ? (isSmall ? '16px 14px 14px' : '20px 18px 16px')
-              : isTablet
-                ? '24px 28px 22px'
-                : '32px 44px 28px',
-            overflowY: isMobile ? 'auto' : 'hidden',
-            animation: 'dropdownFadeIn 280ms cubic-bezier(0.2, 0.8, 0.2, 1)',
+            animation: 'onbCardIn 320ms cubic-bezier(0.2, 0.8, 0.2, 1)',
           }}
         >
-          {/* Header Motivational Title, Subtitle & Progress Card */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 10 : 14, boxSizing: 'border-box', flexShrink: 0 }}>
-            {/* Top Motivational Greeting & Subtitle + Top-Right Skip Button */}
-            <div style={{
+          {/* Left rail */}
+          <aside
+            style={{
+              width: 320,
+              flexShrink: 0,
+              background: colors.railBg,
+              borderRight: `1px solid ${colors.railBorder}`,
+              padding: '30px 28px',
               display: 'flex',
-              alignItems: 'flex-start',
-              justifyContent: 'space-between',
-              gap: 12,
+              flexDirection: 'column',
               boxSizing: 'border-box',
-              width: '100%',
-            }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <h1 style={{
-                  fontSize: isMobile ? 18 : isTablet ? 21 : 24,
-                  fontWeight: 800,
-                  color: colors.textPrimary,
-                  margin: 0,
-                  letterSpacing: '-0.35px',
-                  lineHeight: 1.25,
-                }}>
-                  {currentStep.id === 'complete'
-                    ? `You're all set, ${displayName.trim().split(/\s+/)[0] || 'there'}! 🎊`
-                    : currentStep.motivationalTitle || currentStep.title}
-                </h1>
-                <p style={{
-                  fontSize: isMobile ? 12 : 13.5,
-                  color: colors.textSecondary,
-                  margin: '4px 0 0',
-                  lineHeight: 1.4,
-                }}>
-                  {currentStep.motivationalSubtitle || currentStep.subtitle}
-                </p>
-              </div>
+              position: 'relative',
+              overflow: 'hidden',
+            }}
+          >
+            {/* Decorative brand glow */}
+            <div
+              style={{
+                position: 'absolute',
+                top: -70,
+                right: -70,
+                width: 180,
+                height: 180,
+                borderRadius: '50%',
+                background: 'radial-gradient(circle, rgba(139, 92, 246, 0.22) 0%, rgba(139, 92, 246, 0) 70%)',
+                pointerEvents: 'none',
+              }}
+            />
 
-              {/* Top Most Right-side "Skip" button */}
-              {currentStep.id !== 'complete' && (
-                <button
-                  type="button"
-                  onClick={handleSkipOnboarding}
-                  disabled={isSubmitting}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: isMobile ? '4px 10px' : '5px 14px',
-                    borderRadius: 99,
-                    fontSize: isMobile ? 11.5 : 12.5,
-                    fontWeight: 600,
-                    background: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9',
-                    border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : '#E2E8F0'}`,
-                    color: colors.textSecondary,
-                    cursor: isSubmitting ? 'wait' : 'pointer',
-                    transition: 'all 180ms cubic-bezier(0.16, 1, 0.3, 1)',
-                    flexShrink: 0,
-                    lineHeight: 1,
-                  }}
-                  className="hover:!text-[#6366F1] hover:!border-[#6366F1] hover:!bg-[#6366F1]/10 active:scale-95"
-                  title="Skip onboarding"
-                >
-                  Skip
-                </button>
-              )}
-            </div>
+            {brandMark}
 
-            {/* Motivational Progress Card with interactive jump-to-step support */}
+            <p
+              style={{
+                fontSize: 13,
+                color: colors.textSecondary,
+                margin: '14px 0 22px',
+                lineHeight: 1.5,
+                position: 'relative',
+              }}
+            >
+              Let&rsquo;s personalize your workspace in four quick steps.
+            </p>
+
             <OnboardingProgress
               steps={ONBOARDING_STEPS}
               currentStepIndex={currentStepIndex}
               isDark={isDark}
-              onSelectStep={(idx) => setCurrentStepIndex(idx)}
+              onSelectStep={handleJumpToStep}
+              orientation="vertical"
             />
-          </div>
 
-          {/* Body Step Content Container - Uniform fixed height on mobile across all 6 steps */}
-          <div style={{
-            margin: isMobile ? '8px 0' : '12px 0',
-            padding: isMobile ? '2px 2px' : '8px 4px',
-            flex: isMobile ? 'none' : 1,
-            height: isMobile ? 325 : undefined,
-            minHeight: isMobile ? 325 : 280,
-            maxHeight: isMobile ? 325 : 380,
-            boxSizing: 'border-box',
+            {/* Rail footer */}
+            <div style={{ marginTop: 'auto', paddingTop: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+              {!isLastStep ? skipButton : <span />}
+              {helpLink}
+            </div>
+          </aside>
+
+          {/* Right panel */}
+          <section
+            style={{
+              flex: 1,
+              minWidth: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              padding: '36px 40px 26px',
+              boxSizing: 'border-box',
+              gap: 18,
+            }}
+          >
+            {stepHeader}
+            {errorBanner}
+            {stepContent}
+            {footerNav}
+          </section>
+        </div>
+      ) : (
+        /* ── MOBILE / TABLET: single-column card ── */
+        <div
+          style={{
+            width: '100%',
+            maxWidth: 640,
+            height: isMobile ? '100vh' : 'min(720px, calc(100vh - 40px))',
+            maxHeight: '100vh',
+            background: colors.cardBg,
+            border: isMobile ? 'none' : `1.5px solid ${colors.cardBorder}`,
+            borderRadius: isMobile ? 0 : 22,
+            boxShadow: isMobile ? 'none' : isDark ? '0 20px 60px rgba(0,0,0,0.45)' : '0 16px 50px rgba(124, 58, 237, 0.08)',
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: 'center',
-            width: '100%',
-            overflowY: isMobile ? 'auto' : 'visible',
-            scrollbarWidth: 'thin',
-          }}>
-            {errorMessage && (
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 10,
-                background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.25)',
-                color: '#EF4444', fontSize: 12.5, marginBottom: 14,
-              }}>
-                <AlertCircle size={15} style={{ flexShrink: 0 }} />
-                <span>{errorMessage}</span>
-              </div>
-            )}
-
-            <div
-              key={currentStep.id}
-              style={{
-                width: '100%',
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                boxSizing: 'border-box',
-                animation: 'stepContentIn 220ms cubic-bezier(0.16, 1, 0.3, 1)',
-              }}
-            >
-              {currentStep.id === 'display_name' && (
-                <DisplayNameStep
-                  value={displayName}
-                  onChange={setDisplayName}
-                  onEnter={handleNextStep}
-                  isDark={isDark}
-                />
-              )}
-
-              {currentStep.id === 'role' && (
-                <RoleStep
-                  selectedRole={role}
-                  onSelectRole={handleSelectRole}
-                  isDark={isDark}
-                />
-              )}
-
-              {currentStep.id === 'mode' && (
-                <ModeStep
-                  selectedRole={role}
-                  selectedMode={mode}
-                  onSelectMode={setMode}
-                  isDark={isDark}
-                />
-              )}
-
-              {currentStep.id === 'avatar' && (
-                <AvatarStep
-                  displayName={displayName}
-                  avatarUrl={avatarUrl}
-                  avatarPreset={avatarPreset}
-                  onUploadFile={(file) => {
-                    setAvatarFile(file);
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                      setAvatarUrl(reader.result as string);
-                    };
-                    reader.readAsDataURL(file);
-                  }}
-                  onSelectPreset={(idx) => {
-                    setAvatarPreset(idx);
-                    setAvatarUrl(null);
-                    setAvatarFile(null);
-                  }}
-                  onRemovePhoto={() => {
-                    setAvatarUrl(null);
-                    setAvatarFile(null);
-                  }}
-                  isDark={isDark}
-                />
-              )}
-
-              {currentStep.id === 'theme' && (
-                <ThemeStep
-                  selectedTheme={theme}
-                  onSelectTheme={handleSelectTheme}
-                  isDark={isDark}
-                />
-              )}
-
-              {currentStep.id === 'complete' && (
-                <CompletionStep
-                  displayName={displayName}
-                  role={role}
-                  mode={mode}
-                  avatarUrl={avatarUrl}
-                  avatarPreset={avatarPreset}
-                  theme={theme}
-                  isDark={isDark}
-                />
-              )}
+            boxSizing: 'border-box',
+            padding: isMobile ? (isSmall ? '16px 14px' : '18px 18px') : '24px 28px',
+            gap: isMobile ? 12 : 14,
+            overflow: 'hidden',
+            animation: 'onbCardIn 300ms cubic-bezier(0.2, 0.8, 0.2, 1)',
+          }}
+        >
+          {/* Top bar: brand + skip */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexShrink: 0 }}>
+            {brandMark}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {!isSmall && helpLink}
+              {!isLastStep && skipButton}
             </div>
           </div>
 
-          {/* Footer Navigation Buttons */}
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: currentStepIndex > 0 ? 'space-between' : 'flex-end',
-            paddingTop: isMobile ? 12 : 16, borderTop: `1px solid ${colors.divider}`,
-            boxSizing: 'border-box', width: '100%', gap: 8, flexShrink: 0,
-          }}>
-            {currentStepIndex > 0 && (
-              <button
-                type="button"
-                onClick={handlePrevStep}
-                disabled={isSubmitting}
-                style={{
-                  padding: isMobile ? '8px 14px' : '9.5px 20px', borderRadius: 10,
-                  fontSize: isMobile ? 12.5 : 13.5, fontWeight: 600,
-                  background: isDark ? 'rgba(255,255,255,0.06)' : '#F1F5F9',
-                  border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : '#E2E8F0'}`,
-                  color: colors.textPrimary, cursor: 'pointer', transition: 'all 180ms ease'
-                }}
-                className="hover:opacity-85 active:scale-95"
-              >
-                ← Back
-              </button>
-            )}
-
-            {currentStepIndex < ONBOARDING_STEPS.length - 1 ? (
-              <button
-                type="button"
-                onClick={handleNextStep}
-                disabled={!isStepValid()}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  padding: isMobile ? '9px 18px' : '10.5px 24px', borderRadius: 10,
-                  fontSize: isMobile ? 12.5 : 13.5, fontWeight: 700,
-                  background: isStepValid() ? '#6366F1' : 'rgba(99, 102, 241, 0.3)',
-                  color: '#FFFFFF', border: 'none',
-                  cursor: isStepValid() ? 'pointer' : 'not-allowed',
-                  boxShadow: isStepValid() ? '0 5px 15px rgba(99, 102, 241, 0.35)' : 'none',
-                  opacity: isStepValid() ? 1 : 0.6,
-                  transition: 'all 180ms ease',
-                  whiteSpace: 'nowrap',
-                }}
-                className="hover:brightness-105 active:scale-95"
-              >
-                <span>Continue →</span>
-                {!isMobile && (
-                  <kbd style={{
-                    fontSize: 10,
-                    padding: '1.5px 5px',
-                    borderRadius: 4,
-                    background: 'rgba(255, 255, 255, 0.22)',
-                    fontWeight: 700,
-                    letterSpacing: '0.3px',
-                    border: '1px solid rgba(255, 255, 255, 0.30)',
-                    lineHeight: 1,
-                    display: 'inline-block',
-                  }}>
-                    ↵ Enter
-                  </kbd>
-                )}
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleFinishOnboarding}
-                disabled={isSubmitting}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  padding: isMobile ? '9px 18px' : '10.5px 26px', borderRadius: 10,
-                  fontSize: isMobile ? 12.5 : 13.5, fontWeight: 700,
-                  background: '#6366F1',
-                  color: '#FFFFFF', border: 'none', cursor: isSubmitting ? 'wait' : 'pointer',
-                  boxShadow: '0 5px 16px rgba(99, 102, 241, 0.40)',
-                  opacity: isSubmitting ? 0.7 : 1,
-                  transition: 'all 180ms ease',
-                  whiteSpace: 'nowrap',
-                }}
-                className="hover:brightness-110 active:scale-95"
-              >
-                <span>{isSubmitting ? 'Saving...' : 'Complete Setup'}</span>
-                <Check size={14} strokeWidth={3} />
-                {!isMobile && !isSubmitting && (
-                  <kbd style={{
-                    fontSize: 10,
-                    padding: '1.5px 5px',
-                    borderRadius: 4,
-                    background: 'rgba(255, 255, 255, 0.22)',
-                    fontWeight: 700,
-                    letterSpacing: '0.3px',
-                    border: '1px solid rgba(255, 255, 255, 0.30)',
-                    lineHeight: 1,
-                    display: 'inline-block',
-                  }}>
-                    ↵ Enter
-                  </kbd>
-                )}
-              </button>
-            )}
+          {/* Horizontal progress */}
+          <div style={{ flexShrink: 0 }}>
+            <OnboardingProgress
+              steps={ONBOARDING_STEPS}
+              currentStepIndex={currentStepIndex}
+              isDark={isDark}
+              onSelectStep={handleJumpToStep}
+              orientation="horizontal"
+            />
           </div>
+
+          {stepHeader}
+          {errorBanner}
+          {stepContent}
+          {footerNav}
         </div>
-      </main>
+      )}
     </div>
   );
 };

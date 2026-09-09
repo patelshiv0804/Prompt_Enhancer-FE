@@ -324,6 +324,52 @@ export default function VaultPage() {
   const [statsLoading,   setStatsLoading]   = useState(true);
 
   const sortRef = useRef<HTMLDivElement>(null);
+  const chipsRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const checkChipsScroll = useCallback(() => {
+    const el = chipsRef.current;
+    if (!el) return;
+    const maxScroll = el.scrollWidth - el.clientWidth;
+    if (maxScroll <= 4) {
+      setCanScrollLeft(false);
+      setCanScrollRight(false);
+      return;
+    }
+    setCanScrollLeft(el.scrollLeft > 6);
+    // Hide right button with generous tolerance so the last tag is completely visible
+    setCanScrollRight(el.scrollLeft < maxScroll - 16);
+  }, []);
+
+  useEffect(() => {
+    checkChipsScroll();
+    const raf = requestAnimationFrame(checkChipsScroll);
+    const el = chipsRef.current;
+    if (!el) return () => cancelAnimationFrame(raf);
+
+    el.addEventListener('scroll', checkChipsScroll, { passive: true });
+    window.addEventListener('resize', checkChipsScroll);
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => checkChipsScroll()) : null;
+    ro?.observe(el);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      el.removeEventListener('scroll', checkChipsScroll);
+      window.removeEventListener('resize', checkChipsScroll);
+      ro?.disconnect();
+    };
+  }, [checkChipsScroll]);
+
+  const scrollChips = (direction: 'left' | 'right') => {
+    const el = chipsRef.current;
+    if (!el) return;
+    const scrollAmount = Math.max(160, Math.floor(el.clientWidth * 0.6));
+    el.scrollBy({
+      left: direction === 'right' ? scrollAmount : -scrollAmount,
+      behavior: 'smooth',
+    });
+  };
 
   /* Responsive breakpoints — inline styles beat CSS @media (specificity), so
      layout decisions are driven from JS via matchMedia. Mirrors the pattern in
@@ -530,9 +576,11 @@ export default function VaultPage() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+          {!isMobile && <div className="skeleton" style={{ height: 38, width: 86, borderRadius: 10 }} />}
           <div className="skeleton" style={{ height: 40, width: isMobile ? '100%' : 260, borderRadius: 10 }} />
           <div className="skeleton" style={{ height: 34, flex: '1 1 200px', minWidth: 0, borderRadius: 9999 }} />
           <div className="skeleton" style={{ height: 38, width: 90, borderRadius: 10 }} />
+          {isMobile && <div className="skeleton" style={{ height: 38, flex: '1 1 0', borderRadius: 10 }} />}
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -561,8 +609,24 @@ export default function VaultPage() {
 
       {/* Toolbar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 12, marginBottom: 16, flexWrap: 'wrap' }}>
+        {/* Select / Multiple Delete Mode Toggle Button */}
+        <button id="vault-toggle-select-btn" onClick={() => { setIsSelectionMode(v => !v); setSelectedIds(new Set()); }}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, fontSize: 13, fontWeight: 500,
+            border: isSelectionMode ? `1px solid ${isDark ? 'rgba(167,139,250,0.4)' : 'rgba(124,58,237,0.30)'}` : `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(124,58,237,0.12)'}`,
+            cursor: 'pointer',
+            background: isSelectionMode ? (isDark ? 'rgba(139,92,246,0.2)' : 'rgba(124,58,237,0.08)') : (isDark ? 'rgba(14, 13, 20, 0.85)' : '#FFFFFF'),
+            color: isSelectionMode ? (isDark ? '#C084FC' : 'var(--color-primary)') : (isDark ? D.textSecondary : 'var(--color-text-secondary)'),
+            transition: 'all 200ms ease', flex: isMobile ? '1 1 0' : '0 0 auto', width: isMobile ? '100%' : undefined,
+            order: isMobile ? 3 : 0,
+          }}
+          className={isDark ? 'hover:!border-[rgba(167,139,250,0.35)] hover:!text-[#FFFFFF]' : 'hover:!border-[rgba(124,58,237,0.22)] hover:!text-[var(--color-text-primary)]'}
+        >
+          <CheckSquare size={13} strokeWidth={2} />{isSelectionMode ? 'Cancel Select' : 'Select'}
+        </button>
+
         {/* Search */}
-        <div style={{ position: 'relative', flex: isMobile ? '1 1 100%' : '0 0 260px' }}>
+        <div style={{ position: 'relative', flex: isMobile ? '1 1 100%' : '0 0 260px', order: isMobile ? 1 : 0 }}>
           <Search size={14} strokeWidth={1.8} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: isDark ? D.textMuted : 'var(--color-text-secondary)', pointerEvents: 'none' }} />
           <input id="vault-search-input" type="text" placeholder="Search prompts..." value={search} onChange={e => setSearch(e.target.value)}
             style={{
@@ -578,26 +642,184 @@ export default function VaultPage() {
           {search && <button onClick={() => setSearch('')} title="Clear" style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: isDark ? D.textMuted : 'var(--color-text-secondary)', lineHeight: 1 }}>×</button>}
         </div>
 
-        {/* Category chips */}
-        <div id="vault-filter-chips" style={{ display: 'flex', gap: 6, overflowX: 'auto', flexWrap: 'nowrap', flex: isMobile ? '1 1 100%' : 1, minWidth: 0, scrollbarWidth: 'none', msOverflowStyle: 'none' }} className="no-scrollbar">
-          {FILTER_CATEGORIES.map(cat => (
-            <button key={cat.id} id={`filter-${cat.id}`} onClick={() => setActiveCategory(cat.id)}
+        {/* Category chips with aesthetic scroll indicators and edge fades */}
+        <div
+          style={{
+            position: 'relative',
+            flex: isMobile ? '1 1 100%' : 1,
+            minWidth: 0,
+            order: isMobile ? 2 : 0,
+            display: 'flex',
+            alignItems: 'center',
+          }}
+        >
+          {/* Left scroll hint button */}
+          {canScrollLeft && (
+            <div
               style={{
-                padding: '6px 14px', borderRadius: 9999, fontSize: 12.5, fontWeight: 500, cursor: 'pointer', border: 'none', whiteSpace: 'nowrap', transition: 'all 180ms ease',
-                flexShrink: 0,
-                background: activeCategory === cat.id
-                  ? 'linear-gradient(135deg, #7C3AED, #A855F7)'
-                  : (isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(124,58,237,0.06)'),
-                color: activeCategory === cat.id ? 'white' : (isDark ? D.textSecondary : 'var(--color-text-secondary)'),
-                boxShadow: activeCategory === cat.id ? '0 3px 10px rgba(124,58,237,0.25)' : 'none',
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                bottom: 0,
+                zIndex: 10,
+                display: 'flex',
+                alignItems: 'center',
+                paddingRight: 8,
+                background: isDark
+                  ? 'linear-gradient(to right, #0A0A0F 60%, rgba(10, 10, 15, 0.8) 80%, transparent 100%)'
+                  : 'linear-gradient(to right, #ffffff 60%, rgba(255, 255, 255, 0.8) 80%, transparent 100%)',
+                pointerEvents: 'none',
               }}
-              className={activeCategory !== cat.id ? (isDark ? 'hover:!bg-[rgba(255,255,255,0.09)] hover:!text-[#FFFFFF]' : 'hover:!bg-[rgba(124,58,237,0.12)] hover:!text-[var(--color-text-primary)]') : ''}
-            >{cat.label}</button>
-          ))}
+            >
+              <button
+                type="button"
+                id="vault-chips-scroll-left"
+                onClick={() => scrollChips('left')}
+                title="Scroll left"
+                aria-label="Scroll left"
+                style={{
+                  pointerEvents: 'auto',
+                  width: 26,
+                  height: 26,
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: `1px solid ${isDark ? 'rgba(167,139,250,0.30)' : 'rgba(124,58,237,0.20)'}`,
+                  background: isDark ? 'rgba(20, 19, 32, 0.95)' : '#FFFFFF',
+                  color: isDark ? '#C084FC' : 'var(--color-primary)',
+                  cursor: 'pointer',
+                  boxShadow: isDark
+                    ? '0 2px 8px rgba(0,0,0,0.5), 0 0 10px rgba(139,92,246,0.2)'
+                    : '0 2px 8px rgba(124,58,237,0.18)',
+                  backdropFilter: 'blur(8px)',
+                  transition: 'all 180ms ease',
+                }}
+                className={isDark ? 'hover:!bg-[rgba(139,92,246,0.3)] hover:!border-[rgba(167,139,250,0.5)] hover:scale-105' : 'hover:!bg-[rgba(124,58,237,0.12)] hover:!border-[rgba(124,58,237,0.35)] hover:scale-105'}
+              >
+                <ChevronLeft size={13} strokeWidth={2.4} />
+              </button>
+            </div>
+          )}
+
+          {/* Chips container */}
+          <div
+            id="vault-filter-chips"
+            ref={chipsRef}
+            style={{
+              display: 'flex',
+              gap: 6,
+              overflowX: 'auto',
+              flexWrap: 'nowrap',
+              width: '100%',
+              minWidth: 0,
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+              scrollBehavior: 'smooth',
+              maskImage: canScrollRight && canScrollLeft
+                ? 'linear-gradient(to right, transparent 0px, black 28px, black calc(100% - 34px), transparent 100%)'
+                : canScrollRight
+                ? 'linear-gradient(to right, black calc(100% - 34px), transparent 100%)'
+                : canScrollLeft
+                ? 'linear-gradient(to right, transparent 0px, black 28px, black 100%)'
+                : 'none',
+              WebkitMaskImage: canScrollRight && canScrollLeft
+                ? 'linear-gradient(to right, transparent 0px, black 28px, black calc(100% - 34px), transparent 100%)'
+                : canScrollRight
+                ? 'linear-gradient(to right, black calc(100% - 34px), transparent 100%)'
+                : canScrollLeft
+                ? 'linear-gradient(to right, transparent 0px, black 28px, black 100%)'
+                : 'none',
+            }}
+            className="no-scrollbar"
+          >
+            {FILTER_CATEGORIES.map(cat => (
+              <button
+                key={cat.id}
+                id={`filter-${cat.id}`}
+                onClick={(e) => {
+                  setActiveCategory(cat.id);
+                  (e.currentTarget as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                }}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: 9999,
+                  fontSize: 12.5,
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  border: 'none',
+                  whiteSpace: 'nowrap',
+                  transition: 'all 180ms ease',
+                  flexShrink: 0,
+                  background: activeCategory === cat.id
+                    ? 'linear-gradient(135deg, #7C3AED, #A855F7)'
+                    : (isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(124,58,237,0.06)'),
+                  color: activeCategory === cat.id ? 'white' : (isDark ? D.textSecondary : 'var(--color-text-secondary)'),
+                  boxShadow: activeCategory === cat.id ? '0 3px 10px rgba(124,58,237,0.25)' : 'none',
+                }}
+                className={activeCategory !== cat.id ? (isDark ? 'hover:!bg-[rgba(255,255,255,0.09)] hover:!text-[#FFFFFF]' : 'hover:!bg-[rgba(124,58,237,0.12)] hover:!text-[var(--color-text-primary)]') : ''}
+              >
+                {cat.label}
+              </button>
+            ))}
+
+            {/* Trailing spacer so the last chip is never hidden behind the scroll button */}
+            <span style={{ width: 36, minWidth: 36, flexShrink: 0, display: 'inline-block', height: 1 }} aria-hidden="true" />
+          </div>
+
+          {/* Right scroll hint button */}
+          {canScrollRight && (
+            <div
+              style={{
+                position: 'absolute',
+                right: 0,
+                top: 0,
+                bottom: 0,
+                zIndex: 10,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'flex-end',
+                paddingLeft: 10,
+                background: isDark
+                  ? 'linear-gradient(to left, #0A0A0F 60%, rgba(10, 10, 15, 0.8) 80%, transparent 100%)'
+                  : 'linear-gradient(to left, #ffffff 60%, rgba(255, 255, 255, 0.8) 80%, transparent 100%)',
+                pointerEvents: 'none',
+              }}
+            >
+              <button
+                type="button"
+                id="vault-chips-scroll-right"
+                onClick={() => scrollChips('right')}
+                title="Scroll for more categories"
+                aria-label="Scroll for more categories"
+                style={{
+                  pointerEvents: 'auto',
+                  width: 24,
+                  height: 24,
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: `1px solid ${isDark ? 'rgba(167,139,250,0.30)' : 'rgba(124,58,237,0.20)'}`,
+                  background: isDark ? 'rgba(20, 19, 32, 0.95)' : '#FFFFFF',
+                  color: isDark ? '#C084FC' : 'var(--color-primary)',
+                  cursor: 'pointer',
+                  boxShadow: isDark
+                    ? '0 2px 8px rgba(0,0,0,0.5), 0 0 10px rgba(139,92,246,0.2)'
+                    : '0 2px 8px rgba(124,58,237,0.18)',
+                  backdropFilter: 'blur(8px)',
+                  transition: 'all 180ms ease',
+                }}
+                className={isDark ? 'hover:!bg-[rgba(139,92,246,0.3)] hover:!border-[rgba(167,139,250,0.5)] hover:scale-105' : 'hover:!bg-[rgba(124,58,237,0.12)] hover:!border-[rgba(124,58,237,0.35)] hover:scale-105'}
+              >
+                <ChevronRight size={13} strokeWidth={2.4} />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Sort */}
-        <div style={{ position: 'relative', flex: isMobile ? '1 1 0' : '0 0 auto' }} ref={sortRef}>
+        <div style={{ position: 'relative', flex: isMobile ? '1 1 0' : '0 0 auto', order: isMobile ? 4 : 0 }} ref={sortRef}>
           <button id="sort-btn" onClick={() => setShowSort(v => !v)}
             style={{
               display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: 6, padding: '8px 14px', borderRadius: 10, fontSize: 13, fontWeight: 500,
@@ -637,21 +859,6 @@ export default function VaultPage() {
             </div>
           )}
         </div>
-
-        {/* Select / Multiple Delete Mode Toggle Button */}
-        <button id="vault-toggle-select-btn" onClick={() => { setIsSelectionMode(v => !v); setSelectedIds(new Set()); }}
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, fontSize: 13, fontWeight: 500,
-            border: isSelectionMode ? `1px solid ${isDark ? 'rgba(167,139,250,0.4)' : 'rgba(124,58,237,0.30)'}` : `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(124,58,237,0.12)'}`,
-            cursor: 'pointer',
-            background: isSelectionMode ? (isDark ? 'rgba(139,92,246,0.2)' : 'rgba(124,58,237,0.08)') : (isDark ? 'rgba(14, 13, 20, 0.85)' : '#FFFFFF'),
-            color: isSelectionMode ? (isDark ? '#C084FC' : 'var(--color-primary)') : (isDark ? D.textSecondary : 'var(--color-text-secondary)'),
-            transition: 'all 200ms ease', flex: isMobile ? '1 1 0' : '0 0 auto', width: isMobile ? '100%' : undefined,
-          }}
-          className={isDark ? 'hover:!border-[rgba(167,139,250,0.35)] hover:!text-[#FFFFFF]' : 'hover:!border-[rgba(124,58,237,0.22)] hover:!text-[var(--color-text-primary)]'}
-        >
-          <CheckSquare size={13} strokeWidth={2} />{isSelectionMode ? 'Cancel Select' : 'Select'}
-        </button>
       </div>
 
       {/* Selection action bar (rendered ONLY in selection mode) */}
