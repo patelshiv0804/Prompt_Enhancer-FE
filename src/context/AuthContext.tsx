@@ -101,6 +101,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(profile);
         const styles = await apiClient.get<StyleProfile[]>('/api/v1/styles');
         setStyleProfiles(styles || []);
+        if (typeof window !== 'undefined') {
+          const raw = localStorage.getItem('token') || localStorage.getItem('promptiq_access_token');
+          if (raw && raw !== 'null' && raw !== 'undefined') {
+            setToken(raw);
+          }
+        }
       } catch {
         setUser(null);
         setToken(null);

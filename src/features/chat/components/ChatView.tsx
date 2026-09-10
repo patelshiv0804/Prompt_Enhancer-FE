@@ -1607,8 +1607,8 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                   <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 5, marginTop: 4 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: isDark ? D.textSecondary : '#64748B', fontWeight: 600 }}>
                       <span>Before</span>
-                      <span style={{ fontWeight: 700, color: isDark ? D.textMuted : '#94A3B8' }}>
-                        {version.beforeOverallScore ?? session.originalScore ?? sessionVersions[0].overallScore}
+                      <span style={{ fontWeight: version.isGenerating ? 900 : 700, color: isDark ? D.textMuted : '#94A3B8', fontSize: version.isGenerating ? 14 : undefined }}>
+                        {version.isGenerating ? '—' : (version.beforeOverallScore ?? session.originalScore ?? sessionVersions[0].overallScore)}
                       </span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: isDark ? D.textSecondary : '#64748B', fontWeight: 600 }}>

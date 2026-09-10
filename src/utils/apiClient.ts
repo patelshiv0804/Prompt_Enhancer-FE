@@ -89,6 +89,13 @@ export async function refreshAuthTokens(): Promise<string> {
   }
 }
 
+export function getStoredAccessToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  const raw = localStorage.getItem('token') || localStorage.getItem('promptiq_access_token');
+  if (!raw || raw === 'null' || raw === 'undefined' || !raw.trim()) return null;
+  return raw.trim();
+}
+
 export async function apiRequest<T = any>(
   path: string,
   options: RequestOptions = {}
@@ -105,7 +112,7 @@ export async function apiRequest<T = any>(
   // Build headers
   const defaultHeaders: Record<string, string> = {};
 
-  const token = typeof window !== 'undefined' ? (localStorage.getItem('token') || localStorage.getItem('promptiq_access_token')) : null;
+  const token = getStoredAccessToken();
   if (token) {
     defaultHeaders['Authorization'] = `Bearer ${token}`;
   }
@@ -320,9 +327,7 @@ export async function streamEnhance<TDone = EnhanceStreamDone>(
   // accept the Authorization header first, then the cookie, so this mirrors the
   // blocking apiRequest path and is a no-op when no token is stored (desktop
   // behavior unchanged — the cookie is still sent regardless).
-  const token = typeof window !== 'undefined'
-    ? (localStorage.getItem('token') || localStorage.getItem('promptiq_access_token'))
-    : null;
+  const token = getStoredAccessToken();
 
   let response: Response;
   try {
@@ -349,7 +354,12 @@ export async function streamEnhance<TDone = EnhanceStreamDone>(
         await refreshAuthTokens();
         return streamEnhance(path, body, handlers, { _retry: true });
       } catch {
-        // Fall back to handling error below
+        // If Bearer token in localStorage is stale/invalid, clear it and retry once with cookie-only auth
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('token');
+          localStorage.removeItem('promptiq_access_token');
+        }
+        return streamEnhance(path, body, handlers, { _retry: true });
       }
     }
     // Pre-stream failures (auth, validation, bad template) arrive as a normal

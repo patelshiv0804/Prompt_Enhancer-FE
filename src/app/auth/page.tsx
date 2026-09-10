@@ -2,6 +2,7 @@
 import './auth.css';
 import Script from 'next/script';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, CheckCircle, Eye, EyeOff, KeyRound, Lock, Mail, RefreshCw, Sparkles, User, Zap } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
@@ -17,6 +18,10 @@ declare global {
           initialize: (options: {
             client_id: string;
             callback: (response: { credential?: string }) => void | Promise<void>;
+            itp_support?: boolean;
+            cancel_on_tap_outside?: boolean;
+            auto_select?: boolean;
+            [key: string]: any;
           }) => void;
           renderButton: (
             parent: HTMLElement,
@@ -43,15 +48,23 @@ function AuthContent() {
   const [tab, setTab] = useState<'signin' | 'signup'>('signin');
   const [showPass, setShowPass] = useState(false);
   const [googleReady, setGoogleReady] = useState(false);
+  const [googleLoadFailed, setGoogleLoadFailed] = useState(false);
   const [googleButtonVisible, setGoogleButtonVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const googleInitRef = useRef(false);
   const googleButtonRef = useRef<HTMLDivElement | null>(null);
 
   const isDark = useIsDark();
+  const router = useRouter();
 
-  const { login, register, loginWithGoogle, loading,
+  const { isAuthenticated, login, register, loginWithGoogle, loading,
     sendPasswordResetOtp, verifyPasswordResetOtp, resetPassword } = useAuth();
+
+  useEffect(() => {
+    if (!loading && isAuthenticated) {
+      router.replace('/dashboard/optimizer');
+    }
+  }, [isAuthenticated, loading, router]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -63,6 +76,7 @@ function AuthContent() {
   const showInitialSkeleton = loading && !isSubmitting;
   const showGoogleSkeleton =
     !isSubmitting &&
+    !googleLoadFailed &&
     (showInitialSkeleton || (Boolean(googleClientId) && (!googleReady || !googleButtonVisible)));
 
   // ── Forgot Password State ─────────────────────────────────────────────────
@@ -115,10 +129,16 @@ function AuthContent() {
       return;
     }
 
+    let attempts = 0;
     const checkGoogleInterval = setInterval(() => {
+      attempts++;
       if (typeof window !== 'undefined' && window.google?.accounts?.id) {
         setGoogleReady(true);
         clearInterval(checkGoogleInterval);
+      } else if (attempts > 25) {
+        // After 5s, mark as failed (e.g. adblocker, Brave Shields, or network blocker)
+        clearInterval(checkGoogleInterval);
+        setGoogleLoadFailed(true);
       }
     }, 200);
 
@@ -139,28 +159,35 @@ function AuthContent() {
       return;
     }
 
-    window.google.accounts.id.initialize({
-      client_id: googleClientId,
-      callback: async ({ credential }) => {
-        if (!credential) {
-          setError('Google sign-in did not return a credential.');
-          return;
-        }
+    try {
+      window.google.accounts.id.initialize({
+        client_id: googleClientId,
+        callback: async ({ credential }) => {
+          if (!credential) {
+            setError('Google sign-in did not return a credential.');
+            return;
+          }
 
-        setError(null);
-        setIsSubmitting(true);
-        try {
-          await loginWithGoogleRef.current(credential);
-        } catch (err: unknown) {
-          console.error(err);
-          setError(getErrorMessage(err));
-          setIsSubmitting(false);
-        }
-      },
-    });
+          setError(null);
+          setIsSubmitting(true);
+          try {
+            await loginWithGoogleRef.current(credential);
+          } catch (err: unknown) {
+            console.error(err);
+            setError(getErrorMessage(err));
+            setIsSubmitting(false);
+          }
+        },
+        itp_support: true,
+        cancel_on_tap_outside: true,
+      });
 
-    window.__gsi_initialized = true;
-    googleInitRef.current = true;
+      window.__gsi_initialized = true;
+      googleInitRef.current = true;
+    } catch (initErr) {
+      console.error('Failed to initialize Google Accounts:', initErr);
+      setGoogleLoadFailed(true);
+    }
   }, [googleClientId, googleReady]);
 
   useEffect(() => {
@@ -172,18 +199,24 @@ function AuthContent() {
 
     const renderGoogleBtn = () => {
       if (!googleButtonRef.current || !window.google?.accounts?.id) return false;
-      const parentWidth = googleButtonRef.current.parentElement?.clientWidth || googleButtonRef.current.clientWidth || 320;
+      const parentWidth = googleButtonRef.current.parentElement?.clientWidth || googleButtonRef.current.clientWidth || 360;
       googleButtonRef.current.innerHTML = '';
-      window.google.accounts.id.renderButton(googleButtonRef.current, {
-        theme: isDark ? 'filled_black' : 'outline',
-        size: 'large',
-        text: tab === 'signin' ? 'signin_with' : 'signup_with',
-        shape: 'pill',
-        width: Math.min(400, Math.max(220, parentWidth)),
-        logo_alignment: 'left',
-      });
-      setGoogleButtonVisible(true);
-      return true;
+      try {
+        window.google.accounts.id.renderButton(googleButtonRef.current, {
+          theme: 'outline',
+          size: 'large',
+          text: tab === 'signin' ? 'continue_with' : 'signup_with',
+          shape: 'pill',
+          width: Math.min(400, Math.max(250, Math.floor(parentWidth))),
+          logo_alignment: 'left',
+        });
+        setGoogleButtonVisible(true);
+        return true;
+      } catch (renderErr) {
+        console.error('Failed to render Google button:', renderErr);
+        setGoogleLoadFailed(true);
+        return false;
+      }
     };
 
     if (!renderGoogleBtn()) {
@@ -191,7 +224,7 @@ function AuthContent() {
         if (renderGoogleBtn()) {
           clearInterval(intervalId);
         }
-      }, 50);
+      }, 60);
     }
 
     window.addEventListener('resize', renderGoogleBtn);
@@ -579,6 +612,52 @@ function AuthContent() {
     </div>
   );
 
+  if (loading || isAuthenticated) {
+    return (
+      <div
+        className="authguard-loading-container"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '100vh',
+          background: isDark ? '#0A0A0F' : '#FAFAFC',
+          fontFamily: "'Geist', sans-serif",
+        }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+          <div
+            className="authguard-spinner"
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: '50%',
+              border: `3px solid ${isDark ? 'rgba(139, 92, 246, 0.2)' : 'rgba(124, 58, 237, 0.1)'}`,
+              borderTopColor: isDark ? '#A855F7' : '#7C3AED',
+              animation: 'spin 1s linear infinite',
+            }}
+          />
+          <p
+            className="authguard-loading-text"
+            style={{
+              color: isDark ? '#ABA9BC' : 'rgba(70, 70, 76, 0.6)',
+              fontSize: 14,
+              fontWeight: 500,
+            }}
+          >
+            {isAuthenticated ? 'Redirecting to workspace...' : 'Initializing session...'}
+          </p>
+        </div>
+        <style>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
+      </div>
+    );
+  }
+
   return (
     <div
       className="auth-root"
@@ -871,8 +950,14 @@ function AuthContent() {
 
                       {googleClientId ? (
                         <div className="google-button-shell">
-                          {!showGoogleSkeleton && (
-                            <div className="google-styled-btn" aria-hidden="true">
+                          {googleLoadFailed ? (
+                            <button
+                              type="button"
+                              className="google-fallback-btn"
+                              onClick={() => {
+                                setError('Google Sign-In could not be loaded. Please ensure third-party cookies or tracker blockers (e.g. Brave Shields) allow accounts.google.com, or sign in with email and password.');
+                              }}
+                            >
                               <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
                                 <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.654 32.657 29.221 36 24 36c-6.627 0-12-5.373-12-12S17.373 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.278 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917Z" />
                                 <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.278 4 24 4c-7.682 0-14.346 4.337-17.694 10.691Z" />
@@ -880,15 +965,18 @@ function AuthContent() {
                                 <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.05 12.05 0 0 1-4.084 5.571h.003l6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917Z" />
                               </svg>
                               {tab === 'signin' ? 'Continue with Google' : 'Sign up with Google'}
-                            </div>
-                          )}
-                          <div
-                            ref={googleButtonRef}
-                            className="google-button-host"
-                            style={{ visibility: showGoogleSkeleton ? 'hidden' : 'visible' }}
-                          />
-                          {showGoogleSkeleton && (
-                            <div className="inline-skeleton google google-button-skeleton" aria-hidden="true" />
+                            </button>
+                          ) : (
+                            <>
+                              <div
+                                ref={googleButtonRef}
+                                className="google-button-host"
+                                style={{ visibility: showGoogleSkeleton ? 'hidden' : 'visible' }}
+                              />
+                              {showGoogleSkeleton && (
+                                <div className="inline-skeleton google google-button-skeleton" aria-hidden="true" />
+                              )}
+                            </>
                           )}
                         </div>
                       ) : (
