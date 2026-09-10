@@ -14,6 +14,7 @@ import { apiClient, streamEnhance, type ReenhanceStreamDone } from '@/utils/apiC
 import FormattedPromptViewer from '../../optimizer/components/FormattedPromptViewer';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useTheme, D } from '@/theme/theme';
+import { useAuth } from '@/context/AuthContext';
 
 // ── Streaming prompt formatter ──────────────────────────────────────────────
 function formatPromptText(text: string): string {
@@ -878,22 +879,20 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
   const [isRightCompareMenuOpen, setIsRightCompareMenuOpen] = useState(false);
 
   // Selector state
+  // The destination "target model" is owned globally by AuthContext (set from
+  // the header dropdown) so every surface agrees on one value; ChatView reads
+  // it here and forwards it on re-enhance.
+  const { activeTarget } = useAuth();
   const [selectedStyle, setSelectedStyle] = useState('None');
   const [isStyleOpen, setIsStyleOpen] = useState(false);
-  const [selectedTarget, setSelectedTarget] = useState('Claude');
   const [selectedEngine, setSelectedEngine] = useState('Claude Sonnet 4.5');
-  const [isTargetOpen, setIsTargetOpen] = useState(false);
 
   const styleDropdownRef = useRef<HTMLDivElement>(null);
-  const targetDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (styleDropdownRef.current && !styleDropdownRef.current.contains(event.target as Node)) {
         setIsStyleOpen(false);
-      }
-      if (targetDropdownRef.current && !targetDropdownRef.current.contains(event.target as Node)) {
-        setIsTargetOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -908,18 +907,6 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
     }
   }, [styleOptions, selectedStyle]);
 
-  const targetModels = [
-    'ChatGPT', 'Claude', 'Gemini', 'Grok', 'Midjourney', 'VEO', 'Perplexity'
-  ];
-  const modelIcons: Record<string, string> = {
-    'ChatGPT': '/chatgpt-icon.svg',
-    'Claude': '/claude-ai-icon.svg',
-    'Gemini': '/google-gemini-icon.svg',
-    'Grok': '/grok-icon.svg',
-    'Midjourney': '/midjourney-color-icon.svg',
-    'VEO': '/veo-icon.svg',
-    'Perplexity': '/perplexity-ai-icon.svg',
-  };
   const optimizerEngines = ['Claude Sonnet 4.5', 'GPT-5.2'];
   const [ready, setReady] = useState(false);
   const [inputValue, setInputValue] = useState('');
@@ -991,7 +978,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
   };
 
   const runBlockingReenhance = async (pId: string, nextVerNum: number, prevScore: number) => {
-    const res = await apiClient.post<any>(`/api/v1/prompts/${pId}/reenhance`);
+    const res = await apiClient.post<any>(`/api/v1/prompts/${pId}/reenhance`, { target_model: activeTarget });
     if (!res?.data) throw new Error('No data returned from re-enhance');
     const d = res.data;
     const vNewAnal = d.new_analysis || null;
@@ -1055,7 +1042,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
     const pId = chatId;
     let settledLocally = false;
 
-    await streamEnhance<ReenhanceStreamDone>(`/api/v1/prompts/${pId}/reenhance/stream`, {}, {
+    await streamEnhance<ReenhanceStreamDone>(`/api/v1/prompts/${pId}/reenhance/stream`, { target_model: activeTarget }, {
       onToken: (text) => {
         setStreamingText(prev => prev + text);
       },

@@ -7,6 +7,7 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 import { useIsDark, D } from '@/theme/theme';
 import ThemeToggle from '@/components/ThemeToggle';
+import { TARGET_MODELS, getTargetModel } from '@/constants/targetModels';
 
 interface HeaderProps {
   activeTab?: string;
@@ -20,8 +21,6 @@ export default function Header({ activeTab = 'Draft', onTabChange }: HeaderProps
     setActiveStyle,
     activeTarget,
     setActiveTarget,
-    activeEngine,
-    setActiveEngine,
   } = useAuth();
 
   const isDark = useIsDark();
@@ -68,9 +67,7 @@ export default function Header({ activeTab = 'Draft', onTabChange }: HeaderProps
     })),
   ];
 
-  const models  = ['ChatGPT', 'Claude', 'Gemini', 'Grok', 'Midjourney', 'VEO', 'DALL-E', 'Stable Diffusion'];
-  const engines = ['Claude Sonnet 4.5', 'GPT-5.2'];
-
+  const activeTargetObj = getTargetModel(activeTarget);
   const activeStyleObj = styles.find(s => s.id === activeStyle.id) || styles[0];
 
   /* ── Shared inline styles as objects for readability ── */
@@ -230,7 +227,31 @@ export default function Header({ activeTab = 'Draft', onTabChange }: HeaderProps
                 style={pillBase}
                 className="hover:translate-y-[-1px] active:scale-[0.98]"
               >
-                <span style={{ width: isPhone ? 6 : 7, height: isPhone ? 6 : 7, borderRadius: '50%', background: '#8B5CF6', display: 'inline-block', flexShrink: 0 }} />
+                {activeTargetObj.icon ? (
+                  <img
+                    src={activeTargetObj.icon}
+                    alt={activeTargetObj.name}
+                    width={isPhone ? 14 : 16}
+                    height={isPhone ? 14 : 16}
+                    style={{
+                      width: isPhone ? 14 : 16,
+                      height: isPhone ? 14 : 16,
+                      objectFit: 'contain',
+                      flexShrink: 0,
+                      filter: (activeTargetObj.darkInvert && isDark) ? 'invert(1)' : undefined,
+                    }}
+                    draggable="false"
+                  />
+                ) : (
+                  <span style={{
+                    width: isPhone ? 6 : 7,
+                    height: isPhone ? 6 : 7,
+                    borderRadius: '50%',
+                    background: '#9ca3af',
+                    display: 'inline-block',
+                    flexShrink: 0,
+                  }} />
+                )}
                 <span style={{ fontSize: isPhone ? 9.5 : 11, fontWeight: 700, color: isDark ? D.textMuted : 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Target</span>
                 <span style={{ opacity: 0.3, fontSize: isPhone ? 9.5 : 11 }}>|</span>
                 <span style={{ fontWeight: 650, fontSize: isPhone ? 11 : 12.5, color: '#8B5CF6', maxWidth: isPhone ? 65 : 110, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -245,7 +266,7 @@ export default function Header({ activeTab = 'Draft', onTabChange }: HeaderProps
                   background: isDark ? 'rgba(20, 19, 32, 0.96)' : 'rgba(255,255,255,0.98)',
                   backdropFilter: 'blur(20px)',
                   border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(124,58,237,0.15)'}`,
-                  borderRadius: 16, minWidth: 220,
+                  borderRadius: 16, minWidth: 230,
                   overflow: 'hidden', zIndex: 100,
                   boxShadow: isDark ? '0 12px 36px rgba(0,0,0,0.6)' : '0 12px 36px rgba(109,40,217,0.14), 0 4px 12px rgba(0,0,0,0.06)',
                   animation: 'dropdownFadeIn 150ms ease',
@@ -253,46 +274,60 @@ export default function Header({ activeTab = 'Draft', onTabChange }: HeaderProps
                   <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: isDark ? D.textMuted : 'var(--color-text-secondary)', padding: '10px 14px 6px' }}>
                     Target AI model
                   </div>
-                  <div style={{ padding: '4px 6px', display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {models.map(model => (
-                      <button key={model} onClick={() => { setActiveTarget(model); setShowTargetDropdown(false); }}
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 10px',
-                          fontSize: 13, fontWeight: activeTarget === model ? 650 : 500,
-                          color: activeTarget === model ? 'var(--color-primary)' : (isDark ? D.textPrimary : 'var(--color-text-primary)'),
-                          background: activeTarget === model ? (isDark ? 'rgba(139,92,246,0.18)' : 'rgba(124,58,237,0.08)') : 'transparent',
-                          borderRadius: 10, textAlign: 'left', border: 'none', cursor: 'pointer',
-                        }}
-                        className="transition-colors"
-                      >
-                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--color-primary)', flexShrink: 0, opacity: activeTarget === model ? 1 : 0 }} />
-                        <span style={{ flex: 1 }}>{model}</span>
-                        {activeTarget === model && (
-                          <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-primary)' }}>Selected</span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                  <div style={{ height: 1, background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(124,58,237,0.08)', margin: '4px 8px' }} />
-                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: isDark ? D.textMuted : 'var(--color-text-secondary)', padding: '6px 14px' }}>
-                    Optimizer Engine
-                  </div>
                   <div style={{ padding: '4px 6px 8px', display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {engines.map(engine => (
-                      <button key={engine} onClick={() => { setActiveEngine(engine); setShowTargetDropdown(false); }}
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 10px',
-                          fontSize: 13, fontWeight: activeEngine === engine ? 650 : 500,
-                          color: activeEngine === engine ? 'var(--color-primary)' : (isDark ? D.textPrimary : 'var(--color-text-primary)'),
-                          background: activeEngine === engine ? (isDark ? 'rgba(139,92,246,0.18)' : 'rgba(124,58,237,0.08)') : 'transparent',
-                          borderRadius: 10, textAlign: 'left', border: 'none', cursor: 'pointer',
-                        }}
-                        className="transition-colors"
-                      >
-                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--color-primary)', flexShrink: 0, opacity: activeEngine === engine ? 1 : 0 }} />
-                        <span style={{ flex: 1 }}>{engine}</span>
-                      </button>
-                    ))}
+                    {TARGET_MODELS.map(model => {
+                      const isSelected = activeTarget.toLowerCase() === model.name.toLowerCase();
+                      return (
+                        <button
+                          key={model.name}
+                          onClick={() => { setActiveTarget(model.name); setShowTargetDropdown(false); }}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '7px 10px',
+                            fontSize: 13, fontWeight: isSelected ? 650 : 500,
+                            color: isSelected ? 'var(--color-primary)' : (isDark ? D.textPrimary : 'var(--color-text-primary)'),
+                            background: isSelected ? (isDark ? 'rgba(139,92,246,0.18)' : 'rgba(124,58,237,0.08)') : 'transparent',
+                            borderRadius: 10, textAlign: 'left', border: 'none', cursor: 'pointer',
+                          }}
+                          className="transition-colors hover:opacity-90"
+                        >
+                          <div style={{
+                            width: 22, height: 22, borderRadius: 6,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            background: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
+                            flexShrink: 0,
+                          }}>
+                            {model.icon ? (
+                              <img
+                                src={model.icon}
+                                alt={model.name}
+                                width={16}
+                                height={16}
+                                style={{
+                                  width: 16,
+                                  height: 16,
+                                  objectFit: 'contain',
+                                  filter: (model.darkInvert && isDark) ? 'invert(1)' : undefined,
+                                }}
+                                draggable="false"
+                              />
+                            ) : (
+                              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#9ca3af' }} />
+                            )}
+                          </div>
+                          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                            <span style={{ lineHeight: 1.2 }}>{model.name}</span>
+                            {model.description && (
+                              <span style={{ fontSize: 9.5, opacity: 0.65, fontWeight: 400, marginTop: 1 }}>
+                                {model.description}
+                              </span>
+                            )}
+                          </div>
+                          {isSelected && (
+                            <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-primary)' }}>Selected</span>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}

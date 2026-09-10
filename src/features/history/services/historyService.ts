@@ -1,4 +1,5 @@
 import { apiClient } from '@/utils/apiClient';
+import { getTargetModelLabel } from '@/constants/targetModels';
 import type { HistoryItem, HistoryStats, HistoryFilters, PaginatedHistoryResponse } from '../types/history.types';
 
 export async function fetchHistoryStats(): Promise<HistoryStats> {
@@ -131,7 +132,10 @@ export async function fetchHistory(page: number, pageSize: number, filters: Hist
         category: (p.template?.role || p.template?.mode || p.title?.split(' - ')[1] || 'general').toLowerCase(),
         score: finalScore,
         isFavorite: isFav,
-        targetModel: p.ai_model?.model_name || 'ChatGPT',
+        // Destination model the prompt was optimized for (persisted on the
+        // prompt). Falls back to "Universal" when none was chosen. Note this is
+        // NOT p.ai_model (that is the fixed enhancing LLM, not the target).
+        targetModel: getTargetModelLabel(p.target_model),
         mode: p.template?.mode || p.title?.split(' - ')[1] || 'General',
         createdAt: p.created_at || new Date().toISOString(),
         wordCount: { original: (p.original_prompt || '').split(/\s+/).length, optimized: 20 },

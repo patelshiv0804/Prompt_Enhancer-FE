@@ -21,7 +21,7 @@ const MODE_MAPPING: Record<string, { role: string; mode: string }> = {
 };
 
 function OptimizerPageContent() {
-  const { activeStyle } = useAuth();
+  const { activeStyle, activeTarget } = useAuth();
   const searchParams = useSearchParams();
   const promptId = searchParams.get('prompt_id');
   // Template picked from the library "Use" button. The title is shown to the
@@ -302,6 +302,7 @@ function OptimizerPageContent() {
       ...(isGeneralMode ? {} : { role: selectedRole, mode: selectedMode }),
       apply_style: applyStyle,
       style_profile_id: activeStyle.id || undefined,
+      ...(activeTarget && activeTarget !== 'None' ? { target_model: activeTarget } : {}),
       ...(forcedLevel ? { enhancement_level: forcedLevel } : {}),
       // When a library template is applied (and not dismissed), tell the
       // backend to enhance using THAT template instead of auto-retrieval.

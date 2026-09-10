@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const [styleProfiles, setStyleProfiles] = useState<StyleProfile[]>([]);
   const [activeStyle, setActiveStyle] = useState<{ id: string | null; name: string }>({ id: null, name: 'None' });
-  const [activeTarget, setActiveTarget] = useState('ChatGPT');
+  const [activeTarget, setActiveTarget] = useState('None');
   const [activeEngine, setActiveEngine] = useState('Claude Sonnet 4.5');
 
   const router = useRouter();
