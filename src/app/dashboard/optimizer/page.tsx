@@ -290,10 +290,16 @@ function OptimizerPageContent() {
     const forcedLevel =
       enhancementLevel && enhancementLevel !== 'auto' ? enhancementLevel : undefined;
 
+    // When the user selects "General" (or "auto"), omit role+mode entirely.
+    // This lets the backend AMPE path freely classify the domain instead of
+    // being forced into the Universal General Template.
+    // Specific role+mode selections (student+study, developer+backend, etc.)
+    // still send role+mode and go through the existing template path unchanged.
+    const isGeneralMode = selectedRole === 'general' || selectedRole === 'auto';
+
     const payload = {
       prompt: promptText,
-      role: selectedRole,
-      mode: selectedMode,
+      ...(isGeneralMode ? {} : { role: selectedRole, mode: selectedMode }),
       apply_style: applyStyle,
       style_profile_id: activeStyle.id || undefined,
       ...(forcedLevel ? { enhancement_level: forcedLevel } : {}),

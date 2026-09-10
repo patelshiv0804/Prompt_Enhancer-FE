@@ -802,17 +802,41 @@ html.dark,
 .inline-skeleton.btn { height: 44px; margin-top: 6px; }
 .inline-skeleton.google { height: 44px; margin-top: 2px; }
 
-.google-button-shell { position: relative; width: 100%; min-height: 44px; display: flex; justify-content: center; }
-.google-button-host { width: 100%; min-height: 44px; display: flex; justify-content: center; }
-.google-button-host > div, .google-button-host iframe { width: 100% !important; max-width: 100% !important; border-radius: 9999px !important; }
-.google-button-skeleton { position: absolute; inset: 0; z-index: 3; }
-
-.google-styled-btn {
-  display: none;
+.google-button-shell {
+  position: relative;
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.google-button-host {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.google-button-host > div {
+  width: 100% !important;
+  max-width: 400px !important;
+  display: flex !important;
+  justify-content: center !important;
+}
+.google-button-host iframe {
+  border-radius: 9999px !important;
+  color-scheme: light !important;
+}
+.google-button-skeleton {
   position: absolute;
   inset: 0;
-  z-index: 1;
-  pointer-events: none;
+  z-index: 3;
+}
+
+.google-fallback-btn {
+  width: 100%;
+  max-width: 400px;
+  min-height: 44px;
   border-radius: 9999px;
   border: 1.5px solid var(--auth-google-border);
   background: var(--auth-google-bg);
@@ -821,36 +845,20 @@ html.dark,
   font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.01em;
+  display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
   box-sizing: border-box;
   box-shadow: var(--auth-google-shadow);
-  transition: background 0.2s, border-color 0.2s;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
 }
 
-html.dark .google-button-shell,
-.google-button-shell.google-masked {
-  align-items: center;
-}
-
-html.dark .google-button-shell .google-button-host,
-.google-masked .google-button-host {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  opacity: 0;
-  overflow: hidden;
-}
-
-html.dark .google-styled-btn {
-  display: flex;
-}
-
-html.dark .google-button-shell:hover .google-styled-btn,
-.google-masked:hover .google-styled-btn {
+.google-fallback-btn:hover {
   background: var(--auth-google-hover-bg);
   border-color: var(--auth-google-hover-border);
+  transform: translateY(-1px);
 }
 
 .auth-loading-overlay {

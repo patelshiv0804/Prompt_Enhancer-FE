@@ -151,9 +151,7 @@ export default function ScoreSection({
               <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: isDark ? D.textSecondary : 'var(--color-text-secondary)', fontWeight: 600 }}>
                   <span>Before</span>
-                  <span style={{ fontWeight: 700, color: isDark ? D.textMuted : 'var(--color-text-secondary)' }}>
-                    {origScore}
-                  </span>
+                  <span style={{ fontWeight: 900, color: isDark ? D.textMuted : 'var(--color-text-secondary)', fontSize: 14 }}>—</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: isDark ? D.textSecondary : 'var(--color-text-secondary)', fontWeight: 600 }}>
                   <span>After</span>
