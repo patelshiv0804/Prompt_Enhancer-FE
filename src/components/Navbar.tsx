@@ -210,12 +210,12 @@ export default function Navbar() {
       return (
         <>
           <div
-            className="h-5 w-16 animate-pulse rounded-full bg-gray-200/80"
+            className="h-5 w-16 animate-pulse rounded-full bg-gray-200/80 dark:bg-white/[0.08]"
             style={skeletonBg ? { background: skeletonBg } : undefined}
             aria-hidden="true"
           />
           <div
-            className="h-10 w-28 animate-pulse rounded-full bg-gray-200/80"
+            className="h-10 w-28 animate-pulse rounded-full bg-gray-200/80 dark:bg-white/[0.08]"
             style={skeletonBg ? { background: skeletonBg } : undefined}
             aria-hidden="true"
           />
@@ -259,12 +259,12 @@ export default function Navbar() {
       return (
         <>
           <div
-            className="h-10 w-full animate-pulse rounded-lg bg-gray-100"
+            className="h-10 w-full animate-pulse rounded-lg bg-gray-100 dark:bg-white/[0.08]"
             style={skeletonBg ? { background: skeletonBg } : undefined}
             aria-hidden="true"
           />
           <div
-            className="h-11 w-full animate-pulse rounded-full bg-gray-200/90"
+            className="h-11 w-full animate-pulse rounded-full bg-gray-200/90 dark:bg-white/[0.08]"
             style={skeletonBg ? { background: skeletonBg } : undefined}
             aria-hidden="true"
           />

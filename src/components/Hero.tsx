@@ -12,7 +12,7 @@ export default function Hero() {
   return (
     <section
       id="hero"
-      className="hero-shell relative overflow-hidden bg-white"
+      className="hero-shell relative overflow-hidden bg-white dark:bg-[#0A0A0F]"
       style={{ background: isDark ? D.bg : undefined }}
     >
       {/* ── Full-screen 3D canvas (absolute, fills whole hero) ── */}

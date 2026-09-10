@@ -2209,9 +2209,10 @@ function CardTemplates() {
 export default function BentoFeatures() {
   const { isDark, P, CARD } = useBento();
   return (
-    <section id="features" className="bento-section" style={{ background: P.bg, padding: "100px 0 90px", position: "relative", overflow: "hidden" }}>
+    <section id="features" className="bento-section dark:bg-[#0A0A0F]" style={{ background: P.bg, padding: "100px 0 90px", position: "relative", overflow: "hidden" }}>
 
       <style>{`
+        html.dark .bento-section { background-color: #0A0A0F !important; }
         /* ─── Responsive Bento Grid ───────────────────────────────────
            - Desktop (>= 1024px): 12-column precision editorial Bento Grid
            - Tablet (640px - 1023px): 2-column modular Bento Grid

@@ -994,7 +994,7 @@ export default function PromptIQUniverse() {
             className="absolute pointer-events-none"
             style={{ top: "calc(50% + 32px)", left: "50%", transform: "translateX(-50%)", whiteSpace: "nowrap" }}
           >
-            <span className="text-[9px] tracking-[0.20em] font-extrabold uppercase text-[#7C3AED] bg-white/90 backdrop-blur-md px-2 py-0.5 rounded-full border border-purple-400/20 shadow-sm">
+            <span className="text-[9px] tracking-[0.20em] font-extrabold uppercase text-[#7C3AED] dark:text-[#A78BFA] bg-white/90 dark:bg-[#141320]/90 backdrop-blur-md px-2 py-0.5 rounded-full border border-purple-400/20 dark:border-purple-400/30 shadow-sm">
               AURE Engine
             </span>
           </div>

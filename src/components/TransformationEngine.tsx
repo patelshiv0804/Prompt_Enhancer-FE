@@ -67,7 +67,7 @@ export default function TransformationEngine({
   return (
     <section
       ref={sectionRef}
-      className="relative overflow-hidden bg-[#FAFBFC]"
+      className="relative overflow-hidden bg-[#FAFBFC] dark:bg-[#0A0A0F]"
       id="transformation-engine"
       style={{ minHeight: "100vh", background: isDark ? D.bg : undefined }}
     >

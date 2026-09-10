@@ -201,7 +201,7 @@ export default function PromptTransformationShowcase({
 
 
   return (
-    <section className="w-full bg-[#FAFBFC] py-16 md:py-20 px-6 md:px-12 lg:px-16" id="transformation-showcase" style={{ background: isDark ? D.bg : undefined }}>
+    <section className="w-full bg-[#FAFBFC] dark:bg-[#0A0A0F] py-16 md:py-20 px-6 md:px-12 lg:px-16" id="transformation-showcase" style={{ background: isDark ? D.bg : undefined }}>
       <motion.div
         variants={containerVariants}
         initial="hidden"

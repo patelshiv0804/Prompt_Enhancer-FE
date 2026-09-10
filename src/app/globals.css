@@ -19,9 +19,14 @@ html.dark,
   --authguard-spinner-head: #A855F7;
 }
 
+html.dark,
 html.dark body {
-  background: #0A0A0F;
+  background-color: #0A0A0F !important;
   color: #F5F4F8;
+}
+
+html.dark main.landing-root {
+  background-color: #0A0A0F !important;
 }
 
 /* AuthGuard Loading Screen immediate theme styling */
