@@ -14,10 +14,27 @@ const TransformationEngine = dynamic(() => import("@/components/TransformationEn
   loading: () => <div style={{ minHeight: "100vh" }} className="landing-engine-fallback" />,
 });
 
+interface EnhancedData {
+  original_prompt?: string;
+  enhanced_prompt?: string;
+  original_analysis?: {
+    dimensions?: Record<string, { score: number; explanation: string; suggestions: string[] }>;
+    overall_score?: number;
+    grade?: string;
+    summary?: string;
+  };
+  enhanced_analysis?: {
+    dimensions?: Record<string, { score: number; explanation: string; suggestions: string[] }>;
+    overall_score?: number;
+    grade?: string;
+    summary?: string;
+  };
+}
+
 export default function Home() {
   const [prompt, setPrompt] = useState("Create a product launch campaign for our new AI writing assistant.");
   const [isEnhancing, setIsEnhancing] = useState(false);
-  const [enhancedData, setEnhancedData] = useState<any>(null);
+  const [enhancedData, setEnhancedData] = useState<EnhancedData | null>(null);
 
   const handleEnhance = () => {
     // Static UI button - no redirects, API calls, or scrolling

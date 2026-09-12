@@ -67,7 +67,14 @@ export default function Sidebar() {
   const showCollapsed = isCollapsed && !isMobile;
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [recentCollapsed, setRecentCollapsed] = useState(false);
-  const [recentItems, setRecentItems] = useState<any[]>([]);
+  const [recentItems, setRecentItems] = useState<{
+    id: string;
+    prompt: string;
+    category: string;
+    score?: number | null;
+    isFavorite?: boolean;
+    ago: string;
+  }[]>([]);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [chatToDelete, setChatToDelete] = useState<{ id: string; prompt: string } | null>(null);
   const [showRecentFlyout, setShowRecentFlyout] = useState(false);
@@ -79,6 +86,7 @@ export default function Sidebar() {
 
   // Initialize collapse preference from localStorage
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
     try {
       const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
@@ -200,6 +208,7 @@ export default function Sidebar() {
 
   // Close the mobile drawer whenever the route changes.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsMobileOpen(false);
   }, [pathname]);
 

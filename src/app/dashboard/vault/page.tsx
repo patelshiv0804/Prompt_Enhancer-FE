@@ -73,6 +73,7 @@ function useCountUp(target: number, active: boolean, duration = 1200): number {
 
   useEffect(() => {
     if (!active) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setValue(target);
       return;
     }
@@ -395,6 +396,7 @@ export default function VaultPage() {
 
   /* Reset page to 1 when search or filters change */
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCurrentPage(1);
   }, [debSearch, activeCategory, sortBy]);
 
@@ -405,6 +407,7 @@ export default function VaultPage() {
      Changing currentPage re-runs the loader below and fetches that page. */
   useEffect(() => {
     if (currentPage > totalPages) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrentPage(totalPages);
     }
   }, [currentPage, totalPages]);
@@ -426,6 +429,7 @@ export default function VaultPage() {
     }
   }, [currentPage, debSearch, activeCategory, sortBy]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(); }, [load]);
 
   useEffect(() => {

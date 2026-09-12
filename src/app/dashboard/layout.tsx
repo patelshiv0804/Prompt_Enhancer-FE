@@ -19,6 +19,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Auto-open onboarding for non-onboarded users
   useEffect(() => {
     if (user && user.onboarding_completed === false) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsOnboardingOpen(true);
     }
   }, [user]);

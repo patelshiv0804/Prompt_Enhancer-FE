@@ -338,7 +338,7 @@ export default function WorksEverywhere() {
                   <path d="M16 16.5 L12 22" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
                 </svg> */}
                 <img src="/google-chrome-icon.svg" alt="chrome" width="18" height="18" />
-                Add to Chrome – It's Free
+                Add to Chrome – It&apos;s Free
               </a>
               <a
                 href="#how-it-works"

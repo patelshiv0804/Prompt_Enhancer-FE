@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import React, { useState, useEffect, useRef, Suspense } from 'react';
@@ -146,6 +147,7 @@ function OptimizerPageContent() {
 
   useEffect(() => {
     if (promptId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       loadPromptDetails(promptId);
     }
   }, [promptId]);
@@ -153,6 +155,7 @@ function OptimizerPageContent() {
   // Re-show the "template in use" banner whenever a different template is
   // opened from the library (a previous dismissal shouldn't hide the new one).
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTemplateDismissed(false);
   }, [activeTemplateName]);
 

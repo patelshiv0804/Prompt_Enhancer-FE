@@ -64,11 +64,18 @@ function AnimatedScore({ from, to, delay = 0 }: { from: number; to: number; dela
 }
 
 // 6 Dimensions Data Configuration
+interface AnalysisResult {
+  dimensions?: Record<string, { score: number; explanation: string; suggestions: string[] }>;
+  overall_score?: number;
+  grade?: string;
+  summary?: string;
+}
+
 interface PromptTransformationShowcaseProps {
   originalText?: string;
   enhancedText?: string;
-  originalAnalysis?: any;
-  enhancedAnalysis?: any;
+  originalAnalysis?: AnalysisResult;
+  enhancedAnalysis?: AnalysisResult;
 }
 
 export default function PromptTransformationShowcase({
@@ -90,7 +97,7 @@ export default function PromptTransformationShowcase({
     }
   };
 
-  const getScore = (analysis: any, key: string, fallback: number) => {
+  const getScore = (analysis: AnalysisResult | undefined, key: string, fallback: number) => {
     if (!analysis || !analysis.dimensions || !analysis.dimensions[key]) return fallback;
     return analysis.dimensions[key].score;
   };

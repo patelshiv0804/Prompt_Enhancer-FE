@@ -6,7 +6,7 @@ export async function fetchHistoryStats(): Promise<HistoryStats> {
   try {
     const promptsRes = await apiClient.get<any>('/api/v1/prompts/?page=1&page_size=100');
     
-    let totalPrompts = promptsRes.data ? promptsRes.data.length : 0;
+    const totalPrompts = promptsRes.data ? promptsRes.data.length : 0;
     
     const activeIds = new Set((promptsRes.data || []).map((p: any) => p.id || p.prompt_id));
     const localFavs = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('promptiq_favorites') || '[]') : [];

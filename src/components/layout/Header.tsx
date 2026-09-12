@@ -56,7 +56,7 @@ export default function Header({ activeTab = 'Draft', onTabChange }: HeaderProps
   };
 
   // Only active styles (is_active === true or enabled === true) should appear in the dropdown
-  const activeProfiles = styleProfiles.filter(p => (p as any).is_active ?? (p as any).enabled ?? true);
+  const activeProfiles = styleProfiles.filter(p => (p as unknown as Record<string, unknown>).is_active ?? (p as unknown as Record<string, unknown>).enabled ?? true);
 
   const styles = [
     { id: null, name: 'None', color: '#9ca3af' },

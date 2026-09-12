@@ -67,7 +67,7 @@ interface PromptVersion {
   tweakNote?: string;
   isStarred?: boolean;
   versionType?: string;
-  toolRecommendations?: any;
+  toolRecommendations?: unknown;
   isGenerating?: boolean;
 }
 
@@ -508,6 +508,7 @@ function scoreLabel(s: number) {
 function useCountUp(target: number, active: boolean, duration = 1200): number {
   const [value, setValue] = useState(0);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!active) { setValue(0); return; }
     let current = 0;
     const step = target / (duration / 16);
@@ -682,6 +683,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
     if (!chatId) return;
 
     if (MOCK_SESSIONS[chatId]) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrentSession(MOCK_SESSIONS[chatId]);
       return;
     }

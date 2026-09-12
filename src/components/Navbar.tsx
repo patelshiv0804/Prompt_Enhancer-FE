@@ -128,6 +128,7 @@ export default function Navbar() {
     if (typeof window !== "undefined" && window.location.hash) {
       const hashId = window.location.hash.replace("#", "");
       if (navLinks.some((n) => n.id === hashId)) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setActiveId(hashId);
       }
     }

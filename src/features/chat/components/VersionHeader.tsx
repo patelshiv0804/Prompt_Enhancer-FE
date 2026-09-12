@@ -39,8 +39,6 @@ export default function VersionHeader({
   const [searchNotFound, setSearchNotFound] = useState(false);
   const isMobile = useMediaQuery('(max-width: 640px)');
 
-  const activeVersion = versions[activeIndex];
-  if (!activeVersion) return null;
 
   /* Auto-scroll to current bubble */
   useEffect(() => {
@@ -98,6 +96,9 @@ export default function VersionHeader({
   }, []);
 
   useEffect(() => { handleScroll(); }, [handleScroll, versions.length]);
+
+  const activeVersion = versions[activeIndex];
+  if (!activeVersion) return null;
 
   const activeColor = scoreColor(activeVersion.overallScore);
 
