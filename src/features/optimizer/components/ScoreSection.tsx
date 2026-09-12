@@ -92,6 +92,14 @@ export default function ScoreSection({
             0%, 100% { opacity: 1; transform: scaleX(1); }
             50% { opacity: 0.4; transform: scaleX(0.7); }
           }
+          @keyframes wandPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.75; transform: scale(1.06); }
+          }
+          @keyframes iconPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.65; transform: scale(0.95); }
+          }
         `}</style>
         <div
           style={{
@@ -128,7 +136,7 @@ export default function ScoreSection({
                   />
                 </svg>
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Wand2 size={24} style={{ color: '#8B5CF6', animation: 'evaluatingSpin 3s linear infinite' }} />
+                  <Wand2 size={24} style={{ color: '#8B5CF6', animation: 'wandPulse 2s ease-in-out infinite' }} />
                 </div>
               </div>
 
@@ -184,7 +192,7 @@ export default function ScoreSection({
                         width: 22, height: 22, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center',
                         background: isDark ? 'rgba(139,92,246,0.18)' : 'rgba(124,58,237,0.10)', color: isDark ? '#C084FC' : '#7C3AED',
                       }}>
-                        <Sparkles size={12} style={{ animation: 'evaluatingSpin 2s linear infinite' }} />
+                        <Sparkles size={12} style={{ animation: 'iconPulse 2s ease-in-out infinite' }} />
                       </div>
                       <span style={{ fontSize: 13, fontWeight: 700, color: isDark ? D.textPrimary : 'var(--color-text-primary)' }}>{d.label}</span>
                     </div>
