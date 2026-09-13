@@ -5,10 +5,13 @@ import {
   Copy, Wand2, Bookmark, TrendingUp, Clock, ArrowRight,
   CheckCircle2, AlertTriangle, Minus, GitCompareArrows,
   Sparkles, Code, Search, Megaphone, BookOpen, Image as ImageIcon,
-  Film, PlaySquare, ChevronDown, GitBranch,
+  Film, PlaySquare, ChevronDown, GitBranch, Download,
 } from 'lucide-react';
 import VersionHeader from './VersionHeader';
 import VersionHistoryDrawer from './VersionHistoryDrawer';
+import MultiChatExportModal from './MultiChatExportModal';
+import type { MultiChatExportItem } from '../services/multiChatExportService';
+import { fetchHistory } from '@/features/history/services/historyService';
 import { useEnabledStyleOptions } from '@/features/style-memory/services/styleMemoryService';
 import { apiClient, streamEnhance, type ReenhanceStreamDone } from '@/utils/apiClient';
 import FormattedPromptViewer from '../../optimizer/components/FormattedPromptViewer';
@@ -816,12 +819,12 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
             {
               versionNumber: 1,
               versionType: 'original',
-              optimizedPrompt: p.current_version?.content || p.original_prompt || '',
+              optimizedPrompt: p.current_version?.content || '',
               overallScore: overallScore,
               beforeOverallScore: originalScore,
               dimensions: makeDimensions(origAnal, enhAnal, originalScore, overallScore),
-              wordsAfter: ((p.current_version?.content || p.original_prompt) || '').split(/\s+/).filter(Boolean).length,
-              tokensAfter: Math.round(((p.current_version?.content || p.original_prompt) || '').length / 4),
+              wordsAfter: (p.current_version?.content || '').split(/\s+/).filter(Boolean).length,
+              tokensAfter: Math.round((p.current_version?.content || '').length / 4),
               timestamp: 'Just now',
             }
           ];
@@ -914,6 +917,35 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
   const [inputValue, setInputValue] = useState('');
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [hoveredVersionIndex, setHoveredVersionIndex] = useState<number | null>(null);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [recentChatsForExport, setRecentChatsForExport] = useState<MultiChatExportItem[]>([]);
+
+  useEffect(() => {
+    fetchHistory(1, 15, { search: '', category: 'all', sortBy: 'most-recent' })
+      .then(res => {
+        if (res?.items) {
+          setRecentChatsForExport(res.items.map(i => ({
+            id: i.id,
+            title: i.prompt.slice(0, 50),
+            originalPrompt: i.prompt,
+            mode: i.mode,
+            category: i.category,
+            targetModel: i.targetModel,
+            score: i.score ?? undefined,
+            createdAt: i.createdAt,
+            optimizedPrompt: i.optimizedPrompt,
+            versions: i.optimizedPrompt ? [
+              {
+                versionNumber: 1,
+                optimizedPrompt: i.optimizedPrompt,
+                overallScore: i.score ?? undefined,
+              }
+            ] : undefined,
+          })));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const [sessionVersions, setSessionVersions] = useState(currentSession.versions);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -1119,6 +1151,34 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
   const version = sessionVersions[activeVersionIndex] || sessionVersions[0] || currentSession.versions[0];
   const activeVersion = version;
   const bestIndex = sessionVersions.reduce((best, v, i) => v.overallScore > sessionVersions[best].overallScore ? i : best, 0);
+
+  const exportableChats: MultiChatExportItem[] = React.useMemo(() => {
+    const currentId = currentSession.id || chatId || 'current-session';
+    const currentItem: MultiChatExportItem = {
+      id: currentId,
+      title: currentSession.originalPrompt.slice(0, 50),
+      originalPrompt: currentSession.originalPrompt,
+      mode: currentSession.mode,
+      score: currentSession.originalScore,
+      createdAt: currentSession.createdAt,
+      versions: sessionVersions.map(v => ({
+        versionNumber: v.versionNumber,
+        optimizedPrompt: v.optimizedPrompt,
+        overallScore: v.overallScore,
+        tweakNote: v.tweakNote,
+        timestamp: v.timestamp,
+        dimensions: v.dimensions ? v.dimensions.map(d => ({
+          id: d.id,
+          label: d.label,
+          score: d.score,
+          desc: d.desc,
+        })) : [],
+      })),
+    };
+
+    const others = recentChatsForExport.filter(c => c.id !== currentId);
+    return [currentItem, ...others];
+  }, [currentSession, chatId, sessionVersions, recentChatsForExport]);
 
   const animatedScore = useCountUp(version.overallScore, ready);
   const radius = 44;
@@ -1368,6 +1428,30 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 10, flexShrink: 0, marginLeft: 'auto' }}>
+            {/* Export Context Button */}
+            <button
+              id="chat-export-context-btn"
+              onClick={() => setIsExportModalOpen(true)}
+              title="Export context to ChatGPT, Claude, etc."
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                padding: isMobile ? '5px 10px' : '6px 14px',
+                borderRadius: 8,
+                fontSize: isMobile ? 11.5 : 12.5,
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 160ms ease',
+                background: isDark ? 'rgba(139,92,246,0.18)' : 'rgba(124,58,237,0.08)',
+                color: isDark ? '#C084FC' : '#6D28D9',
+                border: `1px solid ${isDark ? 'rgba(167,139,250,0.30)' : 'rgba(124,58,237,0.20)'}`,
+                whiteSpace: 'nowrap',
+              }}
+              className={isDark ? 'hover:!bg-[rgba(139,92,246,0.28)] hover:!text-[#FFFFFF]' : 'hover:!bg-[rgba(124,58,237,0.15)]'}
+            >
+              <Download size={13} />
+              <span>Export Context</span>
+            </button>
+
             {sessionVersions.length > 1 && (
               <button
                 onClick={() => { setCompareMode(!compareMode); if (!compareMode) setCompareIndex(0); }}
@@ -1805,6 +1889,14 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
           onSelect={handleVersionSelect}
           onToggleStar={handleToggleStar}
           onHoverVersion={setHoveredVersionIndex}
+        />
+
+        {/* Multi-Chat Context Export Modal */}
+        <MultiChatExportModal
+          isOpen={isExportModalOpen}
+          onClose={() => setIsExportModalOpen(false)}
+          availableChats={exportableChats}
+          initialSelectedIds={[currentSession.id || chatId || 'current-session']}
         />
       </div>
     </div>

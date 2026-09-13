@@ -9,9 +9,11 @@ import {
   Settings, User, Clock,
   Code2, Search, Film, PlaySquare, Image as ImageIcon,
   Megaphone, BookOpen, Mail, Star, ChevronDown, ChevronRight,
-  LogOut, Trash2, PanelLeftClose, PanelLeftOpen, Menu, X,
+  LogOut, Trash2, PanelLeftClose, PanelLeftOpen, Menu, X, Download,
 } from 'lucide-react';
 import { fetchHistory, deleteHistoryItem } from '@/features/history/services/historyService';
+import MultiChatExportModal from '@/features/chat/components/MultiChatExportModal';
+import type { MultiChatExportItem } from '@/features/chat/services/multiChatExportService';
 import ScoreSpinner from '@/components/ScoreSpinner';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useIsDark, D } from '@/theme/theme';
@@ -70,14 +72,36 @@ export default function Sidebar() {
   const [recentItems, setRecentItems] = useState<{
     id: string;
     prompt: string;
+    optimizedPrompt?: string;
     category: string;
     score?: number | null;
     isFavorite?: boolean;
     ago: string;
   }[]>([]);
+  const [hoveredRecentId, setHoveredRecentId] = useState<string | null>(null);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [chatToDelete, setChatToDelete] = useState<{ id: string; prompt: string } | null>(null);
   const [showRecentFlyout, setShowRecentFlyout] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+
+  const exportableChats: MultiChatExportItem[] = React.useMemo(() => {
+    return recentItems.map(item => ({
+      id: item.id,
+      title: (item.prompt || '').slice(0, 50),
+      originalPrompt: item.prompt || '',
+      category: item.category,
+      score: item.score ?? undefined,
+      createdAt: item.ago,
+      optimizedPrompt: item.optimizedPrompt,
+      versions: item.optimizedPrompt ? [
+        {
+          versionNumber: 1,
+          optimizedPrompt: item.optimizedPrompt,
+          overallScore: item.score ?? undefined,
+        }
+      ] : undefined,
+    }));
+  }, [recentItems]);
   const [mounted, setMounted] = useState(false);
   
   // Tooltip hover state for collapsed mode
@@ -167,6 +191,7 @@ export default function Sidebar() {
       const formatted = (res?.items || []).map(item => ({
         id: item.id,
         prompt: item.prompt,
+        optimizedPrompt: item.optimizedPrompt,
         category: item.category || 'general',
         score: item.score,
         isFavorite: item.isFavorite,
@@ -217,6 +242,24 @@ export default function Sidebar() {
     setActiveTooltip(null);
     setIsMobileOpen(false);
     router.push(`/dashboard/${page}`);
+  };
+
+  const navigateChat = (chatId: string) => {
+    setShowRecentFlyout(false);
+    setActiveTooltip(null);
+    setIsMobileOpen(false);
+    router.push(`/dashboard/chat/${chatId}`);
+  };
+
+  const handleDeleteChat = async (id: string) => {
+    try {
+      await deleteHistoryItem(id);
+      setRecentItems(prev => prev.filter(item => item.id !== id));
+      setChatToDelete(null);
+      window.dispatchEvent(new CustomEvent('promptiq:history-updated'));
+    } catch (err) {
+      console.error('Failed to delete chat:', err);
+    }
   };
 
   const isActive = (page: ActivePage) => pathname === `/dashboard/${page}` || (page === 'optimizer' && pathname === '/dashboard');
@@ -518,7 +561,7 @@ export default function Sidebar() {
           }}
         >
           {showCollapsed ? (
-            /* COLLAPSED VIEW: Minimalist Clean Icon Rail (Matching ChatGPT Image 2) */
+            /* COLLAPSED VIEW: Minimalist Clean Icon Rail */
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
               {NAV_GROUPS.map((group, groupIdx) => (
                 <React.Fragment key={group.label}>
@@ -639,23 +682,50 @@ export default function Sidebar() {
                       >
                         Recent Prompts
                       </span>
-                      <button
-                        onClick={() => {
-                          setShowRecentFlyout(false);
-                          router.push('/dashboard/vault');
-                        }}
-                        style={{
-                          fontSize: 11,
-                          fontWeight: 600,
-                          color: isDark ? '#C084FC' : '#6D28D9',
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                        }}
-                        className="hover:underline"
-                      >
-                        View all
-                      </button>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <button
+                          onClick={() => {
+                            setShowRecentFlyout(false);
+                            setIsExportModalOpen(true);
+                          }}
+                          title="Export context to ChatGPT, Claude, etc."
+                          style={{
+                            fontSize: 10.5,
+                            fontWeight: 600,
+                            color: isDark ? '#C084FC' : '#6D28D9',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: '1px 4px',
+                            borderRadius: 4,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 3,
+                          }}
+                          className="aure-soft-btn"
+                        >
+                          <Download size={10} />Export
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowRecentFlyout(false);
+                            router.push('/dashboard/vault');
+                          }}
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color: isDark ? '#C084FC' : '#6D28D9',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: '1px 4px',
+                            borderRadius: 4,
+                          }}
+                          className="aure-soft-btn"
+                        >
+                          View all
+                        </button>
+                      </div>
                     </div>
 
                     <div
@@ -812,6 +882,18 @@ export default function Sidebar() {
                   className="aure-soft-btn"
                 >
                   <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'capitalize', letterSpacing: '0.2px', color: isDark ? D.textMuted : 'rgba(45,27,105,0.45)', flex: 1 }}>Recent</span>
+                  <button
+                    id="sidebar-export-context-btn"
+                    onClick={e => { e.stopPropagation(); setIsExportModalOpen(true); }}
+                    title="Export context to ChatGPT, Claude, etc."
+                    style={{
+                      fontSize: 10.5, fontWeight: 600, color: isDark ? '#C084FC' : '#6D28D9', background: 'none', border: 'none',
+                      cursor: 'pointer', padding: '1px 4px', borderRadius: 4, marginRight: 2, display: 'inline-flex', alignItems: 'center', gap: 3
+                    }}
+                    className="aure-soft-btn"
+                  >
+                    <Download size={10} />Export
+                  </button>
                   <button
                     id="sidebar-history-view-all"
                     onClick={e => { e.stopPropagation(); router.push('/dashboard/vault'); }}
@@ -1281,6 +1363,13 @@ export default function Sidebar() {
         </div>,
         document.body
       )}
+
+      {/* Multi-Chat Context Export Modal */}
+      <MultiChatExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        availableChats={exportableChats}
+      />
     </>
   );
 }

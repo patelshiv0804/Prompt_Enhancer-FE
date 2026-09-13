@@ -128,7 +128,7 @@ export async function fetchHistory(page: number, pageSize: number, filters: Hist
       return {
         id: itemId,
         prompt: p.original_prompt || p.title || 'Untitled Prompt',
-        optimizedPrompt: p.original_prompt || '',
+        optimizedPrompt: p.current_version?.content || p.optimized_prompt || p.enhanced_prompt || '',
         category: (p.template?.role || p.template?.mode || p.title?.split(' - ')[1] || 'general').toLowerCase(),
         score: finalScore,
         isFavorite: isFav,
