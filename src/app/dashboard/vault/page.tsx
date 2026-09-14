@@ -13,6 +13,7 @@ import type { HistoryItem, HistoryStats, SortBy } from '@/features/history/types
 import MultiChatExportModal from '@/features/chat/components/MultiChatExportModal';
 import type { MultiChatExportItem } from '@/features/chat/services/multiChatExportService';
 import ScoreSpinner from '@/components/ScoreSpinner';
+import MarqueeTitle from '@/components/MarqueeTitle';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useTheme, D } from '@/theme/theme';
 
@@ -179,7 +180,7 @@ function VaultRow({ item, isSelectionMode, selected, onSelect, onToggleFavorite,
       transition: 'background 200ms ease, box-shadow 200ms ease, border-color 200ms ease',
       position: 'relative', cursor: 'pointer',
     }}
-    className={isDark ? 'hover:!bg-[rgba(255,255,255,0.05)] hover:!border-[rgba(167,139,250,0.3)]' : 'hover:!bg-[rgba(124,58,237,0.03)] hover:shadow-[0_4px_16px_rgba(109,40,217,0.07)] hover:!border-[rgba(124,58,237,0.15)]'}
+    className={`group/vaultrow ${isDark ? 'hover:!bg-[rgba(255,255,255,0.05)] hover:!border-[rgba(167,139,250,0.3)]' : 'hover:!bg-[rgba(124,58,237,0.03)] hover:shadow-[0_4px_16px_rgba(109,40,217,0.07)] hover:!border-[rgba(124,58,237,0.15)]'}`}
     onClick={() => {
       if (isSelectionMode) {
         onSelect(item.id);
@@ -193,7 +194,7 @@ function VaultRow({ item, isSelectionMode, selected, onSelect, onToggleFavorite,
           id={`vault-select-${item.id}`}
           type="checkbox"
           checked={selected}
-          aria-label={`Select ${item.prompt}`}
+          aria-label={`Select ${item.title || item.prompt}`}
           onClick={event => event.stopPropagation()}
           onChange={() => onSelect(item.id)}
           style={{ width: 16, height: 16, accentColor: '#8B5CF6', cursor: 'pointer', flexShrink: 0 }}
@@ -204,7 +205,17 @@ function VaultRow({ item, isSelectionMode, selected, onSelect, onToggleFavorite,
       </div>
 
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <p style={{ margin: 0, fontSize: 14, fontWeight: 500, color: isDark ? D.textPrimary : 'var(--color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.prompt}</p>
+        <MarqueeTitle
+          text={item.title || item.prompt}
+          titleHover={item.prompt}
+          style={{
+            margin: 0,
+            fontSize: 14,
+            fontWeight: 500,
+            color: isDark ? D.textPrimary : 'var(--color-text-primary)',
+            lineHeight: 1.35,
+          }}
+        />
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: isDark ? D.textSecondary : 'var(--color-text-secondary)', minWidth: 0, overflow: 'hidden', whiteSpace: 'nowrap' }}>
           <Clock size={11} strokeWidth={1.5} style={{ flexShrink: 0 }} />
           <span style={{ flexShrink: 0 }}>{timeAgo(item.createdAt)}</span>

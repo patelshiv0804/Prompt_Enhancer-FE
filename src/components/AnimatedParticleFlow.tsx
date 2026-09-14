@@ -11,9 +11,8 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
  * 2. Canvas Bezier Math: Resolves points along cubic Bezier curves in JS,
  *    rendering paths and particles natively.
  *
- * 3. Passive Scroll Throttling: During scroll events, freezes particle movement
- *    and throttles draw rate to 15 FPS. Automatically resumes full 60 FPS 
- *    motion after 150ms of no scrolling.
+ * 3. Continuous 60 FPS Smooth Flow: Particles and energy paths animate continuously
+ *    and smoothly even while the user scrolls.
  *
  * 4. Offscreen loop cancellation: IntersectionObserver halts the requestAnimationFrame
  *    loop entirely when off-screen.
@@ -212,7 +211,6 @@ function AnimatedParticleFlowInner() {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animFrameIdRef = useRef<number>(0);
-  const isScrollingRef = useRef(false);
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
@@ -227,7 +225,7 @@ function AnimatedParticleFlowInner() {
       ([entry]) => {
         setIsVisible(entry.isIntersecting);
       },
-      { threshold: 0 }
+      { rootMargin: "300px 0px" }
     );
     const container = containerRef.current;
     if (container) {
@@ -285,31 +283,19 @@ function AnimatedParticleFlowInner() {
     resize();
     window.addEventListener("resize", resize);
 
-    // Scroll listener to throttle FPS to 15 and pause simulation
-    let scrollTimeout: number;
-    const handleScroll = () => {
-      isScrollingRef.current = true;
-      window.clearTimeout(scrollTimeout);
-      scrollTimeout = window.setTimeout(() => {
-        isScrollingRef.current = false;
-      }, 150);
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-
     const tick = (timestamp: number) => {
       if (!active) return;
       animFrameIdRef.current = requestAnimationFrame(tick);
 
       const elapsed = timestamp - lastTimestamp;
-      const fpsLimit = isScrollingRef.current ? 66.7 : 16.7; // 15 FPS vs 60 FPS
+      const fpsLimit = 16.7; // 60 FPS continuous animation
 
       if (elapsed >= fpsLimit) {
         lastTimestamp = timestamp - (elapsed % fpsLimit);
 
-        // Advance simulation time only when not scrolling (pauses animations)
-        if (!isScrollingRef.current) {
-          time += 0.016;
-        }
+        // Advance simulation time continuously using real elapsed delta
+        const deltaSec = Math.min(elapsed / 1000, 0.04);
+        time += deltaSec;
 
         const dpr = window.devicePixelRatio || 1;
         const w = canvas.width / dpr;
@@ -414,8 +400,6 @@ function AnimatedParticleFlowInner() {
       active = false;
       cancelAnimationFrame(animFrameIdRef.current);
       window.removeEventListener("resize", resize);
-      window.removeEventListener("scroll", handleScroll);
-      window.clearTimeout(scrollTimeout);
     };
   }, [isVisible, particles]);
 

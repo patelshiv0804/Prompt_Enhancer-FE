@@ -126,7 +126,7 @@ function InlineScorePanel({ active, analysisResult }: { active: boolean; analysi
             {scoreLabel(score)}
           </div>
           <p style={{ fontSize: 12, color: isDark ? D.textSecondary : 'var(--color-text-secondary)', lineHeight: 1.4, margin: 0 }}>
-            {analysisResult?.summary || 'Run Optimize to improve your score'}
+            {analysisResult?.summary || 'Run Enhance to improve your score'}
           </p>
         </div>
       </div>
@@ -760,7 +760,7 @@ export default function ComparisonBlock({
               className={(!isOptimizing && !isAnalyzing && originalText.length <= 12000) ? 'hover:translate-y-[-1px] hover:shadow-[0_8px_24px_rgba(109,40,217,0.42)] hover:brightness-105 active:scale-[0.98]' : ''}
             >
               <Wand2 size={13} />
-              <span>{isOptimizing ? 'Optimizing...' : 'Optimize'}</span>
+              <span>{isOptimizing ? 'Enhancing...' : 'Enhance'}</span>
             </button>
           </div>
       </motion.div>
