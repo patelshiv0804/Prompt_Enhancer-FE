@@ -1,0 +1,79 @@
+'use client';
+
+import React, { useRef, useState, useEffect, useCallback } from 'react';
+
+interface MarqueeTitleProps {
+  text: string;
+  className?: string;
+  style?: React.CSSProperties;
+  titleHover?: string;
+}
+
+export default function MarqueeTitle({ text, className = '', style = {}, titleHover }: MarqueeTitleProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLSpanElement>(null);
+  const [overflowDistance, setOverflowDistance] = useState(0);
+
+  const checkOverflow = useCallback(() => {
+    if (!containerRef.current || !textRef.current) return;
+    const containerWidth = containerRef.current.clientWidth;
+    const textWidth = textRef.current.scrollWidth;
+
+    if (textWidth > containerWidth + 2) {
+      setOverflowDistance(textWidth - containerWidth);
+    } else {
+      setOverflowDistance(0);
+    }
+  }, []);
+
+  useEffect(() => {
+    checkOverflow();
+
+    if (typeof ResizeObserver !== 'undefined' && containerRef.current) {
+      const ro = new ResizeObserver(() => {
+        checkOverflow();
+      });
+      ro.observe(containerRef.current);
+      return () => ro.disconnect();
+    }
+
+    const handleResize = () => checkOverflow();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [text, checkOverflow]);
+
+  const isOverflowing = overflowDistance > 0;
+  // Natural reading speed: ~28px per second + 1.2s pause time at edges, min 2.8s
+  const duration = Math.max(2.8, (overflowDistance / 28) + 1.2);
+
+  return (
+    <div
+      ref={containerRef}
+      title={titleHover || text}
+      className={`marquee-container ${className}`}
+      style={{
+        overflow: 'hidden',
+        position: 'relative',
+        minWidth: 0,
+        width: '100%',
+        whiteSpace: 'nowrap',
+        ...style,
+      }}
+    >
+      <span
+        ref={textRef}
+        className={`marquee-content ${isOverflowing ? 'is-overflowing' : ''}`}
+        style={
+          isOverflowing
+            ? ({
+                '--marquee-dist': `-${overflowDistance + 6}px`,
+                '--marquee-duration': `${duration.toFixed(2)}s`,
+              } as React.CSSProperties)
+            : undefined
+        }
+      >
+        {text}
+      </span>
+    </div>
+  );
+}

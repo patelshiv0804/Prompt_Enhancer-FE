@@ -166,7 +166,7 @@ function HistoryRow({ item, onToggleFavorite, onDelete }: { item: HistoryItem; o
       </div>
 
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <p style={{ margin: 0, fontSize: 14, fontWeight: 500, color: 'var(--color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.prompt}</p>
+        <p title={item.prompt} style={{ margin: 0, fontSize: 14, fontWeight: 500, color: 'var(--color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.title || item.prompt}</p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--color-text-secondary)' }}>
           <Clock size={11} strokeWidth={1.5} />
           <span>{timeAgo(item.createdAt)}</span>

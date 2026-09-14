@@ -15,6 +15,7 @@ import { fetchHistory, deleteHistoryItem } from '@/features/history/services/his
 import MultiChatExportModal from '@/features/chat/components/MultiChatExportModal';
 import type { MultiChatExportItem } from '@/features/chat/services/multiChatExportService';
 import ScoreSpinner from '@/components/ScoreSpinner';
+import MarqueeTitle from '@/components/MarqueeTitle';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useIsDark, D } from '@/theme/theme';
 
@@ -71,6 +72,7 @@ export default function Sidebar() {
   const [recentCollapsed, setRecentCollapsed] = useState(false);
   const [recentItems, setRecentItems] = useState<{
     id: string;
+    title?: string;
     prompt: string;
     optimizedPrompt?: string;
     category: string;
@@ -87,7 +89,7 @@ export default function Sidebar() {
   const exportableChats: MultiChatExportItem[] = React.useMemo(() => {
     return recentItems.map(item => ({
       id: item.id,
-      title: (item.prompt || '').slice(0, 50),
+      title: item.title || (item.prompt || '').slice(0, 50),
       originalPrompt: item.prompt || '',
       category: item.category,
       score: item.score ?? undefined,
@@ -190,6 +192,7 @@ export default function Sidebar() {
     fetchHistory(1, 8, { search: '', category: 'all', sortBy: 'most-recent' }).then(res => {
       const formatted = (res?.items || []).map(item => ({
         id: item.id,
+        title: item.title || item.prompt,
         prompt: item.prompt,
         optimizedPrompt: item.optimizedPrompt,
         category: item.category || 'general',
@@ -764,25 +767,22 @@ export default function Sidebar() {
                                 cursor: 'pointer',
                                 transition: 'background 120ms ease',
                               }}
-                              className="hover:bg-[rgba(124,58,237,0.05)]"
+                              className="hover:bg-[rgba(124,58,237,0.05)] group/flyoutitem"
                             >
                               <Icon size={13} color={accent} strokeWidth={1.8} style={{ flexShrink: 0 }} />
-                              <p
+                              <MarqueeTitle
+                                text={item.title || item.prompt}
+                                titleHover={item.prompt}
                                 style={{
                                   fontSize: 12.5,
                                   fontWeight: active ? 600 : 450,
                                   color: active ? (isDark ? '#F5F4F8' : '#4C1D95') : (isDark ? D.textSecondary : 'rgba(45,27,105,0.85)'),
-                                  margin: 0,
-                                  whiteSpace: 'nowrap',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
+                                  lineHeight: 1.3,
                                   flex: 1,
                                 }}
-                              >
-                                {item.prompt}
-                              </p>
+                              />
                               {item.score != null && (
-                                <span style={{ fontSize: 10, fontWeight: 600, color: accent }}>{item.score}</span>
+                                <span style={{ fontSize: 10, fontWeight: 600, color: accent, flexShrink: 0 }}>{item.score}</span>
                               )}
                             </div>
                           );
@@ -951,17 +951,18 @@ export default function Sidebar() {
                             className={`group/chatitem aure-recent-item ${active ? 'is-active' : ''}`}
                           >
                             <Icon size={14} color={accent} strokeWidth={1.75} style={{ flexShrink: 0 }} />
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0, flex: 1 }}>
-                              <p
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0, flex: 1, overflow: 'hidden' }}>
+                              <MarqueeTitle
+                                text={item.title || item.prompt}
+                                titleHover={item.prompt}
                                 style={{
-                                  fontSize: 13, fontWeight: active ? 600 : 450,
+                                  fontSize: 13,
+                                  fontWeight: active ? 600 : 450,
                                   color: active ? (isDark ? '#F5F4F8' : '#4C1D95') : (isDark ? D.textSecondary : 'rgba(45,27,105,0.80)'),
-                                  margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3,
+                                  lineHeight: 1.3,
                                   flex: 1,
                                 }}
-                              >
-                                {item.prompt}
-                              </p>
+                              />
                               {item.isFavorite && <Star size={9} fill="#F59E0B" color="#F59E0B" style={{ flexShrink: 0 }} />}
                             </div>
 
@@ -981,7 +982,7 @@ export default function Sidebar() {
                                 id={`sidebar-delete-btn-${item.id}`}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setChatToDelete({ id: item.id, prompt: item.prompt });
+                                  setChatToDelete({ id: item.id, prompt: item.title || item.prompt });
                                 }}
                                 title="Delete chat"
                                 style={{

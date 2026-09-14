@@ -925,3 +925,47 @@ html.theme-transitioning .dashboard-root *:not(canvas):not(svg):not(svg *) {
     transition: none !important;
   }
 }
+
+/* ── Text Marquee for Overflowing Titles on Hover ── */
+@keyframes marquee-pingpong {
+  0%, 18% {
+    transform: translateX(0);
+  }
+  82%, 100% {
+    transform: translateX(var(--marquee-dist, 0px));
+  }
+}
+
+.marquee-container {
+  overflow: hidden;
+  position: relative;
+  min-width: 0;
+  width: 100%;
+}
+
+.marquee-content {
+  display: inline-block;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  transition: transform 320ms ease-out;
+}
+
+/* Triggered on hover of the chat item group, flyout item, or container */
+.group\/chatitem:hover .marquee-content.is-overflowing,
+.group\/flyoutitem:hover .marquee-content.is-overflowing,
+.marquee-container:hover .marquee-content.is-overflowing {
+  max-width: none !important;
+  text-overflow: clip !important;
+  animation: marquee-pingpong var(--marquee-duration, 3.2s) cubic-bezier(0.4, 0, 0.2, 1) infinite alternate !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .group\/chatitem:hover .marquee-content.is-overflowing,
+  .group\/flyoutitem:hover .marquee-content.is-overflowing,
+  .marquee-container:hover .marquee-content.is-overflowing {
+    animation: none !important;
+  }
+}
