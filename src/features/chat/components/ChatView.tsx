@@ -18,6 +18,7 @@ import FormattedPromptViewer from '../../optimizer/components/FormattedPromptVie
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useTheme, D } from '@/theme/theme';
 import { useAuth } from '@/context/AuthContext';
+import ExpandableDimensionText from '@/components/ExpandableDimensionText';
 
 // ── Streaming prompt formatter ──────────────────────────────────────────────
 function formatPromptText(text: string): string {
@@ -591,7 +592,7 @@ function ChatDetailSkeleton() {
               background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF', borderRadius: 20, padding: 24,
               boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.35)' : '0 4px 20px rgba(109,40,217,0.04)',
               border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.10)'}`,
-              display: 'flex', flexDirection: 'column', gap: 18, minHeight: 300,
+              display: 'flex', flexDirection: 'column', gap: 18, minHeight: 650,
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div className="skeleton" style={{ width: 128, height: 28, borderRadius: 9999 }} />
@@ -944,7 +945,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
           })));
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const [sessionVersions, setSessionVersions] = useState(currentSession.versions);
@@ -1261,7 +1262,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
         boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.4)' : '0 4px 20px rgba(109,40,217,0.06), 0 1px 3px rgba(0,0,0,0.03)',
         border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.12)'}`,
         display: 'flex', flexDirection: 'column',
-        position: 'relative', overflow: 'hidden', minWidth: 0, height: isMobile ? 340 : 420, maxHeight: isMobile ? 340 : 420, boxSizing: 'border-box',
+        position: 'relative', overflow: 'hidden', minWidth: 0, height: isMobile ? 400 : 560, maxHeight: isMobile ? 400 : 560, boxSizing: 'border-box',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, paddingRight: 16 }}>
           <div style={{
@@ -1349,28 +1350,6 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
             <FormattedPromptViewer content={v.optimizedPrompt} />
           </div>
         )}
-
-        {isGenerating ? (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, paddingTop: 14,
-            borderTop: `1px dashed ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(124,58,237,0.16)'}`, fontSize: 12,
-            color: isDark ? '#C084FC' : '#6D28D9', fontWeight: 600,
-            paddingRight: 16,
-          }}>
-            <Wand2 size={13} style={{ flexShrink: 0, animation: 'spin 1.5s linear infinite' }} />
-            <span>Streaming enhanced prompt live…</span>
-          </div>
-        ) : v.tweakNote ? (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, paddingTop: 14,
-            borderTop: `1px dashed ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(124,58,237,0.16)'}`, fontSize: 12,
-            color: isDark ? '#C084FC' : '#6D28D9', fontWeight: 600,
-            paddingRight: 16,
-          }}>
-            <Wand2 size={13} style={{ flexShrink: 0 }} />
-            <span>{cleanTweakNote(v.tweakNote)}</span>
-          </div>
-        ) : null}
       </div>
     );
   };
@@ -1566,7 +1545,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                   borderRadius: 20, padding: isMobile ? '18px 6px 18px 18px' : '24px 8px 24px 24px',
                   boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.4)' : '0 4px 20px rgba(109,40,217,0.04)',
                   border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.10)'}`,
-                  display: 'flex', flexDirection: 'column', height: isMobile ? 340 : 420, maxHeight: isMobile ? 340 : 420, boxSizing: 'border-box', overflow: 'hidden', minWidth: 0,
+                  display: 'flex', flexDirection: 'column', height: isMobile ? 400 : 560, maxHeight: isMobile ? 400 : 560, boxSizing: 'border-box', overflow: 'hidden', minWidth: 0,
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, paddingRight: 16 }}>
                     <div style={{
@@ -1802,8 +1781,8 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                             }} />
                           </div>
 
-                          {/* Description */}
-                          <p style={{ fontSize: 11.5, color: isDark ? D.textSecondary : '#64748B', margin: 0, lineHeight: 1.45, fontWeight: 500 }}>{dim.desc}</p>
+                          {/* Description with 2-3 lines max & Show more option */}
+                          <ExpandableDimensionText text={dim.desc} maxLines={3} fontSize={11.5} lineHeight={1.45} />
                         </div>
                       );
                     })

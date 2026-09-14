@@ -928,11 +928,16 @@ html.theme-transitioning .dashboard-root *:not(canvas):not(svg):not(svg *) {
 
 /* ── Text Marquee for Overflowing Titles on Hover ── */
 @keyframes marquee-pingpong {
-  0%, 18% {
-    transform: translateX(0);
+  0% {
+    transform: translate3d(0, 0, 0);
   }
-  82%, 100% {
-    transform: translateX(var(--marquee-dist, 0px));
+  /* Glides forward instantly and smoothly reaches end at 48% */
+  48%, 66% {
+    transform: translate3d(var(--marquee-dist, 0px), 0, 0);
+  }
+  /* Glides smoothly back to start by 94% */
+  94%, 100% {
+    transform: translate3d(0, 0, 0);
   }
 }
 
@@ -941,6 +946,7 @@ html.theme-transitioning .dashboard-root *:not(canvas):not(svg):not(svg *) {
   position: relative;
   min-width: 0;
   width: 100%;
+  contain: paint;
 }
 
 .marquee-content {
@@ -950,16 +956,25 @@ html.theme-transitioning .dashboard-root *:not(canvas):not(svg):not(svg *) {
   overflow: hidden;
   text-overflow: ellipsis;
   vertical-align: middle;
-  transition: transform 320ms ease-out;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  perspective: 1000px;
 }
 
-/* Triggered on hover of the chat item group, flyout item, or container */
+/* Smooth reset when mouse leaves */
+.marquee-content.is-overflowing {
+  transition: transform 260ms cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* Triggered instantly on hover of the chat item group, flyout item, or container */
 .group\/chatitem:hover .marquee-content.is-overflowing,
 .group\/flyoutitem:hover .marquee-content.is-overflowing,
 .marquee-container:hover .marquee-content.is-overflowing {
   max-width: none !important;
   text-overflow: clip !important;
-  animation: marquee-pingpong var(--marquee-duration, 3.2s) cubic-bezier(0.4, 0, 0.2, 1) infinite alternate !important;
+  will-change: transform !important;
+  transition: none !important;
+  animation: marquee-pingpong var(--marquee-duration, 3.2s) ease-in-out infinite !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

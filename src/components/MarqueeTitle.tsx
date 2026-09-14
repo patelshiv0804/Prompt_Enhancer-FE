@@ -43,8 +43,9 @@ export default function MarqueeTitle({ text, className = '', style = {}, titleHo
   }, [text, checkOverflow]);
 
   const isOverflowing = overflowDistance > 0;
-  // Natural reading speed: ~28px per second + 1.2s pause time at edges, min 2.8s
-  const duration = Math.max(2.8, (overflowDistance / 28) + 1.2);
+  // Natural reading speed: ~35px per second for the forward scroll (48% of loop)
+  const forwardTravelTime = overflowDistance / 35;
+  const duration = Math.max(2.4, Math.min(8.0, forwardTravelTime / 0.48));
 
   return (
     <div
@@ -66,7 +67,7 @@ export default function MarqueeTitle({ text, className = '', style = {}, titleHo
         style={
           isOverflowing
             ? ({
-                '--marquee-dist': `-${overflowDistance + 6}px`,
+                '--marquee-dist': `-${overflowDistance + 8}px`,
                 '--marquee-duration': `${duration.toFixed(2)}s`,
               } as React.CSSProperties)
             : undefined

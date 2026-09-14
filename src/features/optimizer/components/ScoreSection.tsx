@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { CheckCircle2, AlertTriangle, Minus, TrendingUp, Sparkles, Wand2 } from 'lucide-react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useIsDark, D } from '@/theme/theme';
+import ExpandableDimensionText from '@/components/ExpandableDimensionText';
 
 function useCountUp(target: number, active: boolean, duration = 1200): number {
   const [value, setValue] = useState(0);
@@ -467,7 +468,7 @@ export default function ScoreSection({
                       <div style={{ height: '100%', borderRadius: 99, width: `${displayed}%`, background: scoreColor(displayed), transition: 'width 0.8s ease-out' }} />
                     </div>
 
-                    <p style={{ fontSize: 12, color: isDark ? D.textSecondary : 'var(--color-text-secondary)', lineHeight: 1.5, margin: 0, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }} title={dim.desc || 'No details provided.'}>{dim.desc || 'No details provided.'}</p>
+                    <ExpandableDimensionText text={dim.desc} maxLines={3} fontSize={12} lineHeight={1.5} />
                   </div>
                 );
               })}
