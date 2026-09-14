@@ -1026,7 +1026,7 @@ export default function ComparisonBlock({
 
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative', minHeight: 0 }}>
                   {isOptimizing && streamingText ? (
-                    /* Live token stream */
+                    /* Live formatted token stream */
                     <div
                       ref={streamScrollRef}
                       className="custom-scrollbar"
@@ -1039,28 +1039,13 @@ export default function ComparisonBlock({
                         paddingRight: isMobile ? 4 : 16,
                         color: isDark ? D.textPrimary : 'var(--color-text-primary)',
                         letterSpacing: '0.01em',
-                        whiteSpace: 'pre-wrap',
-                        wordBreak: 'break-word',
                         animation: 'fadeInRise 300ms ease-out forwards',
                         scrollbarWidth: 'thin',
                         scrollbarColor: isDark ? 'rgba(139,92,246,0.3) transparent' : 'rgba(124,58,237,0.25) transparent',
                         WebkitOverflowScrolling: 'touch',
                       }}
                     >
-                      {formatPromptText(streamingText)}
-                      <span
-                        aria-hidden="true"
-                        style={{
-                          display: 'inline-block',
-                          width: 7,
-                          height: 15,
-                          marginLeft: 2,
-                          borderRadius: 1,
-                          background: 'var(--color-primary)',
-                          verticalAlign: 'text-bottom',
-                          animation: 'streamCaretBlink 1s step-end infinite',
-                        }}
-                      />
+                      <FormattedPromptViewer content={formatPromptText(streamingText)} isStreaming={true} />
                     </div>
                   ) : isOptimizing ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 24, marginTop: 8 }}>

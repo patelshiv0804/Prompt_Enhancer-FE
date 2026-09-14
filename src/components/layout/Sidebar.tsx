@@ -80,6 +80,13 @@ export default function Sidebar() {
     isFavorite?: boolean;
     ago: string;
   }[]>([]);
+  const [hasMoreRecent, setHasMoreRecent] = useState<boolean>(false);
+  const [recentPage, setRecentPage] = useState<number>(1);
+  const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
+  const isFetchingMoreRef = useRef(false);
+  const recentItemsRef = useRef(recentItems);
+  recentItemsRef.current = recentItems;
+
   const [hoveredRecentId, setHoveredRecentId] = useState<string | null>(null);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [chatToDelete, setChatToDelete] = useState<{ id: string; prompt: string } | null>(null);
@@ -188,21 +195,67 @@ export default function Sidebar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showRecentFlyout]);
 
+  const formatRecentItem = (item: any) => ({
+    id: String(item.id),
+    title: item.title || item.prompt,
+    prompt: item.prompt,
+    optimizedPrompt: item.optimizedPrompt,
+    category: item.category || 'general',
+    score: item.score,
+    isFavorite: item.isFavorite,
+    ago: item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'Recent'
+  });
+
   const loadRecentItems = useCallback(() => {
-    fetchHistory(1, 8, { search: '', category: 'all', sortBy: 'most-recent' }).then(res => {
-      const formatted = (res?.items || []).map(item => ({
-        id: item.id,
-        title: item.title || item.prompt,
-        prompt: item.prompt,
-        optimizedPrompt: item.optimizedPrompt,
-        category: item.category || 'general',
-        score: item.score,
-        isFavorite: item.isFavorite,
-        ago: item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'Recent'
-      }));
+    const fetchCount = Math.max(50, recentItemsRef.current.length);
+    fetchHistory(1, fetchCount, { search: '', category: 'all', sortBy: 'most-recent' }).then(res => {
+      const formatted = (res?.items || []).map(formatRecentItem);
       setRecentItems(formatted);
+      const total = res?.total ?? formatted.length;
+      setHasMoreRecent(formatted.length < total);
+      setRecentPage(1);
     }).catch(err => console.error(err));
   }, []);
+
+  const loadMoreRecentItems = useCallback(() => {
+    if (isFetchingMoreRef.current || !hasMoreRecent) return;
+    isFetchingMoreRef.current = true;
+    setIsLoadingMore(true);
+
+    const nextPage = recentPage + 1;
+    fetchHistory(nextPage, 50, { search: '', category: 'all', sortBy: 'most-recent' })
+      .then(res => {
+        if (res?.items && res.items.length > 0) {
+          setRecentItems(prev => {
+            const existingIds = new Set(prev.map(i => i.id));
+            const newFormatted = res.items
+              .filter(i => !existingIds.has(String(i.id)))
+              .map(formatRecentItem);
+            const nextList = [...prev, ...newFormatted];
+            const total = res?.total ?? nextList.length;
+            setHasMoreRecent(nextList.length < total);
+            return nextList;
+          });
+          setRecentPage(nextPage);
+        } else {
+          setHasMoreRecent(false);
+        }
+      })
+      .catch(err => {
+        console.error('Failed to load more recent items:', err);
+      })
+      .finally(() => {
+        isFetchingMoreRef.current = false;
+        setIsLoadingMore(false);
+      });
+  }, [hasMoreRecent, recentPage]);
+
+  const handleRecentScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    if (scrollHeight - scrollTop - clientHeight < 80) {
+      loadMoreRecentItems();
+    }
+  }, [loadMoreRecentItems]);
 
   useEffect(() => {
     loadRecentItems();
@@ -550,13 +603,14 @@ export default function Sidebar() {
           </div>
         )}
 
-        {/* Scrollable body */}
+        {/* Body */}
         <div
           style={{
             flex: 1,
-            overflowY: 'auto',
+            minHeight: 0,
+            overflowY: showCollapsed ? 'auto' : 'hidden',
             overflowX: 'hidden',
-            padding: showCollapsed ? '8px 6px' : '10px 8px',
+            padding: showCollapsed ? '8px 6px' : '10px 8px 4px',
             display: 'flex',
             flexDirection: 'column',
             gap: showCollapsed ? 4 : 2,
@@ -732,6 +786,8 @@ export default function Sidebar() {
                     </div>
 
                     <div
+                      onScroll={handleRecentScroll}
+                      className="custom-scrollbar"
                       style={{
                         flex: 1,
                         overflowY: 'auto',
@@ -746,47 +802,55 @@ export default function Sidebar() {
                           No recent prompts
                         </div>
                       ) : (
-                        recentItems.map(item => {
-                          const Icon = SIDEBAR_HISTORY_ICONS[item.category] || Clock;
-                          const accent = SIDEBAR_HISTORY_ACCENTS[item.category] || '#7C3AED';
-                          const active = pathname === `/dashboard/chat/${item.id}`;
-                          return (
-                            <div
-                              key={item.id}
-                              onClick={() => {
-                                setShowRecentFlyout(false);
-                                router.push(`/dashboard/chat/${item.id}`);
-                              }}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 8,
-                                padding: '6px 8px',
-                                borderRadius: 6,
-                                background: active ? (isDark ? 'rgba(139,92,246,0.18)' : 'rgba(124,58,237,0.08)') : 'transparent',
-                                cursor: 'pointer',
-                                transition: 'background 120ms ease',
-                              }}
-                              className="hover:bg-[rgba(124,58,237,0.05)] group/flyoutitem"
-                            >
-                              <Icon size={13} color={accent} strokeWidth={1.8} style={{ flexShrink: 0 }} />
-                              <MarqueeTitle
-                                text={item.title || item.prompt}
-                                titleHover={item.prompt}
-                                style={{
-                                  fontSize: 12.5,
-                                  fontWeight: active ? 600 : 450,
-                                  color: active ? (isDark ? '#F5F4F8' : '#4C1D95') : (isDark ? D.textSecondary : 'rgba(45,27,105,0.85)'),
-                                  lineHeight: 1.3,
-                                  flex: 1,
+                        <>
+                          {recentItems.map(item => {
+                            const Icon = SIDEBAR_HISTORY_ICONS[item.category] || Clock;
+                            const accent = SIDEBAR_HISTORY_ACCENTS[item.category] || '#7C3AED';
+                            const active = pathname === `/dashboard/chat/${item.id}`;
+                            return (
+                              <div
+                                key={item.id}
+                                onClick={() => {
+                                  setShowRecentFlyout(false);
+                                  router.push(`/dashboard/chat/${item.id}`);
                                 }}
-                              />
-                              {item.score != null && (
-                                <span style={{ fontSize: 10, fontWeight: 600, color: accent, flexShrink: 0 }}>{item.score}</span>
-                              )}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 8,
+                                  padding: '6px 8px',
+                                  borderRadius: 6,
+                                  background: active ? (isDark ? 'rgba(139,92,246,0.18)' : 'rgba(124,58,237,0.08)') : 'transparent',
+                                  cursor: 'pointer',
+                                  transition: 'background 120ms ease',
+                                }}
+                                className="hover:bg-[rgba(124,58,237,0.05)] group/flyoutitem"
+                              >
+                                <Icon size={13} color={accent} strokeWidth={1.8} style={{ flexShrink: 0 }} />
+                                <MarqueeTitle
+                                  text={item.title || item.prompt}
+                                  titleHover={item.prompt}
+                                  style={{
+                                    fontSize: 12.5,
+                                    fontWeight: active ? 600 : 450,
+                                    color: active ? (isDark ? '#F5F4F8' : '#4C1D95') : (isDark ? D.textSecondary : 'rgba(45,27,105,0.85)'),
+                                    lineHeight: 1.3,
+                                    flex: 1,
+                                  }}
+                                />
+                                {item.score != null && (
+                                  <span style={{ fontSize: 10, fontWeight: 600, color: accent, flexShrink: 0 }}>{item.score}</span>
+                                )}
+                              </div>
+                            );
+                          })}
+                          {isLoadingMore && (
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px 0', gap: 6, color: isDark ? D.textMuted : '#64748B', fontSize: 11 }}>
+                              <ScoreSpinner size={11} color="#7C3AED" />
+                              <span>Loading...</span>
                             </div>
-                          );
-                        })
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
@@ -797,69 +861,71 @@ export default function Sidebar() {
             /* EXPANDED VIEW: Clean ChatGPT style typography and icons (Matching Image 1) */
             <>
               {/* Nav Groups */}
-              {NAV_GROUPS.map(group => {
-                const isGroupCollapsed = !!collapsedGroups[group.label];
-                return (
-                  <div key={group.label} style={{ display: 'flex', flexDirection: 'column', marginBottom: 6 }}>
-                    <button
-                      onClick={() => toggleGroup(group.label)}
-                      aria-expanded={!isGroupCollapsed}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: 6, padding: '4px 6px',
-                        borderRadius: 4, border: 'none', background: 'transparent', cursor: 'pointer',
-                        width: '100%', textAlign: 'left', marginBottom: 1,
-                      }}
-                      className="aure-soft-btn"
-                    >
-                      <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'capitalize', letterSpacing: '0.2px', color: isDark ? D.textMuted : 'rgba(45,27,105,0.45)', flex: 1 }}>
-                        {group.label}
-                      </span>
-                      {isGroupCollapsed
-                        ? <ChevronRight size={11} style={{ color: isDark ? 'rgba(255,255,255,0.30)' : 'rgba(109,40,217,0.30)', flexShrink: 0 }} />
-                        : <ChevronDown size={11} style={{ color: isDark ? 'rgba(255,255,255,0.30)' : 'rgba(109,40,217,0.30)', flexShrink: 0 }} />
-                      }
-                    </button>
+              <div style={{ display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
+                {NAV_GROUPS.map(group => {
+                  const isGroupCollapsed = !!collapsedGroups[group.label];
+                  return (
+                    <div key={group.label} style={{ display: 'flex', flexDirection: 'column', marginBottom: 6 }}>
+                      <button
+                        onClick={() => toggleGroup(group.label)}
+                        aria-expanded={!isGroupCollapsed}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 6, padding: '4px 6px',
+                          borderRadius: 4, border: 'none', background: 'transparent', cursor: 'pointer',
+                          width: '100%', textAlign: 'left', marginBottom: 1,
+                        }}
+                        className="aure-soft-btn"
+                      >
+                        <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'capitalize', letterSpacing: '0.2px', color: isDark ? D.textMuted : 'rgba(45,27,105,0.45)', flex: 1 }}>
+                          {group.label}
+                        </span>
+                        {isGroupCollapsed
+                          ? <ChevronRight size={11} style={{ color: isDark ? 'rgba(255,255,255,0.30)' : 'rgba(109,40,217,0.30)', flexShrink: 0 }} />
+                          : <ChevronDown size={11} style={{ color: isDark ? 'rgba(255,255,255,0.30)' : 'rgba(109,40,217,0.30)', flexShrink: 0 }} />
+                        }
+                      </button>
 
-                    {!isGroupCollapsed && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                        {group.items.map(item => {
-                          const Icon = item.icon;
-                          const active = isActive(item.id);
-                          return (
-                            <button
-                              key={item.id}
-                              id={`nav-${item.id}`}
-                              onClick={() => navigate(item.id)}
-                              style={{
-                                display: 'flex', alignItems: 'center', gap: 9, padding: '7px 8px',
-                                borderRadius: 8, fontSize: 13.5, fontWeight: active ? 600 : 450,
-                                cursor: 'pointer', border: 'none', width: '100%', textAlign: 'left',
-                                color: active ? (isDark ? '#F5F4F8' : '#4C1D95') : (isDark ? D.textSecondary : 'rgba(45,27,105,0.78)'),
-                                background: active ? (isDark ? 'linear-gradient(90deg, rgba(139, 92, 246, 0.22) 0%, rgba(168, 85, 247, 0.10) 100%)' : 'rgba(124,58,237,0.09)') : 'transparent',
-                                boxShadow: active && isDark ? 'inset 0 0 0 1px rgba(167, 139, 250, 0.30)' : 'none',
-                              }}
-                              className={`aure-nav-item ${active ? 'is-active' : ''}`}
-                            >
-                              <Icon className="aure-nav-icon" size={17} strokeWidth={active ? 2 : 1.75} style={{ color: active ? (isDark ? '#C084FC' : '#7C3AED') : (isDark ? '#A78BFA' : 'rgba(109,40,217,0.55)'), flexShrink: 0 }} />
-                              <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                {item.label}
-                              </span>
-                              {item.shortcut && (
-                                <span
-                                  className="aure-nav-shortcut"
-                                  style={{ fontSize: 10, fontWeight: 500, color: isDark ? D.textMuted : 'rgba(109,40,217,0.30)' }}
-                                >
-                                  {item.shortcut}
+                      {!isGroupCollapsed && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                          {group.items.map(item => {
+                            const Icon = item.icon;
+                            const active = isActive(item.id);
+                            return (
+                              <button
+                                key={item.id}
+                                id={`nav-${item.id}`}
+                                onClick={() => navigate(item.id)}
+                                style={{
+                                  display: 'flex', alignItems: 'center', gap: 9, padding: '7px 8px',
+                                  borderRadius: 8, fontSize: 13.5, fontWeight: active ? 600 : 450,
+                                  cursor: 'pointer', border: 'none', width: '100%', textAlign: 'left',
+                                  color: active ? (isDark ? '#F5F4F8' : '#4C1D95') : (isDark ? D.textSecondary : 'rgba(45,27,105,0.78)'),
+                                  background: active ? (isDark ? 'linear-gradient(90deg, rgba(139, 92, 246, 0.22) 0%, rgba(168, 85, 247, 0.10) 100%)' : 'rgba(124,58,237,0.09)') : 'transparent',
+                                  boxShadow: active && isDark ? 'inset 0 0 0 1px rgba(167, 139, 250, 0.30)' : 'none',
+                                }}
+                                className={`aure-nav-item ${active ? 'is-active' : ''}`}
+                              >
+                                <Icon className="aure-nav-icon" size={17} strokeWidth={active ? 2 : 1.75} style={{ color: active ? (isDark ? '#C084FC' : '#7C3AED') : (isDark ? '#A78BFA' : 'rgba(109,40,217,0.55)'), flexShrink: 0 }} />
+                                <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                  {item.label}
                                 </span>
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+                                {item.shortcut && (
+                                  <span
+                                    className="aure-nav-shortcut"
+                                    style={{ fontSize: 10, fontWeight: 500, color: isDark ? D.textMuted : 'rgba(109,40,217,0.30)' }}
+                                  >
+                                    {item.shortcut}
+                                  </span>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
 
               {/* Section Divider */}
               <div style={{
@@ -868,7 +934,16 @@ export default function Sidebar() {
               }} />
 
               {/* Recent History */}
-              <div style={{ display: 'flex', flexDirection: 'column', marginBottom: 4 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  flex: 1,
+                  minHeight: 0,
+                  overflow: 'hidden',
+                  marginBottom: 2,
+                }}
+              >
                 <div
                   role="button" tabIndex={0}
                   onClick={() => setRecentCollapsed(v => !v)}
@@ -877,7 +952,7 @@ export default function Sidebar() {
                   style={{
                     display: 'flex', alignItems: 'center', gap: 6, padding: '4px 6px',
                     borderRadius: 4, border: 'none', background: 'transparent', cursor: 'pointer',
-                    width: '100%', textAlign: 'left', marginBottom: 1,
+                    width: '100%', textAlign: 'left', marginBottom: 2, flexShrink: 0,
                   }}
                   className="aure-soft-btn"
                 >
@@ -910,7 +985,20 @@ export default function Sidebar() {
                 </div>
 
                 {!recentCollapsed && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <div
+                    onScroll={handleRecentScroll}
+                    className="custom-scrollbar"
+                    style={{
+                      flex: 1,
+                      minHeight: 0,
+                      overflowY: 'auto',
+                      overflowX: 'hidden',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 1,
+                      paddingRight: 2,
+                    }}
+                  >
                     {recentItems.length === 0 ? (
                       <div
                         style={{
@@ -923,82 +1011,101 @@ export default function Sidebar() {
                         No recent prompts.
                       </div>
                     ) : (
-                      recentItems.map(item => {
-                        const Icon = SIDEBAR_HISTORY_ICONS[item.category] || Clock;
-                        const accent = SIDEBAR_HISTORY_ACCENTS[item.category] || '#7C3AED';
-                        const active = pathname === `/dashboard/chat/${item.id}`;
-                        return (
+                      <>
+                        {recentItems.map(item => {
+                          const Icon = SIDEBAR_HISTORY_ICONS[item.category] || Clock;
+                          const accent = SIDEBAR_HISTORY_ACCENTS[item.category] || '#7C3AED';
+                          const active = pathname === `/dashboard/chat/${item.id}`;
+                          return (
+                            <div
+                              key={item.id}
+                              id={`sidebar-history-item-${item.id}`}
+                              role="button"
+                              tabIndex={0}
+                              title={item.prompt}
+                              onClick={() => router.push(`/dashboard/chat/${item.id}`)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  router.push(`/dashboard/chat/${item.id}`);
+                                }
+                              }}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px',
+                                borderRadius: 8,
+                                background: active ? (isDark ? 'rgba(139,92,246,0.18)' : 'rgba(124,58,237,0.09)') : 'transparent',
+                                cursor: 'pointer', width: '100%', textAlign: 'left',
+                                flexShrink: 0,
+                              }}
+                              className={`group/chatitem aure-recent-item ${active ? 'is-active' : ''}`}
+                            >
+                              <Icon size={14} color={accent} strokeWidth={1.75} style={{ flexShrink: 0 }} />
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0, flex: 1, overflow: 'hidden' }}>
+                                <MarqueeTitle
+                                  text={item.title || item.prompt}
+                                  titleHover={item.prompt}
+                                  style={{
+                                    fontSize: 13,
+                                    fontWeight: active ? 600 : 450,
+                                    color: active ? (isDark ? '#F5F4F8' : '#4C1D95') : (isDark ? D.textSecondary : 'rgba(45,27,105,0.80)'),
+                                    lineHeight: 1.3,
+                                    flex: 1,
+                                  }}
+                                />
+                                {item.isFavorite && <Star size={9} fill="#F59E0B" color="#F59E0B" style={{ flexShrink: 0 }} />}
+                              </div>
+
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                <span
+                                  style={{
+                                    fontSize: 10, fontWeight: 600, color: accent, opacity: 0.85,
+                                    padding: '1px 3px', borderRadius: 4,
+                                  }}
+                                  className="group-hover/chatitem:hidden"
+                                >
+                                  {item.score == null ? (
+                                    <ScoreSpinner size={10} color={accent} />
+                                  ) : item.score}
+                                </span>
+                                <button
+                                  id={`sidebar-delete-btn-${item.id}`}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setChatToDelete({ id: item.id, prompt: item.title || item.prompt });
+                                  }}
+                                  title="Delete chat"
+                                  style={{
+                                    display: 'none', alignItems: 'center', justifyContent: 'center',
+                                    width: 18, height: 18, borderRadius: 4, border: 'none',
+                                    cursor: 'pointer', background: 'rgba(239,68,68,0.10)', color: '#EF4444',
+                                    transition: 'all 140ms ease', flexShrink: 0,
+                                  }}
+                                  className="group-hover/chatitem:!flex hover:!bg-[#EF4444] hover:!text-white"
+                                >
+                                  <Trash2 size={11} strokeWidth={2} />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {isLoadingMore && (
                           <div
-                            key={item.id}
-                            id={`sidebar-history-item-${item.id}`}
-                            role="button"
-                            tabIndex={0}
-                            title={item.prompt}
-                            onClick={() => router.push(`/dashboard/chat/${item.id}`)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
-                                router.push(`/dashboard/chat/${item.id}`);
-                              }
-                            }}
                             style={{
-                              display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px',
-                              borderRadius: 8,
-                              background: active ? (isDark ? 'rgba(139,92,246,0.18)' : 'rgba(124,58,237,0.09)') : 'transparent',
-                              cursor: 'pointer', width: '100%', textAlign: 'left',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              padding: '8px 0',
+                              gap: 6,
+                              color: isDark ? D.textMuted : 'rgba(45,27,105,0.45)',
+                              fontSize: 11,
                               flexShrink: 0,
                             }}
-                            className={`group/chatitem aure-recent-item ${active ? 'is-active' : ''}`}
                           >
-                            <Icon size={14} color={accent} strokeWidth={1.75} style={{ flexShrink: 0 }} />
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0, flex: 1, overflow: 'hidden' }}>
-                              <MarqueeTitle
-                                text={item.title || item.prompt}
-                                titleHover={item.prompt}
-                                style={{
-                                  fontSize: 13,
-                                  fontWeight: active ? 600 : 450,
-                                  color: active ? (isDark ? '#F5F4F8' : '#4C1D95') : (isDark ? D.textSecondary : 'rgba(45,27,105,0.80)'),
-                                  lineHeight: 1.3,
-                                  flex: 1,
-                                }}
-                              />
-                              {item.isFavorite && <Star size={9} fill="#F59E0B" color="#F59E0B" style={{ flexShrink: 0 }} />}
-                            </div>
-
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                              <span
-                                style={{
-                                  fontSize: 10, fontWeight: 600, color: accent, opacity: 0.85,
-                                  padding: '1px 3px', borderRadius: 4,
-                                }}
-                                className="group-hover/chatitem:hidden"
-                              >
-                                {item.score == null ? (
-                                  <ScoreSpinner size={10} color={accent} />
-                                ) : item.score}
-                              </span>
-                              <button
-                                id={`sidebar-delete-btn-${item.id}`}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setChatToDelete({ id: item.id, prompt: item.title || item.prompt });
-                                }}
-                                title="Delete chat"
-                                style={{
-                                  display: 'none', alignItems: 'center', justifyContent: 'center',
-                                  width: 18, height: 18, borderRadius: 4, border: 'none',
-                                  cursor: 'pointer', background: 'rgba(239,68,68,0.10)', color: '#EF4444',
-                                  transition: 'all 140ms ease', flexShrink: 0,
-                                }}
-                                className="group-hover/chatitem:!flex hover:!bg-[#EF4444] hover:!text-white"
-                              >
-                                <Trash2 size={11} strokeWidth={2} />
-                              </button>
-                            </div>
+                            <ScoreSpinner size={11} color="#7C3AED" />
+                            <span>Loading more...</span>
                           </div>
-                        );
-                      })
+                        )}
+                      </>
                     )}
                   </div>
                 )}

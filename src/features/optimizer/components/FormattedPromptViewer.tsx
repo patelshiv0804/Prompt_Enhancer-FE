@@ -6,14 +6,40 @@ import { useTheme, D } from '@/theme/theme';
 
 interface FormattedPromptViewerProps {
   content: string;
+  isStreaming?: boolean;
 }
 
-export default function FormattedPromptViewer({ content }: FormattedPromptViewerProps) {
+export default function FormattedPromptViewer({ content, isStreaming = false }: FormattedPromptViewerProps) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const [copiedCodeIndex, setCopiedCodeIndex] = useState<number | null>(null);
 
-  if (!content) return null;
+  const Caret = () => (
+    <span
+      aria-hidden="true"
+      style={{
+        display: 'inline-block',
+        width: 6,
+        height: 15,
+        marginLeft: 4,
+        borderRadius: 1,
+        background: isDark ? '#C084FC' : '#7C3AED',
+        verticalAlign: 'text-bottom',
+        animation: 'streamCaretBlink 1s step-end infinite',
+      }}
+    />
+  );
+
+  if (!content || !content.trim()) {
+    if (isStreaming) {
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', minHeight: 24 }}>
+          <Caret />
+        </div>
+      );
+    }
+    return null;
+  }
 
   let text = content.trim();
 
@@ -189,7 +215,7 @@ export default function FormattedPromptViewer({ content }: FormattedPromptViewer
   ];
   const sectionLabelRe = new RegExp(`^(${SECTION_LABELS.join('|')}):?\\s*(.*)$`, 'i');
 
-  const renderSectionLabel = (label: string, rest: string, key: number) => (
+  const renderSectionLabel = (label: string, rest: string, key: number, showCaret?: boolean) => (
     <div
       key={key}
       style={{
@@ -222,10 +248,13 @@ export default function FormattedPromptViewer({ content }: FormattedPromptViewer
       >
         {label.toUpperCase()}
       </span>
-      {rest && (
+      {rest ? (
         <span style={{ color: isDark ? D.textPrimary : '#374151', fontSize: 13.5, lineHeight: 1.6 }}>
           {renderInline(rest)}
+          {showCaret && <Caret />}
         </span>
+      ) : (
+        showCaret && <Caret />
       )}
     </div>
   );
@@ -270,19 +299,42 @@ export default function FormattedPromptViewer({ content }: FormattedPromptViewer
     blocks.push({ type: 'code', content: codeBuffer.join('\n'), language: codeLang || 'code' });
   }
 
+  if (blocks.length === 0 && isStreaming) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', minHeight: 24 }}>
+        <Caret />
+      </div>
+    );
+  }
+
+  const lastBlockIndex = blocks.length - 1;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18, width: '100%', fontSize: 14, lineHeight: 1.65 }}>
       {blocks.map((block, bIdx) => {
+        const isLastBlock = bIdx === lastBlockIndex;
+
         if (block.type === 'table') {
           const rows = block.rows ?? [];
-          if (rows.some(isSeparatorRow) && rows.length >= 2) return renderTable(rows, bIdx);
+          if (rows.some(isSeparatorRow) && rows.length >= 2) {
+            return (
+              <div key={bIdx}>
+                {renderTable(rows, bIdx)}
+                {isLastBlock && isStreaming && <Caret />}
+              </div>
+            );
+          }
           return (
             <div key={bIdx} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {rows.map((r, i) => (
-                <p key={i} style={{ margin: 0, color: isDark ? D.textPrimary : '#374151', fontFamily: 'monospace', fontSize: 13 }}>
-                  {r}
-                </p>
-              ))}
+              {rows.map((r, i) => {
+                const isLast = isLastBlock && isStreaming && i === rows.length - 1;
+                return (
+                  <p key={i} style={{ margin: 0, color: isDark ? D.textPrimary : '#374151', fontFamily: 'monospace', fontSize: 13 }}>
+                    {r}
+                    {isLast && <Caret />}
+                  </p>
+                );
+              })}
             </div>
           );
         }
@@ -352,12 +404,22 @@ export default function FormattedPromptViewer({ content }: FormattedPromptViewer
                 }}
               >
                 <code>{block.content}</code>
+                {isLastBlock && isStreaming && <Caret />}
               </pre>
             </div>
           );
         }
 
         const paragraphLines = block.content.split('\n');
+        let lastValidLineIdx = -1;
+        for (let idx = paragraphLines.length - 1; idx >= 0; idx--) {
+          const t = paragraphLines[idx].trim();
+          if (t && /[a-zA-Z0-9]/.test(t)) {
+            lastValidLineIdx = idx;
+            break;
+          }
+        }
+
         return (
           <div key={bIdx} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {paragraphLines.map((line, lIdx) => {
@@ -365,7 +427,6 @@ export default function FormattedPromptViewer({ content }: FormattedPromptViewer
               if (!trimmed) return null;
 
               // Filter out noise / separator / placeholder lines that contain no letters or digits
-              // (e.g. "...", "…", ".", "---", "***", "•", "·", "___", "- ...", etc.)
               if (!/[a-zA-Z0-9]/.test(trimmed)) return null;
 
               // Filter out placeholder bullet items like "- ...", "* .", "• ...", "1. ..."
@@ -374,9 +435,11 @@ export default function FormattedPromptViewer({ content }: FormattedPromptViewer
               // Filter out standalone meta labels if any survived
               if (/^\(?(?:Production[- ]Ready|Production[- ]Grade|RTCEF(?: Framework)?|RTCEF)\)?:?$/i.test(trimmed)) return null;
 
+              const isLastLine = isLastBlock && isStreaming && (lIdx === lastValidLineIdx || (lastValidLineIdx === -1 && lIdx === paragraphLines.length - 1));
+
               // Section badge labels
               const slMatch = trimmed.match(sectionLabelRe);
-              if (slMatch) return renderSectionLabel(slMatch[1], slMatch[2] ?? '', lIdx);
+              if (slMatch) return renderSectionLabel(slMatch[1], slMatch[2] ?? '', lIdx, isLastLine);
 
               // Headings (# Heading)
               const headingMatch = trimmed.match(/^(#{1,6})\s+(.*)$/);
@@ -406,6 +469,7 @@ export default function FormattedPromptViewer({ content }: FormattedPromptViewer
                     }}
                   >
                     {renderInline(headingMatch[2])}
+                    {isLastLine && <Caret />}
                   </div>
                 );
               }
@@ -418,7 +482,10 @@ export default function FormattedPromptViewer({ content }: FormattedPromptViewer
                 return (
                   <div key={lIdx} style={{ display: 'flex', gap: 10, paddingLeft: 8, alignItems: 'flex-start' }}>
                     <span style={{ color: isDark ? '#A78BFA' : '#7C3AED', fontWeight: 800, fontSize: 16, lineHeight: '18px', flexShrink: 0 }}>•</span>
-                    <div style={{ color: isDark ? D.textPrimary : '#374151', flex: 1 }}>{renderInline(cleaned)}</div>
+                    <div style={{ color: isDark ? D.textPrimary : '#374151', flex: 1 }}>
+                      {renderInline(cleaned)}
+                      {isLastLine && <Caret />}
+                    </div>
                   </div>
                 );
               }
@@ -449,18 +516,23 @@ export default function FormattedPromptViewer({ content }: FormattedPromptViewer
                     >
                       {num}
                     </span>
-                    <div style={{ color: isDark ? D.textPrimary : '#374151', flex: 1 }}>{renderInline(cleaned)}</div>
+                    <div style={{ color: isDark ? D.textPrimary : '#374151', flex: 1 }}>
+                      {renderInline(cleaned)}
+                      {isLastLine && <Caret />}
+                    </div>
                   </div>
                 );
               }
 
-              // Standard paragraph line (stray leading/trailing asterisks stripped by renderInline)
+              // Standard paragraph line
               return (
                 <p key={lIdx} style={{ margin: 0, color: isDark ? D.textPrimary : '#374151' }}>
                   {renderInline(trimmed)}
+                  {isLastLine && <Caret />}
                 </p>
               );
             })}
+            {isLastBlock && isStreaming && lastValidLineIdx === -1 && <Caret />}
           </div>
         );
       })}

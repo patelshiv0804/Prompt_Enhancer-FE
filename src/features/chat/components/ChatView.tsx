@@ -922,7 +922,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
   const [recentChatsForExport, setRecentChatsForExport] = useState<MultiChatExportItem[]>([]);
 
   useEffect(() => {
-    fetchHistory(1, 15, { search: '', category: 'all', sortBy: 'most-recent' })
+    fetchHistory(1, 50, { search: '', category: 'all', sortBy: 'most-recent' })
       .then(res => {
         if (res?.items) {
           setRecentChatsForExport(res.items.map(i => ({
@@ -1295,59 +1295,26 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
           </div>
         </div>
 
-        {isGenerating ? (
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative', minHeight: 0 }}>
-            {streamingText ? (
-              <div
-                ref={streamScrollRef}
-                className="custom-scrollbar"
-                style={{
-                  flex: 1,
-                  minHeight: 0,
-                  fontSize: 14,
-                  lineHeight: 1.6,
-                  overflowY: 'auto',
-                  paddingRight: 16,
-                  color: isDark ? D.textPrimary : '#1E293B',
-                  letterSpacing: '0.01em',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
-                }}
-              >
-                {formatPromptText(streamingText)}
-                <span
-                  aria-hidden="true"
-                  style={{
-                    display: 'inline-block',
-                    width: 7,
-                    height: 15,
-                    marginLeft: 2,
-                    borderRadius: 1,
-                    background: '#8B5CF6',
-                    verticalAlign: 'text-bottom',
-                    animation: 'streamCaretBlink 1s step-end infinite',
-                  }}
-                />
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 12, color: isDark ? '#C084FC' : '#6D28D9' }}>
-                <div style={{
-                  width: 44, height: 44, borderRadius: '50%',
-                  background: isDark ? 'rgba(139,92,246,0.2)' : 'linear-gradient(135deg, rgba(124,58,237,0.12), rgba(168,85,247,0.18))',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <Wand2 size={22} style={{ animation: 'spin 2s linear infinite', color: '#8B5CF6' }} />
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <p style={{ margin: 0, fontSize: 13.5, fontWeight: 700, color: isDark ? D.textPrimary : '#241144' }}>Re-enhancing prompt…</p>
-                  <p style={{ margin: '4px 0 0', fontSize: 12, color: isDark ? D.textSecondary : '#64748B' }}>Synthesizing higher quality prompt version in real-time</p>
-                </div>
-              </div>
-            )}
+        {isGenerating && !streamingText ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 12, color: isDark ? '#C084FC' : '#6D28D9' }}>
+            <div style={{
+              width: 44, height: 44, borderRadius: '50%',
+              background: isDark ? 'rgba(139,92,246,0.2)' : 'linear-gradient(135deg, rgba(124,58,237,0.12), rgba(168,85,247,0.18))',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Wand2 size={22} style={{ animation: 'spin 2s linear infinite', color: '#8B5CF6' }} />
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ margin: 0, fontSize: 13.5, fontWeight: 700, color: isDark ? D.textPrimary : '#241144' }}>Re-enhancing prompt…</p>
+              <p style={{ margin: '4px 0 0', fontSize: 12, color: isDark ? D.textSecondary : '#64748B' }}>Synthesizing higher quality prompt version in real-time</p>
+            </div>
           </div>
         ) : (
-          <div className="custom-scrollbar" style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 16 }}>
-            <FormattedPromptViewer content={v.optimizedPrompt} />
+          <div ref={streamScrollRef} className="custom-scrollbar" style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 16 }}>
+            <FormattedPromptViewer
+              content={isGenerating ? formatPromptText(streamingText) : v.optimizedPrompt}
+              isStreaming={isGenerating}
+            />
           </div>
         )}
       </div>
