@@ -31,6 +31,7 @@ function OptimizerPageContent() {
   const activeTemplateName = searchParams.get('template');
   const activeTemplateId = searchParams.get('template_id');
   const [templateDismissed, setTemplateDismissed] = useState(false);
+
   // Effective applied template — cleared once the user dismisses the chip so
   // enhancement reverts to the normal automatic-retrieval flow.
   const appliedTemplateId = !templateDismissed ? activeTemplateId : null;
