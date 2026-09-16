@@ -9,11 +9,12 @@ import {
   Zap, Film, Mail, Database, FileText, Loader2, AlertCircle, RefreshCw,
   Rocket, GraduationCap, Microscope, PenLine, LayoutGrid, List,
   X, Copy, Check, Eye, Compass, Flame, ArrowUpRight, CheckCircle2,
-  Cpu, Award,
+  Cpu, Award, Plus, Trash2,
 } from 'lucide-react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
-import { loadTemplates, type Template } from '../services/templatesService';
+import { loadTemplates, deleteCustomTemplate, type Template } from '../services/templatesService';
 import TemplatesHubSkeleton from './TemplatesHubSkeleton';
+import CreateTemplateModal from './CreateTemplateModal';
 import { useTheme, D } from '@/theme/theme';
 
 /* ── Category & Role Icon Taxonomy ── */
@@ -636,6 +637,26 @@ function NotionTemplateCard({
           >
             {categoryLabel(template.category)}
           </span>
+          {template.isCustom && (
+            <span
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                padding: '2px 6px',
+                borderRadius: 5,
+                background: isDark ? 'rgba(244, 114, 182, 0.20)' : 'rgba(236, 72, 153, 0.12)',
+                color: isDark ? '#F472B6' : '#DB2777',
+                border: `1px solid ${isDark ? 'rgba(244, 114, 182, 0.35)' : 'rgba(236, 72, 153, 0.25)'}`,
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 3,
+              }}
+            >
+              <Sparkles size={9} /> Custom
+            </span>
+          )}
         </div>
 
         <button
@@ -751,6 +772,7 @@ function NotionTemplateCard({
         }}
       >
         <span
+          title={`${template.useCount ?? 0} uses`}
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -761,7 +783,7 @@ function NotionTemplateCard({
             whiteSpace: 'nowrap',
           }}
         >
-          <Star size={11} strokeWidth={2} style={{ color: '#F59E0B' }} />
+          <Flame size={12} strokeWidth={2} style={{ color: '#F97316' }} />
           {template.useCount?.toLocaleString() ?? '0'}
         </span>
 
@@ -908,6 +930,25 @@ function NotionListRow({
             >
               {categoryLabel(template.category)}
             </span>
+            {template.isCustom && (
+              <span
+                style={{
+                  fontSize: 9,
+                  fontWeight: 700,
+                  padding: '2px 5px',
+                  borderRadius: 4,
+                  background: isDark ? 'rgba(244, 114, 182, 0.20)' : 'rgba(236, 72, 153, 0.12)',
+                  color: isDark ? '#F472B6' : '#DB2777',
+                  border: `1px solid ${isDark ? 'rgba(244, 114, 182, 0.35)' : 'rgba(236, 72, 153, 0.25)'}`,
+                  textTransform: 'uppercase',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 2,
+                }}
+              >
+                <Sparkles size={8} /> Custom
+              </span>
+            )}
           </div>
 
           {!isPhone && (
@@ -928,6 +969,21 @@ function NotionListRow({
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: isSmall ? 6 : isPhone ? 8 : 14, flexShrink: 0 }}>
+        <span
+          title={`${template.useCount ?? 0} uses`}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
+            fontSize: 11.5,
+            fontWeight: 500,
+            color: isDark ? D.textMuted : 'var(--color-text-secondary)',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <Flame size={12} strokeWidth={2} style={{ color: '#F97316' }} />
+          {template.useCount?.toLocaleString() ?? '0'}
+        </span>
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -984,6 +1040,7 @@ function QuickLookModal({
   onUse,
   isBookmarked,
   onToggleBookmark,
+  onDelete,
   isSmall,
 }: {
   template: Template | null;
@@ -991,6 +1048,7 @@ function QuickLookModal({
   onUse: (t: Template) => void;
   isBookmarked: boolean;
   onToggleBookmark: (id: string) => void;
+  onDelete?: (id: string) => void;
   isSmall: boolean;
 }) {
   const { theme } = useTheme();
@@ -1080,6 +1138,25 @@ function QuickLookModal({
                   >
                     {categoryLabel(template.category)}
                   </span>
+                  {template.isCustom && (
+                    <span
+                      style={{
+                        fontSize: 10.5,
+                        fontWeight: 700,
+                        padding: '2px 7px',
+                        borderRadius: 6,
+                        background: isDark ? 'rgba(244, 114, 182, 0.20)' : 'rgba(236, 72, 153, 0.12)',
+                        color: isDark ? '#F472B6' : '#DB2777',
+                        border: `1px solid ${isDark ? 'rgba(244, 114, 182, 0.35)' : 'rgba(236, 72, 153, 0.25)'}`,
+                        textTransform: 'uppercase',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 3,
+                      }}
+                    >
+                      <Sparkles size={10} /> Custom
+                    </span>
+                  )}
                 </div>
                 <h2 style={{ fontSize: isSmall ? 18 : 20, fontWeight: 800, color: isDark ? D.textPrimary : 'var(--color-text-primary)', margin: 0, letterSpacing: -0.3 }}>
                   {template.title}
@@ -1222,6 +1299,37 @@ function QuickLookModal({
                 {isBookmarked ? <BookmarkCheck size={14} /> : <Bookmark size={14} />}
                 <span>{isBookmarked ? 'Saved' : 'Save'}</span>
               </button>
+
+              {template.isCustom && onDelete && (
+                <button
+                  onClick={() => {
+                    if (window.confirm(`Are you sure you want to delete "${template.title}"?`)) {
+                      onDelete(template.id);
+                      onClose();
+                    }
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
+                    padding: '9px 13px',
+                    borderRadius: 10,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    border: '1px solid rgba(239, 68, 68, 0.30)',
+                    background: isDark ? 'rgba(239, 68, 68, 0.12)' : 'rgba(239, 68, 68, 0.08)',
+                    color: '#EF4444',
+                    cursor: 'pointer',
+                    flex: isSmall ? '1 1 auto' : undefined,
+                  }}
+                  className="hover:!bg-[rgba(239,68,68,0.20)]"
+                  title="Delete Custom Template"
+                >
+                  <Trash2 size={14} />
+                  <span>Delete</span>
+                </button>
+              )}
             </div>
 
             <button
@@ -1267,14 +1375,15 @@ export default function TemplatesPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Navigation & View state
-  const [navTab, setNavTab] = useState<'curated' | 'categories' | 'popular' | 'saved'>('curated');
+  const [navTab, setNavTab] = useState<'curated' | 'categories' | 'popular' | 'saved' | 'custom'>('curated');
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState<'popular' | 'newest' | 'name'>('popular');
 
-  // Quick look modal state
+  // Quick look & Create template modal state
   const [quickLookTemplate, setQuickLookTemplate] = useState<Template | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   // Bookmarks persisted in localStorage
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
@@ -1338,12 +1447,26 @@ export default function TemplatesPage() {
 
   const handleUse = useCallback(
     (template: Template) => {
-      router.push(
-        `/dashboard/optimizer?template_id=${encodeURIComponent(template.id)}&template=${encodeURIComponent(template.title)}`
-      );
+      const params = new URLSearchParams({
+        template_id: template.id,
+        template: template.title,
+      });
+      router.push(`/dashboard/optimizer?${params.toString()}`);
     },
     [router]
   );
+
+  const handleDeleteCustomTemplate = useCallback(async (id: string) => {
+    try {
+      await deleteCustomTemplate(id);
+      setTemplates((prev) => prev.filter((t) => t.id !== id));
+    } catch (err: any) {
+      console.error('Failed to delete custom template:', err);
+      alert(err?.message || 'Failed to delete custom template');
+    }
+  }, []);
+
+  const customCount = useMemo(() => templates.filter((t) => t.isCustom).length, [templates]);
 
   // Category facets
   const categories = useMemo(() => {
@@ -1369,6 +1492,8 @@ export default function TemplatesPage() {
     // Filter by tab
     if (navTab === 'saved') {
       list = list.filter((t) => bookmarkedIds.has(t.id));
+    } else if (navTab === 'custom') {
+      list = list.filter((t) => t.isCustom);
     } else if (navTab === 'popular') {
       list.sort((a, b) => (b.useCount ?? 0) - (a.useCount ?? 0));
     }
@@ -1461,79 +1586,42 @@ export default function TemplatesPage() {
             >
               Templates Hub
             </h1>
-            <span
-              style={{
-                fontSize: 10.5,
-                fontWeight: 700,
-                background: isDark ? 'rgba(139, 92, 246, 0.18)' : 'rgba(124,58,237,0.08)',
-                color: isDark ? '#C084FC' : 'var(--color-primary)',
-                padding: '3px 8px',
-                borderRadius: 9999,
-                border: `1px solid ${isDark ? 'rgba(167, 139, 250, 0.3)' : 'rgba(124,58,237,0.18)'}`,
-              }}
-            >
-              {templates.length} Curated
-            </span>
           </div>
           <p style={{ fontSize: isSmall ? 12.5 : 13.5, color: isDark ? D.textSecondary : 'var(--color-text-secondary)', margin: 0 }}>
             Masterfully engineered prompt recipes for industry-leading AI models
           </p>
         </div>
 
-        {/* Search & View Mode Switcher */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: isPhone ? '100%' : 'auto' }}>
-          <div style={{ position: 'relative', flex: isPhone ? 1 : '0 0 280px' }}>
-            <Search
-              size={15}
-              strokeWidth={1.8}
-              style={{
-                position: 'absolute',
-                left: 12,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: isDark ? D.textMuted : 'var(--color-text-secondary)',
-                pointerEvents: 'none',
-              }}
-            />
-            <input
-              id="templates-search-input"
-              type="text"
-              placeholder="Search by role, task, model..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              disabled={loading || !!error}
-              style={{
-                width: '100%',
-                padding: '9px 32px 9px 36px',
-                fontSize: 13,
-                background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
-                border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(124,58,237,0.14)'}`,
-                borderRadius: 10,
-                outline: 'none',
-                color: isDark ? D.textPrimary : 'var(--color-text-primary)',
-                transition: 'all 200ms ease',
-              }}
-              className={isDark ? 'focus:!border-[rgba(167,139,250,0.5)] focus:shadow-[0_0_0_3px_rgba(139,92,246,0.15)]' : 'focus:!border-[rgba(124,58,237,0.4)] focus:shadow-[0_0_0_3px_rgba(124,58,237,0.08)]'}
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                style={{
-                  position: 'absolute',
-                  right: 10,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: isDark ? D.textSecondary : 'var(--color-text-secondary)',
-                  padding: 2,
-                }}
-              >
-                <X size={14} />
-              </button>
-            )}
-          </div>
+        {/* Search, View Mode Switcher & Create Template Button */}
+        {/* View Mode Switcher & Create Template Button */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: isPhone ? '100%' : 'auto', flexWrap: isPhone ? 'wrap' : 'nowrap' }}>
+          <button
+            id="create-template-btn"
+            onClick={() => setIsCreateModalOpen(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              padding: '9px 15px',
+              borderRadius: 10,
+              fontSize: 13,
+              fontWeight: 700,
+              border: 'none',
+              cursor: 'pointer',
+              background: 'linear-gradient(135deg, #7C3AED, #9333EA)',
+              color: '#FFFFFF',
+              boxShadow: '0 2px 10px rgba(124, 58, 237, 0.35)',
+              transition: 'all 160ms ease',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
+            }}
+            className="hover:brightness-110 active:scale-[0.98]"
+            title="Create Custom Prompt Template"
+          >
+            <Plus size={15} strokeWidth={2.4} />
+            <span>New Template</span>
+          </button>
 
           {/* View Switcher: Grid vs List */}
           <div
@@ -1584,24 +1672,26 @@ export default function TemplatesPage() {
         </div>
       </div>
 
-      {/* ── Notion / Apple Style Segmented Tab Navigation ── */}
+      {/* ── Notion / Apple Style Segmented Tab Navigation with Search on the Right ── */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           borderBottom: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.10)'}`,
-          marginBottom: 22,
-          flexWrap: 'wrap',
-          gap: 10,
+          marginBottom: 16,
+          flexWrap: isPhone ? 'wrap' : 'nowrap',
+          gap: 12,
+          paddingBottom: 4,
         }}
       >
-        <div style={{ display: 'flex', gap: 4, overflowX: 'auto', paddingBottom: 2, scrollbarWidth: 'none' }}>
+        <div style={{ display: 'flex', gap: 4, overflowX: 'auto', paddingBottom: 2, scrollbarWidth: 'none', flexShrink: 0 }}>
           {[
             { id: 'curated', label: 'Curated Showcase', icon: Compass },
             { id: 'categories', label: 'All Categories', icon: LayoutGrid },
             { id: 'popular', label: 'Popular & Top Rated', icon: Flame },
             { id: 'saved', label: `Saved (${bookmarkedIds.size})`, icon: Bookmark },
+            { id: 'custom', label: `My Templates (${customCount})`, icon: Sparkles },
           ].map((tab) => {
             const Icon = tab.icon;
             const active = navTab === tab.id;
@@ -1610,7 +1700,7 @@ export default function TemplatesPage() {
                 key={tab.id}
                 onClick={() => {
                   setNavTab(tab.id as any);
-                  if (tab.id === 'curated') setActiveCategory('all');
+                  if (tab.id === 'curated' || tab.id === 'custom') setActiveCategory('all');
                 }}
                 style={{
                   display: 'flex',
@@ -1637,39 +1727,91 @@ export default function TemplatesPage() {
           })}
         </div>
 
-        {/* Category Pills & Sort Dropdown */}
-        {(navTab === 'categories' || navTab === 'curated' || searchQuery) && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingBottom: 6, overflowX: 'auto', width: isPhone ? '100%' : 'auto', scrollbarWidth: 'none' }}>
-            <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none', flexWrap: isPhone ? 'nowrap' : 'wrap' }}>
-              {categories.map((cat) => {
-                const active = activeCategory === cat;
-                return (
-                  <button
-                    key={cat}
-                    onClick={() => setActiveCategory(cat)}
-                    style={{
-                      padding: '4px 11px',
-                      borderRadius: 999,
-                      fontSize: 11.5,
-                      fontWeight: active ? 700 : 500,
-                      border: active ? `1px solid ${isDark ? '#8B5CF6' : 'var(--color-primary)'}` : `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.10)'}`,
-                      background: active ? (isDark ? 'linear-gradient(135deg, #7C3AED, #A855F7)' : 'var(--color-primary)') : (isDark ? 'rgba(255, 255, 255, 0.05)' : '#FFFFFF'),
-                      color: active ? '#FFFFFF' : (isDark ? D.textSecondary : 'var(--color-text-secondary)'),
-                      cursor: 'pointer',
-                      transition: 'all 150ms ease',
-                      whiteSpace: 'nowrap',
-                      flexShrink: 0,
-                    }}
-                    className={!active ? (isDark ? 'hover:!border-[rgba(167,139,250,0.35)] hover:!text-[#FFFFFF]' : 'hover:!border-[rgba(124,58,237,0.25)] hover:!text-[var(--color-text-primary)]') : ''}
-                  >
-                    {categoryLabel(cat)}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        {/* Search Bar in the line of the tabs */}
+        <div style={{ position: 'relative', width: isPhone ? '100%' : 260, flexShrink: 0, marginBottom: 2 }}>
+          <Search
+            size={14}
+            strokeWidth={1.8}
+            style={{
+              position: 'absolute',
+              left: 11,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: isDark ? D.textMuted : 'var(--color-text-secondary)',
+              pointerEvents: 'none',
+            }}
+          />
+          <input
+            id="templates-search-input"
+            type="text"
+            placeholder="Search by role, task, model..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            disabled={loading || !!error}
+            style={{
+              width: '100%',
+              padding: '7px 30px 7px 32px',
+              fontSize: 12.5,
+              background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
+              border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(124,58,237,0.14)'}`,
+              borderRadius: 8,
+              outline: 'none',
+              color: isDark ? D.textPrimary : 'var(--color-text-primary)',
+              transition: 'all 200ms ease',
+            }}
+            className={isDark ? 'focus:!border-[rgba(167,139,250,0.5)] focus:shadow-[0_0_0_3px_rgba(139,92,246,0.15)]' : 'focus:!border-[rgba(124,58,237,0.4)] focus:shadow-[0_0_0_3px_rgba(124,58,237,0.08)]'}
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              style={{
+                position: 'absolute',
+                right: 8,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: isDark ? D.textSecondary : 'var(--color-text-secondary)',
+                padding: 2,
+              }}
+            >
+              <X size={13} />
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Category Filter Pills Row */}
+      {(navTab === 'categories' || navTab === 'curated' || searchQuery) && (
+        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none', flexWrap: isPhone ? 'nowrap' : 'wrap', marginBottom: 20, paddingBottom: 2 }}>
+          {categories.map((cat) => {
+            const active = activeCategory === cat;
+            return (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                style={{
+                  padding: '4px 11px',
+                  borderRadius: 999,
+                  fontSize: 11.5,
+                  fontWeight: active ? 700 : 500,
+                  border: active ? `1px solid ${isDark ? '#8B5CF6' : 'var(--color-primary)'}` : `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.10)'}`,
+                  background: active ? (isDark ? 'linear-gradient(135deg, #7C3AED, #A855F7)' : 'var(--color-primary)') : (isDark ? 'rgba(255, 255, 255, 0.05)' : '#FFFFFF'),
+                  color: active ? '#FFFFFF' : (isDark ? D.textSecondary : 'var(--color-text-secondary)'),
+                  cursor: 'pointer',
+                  transition: 'all 150ms ease',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                }}
+                className={!active ? (isDark ? 'hover:!border-[rgba(167,139,250,0.35)] hover:!text-[#FFFFFF]' : 'hover:!border-[rgba(124,58,237,0.25)] hover:!text-[var(--color-text-primary)]') : ''}
+              >
+                {categoryLabel(cat)}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* ── Loading / Error / Empty States ── */}
       {loading ? (
@@ -2044,36 +2186,68 @@ export default function TemplatesPage() {
                       color: isDark ? '#C084FC' : 'var(--color-primary)',
                     }}
                   >
-                    <Search size={28} strokeWidth={1.5} />
+                    {navTab === 'custom' ? <Sparkles size={28} strokeWidth={1.5} /> : <Search size={28} strokeWidth={1.5} />}
                   </div>
                   <h3 style={{ fontSize: 16, fontWeight: 700, color: isDark ? D.textPrimary : 'var(--color-text-primary)', margin: 0 }}>
-                    {navTab === 'saved' ? 'No saved templates yet' : 'No templates match your filter'}
+                    {navTab === 'saved'
+                      ? 'No saved templates yet'
+                      : navTab === 'custom'
+                      ? 'No custom templates yet'
+                      : 'No templates match your filter'}
                   </h3>
                   <p style={{ fontSize: 14, color: isDark ? D.textSecondary : 'var(--color-text-secondary)', margin: 0 }}>
                     {navTab === 'saved'
                       ? 'Click the bookmark icon on any template card to save it for quick access.'
+                      : navTab === 'custom'
+                      ? 'Create custom prompt recipes tailored for your specific roles, modes, and models.'
                       : 'Try resetting your search or choosing a different category.'}
                   </p>
-                  <button
-                    onClick={() => {
-                      setSearchQuery('');
-                      setActiveCategory('all');
-                      if (navTab === 'saved') setNavTab('curated');
-                    }}
-                    style={{
-                      marginTop: 8,
-                      padding: '8px 18px',
-                      borderRadius: 10,
-                      fontSize: 13,
-                      fontWeight: 600,
-                      border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(124,58,237,0.20)'}`,
-                      cursor: 'pointer',
-                      background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
-                      color: isDark ? '#C084FC' : 'var(--color-primary)',
-                    }}
-                  >
-                    Reset filters
-                  </button>
+                  {navTab === 'custom' ? (
+                    <button
+                      id="empty-create-template-btn"
+                      onClick={() => setIsCreateModalOpen(true)}
+                      style={{
+                        marginTop: 8,
+                        padding: '9px 20px',
+                        borderRadius: 10,
+                        fontSize: 13,
+                        fontWeight: 700,
+                        border: 'none',
+                        cursor: 'pointer',
+                        background: 'linear-gradient(135deg, #7C3AED, #9333EA)',
+                        color: '#FFFFFF',
+                        boxShadow: '0 4px 14px rgba(124,58,237,0.35)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                      }}
+                      className="hover:brightness-110 active:scale-[0.98]"
+                    >
+                      <Plus size={15} strokeWidth={2.4} />
+                      <span>Create Your First Template</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setSearchQuery('');
+                        setActiveCategory('all');
+                        if (navTab === 'saved') setNavTab('curated');
+                      }}
+                      style={{
+                        marginTop: 8,
+                        padding: '8px 18px',
+                        borderRadius: 10,
+                        fontSize: 13,
+                        fontWeight: 600,
+                        border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(124,58,237,0.20)'}`,
+                        cursor: 'pointer',
+                        background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
+                        color: isDark ? '#C084FC' : 'var(--color-primary)',
+                      }}
+                    >
+                      Reset filters
+                    </button>
+                  )}
                 </div>
               ) : viewMode === 'grid' ? (
                 <div
@@ -2124,7 +2298,19 @@ export default function TemplatesPage() {
         onUse={handleUse}
         isBookmarked={quickLookTemplate ? bookmarkedIds.has(quickLookTemplate.id) : false}
         onToggleBookmark={handleToggleBookmark}
+        onDelete={handleDeleteCustomTemplate}
         isSmall={isSmall}
+      />
+
+      {/* ── Create Custom Template Modal ── */}
+      <CreateTemplateModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={(newTemplate) => {
+          setTemplates((prev) => [newTemplate, ...prev.filter((t) => t.id !== newTemplate.id)]);
+          setNavTab('custom');
+          fetchData();
+        }}
       />
     </div>
   );

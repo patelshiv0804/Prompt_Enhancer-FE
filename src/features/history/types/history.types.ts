@@ -2,6 +2,7 @@ export type SortBy = 'most-recent' | 'highest-score' | 'lowest-score' | 'oldest'
 
 export interface HistoryItem {
   id: string;
+  title?: string;
   prompt: string;
   optimizedPrompt: string;
   category: string;

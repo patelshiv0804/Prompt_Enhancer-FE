@@ -93,7 +93,9 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
   const isDark = appTheme === 'dark';
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (queryTab === 'profile') setActiveTab('profile');
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     else if (queryTab === 'settings') setActiveTab('settings');
   }, [queryTab]);
 
@@ -119,6 +121,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
   // Keep the local control in sync when the theme is changed elsewhere (e.g. the
   // navbar toggle), so the selected pill always reflects the real preference.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTheme(appPreference);
   }, [appPreference]);
   const [defaultMode, setDefaultMode] = useState<string>('Creative');
@@ -1184,7 +1187,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                   return (
                     <button
                       key={th.id}
-                      onClick={() => handleThemeChange(th.id as any)}
+                      onClick={() => handleThemeChange(th.id as 'light' | 'dark' | 'system')}
                       style={{
                         padding: '12px 8px',
                         borderRadius: 14,

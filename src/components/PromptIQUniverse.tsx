@@ -302,7 +302,6 @@ export default function PromptIQUniverse() {
   const mouseRef = useRef({ x: 0, y: 0, sx: 0, sy: 0, active: false });
   const timeRef = useRef(0);
   const entRef = useRef(0);
-  const scrollRef = useRef(false);
 
   // Structured particles
   const heavyRef = useRef<HeavyPlanet[]>([]);
@@ -574,15 +573,6 @@ export default function PromptIQUniverse() {
     const onML = () => { mouseRef.current.active = false; };
     container.addEventListener("mousemove", onMM);
     container.addEventListener("mouseleave", onML);
-
-    let scrollTO: ReturnType<typeof setTimeout>;
-    const onScroll = () => {
-      scrollRef.current = true;
-      clearTimeout(scrollTO);
-      scrollTO = setTimeout(() => { scrollRef.current = false; }, 150);
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-
     // ─ TICK LOOP ─────────────────────────────────────────
     let lastTs = 0;
 
@@ -591,17 +581,15 @@ export default function PromptIQUniverse() {
       rafRef.current = requestAnimationFrame(tick);
 
       const dt = ts - lastTs;
-      const limit = scrollRef.current ? 66.7 : 16.7;
-      if (dt < limit) return;
-      lastTs = ts - (dt % limit);
+      if (dt < 16.7) return;
+      lastTs = ts - (dt % 16.7);
+
+      const step = Math.min(dt / 1000, 0.04);
+      timeRef.current += step;
+      entRef.current = Math.min(entRef.current + step, 20);
 
       const time = timeRef.current;
       const ent = entRef.current;
-
-      if (!scrollRef.current) {
-        timeRef.current += 0.016;
-        entRef.current = Math.min(entRef.current + 0.016, 20);
-      }
 
       // Smooth mouse input
       const m = mouseRef.current;
@@ -632,8 +620,7 @@ export default function PromptIQUniverse() {
       // Compute grid wave frame (includes gravity well warps)
       const G = computeGridPoints(time);
 
-      // ═════════ PHYSICS RUN (paused on scroll) ═════════
-      if (!scrollRef.current) {
+      // ═════════ PHYSICS RUN ═════════
 
         // ── 1. Heavy Planets ──
         const heavies = heavyRef.current;
@@ -774,8 +761,6 @@ export default function PromptIQUniverse() {
           ph.y += ph.vy;
         });
 
-      } // End physics
-
       // ═════════════════ CANVAS RENDER ═════════════════
 
       // ── Background canvas (blurred tiny ambient) ──
@@ -900,7 +885,6 @@ export default function PromptIQUniverse() {
       ro.disconnect();
       container.removeEventListener("mousemove", onMM);
       container.removeEventListener("mouseleave", onML);
-      window.removeEventListener("scroll", onScroll);
     };
   }, []);
 
@@ -994,7 +978,7 @@ export default function PromptIQUniverse() {
             className="absolute pointer-events-none"
             style={{ top: "calc(50% + 32px)", left: "50%", transform: "translateX(-50%)", whiteSpace: "nowrap" }}
           >
-            <span className="text-[9px] tracking-[0.20em] font-extrabold uppercase text-[#7C3AED] bg-white/90 backdrop-blur-md px-2 py-0.5 rounded-full border border-purple-400/20 shadow-sm">
+            <span className="text-[9px] tracking-[0.20em] font-extrabold uppercase text-[#7C3AED] dark:text-[#A78BFA] bg-white/90 dark:bg-[#141320]/90 backdrop-blur-md px-2 py-0.5 rounded-full border border-purple-400/20 dark:border-purple-400/30 shadow-sm">
               AURE Engine
             </span>
           </div>

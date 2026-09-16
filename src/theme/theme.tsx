@@ -195,17 +195,48 @@ function getInitialClientResolvedTheme(): Theme {
   return resolvePreference(getStoredPreference());
 }
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [preference, setPreferenceState] = useState<ThemePreference>(getInitialClientPreference);
-  const [resolvedTheme, setResolvedTheme] = useState<Theme>(getInitialClientResolvedTheme);
+export function setCookieThemePreference(pref: string) {
+  if (typeof document === "undefined") return;
+  try {
+    document.cookie = `${THEME_STORAGE_KEY}=${pref}; path=/; max-age=31536000; SameSite=Lax`;
+  } catch {
+    /* ignore persistence errors */
+  }
+}
+
+export function ThemeProvider({
+  children,
+  initialPreference = "dark",
+  initialTheme = "dark",
+}: {
+  children: React.ReactNode;
+  initialPreference?: ThemePreference;
+  initialTheme?: Theme;
+}) {
+  const [preference, setPreferenceState] = useState<ThemePreference>(() => {
+    if (typeof window !== "undefined") {
+      return getStoredPreference();
+    }
+    return initialPreference;
+  });
+  const [resolvedTheme, setResolvedTheme] = useState<Theme>(() => {
+    if (typeof window !== "undefined") {
+      if (document.documentElement.classList.contains("dark")) return "dark";
+      if (document.documentElement.classList.contains("light")) return "light";
+      return resolvePreference(getStoredPreference());
+    }
+    return initialTheme;
+  });
   const [mounted, setMounted] = useState(false);
 
   // Sync from whatever the no-flash script / localStorage already decided.
   useEffect(() => {
     const pref = getStoredPreference();
+    const resolved = resolvePreference(pref);
     setPreferenceState(pref);
-    setResolvedTheme(resolvePreference(pref));
+    setResolvedTheme(resolved);
     setMounted(true);
+    setCookieThemePreference(pref === "system" ? resolved : pref);
   }, []);
 
   // Resolve the preference, and — while on "system" — follow the OS live. The
@@ -264,6 +295,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     userSelectedThemeThisSession = true;
     enableThemeTransition();
     setPreferenceState(pref);
+    setCookieThemePreference(pref);
   }, []);
 
   const toggleTheme = useCallback(() => {
@@ -271,7 +303,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     // to the Settings menu), flipping whatever is currently showing.
     userSelectedThemeThisSession = true;
     enableThemeTransition();
-    setPreferenceState(resolvedTheme === "dark" ? "light" : "dark");
+    const nextTheme = resolvedTheme === "dark" ? "light" : "dark";
+    setPreferenceState(nextTheme);
+    setCookieThemePreference(nextTheme);
   }, [resolvedTheme]);
 
   const value = useMemo<ThemeContextValue>(
@@ -294,16 +328,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
 /**
  * Read the active theme. Fails soft: a component rendered outside the provider
- * (or reused elsewhere) simply reports light/system, so it renders exactly as
- * it does today rather than throwing.
+ * (or reused elsewhere) simply reports dark/system, so it renders dark rather than throwing.
  */
 export function useTheme(): ThemeContextValue {
   const ctx = useContext(ThemeContext);
   if (ctx === undefined) {
     return {
-      theme: "light",
-      resolvedTheme: "light",
-      preference: "system",
+      theme: "dark",
+      resolvedTheme: "dark",
+      preference: "dark",
       mounted: false,
       setPreference: () => {},
       setTheme: () => {},
@@ -314,21 +347,11 @@ export function useTheme(): ThemeContextValue {
 }
 
 /**
- * Returns `true` only when the app is mounted on the client AND the resolved
- * theme is dark. Returns `false` during SSR and on the first synchronous client
- * render so that the server-produced HTML and the initial client render are
- * identical — eliminating React hydration mismatches.
- *
- * Drop-in replacement for `theme === "dark"` in any component:
- *
- *   // Before (causes hydration mismatch):
- *   const { theme } = useTheme();
- *   const isDark = theme === "dark";
- *
- *   // After (no mismatch):
- *   const isDark = useIsDark();
+ * Returns `true` when resolvedTheme is "dark". Because initialTheme is derived
+ * on the server via cookies/defaults and matches the first client render,
+ * there is zero hydration mismatch and zero theme flash.
  */
 export function useIsDark(): boolean {
-  const { mounted, resolvedTheme } = useTheme();
-  return mounted && resolvedTheme === "dark";
+  const { resolvedTheme } = useTheme();
+  return resolvedTheme === "dark";
 }

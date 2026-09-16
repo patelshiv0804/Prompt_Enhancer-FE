@@ -12,13 +12,16 @@ import VaultPage from '@/app/dashboard/vault/page';
  * Backend prompt rows in the shape historyService.fetchHistory maps from:
  *   prompt      ← original_prompt || title
  *   score       ← new_analysis.overall_score
- *   targetModel ← ai_model.model_name
+ *   targetModel ← target_model (destination model label; "Universal" when unset)
  *   mode        ← template.mode
  *   category    ← template.role (lower-cased)
  * The list and the stats endpoints share the pathname /api/v1/prompts/ (MSW
  * matches on pathname, ignoring the differing page_size query), so one handler
  * feeds both fetchHistory and fetchHistoryStats.
  */
+// ai_model here is the fixed enhancing LLM (Mistral) — deliberately set to
+// names that are NOT valid target labels so the assertions below fail if the
+// row ever falls back to rendering ai_model instead of target_model.
 const PROMPTS = [
   {
     id: 'p1',
@@ -26,7 +29,8 @@ const PROMPTS = [
     title: 'Coding - Full Stack',
     created_at: '2026-08-30T12:00:00Z',
     new_analysis: { overall_score: 88 },
-    ai_model: { model_name: 'GPT-4' },
+    ai_model: { model_name: 'mistral-small-latest' },
+    target_model: 'Claude',
     template: { role: 'coding', mode: 'Full Stack' },
   },
   {
@@ -35,7 +39,8 @@ const PROMPTS = [
     title: 'Marketing - Social',
     created_at: '2026-08-29T09:00:00Z',
     new_analysis: { overall_score: 72 },
-    ai_model: { model_name: 'Claude' },
+    ai_model: { model_name: 'gpt-4o-mini' },
+    target_model: 'Gemini',
     template: { role: 'marketing', mode: 'Social' },
   },
 ];
@@ -64,8 +69,13 @@ describe('History vault flow', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('Write a launch announcement tweet')).toBeInTheDocument();
 
-    // Mapped facets are surfaced too: model + mode from the joined rows.
-    expect(screen.getByText('GPT-4')).toBeInTheDocument();
+    // Mapped facets are surfaced too: destination target model + mode from the
+    // joined rows. targetModel comes from target_model, NOT ai_model — so both
+    // target labels render and neither enhancing-LLM name leaks into a row.
+    expect(screen.getByText('Claude')).toBeInTheDocument();
+    expect(screen.getByText('Gemini')).toBeInTheDocument();
+    expect(screen.queryByText('mistral-small-latest')).not.toBeInTheDocument();
+    expect(screen.queryByText('gpt-4o-mini')).not.toBeInTheDocument();
     expect(screen.getByText('Full Stack')).toBeInTheDocument();
   });
 

@@ -8,7 +8,7 @@ import {
   CheckCircle2, AlertTriangle, Minus, FileText, Layers, Monitor,
   Smartphone, Server, Database, ShieldCheck, Globe, Cpu, Terminal,
   Lightbulb, DollarSign, Scale, ShoppingCart, Users, Mail, Radio,
-  Activity, PieChart, TrendingUp, BookOpen, Building2, Layout, LayoutTemplate, Award, Zap, GitBranch, ChevronDown, Feather, X,
+  Activity, PieChart, TrendingUp, BookOpen, Building2, Layout, LayoutTemplate, Award, Zap, GitBranch, ChevronDown, Feather, X, Lock,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import FormattedPromptViewer from './FormattedPromptViewer';
@@ -126,7 +126,7 @@ function InlineScorePanel({ active, analysisResult }: { active: boolean; analysi
             {scoreLabel(score)}
           </div>
           <p style={{ fontSize: 12, color: isDark ? D.textSecondary : 'var(--color-text-secondary)', lineHeight: 1.4, margin: 0 }}>
-            {analysisResult?.summary || 'Run Optimize to improve your score'}
+            {analysisResult?.summary || 'Run Enhance to improve your score'}
           </p>
         </div>
       </div>
@@ -224,6 +224,9 @@ export default function ComparisonBlock({
   // Scroll container for the live streaming view — kept pinned to the bottom
   // as tokens arrive so the user follows the newest text.
   const streamScrollRef = useRef<HTMLDivElement>(null);
+
+  const isTemplateActive = Boolean(templateName);
+  const isRoleModeDisabled = isOptimizing || isAnalyzing || isTemplateActive;
 
   useEffect(() => {
     if (isOptimizing && streamingText && streamScrollRef.current) {
@@ -407,12 +410,36 @@ export default function ComparisonBlock({
           transition: 'opacity 200ms ease',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: isDark ? D.textMuted : 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '1.2px' }}>Role</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: isDark ? D.textMuted : 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '1.2px' }}>Role</div>
+              {isTemplateActive && (
+                <span
+                  title="Role is locked while a template is selected"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    fontSize: 10,
+                    fontWeight: 600,
+                    color: isDark ? 'rgba(216, 180, 254, 0.9)' : '#7C3AED',
+                    background: isDark ? 'rgba(168, 85, 247, 0.14)' : 'rgba(124, 58, 237, 0.08)',
+                    border: `1px solid ${isDark ? 'rgba(168, 85, 247, 0.3)' : 'rgba(124, 58, 237, 0.2)'}`,
+                    padding: '2px 8px',
+                    borderRadius: 9999,
+                    textTransform: 'none',
+                    letterSpacing: '0.02em',
+                  }}
+                >
+                  <Lock size={10} strokeWidth={2.4} />
+                  Disabled by template
+                </span>
+              )}
+            </div>
             {isMobile && (
               <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--color-primary)', letterSpacing: '0.02em' }}>Swipe &rarr;</span>
             )}
           </div>
-          <div style={{ paddingBottom: isMobile ? 0 : 4 }}>
+          <div style={{ paddingBottom: isMobile ? 0 : 4, cursor: isRoleModeDisabled ? 'not-allowed' : undefined }}>
             <div style={{
               display: 'flex',
               flexWrap: isMobile ? 'nowrap' : 'wrap',
@@ -424,13 +451,14 @@ export default function ComparisonBlock({
             }}>
               {ROLES.map(role => {
                 const Icon = role.icon;
-                const active = activeRole === role.id;
+                const active = !isTemplateActive && activeRole === role.id;
                 return (
                   <button
                     key={role.id}
-                    disabled={isOptimizing || isAnalyzing}
+                    disabled={isRoleModeDisabled}
+                    title={isTemplateActive ? 'Role selection is disabled while a template is in use' : undefined}
                     onClick={() => {
-                      if (isOptimizing || isAnalyzing) return;
+                      if (isRoleModeDisabled) return;
                       setActiveRole(role.id);
                       const modes = ROLE_MODES[role.id] || [];
                       if (modes.length > 0) setActiveMode(modes[0]);
@@ -438,7 +466,9 @@ export default function ComparisonBlock({
                     }}
                     style={{
                       padding: isMobile ? '6.5px 13px' : '8px 16px', borderRadius: 9999, fontSize: isMobile ? 12.5 : 13, fontWeight: active ? 600 : 500,
-                      cursor: (isOptimizing || isAnalyzing) ? 'not-allowed' : 'pointer', transition: 'all 250ms ease', display: 'flex', alignItems: 'center', gap: 6,
+                      cursor: isRoleModeDisabled ? 'not-allowed' : 'pointer',
+                      opacity: isTemplateActive ? 0.45 : 1,
+                      transition: 'all 250ms ease', display: 'flex', alignItems: 'center', gap: 6,
                       flexShrink: isMobile ? 0 : undefined,
                       whiteSpace: 'nowrap',
                       color: active ? (isDark ? '#F5F4F8' : '#6D28D9') : (isDark ? D.textSecondary : '#6B6B8A'),
@@ -470,19 +500,41 @@ export default function ComparisonBlock({
 
           {/* Mode Selector for non-general roles */}
           <AnimatePresence>
-            {activeRole !== 'general' && ROLE_MODES[activeRole] && (
+            {!isTemplateActive && activeRole !== 'general' && ROLE_MODES[activeRole] && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.3 }}
-                style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 2 }}
+                style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 2, cursor: isRoleModeDisabled ? 'not-allowed' : undefined }}
               >
-                <div style={{ fontSize: 11, fontWeight: 700, color: isDark ? D.textMuted : 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '1.2px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: isDark ? D.textMuted : 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '1.2px', display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span>Mode</span>
                   <span style={{ fontSize: 11, fontWeight: 500, color: isDark ? D.textMuted : 'var(--color-text-secondary)', textTransform: 'none' }}>
                     for {ROLES.find(r => r.id === activeRole)?.label}
                   </span>
+                  {isTemplateActive && (
+                    <span
+                      title="Mode is locked while a template is selected"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        fontSize: 10,
+                        fontWeight: 600,
+                        color: isDark ? 'rgba(216, 180, 254, 0.9)' : '#7C3AED',
+                        background: isDark ? 'rgba(168, 85, 247, 0.14)' : 'rgba(124, 58, 237, 0.08)',
+                        border: `1px solid ${isDark ? 'rgba(168, 85, 247, 0.3)' : 'rgba(124, 58, 237, 0.2)'}`,
+                        padding: '2px 8px',
+                        borderRadius: 9999,
+                        textTransform: 'none',
+                        letterSpacing: '0.02em',
+                      }}
+                    >
+                      <Lock size={10} strokeWidth={2.4} />
+                      Locked by template
+                    </span>
+                  )}
                 </div>
                 <div style={{
                   display: 'flex',
@@ -501,14 +553,17 @@ export default function ComparisonBlock({
                     return (
                       <button
                         key={m}
-                        disabled={isOptimizing || isAnalyzing}
+                        disabled={isRoleModeDisabled}
+                        title={isTemplateActive ? 'Mode is locked by active template' : undefined}
                         onClick={() => {
-                          if (isOptimizing || isAnalyzing) return;
+                          if (isRoleModeDisabled) return;
                           setActiveMode(m);
                         }}
                         style={{
                           padding: isMobile ? '6px 12px' : '7px 15px', borderRadius: 9999, fontSize: isMobile ? 12 : 12.5, fontWeight: active ? 600 : 500,
-                          cursor: (isOptimizing || isAnalyzing) ? 'not-allowed' : 'pointer', transition: 'all 250ms ease', display: 'flex', alignItems: 'center', gap: 6,
+                          cursor: isRoleModeDisabled ? 'not-allowed' : 'pointer',
+                          opacity: isTemplateActive ? (active ? 0.9 : 0.38) : 1,
+                          transition: 'all 250ms ease', display: 'flex', alignItems: 'center', gap: 6,
                           flexShrink: isMobile ? 0 : undefined,
                           whiteSpace: 'nowrap',
                           color: active ? (isDark ? '#F5F4F8' : '#6D28D9') : (isDark ? D.textSecondary : '#6B6B8A'),
@@ -705,7 +760,7 @@ export default function ComparisonBlock({
               className={(!isOptimizing && !isAnalyzing && originalText.length <= 12000) ? 'hover:translate-y-[-1px] hover:shadow-[0_8px_24px_rgba(109,40,217,0.42)] hover:brightness-105 active:scale-[0.98]' : ''}
             >
               <Wand2 size={13} />
-              <span>{isOptimizing ? 'Optimizing...' : 'Optimize'}</span>
+              <span>{isOptimizing ? 'Enhancing...' : 'Enhance'}</span>
             </button>
           </div>
       </motion.div>
@@ -971,7 +1026,7 @@ export default function ComparisonBlock({
 
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative', minHeight: 0 }}>
                   {isOptimizing && streamingText ? (
-                    /* Live token stream */
+                    /* Live formatted token stream */
                     <div
                       ref={streamScrollRef}
                       className="custom-scrollbar"
@@ -984,28 +1039,13 @@ export default function ComparisonBlock({
                         paddingRight: isMobile ? 4 : 16,
                         color: isDark ? D.textPrimary : 'var(--color-text-primary)',
                         letterSpacing: '0.01em',
-                        whiteSpace: 'pre-wrap',
-                        wordBreak: 'break-word',
                         animation: 'fadeInRise 300ms ease-out forwards',
                         scrollbarWidth: 'thin',
                         scrollbarColor: isDark ? 'rgba(139,92,246,0.3) transparent' : 'rgba(124,58,237,0.25) transparent',
                         WebkitOverflowScrolling: 'touch',
                       }}
                     >
-                      {formatPromptText(streamingText)}
-                      <span
-                        aria-hidden="true"
-                        style={{
-                          display: 'inline-block',
-                          width: 7,
-                          height: 15,
-                          marginLeft: 2,
-                          borderRadius: 1,
-                          background: 'var(--color-primary)',
-                          verticalAlign: 'text-bottom',
-                          animation: 'streamCaretBlink 1s step-end infinite',
-                        }}
-                      />
+                      <FormattedPromptViewer content={formatPromptText(streamingText)} isStreaming={true} />
                     </div>
                   ) : isOptimizing ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 24, marginTop: 8 }}>

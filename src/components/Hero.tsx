@@ -13,7 +13,7 @@ export default function Hero() {
     <section
       id="hero"
       className="hero-shell relative overflow-hidden bg-white"
-      style={{ background: isDark ? D.bg : undefined }}
+      style={{ background: isDark ? D.bg : "#FFFFFF" }}
     >
       {/* ── Full-screen 3D canvas (absolute, fills whole hero) ── */}
       <PromptIQUniverse />

@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { cookies } from "next/headers";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
-import { ThemeProvider } from "@/theme/theme";
+import { ThemeProvider, type Theme, type ThemePreference } from "@/theme/theme";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -35,34 +36,40 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const themePref = cookieStore.get("aure-theme-preference")?.value;
+  // Default to dark unless explicit light preference exists
+  const isDark = themePref !== "light";
+  const initialTheme: Theme = isDark ? "dark" : "light";
+  const initialPreference: ThemePreference =
+    themePref === "light" || themePref === "dark" || themePref === "system"
+      ? (themePref as ThemePreference)
+      : "dark";
+
   return (
     <html
       lang="en"
-      className={`${inter.variable} h-full antialiased`}
+      className={`${inter.variable} ${isDark ? "dark" : ""} h-full antialiased`}
+      style={{ colorScheme: isDark ? "dark" : "light" }}
       data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
       <head>
-        {/* No-flash theme bootstrap. Runs synchronously in <head> before paint so a
-            visitor loads straight into the correct theme with no white flash on
-            any route. Resolves the same preference the ThemeProvider does:
-            "light"/"dark" are used as-is; anything else (missing key or
-            "system") follows the OS via prefers-color-scheme. Mirrors
-            THEME_STORAGE_KEY in src/theme/theme.tsx. */}
+        {/* Synchronous bootstrap script: executes in <head> before paint to eliminate any flash */}
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "(function(){try{var p=localStorage.getItem('aure-theme-preference');var dark;if(p==='light'){dark=false;}else if(p==='dark'){dark=true;}else{dark=!!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);}var d=document.documentElement;if(dark){d.classList.add('dark');d.style.colorScheme='dark';}else{d.classList.remove('dark');d.style.colorScheme='light';}}catch(e){}})();",
+              "(function(){try{var p=localStorage.getItem('aure-theme-preference');var dark;if(p==='light'){dark=false;}else if(p==='dark'){dark=true;}else{dark=!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches);}var d=document.documentElement;if(dark){d.classList.add('dark');d.style.colorScheme='dark';document.cookie='aure-theme-preference=dark; path=/; max-age=31536000; SameSite=Lax';}else{d.classList.remove('dark');d.style.colorScheme='light';document.cookie='aure-theme-preference=light; path=/; max-age=31536000; SameSite=Lax';}}catch(e){}})();",
           }}
         />
       </head>
       <body className="min-h-full flex flex-col text-foreground">
-        <ThemeProvider>
+        <ThemeProvider initialPreference={initialPreference} initialTheme={initialTheme}>
           <AuthProvider>
             {children}
           </AuthProvider>

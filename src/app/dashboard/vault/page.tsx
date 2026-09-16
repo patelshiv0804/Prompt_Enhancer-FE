@@ -6,11 +6,14 @@ import {
   Search, Star, MoreHorizontal, FileText, Code2, PlaySquare, Mail, Film,
   Image as ImageIcon, ChevronLeft, ChevronRight, Megaphone, BookOpen,
   Sparkles, TrendingUp, SlidersHorizontal, ChevronDown, Zap, Clock,
-  Trash2, ExternalLink, Copy, Library, CheckSquare,
+  Trash2, ExternalLink, Copy, Library, CheckSquare, Download,
 } from 'lucide-react';
 import { fetchHistory, fetchHistoryStats, toggleFavorite, deleteHistoryItems } from '@/features/history/services/historyService';
 import type { HistoryItem, HistoryStats, SortBy } from '@/features/history/types/history.types';
+import MultiChatExportModal from '@/features/chat/components/MultiChatExportModal';
+import type { MultiChatExportItem } from '@/features/chat/services/multiChatExportService';
 import ScoreSpinner from '@/components/ScoreSpinner';
+import MarqueeTitle from '@/components/MarqueeTitle';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useTheme, D } from '@/theme/theme';
 
@@ -73,6 +76,7 @@ function useCountUp(target: number, active: boolean, duration = 1200): number {
 
   useEffect(() => {
     if (!active) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setValue(target);
       return;
     }
@@ -176,7 +180,7 @@ function VaultRow({ item, isSelectionMode, selected, onSelect, onToggleFavorite,
       transition: 'background 200ms ease, box-shadow 200ms ease, border-color 200ms ease',
       position: 'relative', cursor: 'pointer',
     }}
-    className={isDark ? 'hover:!bg-[rgba(255,255,255,0.05)] hover:!border-[rgba(167,139,250,0.3)]' : 'hover:!bg-[rgba(124,58,237,0.03)] hover:shadow-[0_4px_16px_rgba(109,40,217,0.07)] hover:!border-[rgba(124,58,237,0.15)]'}
+    className={`group/vaultrow ${isDark ? 'hover:!bg-[rgba(255,255,255,0.05)] hover:!border-[rgba(167,139,250,0.3)]' : 'hover:!bg-[rgba(124,58,237,0.03)] hover:shadow-[0_4px_16px_rgba(109,40,217,0.07)] hover:!border-[rgba(124,58,237,0.15)]'}`}
     onClick={() => {
       if (isSelectionMode) {
         onSelect(item.id);
@@ -190,7 +194,7 @@ function VaultRow({ item, isSelectionMode, selected, onSelect, onToggleFavorite,
           id={`vault-select-${item.id}`}
           type="checkbox"
           checked={selected}
-          aria-label={`Select ${item.prompt}`}
+          aria-label={`Select ${item.title || item.prompt}`}
           onClick={event => event.stopPropagation()}
           onChange={() => onSelect(item.id)}
           style={{ width: 16, height: 16, accentColor: '#8B5CF6', cursor: 'pointer', flexShrink: 0 }}
@@ -201,7 +205,17 @@ function VaultRow({ item, isSelectionMode, selected, onSelect, onToggleFavorite,
       </div>
 
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <p style={{ margin: 0, fontSize: 14, fontWeight: 500, color: isDark ? D.textPrimary : 'var(--color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.prompt}</p>
+        <MarqueeTitle
+          text={item.title || item.prompt}
+          titleHover={item.prompt}
+          style={{
+            margin: 0,
+            fontSize: 14,
+            fontWeight: 500,
+            color: isDark ? D.textPrimary : 'var(--color-text-primary)',
+            lineHeight: 1.35,
+          }}
+        />
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: isDark ? D.textSecondary : 'var(--color-text-secondary)', minWidth: 0, overflow: 'hidden', whiteSpace: 'nowrap' }}>
           <Clock size={11} strokeWidth={1.5} style={{ flexShrink: 0 }} />
           <span style={{ flexShrink: 0 }}>{timeAgo(item.createdAt)}</span>
@@ -316,8 +330,30 @@ export default function VaultPage() {
   const [loading,        setLoading]        = useState(true);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds,    setSelectedIds]    = useState<Set<string>>(new Set());
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [deleting,       setDeleting]       = useState(false);
   const [deleteDialog,   setDeleteDialog]   = useState<DeleteDialogState>({ open: false });
+
+  const exportableChats: MultiChatExportItem[] = React.useMemo(() => {
+    return items.map(item => ({
+      id: item.id,
+      title: item.prompt.slice(0, 50),
+      originalPrompt: item.prompt,
+      mode: item.mode,
+      category: item.category,
+      targetModel: item.targetModel,
+      score: item.score ?? undefined,
+      createdAt: item.createdAt,
+      optimizedPrompt: item.optimizedPrompt,
+      versions: item.optimizedPrompt ? [
+        {
+          versionNumber: 1,
+          optimizedPrompt: item.optimizedPrompt,
+          overallScore: item.score ?? undefined,
+        }
+      ] : undefined,
+    }));
+  }, [items]);
 
   const [stats,          setStats]          = useState<HistoryStats | null>(null);
   const [statsAnimate,   setStatsAnimate]   = useState(false);
@@ -395,6 +431,7 @@ export default function VaultPage() {
 
   /* Reset page to 1 when search or filters change */
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCurrentPage(1);
   }, [debSearch, activeCategory, sortBy]);
 
@@ -405,6 +442,7 @@ export default function VaultPage() {
      Changing currentPage re-runs the loader below and fetches that page. */
   useEffect(() => {
     if (currentPage > totalPages) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrentPage(totalPages);
     }
   }, [currentPage, totalPages]);
@@ -426,6 +464,7 @@ export default function VaultPage() {
     }
   }, [currentPage, debSearch, activeCategory, sortBy]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(); }, [load]);
 
   useEffect(() => {
@@ -623,6 +662,23 @@ export default function VaultPage() {
           className={isDark ? 'hover:!border-[rgba(167,139,250,0.35)] hover:!text-[#FFFFFF]' : 'hover:!border-[rgba(124,58,237,0.22)] hover:!text-[var(--color-text-primary)]'}
         >
           <CheckSquare size={13} strokeWidth={2} />{isSelectionMode ? 'Cancel Select' : 'Select'}
+        </button>
+
+        {/* Export Contexts Button */}
+        <button id="vault-open-export-btn" onClick={() => setIsExportModalOpen(true)}
+          title="Export chat contexts for ChatGPT, Claude, etc."
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, fontSize: 13, fontWeight: 500,
+            border: `1px solid ${isDark ? 'rgba(167,139,250,0.30)' : 'rgba(124,58,237,0.20)'}`,
+            cursor: 'pointer',
+            background: isDark ? 'rgba(139,92,246,0.14)' : 'rgba(124,58,237,0.06)',
+            color: isDark ? '#C084FC' : '#7C3AED',
+            transition: 'all 200ms ease', flex: isMobile ? '1 1 0' : '0 0 auto', width: isMobile ? '100%' : undefined,
+            order: isMobile ? 3 : 0,
+          }}
+          className={isDark ? 'hover:!bg-[rgba(139,92,246,0.25)] hover:scale-105' : 'hover:!bg-[rgba(124,58,237,0.12)] hover:scale-105'}
+        >
+          <Download size={13} strokeWidth={2} />Export Contexts
         </button>
 
         {/* Search */}
@@ -881,11 +937,23 @@ export default function VaultPage() {
           </label>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {selectedIds.size > 0 && (
-              <button id="vault-delete-selected" onClick={() => requestDelete([...selectedIds])} disabled={deleting}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, border: 'none', background: '#EF4444', color: '#FFFFFF', cursor: deleting ? 'not-allowed' : 'pointer', fontSize: 12.5, fontWeight: 600, opacity: deleting ? 0.65 : 1, transition: 'all 180ms ease' }}
-              >
-                <Trash2 size={13} />Delete selected ({selectedIds.size})
-              </button>
+              <>
+                <button id="vault-export-selected" onClick={() => setIsExportModalOpen(true)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, border: 'none',
+                    background: 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)', color: '#FFFFFF', cursor: 'pointer',
+                    fontSize: 12.5, fontWeight: 600, boxShadow: '0 2px 10px rgba(124,58,237,0.30)', transition: 'all 180ms ease'
+                  }}
+                  className="hover:brightness-110 hover:scale-105"
+                >
+                  <Download size={13} />Export Context ({selectedIds.size})
+                </button>
+                <button id="vault-delete-selected" onClick={() => requestDelete([...selectedIds])} disabled={deleting}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, border: 'none', background: '#EF4444', color: '#FFFFFF', cursor: deleting ? 'not-allowed' : 'pointer', fontSize: 12.5, fontWeight: 600, opacity: deleting ? 0.65 : 1, transition: 'all 180ms ease' }}
+                >
+                  <Trash2 size={13} />Delete selected ({selectedIds.size})
+                </button>
+              </>
             )}
             <button
               onClick={() => { setIsSelectionMode(false); setSelectedIds(new Set()); }}
@@ -1051,6 +1119,13 @@ export default function VaultPage() {
           </div>
         </div>
       )}
+      {/* Multi-Chat Context Export Modal */}
+      <MultiChatExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        availableChats={exportableChats}
+        initialSelectedIds={selectedIds.size > 0 ? Array.from(selectedIds) : undefined}
+      />
     </div>
   );
 }

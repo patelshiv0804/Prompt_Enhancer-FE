@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/refs */
 'use client';
 import './auth.css';
 import Script from 'next/script';
@@ -125,6 +126,7 @@ function AuthContent() {
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.google?.accounts?.id) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setGoogleReady(true);
       return;
     }

@@ -6,41 +6,81 @@ import { useTheme, D } from '@/theme/theme';
 
 interface FormattedPromptViewerProps {
   content: string;
+  isStreaming?: boolean;
 }
 
-export default function FormattedPromptViewer({ content }: FormattedPromptViewerProps) {
+export default function FormattedPromptViewer({ content, isStreaming = false }: FormattedPromptViewerProps) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const [copiedCodeIndex, setCopiedCodeIndex] = useState<number | null>(null);
 
-  if (!content) return null;
+  const Caret = () => (
+    <span
+      aria-hidden="true"
+      style={{
+        display: 'inline-block',
+        width: 6,
+        height: 15,
+        marginLeft: 4,
+        borderRadius: 1,
+        background: isDark ? '#C084FC' : '#7C3AED',
+        verticalAlign: 'text-bottom',
+        animation: 'streamCaretBlink 1s step-end infinite',
+      }}
+    />
+  );
 
-  // Clean raw markers if any
-  let text = content.trim();
-  const markers = ['ENHANCED PROMPT:', 'ENHANCED PROMPT', 'Enhanced Prompt:'];
-  for (const m of markers) {
-    const idx = text.indexOf(m);
-    if (idx !== -1) {
-      text = text.substring(idx + m.length).trim();
-      break;
+  if (!content || !content.trim()) {
+    if (isStreaming) {
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', minHeight: 24 }}>
+          <Caret />
+        </div>
+      );
     }
+    return null;
   }
 
-  // Historical versions may have been saved before the backend began
-  // normalising LLM Markdown. Remove emphasis delimiters here as a final UI
-  // safeguard, including escaped markers returned by some providers.
+  let text = content.trim();
+
+  // 1. Strip leading LLM meta markers like "ENHANCED PROMPT (Production-Ready):", "ENHANCED PROMPT:", etc.
+  text = text.replace(/^(?:#{1,6}\s*)?(?:\*{1,2})?(?:ENHANCED PROMPT|OPTIMIZED PROMPT|FINAL PROMPT|SYSTEM PROMPT|PROMPT)\s*(?:\([^)]*\)|\[[^\]]*\])?(?:\*{1,2})?:?\s*/i, '');
+
+  // 2. Strip common preamble lines (e.g. "Here is the production-ready prompt:", "Enhanced Prompt:", etc.)
+  text = text.replace(/^(?:Here is (?:the|your) [^\n:]+:|Below is [^\n:]+:)\s*[\r\n]*/i, '');
+
+  // 3. Strip standalone production-ready, RTCEF, or meta header tags at the beginning
+  // e.g. "(Production-Ready):", "(RTCEF Framework):", "(Production Ready)", "[Production-Ready]:", etc.
+  text = text.replace(/^[\s\n]*\*{0,2}[\(\[]\s*(?:Production[- ]Ready|Production[- ]Grade|RTCEF(?: Framework)?|Optimized(?: Prompt)?|Enhanced(?: Prompt)?|Final(?: Output)?|System Prompt|Output Prompt|Draft|Version\s*\d+|v\d+)[^)\]]*[\)\]]\*{0,2}:?\s*[\r\n]*/i, '');
+  text = text.replace(/^[\s\n]*\*{0,2}(?:Production[- ]Ready|Production[- ]Grade|RTCEF(?: Framework)?|RTCEF)\*{0,2}:?\s*[\r\n]*/i, '');
+
+  // 4. Strip any leading standalone line that is purely in parentheses like "(Production-Ready):" or "(Version 3):"
+  text = text.replace(/^[\s\n]*\([^\)]{1,60}\):?\s*[\r\n]*/i, '');
+
+  // 5. Strip standalone meta header lines anywhere in the prompt body
+  text = text.replace(/^[\t ]*\*{0,2}[\(\[]?\s*(?:Production[- ]Ready|Production[- ]Grade|RTCEF(?: Framework)?|RTCEF)\s*[\)\]]?\*{0,2}:?[\t ]*$/gim, '');
+
+  // 6. Strip leading "> " or ">" markdown blockquote symbols across the whole prompt
+  // so that blockquoted outputs or code blocks aren't broken by "> " prefixes
+  text = text.replace(/^[\t ]*>\s?/gm, '');
+
+  // 7. Strip markdown bold and italic formatting cleanly
   text = text
     .replace(/\\([*_`])/g, '$1')
-    .replace(/\\?\*{2,}/g, '')
-    .replace(/\\?_{2,}/g, '')
+    .replace(/\*{2,}/g, '')
+    .replace(/_{2,}/g, '')
     .replace(/(?<!\*)\*([^*\n]+?)\*(?!\*)/g, '$1')
     .replace(/(?<!_)_([^_\n]+?)_(?!_)/g, '$1');
 
+  // 8. Strip lone leading asterisk on lines (e.g. `*"Generate a production-ready...` or `* "Generate...`) that are NOT bullet items
+  text = text.replace(/^(\s*)\*(?![\s*])\s*/gm, '$1');
+
+  // 9. Strip trailing lone asterisks at end of lines (e.g. `Focus on:*`)
+  text = text.replace(/\*+\s*$/gm, '');
+
   if (text.includes('DIAGNOSED MODE:') || text.includes('DIAGNOSIS NOTES:')) {
     const actIdx = text.search(/(Act as|You are|Your task|System Prompt|# |\*\*Persona|\*\*Task)/i);
-    if (actIdx !== -1) {
-      text = text.substring(actIdx).trim();
-    }
+    if (actIdx !== -1) text = text.substring(actIdx).trim();
   }
 
   const handleCopyCode = async (codeText: string, index: number) => {
@@ -49,18 +89,15 @@ export default function FormattedPromptViewer({ content }: FormattedPromptViewer
     setTimeout(() => setCopiedCodeIndex(null), 2000);
   };
 
-  // Helper to render inline formatting (**bold**, `code`)
   const renderInline = (str: string) => {
-    const parts = str.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
+    // Strip any leading stray * or trailing stray *
+    const s = str.replace(/^\*(?![\s*])/, '').replace(/\*+$/, '');
+    const parts = s.split(/(`[^`]+`)/g);
     return parts.map((part, i) => {
-      if (part.startsWith('**') && part.endsWith('**')) {
-        return (
-          <strong key={i} style={{ fontWeight: 700, color: isDark ? '#FFFFFF' : 'var(--color-text-primary, #1E1B4B)' }}>
-            {part.slice(2, -2)}
-          </strong>
-        );
-      }
       if (part.startsWith('`') && part.endsWith('`')) {
+        const inner = part.slice(1, -1).trim();
+        // Skip empty or whitespace-only code badges (prevents empty purple capsule)
+        if (!inner) return null;
         return (
           <code
             key={i}
@@ -74,58 +111,234 @@ export default function FormattedPromptViewer({ content }: FormattedPromptViewer
               fontWeight: 600,
             }}
           >
-            {part.slice(1, -1)}
+            {inner}
           </code>
         );
       }
-      return part;
+      // Remove any remaining stray markdown symbols from text
+      return part.replace(/[*_`]/g, '');
     });
   };
 
-  // Split into blocks (code blocks vs text blocks)
-  const blocks: { type: 'text' | 'code'; content: string; language?: string }[] = [];
-  const lines = text.split('\n');
+  const isTableRow = (line: string) => /^\s*\|.+\|/.test(line);
+  const isSeparatorRow = (line: string) => /^\s*\|[\s|:-]+\|\s*$/.test(line);
+  // A placeholder row has no letters or digits across all cells (e.g. "| ... | ... | ... |")
+  const isPlaceholderRow = (cells: string[]) => cells.every(c => !/[a-zA-Z0-9]/.test(c));
 
-  let inCode = false;
-  let codeBuffer: string[] = [];
-  let codeLang = '';
-  let textBuffer: string[] = [];
+  const renderTable = (rows: string[], key: number) => {
+    const nonSep = rows.filter(r => !isSeparatorRow(r));
+    const parsed = nonSep.map(r => r.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim()));
+    const [header, ...bodyRaw] = parsed;
+    const body = bodyRaw.filter(row => !isPlaceholderRow(row));
+
+    return (
+      <div
+        key={key}
+        style={{
+          overflowX: 'auto',
+          borderRadius: 12,
+          border: `1px solid ${isDark ? 'rgba(139,92,246,0.25)' : 'rgba(124,58,237,0.18)'}`,
+          margin: '10px 0',
+          boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.3)' : '0 2px 12px rgba(124,58,237,0.08)',
+        }}
+      >
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+          <thead>
+            <tr
+              style={{
+                background: isDark
+                  ? 'linear-gradient(135deg,rgba(139,92,246,0.22),rgba(167,139,250,0.1))'
+                  : 'linear-gradient(135deg,rgba(124,58,237,0.1),rgba(167,139,250,0.05))',
+              }}
+            >
+              {header?.map((cell, ci) => (
+                <th
+                  key={ci}
+                  style={{
+                    padding: '10px 14px',
+                    textAlign: 'left',
+                    fontWeight: 700,
+                    fontSize: 12,
+                    letterSpacing: '0.04em',
+                    color: isDark ? '#C084FC' : '#5B21B6',
+                    borderBottom: `2px solid ${isDark ? 'rgba(139,92,246,0.35)' : 'rgba(124,58,237,0.25)'}`,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {cell}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {body.map((row, ri) => (
+              <tr
+                key={ri}
+                style={{
+                  background:
+                    ri % 2 === 0
+                      ? isDark
+                        ? 'rgba(255,255,255,0.02)'
+                        : 'rgba(255,255,255,0.7)'
+                      : isDark
+                      ? 'rgba(139,92,246,0.05)'
+                      : 'rgba(124,58,237,0.03)',
+                }}
+              >
+                {row.map((cell, ci) => (
+                  <td
+                    key={ci}
+                    style={{
+                      padding: '9px 14px',
+                      color: isDark ? D.textPrimary : '#374151',
+                      borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}`,
+                      verticalAlign: 'top',
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    {renderInline(cell)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
+  const SECTION_LABELS = [
+    'ROLE', 'TASK', 'CONTEXT', 'EXAMPLES', 'FORMAT', 'CONSTRAINTS',
+    'OUTPUT', 'INSTRUCTIONS', 'OBJECTIVE', 'GOAL', 'CRITERIA', 'AUDIENCE',
+    'TONE', 'DOMAIN', 'ENHANCEMENT LEVEL', 'INPUT', 'STEPS', 'NOTES',
+    'GUIDELINES', 'PARAMETERS', 'RULES', 'PERSONA', 'REQUIREMENTS', 'STRUCTURE'
+  ];
+  const sectionLabelRe = new RegExp(`^(${SECTION_LABELS.join('|')}):?\\s*(.*)$`, 'i');
+
+  const renderSectionLabel = (label: string, rest: string, key: number, showCaret?: boolean) => (
+    <div
+      key={key}
+      style={{
+        display: 'flex',
+        flexDirection: rest ? 'row' : 'column',
+        alignItems: rest ? 'baseline' : 'flex-start',
+        gap: 10,
+        marginTop: 14,
+        marginBottom: 2,
+      }}
+    >
+      <span
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          background: isDark
+            ? 'linear-gradient(135deg,rgba(139,92,246,0.28),rgba(167,139,250,0.12))'
+            : 'linear-gradient(135deg,rgba(124,58,237,0.12),rgba(167,139,250,0.06))',
+          border: `1px solid ${isDark ? 'rgba(167,139,250,0.35)' : 'rgba(124,58,237,0.25)'}`,
+          color: isDark ? '#C084FC' : '#5B21B6',
+          fontWeight: 800,
+          fontSize: 10.5,
+          letterSpacing: '0.1em',
+          padding: '3px 10px',
+          borderRadius: 20,
+          whiteSpace: 'nowrap',
+          flexShrink: 0,
+          textTransform: 'uppercase' as const,
+        }}
+      >
+        {label.toUpperCase()}
+      </span>
+      {rest ? (
+        <span style={{ color: isDark ? D.textPrimary : '#374151', fontSize: 13.5, lineHeight: 1.6 }}>
+          {renderInline(rest)}
+          {showCaret && <Caret />}
+        </span>
+      ) : (
+        showCaret && <Caret />
+      )}
+    </div>
+  );
+
+  const blocks: { type: 'text' | 'code' | 'table'; content: string; language?: string; rows?: string[] }[] = [];
+  const lines = text.split('\n');
+  let inCode = false, codeBuffer: string[] = [], codeLang = '', textBuffer: string[] = [], tableBuffer: string[] = [];
+
+  const flushText = () => { if (textBuffer.length > 0) { blocks.push({ type: 'text', content: textBuffer.join('\n') }); textBuffer = []; } };
+  const flushTable = () => { if (tableBuffer.length > 0) { blocks.push({ type: 'table', content: '', rows: [...tableBuffer] }); tableBuffer = []; } };
 
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    if (line.trim().startsWith('```')) {
+    const rawLine = lines[i];
+    const line = rawLine.replace(/^[\t ]*>\s?/, '');
+    const trimmed = line.trim();
+
+    if (trimmed.startsWith('```') || (trimmed.startsWith('`') && inCode && trimmed === '`')) {
       if (inCode) {
-        // End code block
         blocks.push({ type: 'code', content: codeBuffer.join('\n'), language: codeLang });
         codeBuffer = [];
         codeLang = '';
         inCode = false;
       } else {
-        // Start code block
-        if (textBuffer.length > 0) {
-          blocks.push({ type: 'text', content: textBuffer.join('\n') });
-          textBuffer = [];
-        }
+        flushText();
+        flushTable();
         inCode = true;
-        codeLang = line.trim().slice(3).trim() || 'plaintext';
+        codeLang = trimmed.replace(/^`+/, '').trim() || 'code';
       }
     } else if (inCode) {
       codeBuffer.push(line);
+    } else if (isTableRow(line)) {
+      flushText();
+      tableBuffer.push(line);
     } else {
+      flushTable();
       textBuffer.push(line);
     }
   }
-
-  if (textBuffer.length > 0) {
-    blocks.push({ type: 'text', content: textBuffer.join('\n') });
-  }
+  flushText();
+  flushTable();
   if (codeBuffer.length > 0) {
-    blocks.push({ type: 'code', content: codeBuffer.join('\n'), language: codeLang });
+    blocks.push({ type: 'code', content: codeBuffer.join('\n'), language: codeLang || 'code' });
   }
+
+  if (blocks.length === 0 && isStreaming) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', minHeight: 24 }}>
+        <Caret />
+      </div>
+    );
+  }
+
+  const lastBlockIndex = blocks.length - 1;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18, width: '100%', fontSize: 14, lineHeight: 1.65 }}>
       {blocks.map((block, bIdx) => {
+        const isLastBlock = bIdx === lastBlockIndex;
+
+        if (block.type === 'table') {
+          const rows = block.rows ?? [];
+          if (rows.some(isSeparatorRow) && rows.length >= 2) {
+            return (
+              <div key={bIdx}>
+                {renderTable(rows, bIdx)}
+                {isLastBlock && isStreaming && <Caret />}
+              </div>
+            );
+          }
+          return (
+            <div key={bIdx} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {rows.map((r, i) => {
+                const isLast = isLastBlock && isStreaming && i === rows.length - 1;
+                return (
+                  <p key={i} style={{ margin: 0, color: isDark ? D.textPrimary : '#374151', fontFamily: 'monospace', fontSize: 13 }}>
+                    {r}
+                    {isLast && <Caret />}
+                  </p>
+                );
+              })}
+            </div>
+          );
+        }
+
         if (block.type === 'code') {
           return (
             <div
@@ -139,7 +352,6 @@ export default function FormattedPromptViewer({ content }: FormattedPromptViewer
                 margin: '8px 0',
               }}
             >
-              {/* Code Header */}
               <div
                 style={{
                   display: 'flex',
@@ -179,7 +391,6 @@ export default function FormattedPromptViewer({ content }: FormattedPromptViewer
                   <span>{copiedCodeIndex === bIdx ? 'Copied' : 'Copy code'}</span>
                 </button>
               </div>
-              {/* Code Body */}
               <pre
                 style={{
                   padding: 16,
@@ -193,127 +404,98 @@ export default function FormattedPromptViewer({ content }: FormattedPromptViewer
                 }}
               >
                 <code>{block.content}</code>
+                {isLastBlock && isStreaming && <Caret />}
               </pre>
             </div>
           );
         }
 
-        // Render formatted text lines
         const paragraphLines = block.content.split('\n');
+        let lastValidLineIdx = -1;
+        for (let idx = paragraphLines.length - 1; idx >= 0; idx--) {
+          const t = paragraphLines[idx].trim();
+          if (t && /[a-zA-Z0-9]/.test(t)) {
+            lastValidLineIdx = idx;
+            break;
+          }
+        }
+
         return (
           <div key={bIdx} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {paragraphLines.map((line, lIdx) => {
               const trimmed = line.trim();
               if (!trimmed) return null;
 
-              if (/^(---+|___+|\*\*\*+)$/.test(trimmed)) return null;
+              // Filter out noise / separator / placeholder lines that contain no letters or digits
+              if (!/[a-zA-Z0-9]/.test(trimmed)) return null;
 
+              // Filter out placeholder bullet items like "- ...", "* .", "• ...", "1. ..."
+              if (/^([-*+•·]|\d+[\.\)])\s*[^a-zA-Z0-9]*$/.test(trimmed)) return null;
+
+              // Filter out standalone meta labels if any survived
+              if (/^\(?(?:Production[- ]Ready|Production[- ]Grade|RTCEF(?: Framework)?|RTCEF)\)?:?$/i.test(trimmed)) return null;
+
+              const isLastLine = isLastBlock && isStreaming && (lIdx === lastValidLineIdx || (lastValidLineIdx === -1 && lIdx === paragraphLines.length - 1));
+
+              // Section badge labels
+              const slMatch = trimmed.match(sectionLabelRe);
+              if (slMatch) return renderSectionLabel(slMatch[1], slMatch[2] ?? '', lIdx, isLastLine);
+
+              // Headings (# Heading)
               const headingMatch = trimmed.match(/^(#{1,6})\s+(.*)$/);
               if (headingMatch) {
-                const headingLevel = headingMatch[1].length;
-                const headingStyle = {
-                  fontSize: headingLevel <= 2 ? 20 : headingLevel <= 4 ? 17 : 15,
-                  fontWeight: 700,
-                  color: headingLevel <= 2 ? (isDark ? '#F5F4F8' : '#1E1B4B') : headingLevel <= 4 ? (isDark ? '#C084FC' : '#4C1D95') : (isDark ? '#A78BFA' : '#6D28D9'),
-                  margin: '10px 0 4px',
-                  letterSpacing: headingLevel <= 2 ? '-0.02em' : '-0.01em',
-                  fontFamily: "'Geist', sans-serif",
-                };
-                return <div key={lIdx} style={headingStyle}>{renderInline(headingMatch[2])}</div>;
-              }
-
-              if (trimmed.startsWith('# ')) {
-                return (
-                  <h1
-                    key={lIdx}
-                    style={{
-                      fontSize: 20,
-                      fontWeight: 800,
-                      color: isDark ? '#F5F4F8' : '#1E1B4B',
-                      margin: '12px 0 4px',
-                      letterSpacing: '-0.02em',
-                      fontFamily: "'Geist', sans-serif",
-                    }}
-                  >
-                    {trimmed.slice(2)}
-                  </h1>
-                );
-              }
-              if (trimmed.startsWith('## ')) {
-                return (
-                  <h2
-                    key={lIdx}
-                    style={{
-                      fontSize: 17,
-                      fontWeight: 700,
-                      color: isDark ? '#C084FC' : '#4C1D95',
-                      margin: '10px 0 4px',
-                      letterSpacing: '-0.01em',
-                      fontFamily: "'Geist', sans-serif",
-                    }}
-                  >
-                    {trimmed.slice(3)}
-                  </h2>
-                );
-              }
-              if (trimmed.startsWith('### ')) {
-                return (
-                  <h3
-                    key={lIdx}
-                    style={{
-                      fontSize: 15,
-                      fontWeight: 700,
-                      color: isDark ? '#A78BFA' : '#6D28D9',
-                      margin: '8px 0 2px',
-                      fontFamily: "'Geist', sans-serif",
-                    }}
-                  >
-                    {trimmed.slice(4)}
-                  </h3>
-                );
-              }
-
-              // Check for Key Section Header like **Persona**: or **Task**: or **Requirements**:
-              const sectionMatch = trimmed.match(/^(\*\*[^*]+:\*\*|\*\*[^*]+\*\*)\s*(.*)/);
-              if (sectionMatch && (trimmed.startsWith('**Persona') || trimmed.startsWith('**Task') || trimmed.startsWith('**Requirements') || trimmed.startsWith('**Step') || trimmed.startsWith('**Output') || trimmed.startsWith('**Structure') || trimmed.startsWith('**Level'))) {
+                const lvl = headingMatch[1].length;
                 return (
                   <div
                     key={lIdx}
                     style={{
-                      marginTop: 10,
-                      padding: '10px 14px',
-                      background: isDark
-                        ? 'linear-gradient(135deg, rgba(139,92,246,0.14) 0%, rgba(167,139,250,0.06) 100%)'
-                        : 'linear-gradient(135deg, rgba(124,58,237,0.06) 0%, rgba(167,139,250,0.03) 100%)',
-                      borderLeft: '4px solid #8B5CF6',
-                      borderRadius: '0 10px 10px 0',
+                      fontSize: lvl <= 2 ? 20 : lvl <= 4 ? 17 : 15,
+                      fontWeight: 700,
+                      color:
+                        lvl <= 2
+                          ? isDark
+                            ? '#F5F4F8'
+                            : '#1E1B4B'
+                          : lvl <= 4
+                          ? isDark
+                            ? '#C084FC'
+                            : '#4C1D95'
+                          : isDark
+                          ? '#A78BFA'
+                          : '#6D28D9',
+                      margin: '10px 0 4px',
+                      letterSpacing: lvl <= 2 ? '-0.02em' : '-0.01em',
+                      fontFamily: "'Geist', sans-serif",
                     }}
                   >
-                    <div style={{ fontWeight: 700, color: isDark ? '#C084FC' : '#5B21B6', fontSize: 14, marginBottom: sectionMatch[2] ? 4 : 0 }}>
-                      {renderInline(sectionMatch[1])}
-                    </div>
-                    {sectionMatch[2] && (
-                      <div style={{ color: isDark ? D.textSecondary : '#374151', fontSize: 13.5, lineHeight: 1.6 }}>
-                        {renderInline(sectionMatch[2])}
-                      </div>
-                    )}
+                    {renderInline(headingMatch[2])}
+                    {isLastLine && <Caret />}
                   </div>
                 );
               }
 
-              // Check for Bullet points (- or *)
-              if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+              // Bullet points (- item, * item, + item, • item, · item)
+              const bulletMatch = trimmed.match(/^([-*+•·])\s+(.*)$/);
+              if (bulletMatch) {
+                const cleaned = bulletMatch[2].trim();
+                if (!cleaned || !/[a-zA-Z0-9]/.test(cleaned)) return null;
                 return (
                   <div key={lIdx} style={{ display: 'flex', gap: 10, paddingLeft: 8, alignItems: 'flex-start' }}>
-                    <span style={{ color: isDark ? '#A78BFA' : '#7C3AED', fontWeight: 800, fontSize: 16, lineHeight: '18px' }}>•</span>
-                    <div style={{ color: isDark ? D.textPrimary : '#374151', flex: 1 }}>{renderInline(trimmed.slice(2))}</div>
+                    <span style={{ color: isDark ? '#A78BFA' : '#7C3AED', fontWeight: 800, fontSize: 16, lineHeight: '18px', flexShrink: 0 }}>•</span>
+                    <div style={{ color: isDark ? D.textPrimary : '#374151', flex: 1 }}>
+                      {renderInline(cleaned)}
+                      {isLastLine && <Caret />}
+                    </div>
                   </div>
                 );
               }
 
-              // Check for Numbered lists (1. , 2. )
-              const numMatch = trimmed.match(/^(\d+)\.\s+(.*)/);
+              // Numbered list items (1. item, 1) item, (1) item)
+              const numMatch = trimmed.match(/^(?:\(?(\d+)[\.\)]|\b(\d+)\.)\s+(.*)$/);
               if (numMatch) {
+                const num = numMatch[1] || numMatch[2];
+                const cleaned = numMatch[3].trim();
+                if (!cleaned || !/[a-zA-Z0-9]/.test(cleaned)) return null;
                 return (
                   <div key={lIdx} style={{ display: 'flex', gap: 10, paddingLeft: 6, alignItems: 'flex-start' }}>
                     <span
@@ -332,9 +514,12 @@ export default function FormattedPromptViewer({ content }: FormattedPromptViewer
                         marginTop: 2,
                       }}
                     >
-                      {numMatch[1]}
+                      {num}
                     </span>
-                    <div style={{ color: isDark ? D.textPrimary : '#374151', flex: 1 }}>{renderInline(numMatch[2])}</div>
+                    <div style={{ color: isDark ? D.textPrimary : '#374151', flex: 1 }}>
+                      {renderInline(cleaned)}
+                      {isLastLine && <Caret />}
+                    </div>
                   </div>
                 );
               }
@@ -343,9 +528,11 @@ export default function FormattedPromptViewer({ content }: FormattedPromptViewer
               return (
                 <p key={lIdx} style={{ margin: 0, color: isDark ? D.textPrimary : '#374151' }}>
                   {renderInline(trimmed)}
+                  {isLastLine && <Caret />}
                 </p>
               );
             })}
+            {isLastBlock && isStreaming && lastValidLineIdx === -1 && <Caret />}
           </div>
         );
       })}

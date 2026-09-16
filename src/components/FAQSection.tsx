@@ -107,7 +107,7 @@ export default function FAQSection() {
     <section
       id="faq"
       className="relative w-full overflow-hidden bg-[#FAFBFC] py-24 px-6 md:px-12 lg:px-16 border-t border-gray-100"
-      style={{ background: isDark ? D.bg : undefined, borderTopColor: isDark ? D.border : undefined }}
+      style={{ background: isDark ? D.bg : "#FAFBFC", borderTopColor: isDark ? D.border : "#F3F4F6" }}
     >
       {/* Background ambient lighting */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">

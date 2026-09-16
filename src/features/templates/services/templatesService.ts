@@ -15,19 +15,22 @@ export interface Template {
   title: string;
   description: string;
   category: string;
+  role?: string;
+  mode?: string;
+  body?: string;
   tags: string[];
   model: string;
   modelColor: string;
+  aiModelId?: string;
   isFeatured?: boolean;
   isTrending?: boolean;
   isNew?: boolean;
+  isCustom?: boolean;
+  userId?: string;
   useCount?: number;
 }
 
-/* ── Backend response shapes (only the fields we consume) ──
-   Note: the list endpoint deliberately omits the prompt `body` (the
-   proprietary "recipe"), so it is intentionally absent here — the client
-   never receives or renders it. ── */
+/* ── Backend response shapes ── */
 interface BackendTemplate {
   id: string;
   title: string;
@@ -36,7 +39,10 @@ interface BackendTemplate {
   mode: string | null;
   is_featured: boolean;
   is_approved: boolean;
+  user_id?: string | null;
+  is_custom?: boolean;
   description: string | null;
+  body?: string | null;
   ai_model_id: string;
   tags: string[] | null;
   use_count: number;
@@ -75,7 +81,7 @@ function providerColor(provider?: string): string {
 }
 
 // "mistral-small-latest" → "Mistral Small"
-function prettyModelName(modelName: string): string {
+export function prettyModelName(modelName: string): string {
   return modelName
     .replace(/-latest$/i, '')
     .replace(/[-_]/g, ' ')
@@ -93,12 +99,13 @@ function isRecent(createdAt: string): boolean {
 /**
  * Load the templates library: fetch templates + the AI models catalogue in
  * parallel, resolve each template's model, and derive presentation flags.
- * Throws if the templates request fails (the page surfaces an error + retry);
- * a failing AI-models request degrades gracefully to generic labels.
  */
 export async function loadTemplates(): Promise<Template[]> {
-  const [templatesRes, modelsRes] = await Promise.all([
+  const [templatesRes, customRes, modelsRes] = await Promise.all([
     apiClient.get<Paginated<BackendTemplate>>('/api/v1/templates/?limit=100'),
+    apiClient
+      .get<Paginated<BackendTemplate>>('/api/v1/templates/?mine=true&limit=100')
+      .catch(() => null),
     apiClient
       .get<Paginated<BackendAIModel>>('/api/v1/ai-models/?limit=100')
       .catch(() => null),
@@ -107,19 +114,27 @@ export async function loadTemplates(): Promise<Template[]> {
   const modelMap = new Map<string, BackendAIModel>();
   for (const m of modelsRes?.data ?? []) modelMap.set(m.id, m);
 
-  // The enhance/optimize pipeline and test scripts create throwaway Template
-  // rows ("Enhance Template" / "Opt Template" with test modes). Drop those
-  // obvious artifacts so the curated library stays clean.
+  // Filter out throwaway test artifacts
   const ARTIFACT_TITLES = new Set(['enhance template', 'opt template']);
   const ARTIFACT_MODES = new Set(['api_test_enhance', 'test_opt']);
-  const backendTemplates = (templatesRes?.data ?? []).filter(
+
+  // Merge templates, ensuring custom templates are present and prioritized
+  const templateMap = new Map<string, BackendTemplate>();
+  for (const t of customRes?.data ?? []) {
+    templateMap.set(t.id, t);
+  }
+  for (const t of templatesRes?.data ?? []) {
+    if (!templateMap.has(t.id)) {
+      templateMap.set(t.id, t);
+    }
+  }
+
+  const backendTemplates = Array.from(templateMap.values()).filter(
     (t) =>
       !ARTIFACT_TITLES.has((t.title ?? '').trim().toLowerCase()) &&
       !ARTIFACT_MODES.has((t.mode ?? '').trim().toLowerCase()),
   );
 
-  // Only templates with real usage can "trend"; the top few by use_count light
-  // up the Trending section. A freshly-seeded DB (all zero) simply shows none.
   const trendingIds = new Set(
     [...backendTemplates]
       .filter((t) => (t.use_count ?? 0) > 0)
@@ -134,17 +149,75 @@ export async function loadTemplates(): Promise<Template[]> {
       id: t.id,
       title: t.title,
       description: t.description ?? '',
-      // Facet for the category chips. The current data populates `role`
-      // (developer, marketer, researcher, …) and leaves `category` null, so
-      // prefer role; fall back to category, then a generic bucket.
       category: (t.role ?? t.category ?? 'general').toLowerCase(),
+      role: t.role ?? undefined,
+      mode: t.mode ?? undefined,
+      body: t.body ?? undefined,
       tags: Array.isArray(t.tags) ? t.tags : [],
       model: model ? prettyModelName(model.model_name) : 'AI Model',
       modelColor: providerColor(model?.provider),
+      aiModelId: t.ai_model_id,
       isFeatured: t.is_featured,
       isTrending: trendingIds.has(t.id),
       isNew: isRecent(t.created_at),
+      isCustom: Boolean(t.is_custom || t.user_id),
+      userId: t.user_id ?? undefined,
       useCount: t.use_count ?? 0,
     };
   });
+}
+
+export interface CreateCustomTemplateInput {
+  title: string;
+  description?: string;
+  body: string;
+  role?: string;
+  mode?: string;
+  category?: string;
+  tags?: string[];
+  ai_model_id?: string;
+}
+
+export async function createCustomTemplate(input: CreateCustomTemplateInput): Promise<Template> {
+  const payload = {
+    ...input,
+    category: input.category || (input.role ? input.role.toLowerCase() : 'general'),
+  };
+  const t = await apiClient.post<BackendTemplate>('/api/v1/templates/', payload);
+  return {
+    id: t.id,
+    title: t.title,
+    description: t.description ?? '',
+    category: (t.role ?? t.category ?? input.role ?? 'general').toLowerCase(),
+    role: t.role ?? input.role ?? undefined,
+    mode: t.mode ?? input.mode ?? undefined,
+    body: t.body ?? input.body ?? undefined,
+    tags: Array.isArray(t.tags) ? t.tags : (input.tags ?? []),
+    model: 'AI Model',
+    modelColor: DEFAULT_MODEL_COLOR,
+    aiModelId: t.ai_model_id ?? input.ai_model_id,
+    isFeatured: false,
+    isTrending: false,
+    isNew: true,
+    isCustom: true,
+    userId: t.user_id ?? undefined,
+    useCount: 0,
+  };
+}
+
+export async function deleteCustomTemplate(id: string): Promise<void> {
+  await apiClient.delete(`/api/v1/templates/${id}`);
+}
+
+export async function loadAIModels(): Promise<Array<{ id: string; name: string; provider: string }>> {
+  try {
+    const res = await apiClient.get<Paginated<BackendAIModel>>('/api/v1/ai-models/?limit=100');
+    return (res?.data ?? []).filter((m) => m.is_active).map((m) => ({
+      id: m.id,
+      name: prettyModelName(m.model_name),
+      provider: m.provider,
+    }));
+  } catch {
+    return [];
+  }
 }

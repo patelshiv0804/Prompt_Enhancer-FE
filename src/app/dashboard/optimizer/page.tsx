@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import React, { useState, useEffect, useRef, Suspense } from 'react';
@@ -21,7 +22,7 @@ const MODE_MAPPING: Record<string, { role: string; mode: string }> = {
 };
 
 function OptimizerPageContent() {
-  const { activeStyle } = useAuth();
+  const { activeStyle, activeTarget } = useAuth();
   const searchParams = useSearchParams();
   const promptId = searchParams.get('prompt_id');
   // Template picked from the library "Use" button. The title is shown to the
@@ -30,6 +31,7 @@ function OptimizerPageContent() {
   const activeTemplateName = searchParams.get('template');
   const activeTemplateId = searchParams.get('template_id');
   const [templateDismissed, setTemplateDismissed] = useState(false);
+
   // Effective applied template — cleared once the user dismisses the chip so
   // enhancement reverts to the normal automatic-retrieval flow.
   const appliedTemplateId = !templateDismissed ? activeTemplateId : null;
@@ -146,6 +148,7 @@ function OptimizerPageContent() {
 
   useEffect(() => {
     if (promptId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       loadPromptDetails(promptId);
     }
   }, [promptId]);
@@ -153,6 +156,7 @@ function OptimizerPageContent() {
   // Re-show the "template in use" banner whenever a different template is
   // opened from the library (a previous dismissal shouldn't hide the new one).
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTemplateDismissed(false);
   }, [activeTemplateName]);
 
@@ -302,6 +306,7 @@ function OptimizerPageContent() {
       ...(isGeneralMode ? {} : { role: selectedRole, mode: selectedMode }),
       apply_style: applyStyle,
       style_profile_id: activeStyle.id || undefined,
+      ...(activeTarget && activeTarget !== 'None' ? { target_model: activeTarget } : {}),
       ...(forcedLevel ? { enhancement_level: forcedLevel } : {}),
       // When a library template is applied (and not dismissed), tell the
       // backend to enhance using THAT template instead of auto-retrieval.

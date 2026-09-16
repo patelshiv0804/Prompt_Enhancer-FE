@@ -36,7 +36,7 @@ describe('ComparisonBlock', () => {
 
     await userEvent.clear(textarea);
     await userEvent.type(textarea, 'rewrite this nicely');
-    await userEvent.click(screen.getByRole('button', { name: 'Optimize' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Enhance' }));
 
     expect(onOptimize).toHaveBeenCalledWith('rewrite this nicely', 'general', '', 'auto');
   });

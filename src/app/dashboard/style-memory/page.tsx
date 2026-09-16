@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -5,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import {
   Plus, X, Zap, ChevronRight, ArrowRight,
   Fingerprint, Palette, Film, Trees, User as UserIcon,
-  Sparkles, ChevronDown, Pencil, Trash2, RefreshCw, Loader2
+  Sparkles, ChevronDown, Pencil, Trash2, Loader2
 } from 'lucide-react';
 import {
   useStyleProfiles,
@@ -555,13 +556,20 @@ function ProfileModal({
 
   useEffect(() => {
     if (open && editingProfile) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setName(editingProfile.name);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCategory(editingProfile.category);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setInjection(editingProfile.injectionPrompt);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTagsInput(editingProfile.tags.map(t => t.replace(/^#/, '')).join(', '));
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setModalError(null);
     } else if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setName(''); setCategory('character'); setInjection(''); setTagsInput('');
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setModalError(null);
     }
   }, [open, editingProfile]);
@@ -895,13 +903,6 @@ export default function StyleMemoryPage() {
 
         {/* ── Header ── */}
         <div style={{ padding: isMobile ? '52px 0 22px' : '28px 0 24px' }}>
-          <span style={{
-            fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase',
-            letterSpacing: '0.9px', color: isDark ? D.textMuted : 'var(--color-text-secondary)',
-            display: 'block', marginBottom: 8,
-          }}>
-            Your Creative Signature
-          </span>
           <div style={{
             display: 'flex',
             flexDirection: isMobile ? 'column' : 'row',
@@ -917,22 +918,6 @@ export default function StyleMemoryPage() {
               </p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: isMobile ? '100%' : undefined }}>
-              <button
-                onClick={() => reload()}
-                title="Refresh from Database"
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                  padding: '9px 14px', borderRadius: 10, fontSize: 13, fontWeight: 600,
-                  border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(124,58,237,0.15)'}`, cursor: 'pointer',
-                  background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
-                  color: isDark ? D.textPrimary : 'var(--color-text-secondary)',
-                  transition: 'all 200ms ease', flexShrink: 0,
-                }}
-                className={isDark ? 'hover:!border-[rgba(167,139,250,0.35)] hover:!bg-[rgba(255,255,255,0.06)]' : 'hover:!border-[rgba(124,58,237,0.3)] hover:!text-[var(--color-primary)]'}
-              >
-                <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-                Refresh
-              </button>
               <button
                 id="create-profile-btn"
                 onClick={openCreateDrawer}

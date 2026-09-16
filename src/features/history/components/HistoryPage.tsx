@@ -10,6 +10,7 @@ import {
 import { fetchHistory, fetchHistoryStats, toggleFavorite, deleteHistoryItem } from '../services/historyService';
 import type { HistoryItem, HistoryStats, SortBy } from '../types/history.types';
 import ScoreSpinner from '@/components/ScoreSpinner';
+import MarqueeTitle from '@/components/MarqueeTitle';
 import { useRouter } from 'next/navigation';
 
 const PAGE_SIZE = 10;
@@ -159,14 +160,24 @@ function HistoryRow({ item, onToggleFavorite, onDelete }: { item: HistoryItem; o
       transition: 'background 200ms ease, box-shadow 200ms ease, border-color 200ms ease',
       position: 'relative',
     }}
-    className="hover:!bg-[rgba(124,58,237,0.03)] hover:shadow-[0_4px_16px_rgba(109,40,217,0.07)] hover:!border-[rgba(124,58,237,0.15)]"
+    className="group/vaultrow hover:!bg-[rgba(124,58,237,0.03)] hover:shadow-[0_4px_16px_rgba(109,40,217,0.07)] hover:!border-[rgba(124,58,237,0.15)]"
     >
       <div style={{ width: 38, height: 38, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accent, background: `${accent}14`, border: `1px solid ${accent}22`, flexShrink: 0 }}>
         <Icon size={16} strokeWidth={1.6} />
       </div>
 
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <p style={{ margin: 0, fontSize: 14, fontWeight: 500, color: 'var(--color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.prompt}</p>
+        <MarqueeTitle
+          text={item.title || item.prompt}
+          titleHover={item.prompt}
+          style={{
+            margin: 0,
+            fontSize: 14,
+            fontWeight: 500,
+            color: 'var(--color-text-primary)',
+            lineHeight: 1.35,
+          }}
+        />
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--color-text-secondary)' }}>
           <Clock size={11} strokeWidth={1.5} />
           <span>{timeAgo(item.createdAt)}</span>

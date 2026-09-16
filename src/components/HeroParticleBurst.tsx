@@ -226,7 +226,7 @@ export default function HeroParticleBurst() {
         const cosTheta = Math.cos(p.theta);
 
         let x3d = p.r * sinPhi * cosTheta;
-        let y3d = p.r * cosPhi;
+        const y3d = p.r * cosPhi;
         let z3d = p.r * sinPhi * sinTheta;
 
         // Apply global Y-axis rotation for 3D feel

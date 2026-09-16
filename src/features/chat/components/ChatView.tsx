@@ -5,15 +5,20 @@ import {
   Copy, Wand2, Bookmark, TrendingUp, Clock, ArrowRight,
   CheckCircle2, AlertTriangle, Minus, GitCompareArrows,
   Sparkles, Code, Search, Megaphone, BookOpen, Image as ImageIcon,
-  Film, PlaySquare, ChevronDown, GitBranch,
+  Film, PlaySquare, ChevronDown, GitBranch, Download,
 } from 'lucide-react';
 import VersionHeader from './VersionHeader';
 import VersionHistoryDrawer from './VersionHistoryDrawer';
+import MultiChatExportModal from './MultiChatExportModal';
+import type { MultiChatExportItem } from '../services/multiChatExportService';
+import { fetchHistory } from '@/features/history/services/historyService';
 import { useEnabledStyleOptions } from '@/features/style-memory/services/styleMemoryService';
 import { apiClient, streamEnhance, type ReenhanceStreamDone } from '@/utils/apiClient';
 import FormattedPromptViewer from '../../optimizer/components/FormattedPromptViewer';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useTheme, D } from '@/theme/theme';
+import { useAuth } from '@/context/AuthContext';
+import ExpandableDimensionText from '@/components/ExpandableDimensionText';
 
 // ── Streaming prompt formatter ──────────────────────────────────────────────
 function formatPromptText(text: string): string {
@@ -66,7 +71,7 @@ interface PromptVersion {
   tweakNote?: string;
   isStarred?: boolean;
   versionType?: string;
-  toolRecommendations?: any;
+  toolRecommendations?: unknown;
   isGenerating?: boolean;
 }
 
@@ -507,6 +512,7 @@ function scoreLabel(s: number) {
 function useCountUp(target: number, active: boolean, duration = 1200): number {
   const [value, setValue] = useState(0);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!active) { setValue(0); return; }
     let current = 0;
     const step = target / (duration / 16);
@@ -586,7 +592,7 @@ function ChatDetailSkeleton() {
               background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF', borderRadius: 20, padding: 24,
               boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.35)' : '0 4px 20px rgba(109,40,217,0.04)',
               border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.10)'}`,
-              display: 'flex', flexDirection: 'column', gap: 18, minHeight: 300,
+              display: 'flex', flexDirection: 'column', gap: 18, minHeight: 650,
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div className="skeleton" style={{ width: 128, height: 28, borderRadius: 9999 }} />
@@ -681,6 +687,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
     if (!chatId) return;
 
     if (MOCK_SESSIONS[chatId]) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrentSession(MOCK_SESSIONS[chatId]);
       return;
     }
@@ -813,12 +820,12 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
             {
               versionNumber: 1,
               versionType: 'original',
-              optimizedPrompt: p.current_version?.content || p.original_prompt || '',
+              optimizedPrompt: p.current_version?.content || '',
               overallScore: overallScore,
               beforeOverallScore: originalScore,
               dimensions: makeDimensions(origAnal, enhAnal, originalScore, overallScore),
-              wordsAfter: ((p.current_version?.content || p.original_prompt) || '').split(/\s+/).filter(Boolean).length,
-              tokensAfter: Math.round(((p.current_version?.content || p.original_prompt) || '').length / 4),
+              wordsAfter: (p.current_version?.content || '').split(/\s+/).filter(Boolean).length,
+              tokensAfter: Math.round((p.current_version?.content || '').length / 4),
               timestamp: 'Just now',
             }
           ];
@@ -878,22 +885,20 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
   const [isRightCompareMenuOpen, setIsRightCompareMenuOpen] = useState(false);
 
   // Selector state
+  // The destination "target model" is owned globally by AuthContext (set from
+  // the header dropdown) so every surface agrees on one value; ChatView reads
+  // it here and forwards it on re-enhance.
+  const { activeTarget } = useAuth();
   const [selectedStyle, setSelectedStyle] = useState('None');
   const [isStyleOpen, setIsStyleOpen] = useState(false);
-  const [selectedTarget, setSelectedTarget] = useState('Claude');
   const [selectedEngine, setSelectedEngine] = useState('Claude Sonnet 4.5');
-  const [isTargetOpen, setIsTargetOpen] = useState(false);
 
   const styleDropdownRef = useRef<HTMLDivElement>(null);
-  const targetDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (styleDropdownRef.current && !styleDropdownRef.current.contains(event.target as Node)) {
         setIsStyleOpen(false);
-      }
-      if (targetDropdownRef.current && !targetDropdownRef.current.contains(event.target as Node)) {
-        setIsTargetOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -908,23 +913,40 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
     }
   }, [styleOptions, selectedStyle]);
 
-  const targetModels = [
-    'ChatGPT', 'Claude', 'Gemini', 'Grok', 'Midjourney', 'VEO', 'Perplexity'
-  ];
-  const modelIcons: Record<string, string> = {
-    'ChatGPT': '/chatgpt-icon.svg',
-    'Claude': '/claude-ai-icon.svg',
-    'Gemini': '/google-gemini-icon.svg',
-    'Grok': '/grok-icon.svg',
-    'Midjourney': '/midjourney-color-icon.svg',
-    'VEO': '/veo-icon.svg',
-    'Perplexity': '/perplexity-ai-icon.svg',
-  };
   const optimizerEngines = ['Claude Sonnet 4.5', 'GPT-5.2'];
   const [ready, setReady] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [hoveredVersionIndex, setHoveredVersionIndex] = useState<number | null>(null);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [recentChatsForExport, setRecentChatsForExport] = useState<MultiChatExportItem[]>([]);
+
+  useEffect(() => {
+    fetchHistory(1, 50, { search: '', category: 'all', sortBy: 'most-recent' })
+      .then(res => {
+        if (res?.items) {
+          setRecentChatsForExport(res.items.map(i => ({
+            id: i.id,
+            title: i.prompt.slice(0, 50),
+            originalPrompt: i.prompt,
+            mode: i.mode,
+            category: i.category,
+            targetModel: i.targetModel,
+            score: i.score ?? undefined,
+            createdAt: i.createdAt,
+            optimizedPrompt: i.optimizedPrompt,
+            versions: i.optimizedPrompt ? [
+              {
+                versionNumber: 1,
+                optimizedPrompt: i.optimizedPrompt,
+                overallScore: i.score ?? undefined,
+              }
+            ] : undefined,
+          })));
+        }
+      })
+      .catch(() => { });
+  }, []);
 
   const [sessionVersions, setSessionVersions] = useState(currentSession.versions);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -991,7 +1013,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
   };
 
   const runBlockingReenhance = async (pId: string, nextVerNum: number, prevScore: number) => {
-    const res = await apiClient.post<any>(`/api/v1/prompts/${pId}/reenhance`);
+    const res = await apiClient.post<any>(`/api/v1/prompts/${pId}/reenhance`, { target_model: activeTarget });
     if (!res?.data) throw new Error('No data returned from re-enhance');
     const d = res.data;
     const vNewAnal = d.new_analysis || null;
@@ -1055,7 +1077,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
     const pId = chatId;
     let settledLocally = false;
 
-    await streamEnhance<ReenhanceStreamDone>(`/api/v1/prompts/${pId}/reenhance/stream`, {}, {
+    await streamEnhance<ReenhanceStreamDone>(`/api/v1/prompts/${pId}/reenhance/stream`, { target_model: activeTarget }, {
       onToken: (text) => {
         setStreamingText(prev => prev + text);
       },
@@ -1130,6 +1152,34 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
   const version = sessionVersions[activeVersionIndex] || sessionVersions[0] || currentSession.versions[0];
   const activeVersion = version;
   const bestIndex = sessionVersions.reduce((best, v, i) => v.overallScore > sessionVersions[best].overallScore ? i : best, 0);
+
+  const exportableChats: MultiChatExportItem[] = React.useMemo(() => {
+    const currentId = currentSession.id || chatId || 'current-session';
+    const currentItem: MultiChatExportItem = {
+      id: currentId,
+      title: currentSession.originalPrompt.slice(0, 50),
+      originalPrompt: currentSession.originalPrompt,
+      mode: currentSession.mode,
+      score: currentSession.originalScore,
+      createdAt: currentSession.createdAt,
+      versions: sessionVersions.map(v => ({
+        versionNumber: v.versionNumber,
+        optimizedPrompt: v.optimizedPrompt,
+        overallScore: v.overallScore,
+        tweakNote: v.tweakNote,
+        timestamp: v.timestamp,
+        dimensions: v.dimensions ? v.dimensions.map(d => ({
+          id: d.id,
+          label: d.label,
+          score: d.score,
+          desc: d.desc,
+        })) : [],
+      })),
+    };
+
+    const others = recentChatsForExport.filter(c => c.id !== currentId);
+    return [currentItem, ...others];
+  }, [currentSession, chatId, sessionVersions, recentChatsForExport]);
 
   const animatedScore = useCountUp(version.overallScore, ready);
   const radius = 44;
@@ -1212,7 +1262,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
         boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.4)' : '0 4px 20px rgba(109,40,217,0.06), 0 1px 3px rgba(0,0,0,0.03)',
         border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.12)'}`,
         display: 'flex', flexDirection: 'column',
-        position: 'relative', overflow: 'hidden', minWidth: 0, height: isMobile ? 340 : 420, maxHeight: isMobile ? 340 : 420, boxSizing: 'border-box',
+        position: 'relative', overflow: 'hidden', minWidth: 0, height: isMobile ? 400 : 560, maxHeight: isMobile ? 400 : 560, boxSizing: 'border-box',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, paddingRight: 16 }}>
           <div style={{
@@ -1245,83 +1295,28 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
           </div>
         </div>
 
-        {isGenerating ? (
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative', minHeight: 0 }}>
-            {streamingText ? (
-              <div
-                ref={streamScrollRef}
-                className="custom-scrollbar"
-                style={{
-                  flex: 1,
-                  minHeight: 0,
-                  fontSize: 14,
-                  lineHeight: 1.6,
-                  overflowY: 'auto',
-                  paddingRight: 16,
-                  color: isDark ? D.textPrimary : '#1E293B',
-                  letterSpacing: '0.01em',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
-                }}
-              >
-                {formatPromptText(streamingText)}
-                <span
-                  aria-hidden="true"
-                  style={{
-                    display: 'inline-block',
-                    width: 7,
-                    height: 15,
-                    marginLeft: 2,
-                    borderRadius: 1,
-                    background: '#8B5CF6',
-                    verticalAlign: 'text-bottom',
-                    animation: 'streamCaretBlink 1s step-end infinite',
-                  }}
-                />
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 12, color: isDark ? '#C084FC' : '#6D28D9' }}>
-                <div style={{
-                  width: 44, height: 44, borderRadius: '50%',
-                  background: isDark ? 'rgba(139,92,246,0.2)' : 'linear-gradient(135deg, rgba(124,58,237,0.12), rgba(168,85,247,0.18))',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <Wand2 size={22} style={{ animation: 'spin 2s linear infinite', color: '#8B5CF6' }} />
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <p style={{ margin: 0, fontSize: 13.5, fontWeight: 700, color: isDark ? D.textPrimary : '#241144' }}>Re-enhancing prompt…</p>
-                  <p style={{ margin: '4px 0 0', fontSize: 12, color: isDark ? D.textSecondary : '#64748B' }}>Synthesizing higher quality prompt version in real-time</p>
-                </div>
-              </div>
-            )}
+        {isGenerating && !streamingText ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 12, color: isDark ? '#C084FC' : '#6D28D9' }}>
+            <div style={{
+              width: 44, height: 44, borderRadius: '50%',
+              background: isDark ? 'rgba(139,92,246,0.2)' : 'linear-gradient(135deg, rgba(124,58,237,0.12), rgba(168,85,247,0.18))',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Wand2 size={22} style={{ animation: 'spin 2s linear infinite', color: '#8B5CF6' }} />
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ margin: 0, fontSize: 13.5, fontWeight: 700, color: isDark ? D.textPrimary : '#241144' }}>Re-enhancing prompt…</p>
+              <p style={{ margin: '4px 0 0', fontSize: 12, color: isDark ? D.textSecondary : '#64748B' }}>Synthesizing higher quality prompt version in real-time</p>
+            </div>
           </div>
         ) : (
-          <div className="custom-scrollbar" style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 16 }}>
-            <FormattedPromptViewer content={v.optimizedPrompt} />
+          <div ref={streamScrollRef} className="custom-scrollbar" style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 16 }}>
+            <FormattedPromptViewer
+              content={isGenerating ? formatPromptText(streamingText) : v.optimizedPrompt}
+              isStreaming={isGenerating}
+            />
           </div>
         )}
-
-        {isGenerating ? (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, paddingTop: 14,
-            borderTop: `1px dashed ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(124,58,237,0.16)'}`, fontSize: 12,
-            color: isDark ? '#C084FC' : '#6D28D9', fontWeight: 600,
-            paddingRight: 16,
-          }}>
-            <Wand2 size={13} style={{ flexShrink: 0, animation: 'spin 1.5s linear infinite' }} />
-            <span>Streaming enhanced prompt live…</span>
-          </div>
-        ) : v.tweakNote ? (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, paddingTop: 14,
-            borderTop: `1px dashed ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(124,58,237,0.16)'}`, fontSize: 12,
-            color: isDark ? '#C084FC' : '#6D28D9', fontWeight: 600,
-            paddingRight: 16,
-          }}>
-            <Wand2 size={13} style={{ flexShrink: 0 }} />
-            <span>{cleanTweakNote(v.tweakNote)}</span>
-          </div>
-        ) : null}
       </div>
     );
   };
@@ -1379,6 +1374,30 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 10, flexShrink: 0, marginLeft: 'auto' }}>
+            {/* Export Context Button */}
+            <button
+              id="chat-export-context-btn"
+              onClick={() => setIsExportModalOpen(true)}
+              title="Export context to ChatGPT, Claude, etc."
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                padding: isMobile ? '5px 10px' : '6px 14px',
+                borderRadius: 8,
+                fontSize: isMobile ? 11.5 : 12.5,
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 160ms ease',
+                background: isDark ? 'rgba(139,92,246,0.18)' : 'rgba(124,58,237,0.08)',
+                color: isDark ? '#C084FC' : '#6D28D9',
+                border: `1px solid ${isDark ? 'rgba(167,139,250,0.30)' : 'rgba(124,58,237,0.20)'}`,
+                whiteSpace: 'nowrap',
+              }}
+              className={isDark ? 'hover:!bg-[rgba(139,92,246,0.28)] hover:!text-[#FFFFFF]' : 'hover:!bg-[rgba(124,58,237,0.15)]'}
+            >
+              <Download size={13} />
+              <span>Export Context</span>
+            </button>
+
             {sessionVersions.length > 1 && (
               <button
                 onClick={() => { setCompareMode(!compareMode); if (!compareMode) setCompareIndex(0); }}
@@ -1493,7 +1512,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                   borderRadius: 20, padding: isMobile ? '18px 6px 18px 18px' : '24px 8px 24px 24px',
                   boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.4)' : '0 4px 20px rgba(109,40,217,0.04)',
                   border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.10)'}`,
-                  display: 'flex', flexDirection: 'column', height: isMobile ? 340 : 420, maxHeight: isMobile ? 340 : 420, boxSizing: 'border-box', overflow: 'hidden', minWidth: 0,
+                  display: 'flex', flexDirection: 'column', height: isMobile ? 400 : 560, maxHeight: isMobile ? 400 : 560, boxSizing: 'border-box', overflow: 'hidden', minWidth: 0,
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, paddingRight: 16 }}>
                     <div style={{
@@ -1729,8 +1748,8 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                             }} />
                           </div>
 
-                          {/* Description */}
-                          <p style={{ fontSize: 11.5, color: isDark ? D.textSecondary : '#64748B', margin: 0, lineHeight: 1.45, fontWeight: 500 }}>{dim.desc}</p>
+                          {/* Description with 2-3 lines max & Show more option */}
+                          <ExpandableDimensionText text={dim.desc} maxLines={3} fontSize={11.5} lineHeight={1.45} />
                         </div>
                       );
                     })
@@ -1816,6 +1835,14 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
           onSelect={handleVersionSelect}
           onToggleStar={handleToggleStar}
           onHoverVersion={setHoveredVersionIndex}
+        />
+
+        {/* Multi-Chat Context Export Modal */}
+        <MultiChatExportModal
+          isOpen={isExportModalOpen}
+          onClose={() => setIsExportModalOpen(false)}
+          availableChats={exportableChats}
+          initialSelectedIds={[currentSession.id || chatId || 'current-session']}
         />
       </div>
     </div>
