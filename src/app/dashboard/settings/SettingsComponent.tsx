@@ -9,7 +9,9 @@ import {
   Award, Layers, CheckCircle2, ShieldCheck,
   Sun, Moon, Laptop, ArrowRight,
   Pencil, Cpu, FileText, CheckCircle, ExternalLink,
-  Sliders, Shield, Activity, HelpCircle, LogOut
+  Sliders, Shield, Activity, HelpCircle, LogOut,
+  Crown, Brain, Calendar, Compass, Medal, Layout, GitCommit,
+  Share2, Globe, Command, Filter, Grid, Lock
 } from 'lucide-react';
 import { apiClient } from '@/utils/apiClient';
 import { useAuth } from '@/context/AuthContext';
@@ -17,6 +19,7 @@ import { ROLES, ROLE_MODES, getModeIcon } from '@/constants/roles';
 import { presetAvatarGradients, getInitials, renderPresetAvatar } from '@/constants/avatars';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import SettingsSkeleton from './SettingsSkeleton';
+import { ActivityHeatmap } from './ActivityHeatmap';
 import { useTheme, D, hasUserSelectedThemeThisSession } from '@/theme/theme';
 
 /* ── Custom iOS / macOS Switch Component ── */
@@ -68,6 +71,90 @@ function ToggleSwitch({ enabled, onToggle, ariaLabel }: ToggleSwitchProps) {
   );
 }
 
+export interface BadgeItem {
+  id: string;
+  title: string;
+  tier: 'bronze' | 'silver' | 'gold' | 'diamond' | string;
+  category: string;
+  description: string;
+  unlock_criterion: string;
+  icon: string;
+  color: string;
+  unlocked: boolean;
+  progress: string;
+  percentage: number;
+}
+
+const getBadgeIcon = (iconName: string) => {
+  switch (iconName) {
+    case 'Sparkles':
+    case 'Sparkle':
+      return Sparkles;
+    case 'Award': return Award;
+    case 'Flame': return Flame;
+    case 'Cpu': return Cpu;
+    case 'Crown': return Crown;
+    case 'Target': return Target;
+    case 'Brain': return Brain;
+    case 'CheckCircle': return CheckCircle;
+    case 'Zap': return Zap;
+    case 'Calendar': return Calendar;
+    case 'Compass': return Compass;
+    case 'Shield': return Shield;
+    case 'Activity': return Activity;
+    case 'Medal': return Medal;
+    case 'Layout': return Layout;
+    case 'FileText': return FileText;
+    case 'GitCommit': return GitCommit;
+    case 'Share2': return Share2;
+    case 'Layers': return Layers;
+    case 'Globe': return Globe;
+    case 'Command': return Command;
+    case 'Sliders': return Sliders;
+    case 'Filter': return Filter;
+    case 'Grid': return Grid;
+    default: return Award;
+  }
+};
+
+const getTierStyle = (tier: string, isDark: boolean) => {
+  switch ((tier || '').toLowerCase()) {
+    case 'diamond':
+      return {
+        bg: isDark ? 'rgba(56, 189, 248, 0.12)' : 'rgba(14, 165, 233, 0.08)',
+        border: 'rgba(56, 189, 248, 0.4)',
+        color: '#38BDF8',
+        glow: 'rgba(56, 189, 248, 0.25)',
+        label: 'DIAMOND',
+      };
+    case 'gold':
+      return {
+        bg: isDark ? 'rgba(245, 158, 11, 0.12)' : 'rgba(217, 119, 6, 0.08)',
+        border: 'rgba(245, 158, 11, 0.4)',
+        color: '#F59E0B',
+        glow: 'rgba(245, 158, 11, 0.25)',
+        label: 'GOLD',
+      };
+    case 'silver':
+      return {
+        bg: isDark ? 'rgba(148, 163, 184, 0.12)' : 'rgba(100, 116, 139, 0.08)',
+        border: 'rgba(148, 163, 184, 0.35)',
+        color: '#94A3B8',
+        glow: 'rgba(148, 163, 184, 0.2)',
+        label: 'SILVER',
+      };
+    case 'bronze':
+    default:
+      return {
+        bg: isDark ? 'rgba(205, 127, 50, 0.12)' : 'rgba(180, 83, 9, 0.08)',
+        border: 'rgba(205, 127, 50, 0.35)',
+        color: '#CD7F32',
+        glow: 'rgba(205, 127, 50, 0.2)',
+        label: 'BRONZE',
+      };
+  }
+};
+
 export interface SettingsPageProps {
   initialTab?: 'profile' | 'settings';
 }
@@ -108,11 +195,32 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
   const [plan, setPlan] = useState<string>(() => user?.plan || 'Free');
   const [createdAt, setCreatedAt] = useState<string>('');
   const [updatedAt, setUpdatedAt] = useState<string>('');
-  const [stats, setStats] = useState<{ prompts: number; avgScore: number; dayStreak: number }>({
+  const [stats, setStats] = useState<{
+    prompts: number;
+    avgScore: number;
+    dayStreak: number;
+    longestStreak: number;
+    totalActiveDays: number;
+    activityCalendar: Record<string, number>;
+    userMaxScore: number;
+    frequency7d: number[];
+    unlockedBadgeCount: number;
+    totalBadgeCount: number;
+    badges: BadgeItem[];
+  }>({
     prompts: 0,
     avgScore: 0,
     dayStreak: 0,
+    longestStreak: 0,
+    totalActiveDays: 0,
+    activityCalendar: {},
+    userMaxScore: 0,
+    frequency7d: [0, 0, 0, 0, 0, 0, 0],
+    unlockedBadgeCount: 0,
+    totalBadgeCount: 29,
+    badges: [],
   });
+  const [badgeCategory, setBadgeCategory] = useState<string>('all');
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Preference Settings — the theme control mirrors the global preference
@@ -207,6 +315,18 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
             prompts: statsData.total_prompts ?? 0,
             avgScore: typeof statsData.average_score === 'number' ? Math.round(statsData.average_score) : 0,
             dayStreak: statsData.streak_days ?? 0,
+            longestStreak: statsData.longest_streak ?? statsData.streak_days ?? 0,
+            totalActiveDays: statsData.total_active_days ?? 0,
+            activityCalendar: (typeof statsData.activity_calendar === 'object' && statsData.activity_calendar)
+              ? statsData.activity_calendar
+              : {},
+            userMaxScore: statsData.user_max_score ?? 0,
+            frequency7d: Array.isArray(statsData.frequency_7d) && statsData.frequency_7d.length === 7
+              ? statsData.frequency_7d
+              : [0, 0, 0, 0, 0, 0, 0],
+            unlockedBadgeCount: statsData.unlocked_badge_count ?? 0,
+            totalBadgeCount: statsData.total_badge_count ?? 29,
+            badges: Array.isArray(statsData.badges) ? statsData.badges : [],
           });
         }
       } catch (e) {
@@ -609,14 +729,24 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
          PROFILE VIEW (Apple ID & Telemetry Bento Grid)
          ═══════════════════════════════════════════════════ */}
       {activeTab === 'profile' && (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : isDesktop ? '1.15fr 0.85fr' : '1fr',
-            gap: 24,
-            width: '100%',
-          }}
-        >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24, width: '100%' }}>
+          {/* Full-Width LeetCode Activity & Streak Heatmap (Top Hero Placement) */}
+          <ActivityHeatmap
+            activityCalendar={stats.activityCalendar}
+            currentStreak={stats.dayStreak}
+            longestStreak={stats.longestStreak}
+            totalActiveDays={stats.totalActiveDays}
+            totalPrompts={stats.prompts}
+          />
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : isDesktop ? '1.15fr 0.85fr' : '1fr',
+              gap: 24,
+              width: '100%',
+            }}
+          >
           {/* Left Column: Identity & Plan Bento */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
             {/* Identity Bento Card */}
@@ -1026,29 +1156,31 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                 <span style={{ fontSize: 12, color: isDark ? D.textMuted : '#64748B' }}>Live Metrics</span>
               </div>
 
-              {/* 3 Metric Boxes */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+              {/* 4 Metric Boxes */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
                 {[
                   { label: 'Prompts', value: stats.prompts.toLocaleString(), icon: Zap, color: '#7C3AED' },
                   { label: 'Avg Score', value: stats.avgScore.toString(), icon: Target, color: '#EC4899' },
                   { label: 'Day Streak', value: `${stats.dayStreak}d`, icon: Flame, color: '#F59E0B' },
+                  { label: 'Raw Best', value: `${Math.round(stats.userMaxScore)}`, icon: Award, color: '#10B981' },
                 ].map((item, i) => (
                   <div
                     key={i}
                     style={{
                       background: isDark ? 'rgba(14, 13, 20, 0.75)' : '#F8FAFC',
-                      borderRadius: 16,
+                      borderRadius: 14,
                       border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.06)' : '#E2E8F0'}`,
-                      padding: '14px 10px',
+                      padding: '12px 6px',
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
                       gap: 4,
+                      textAlign: 'center',
                     }}
                   >
-                    <item.icon size={16} color={item.color} strokeWidth={2.2} />
-                    <span style={{ fontSize: 18, fontWeight: 800, color: isDark ? D.textPrimary : '#0F172A', letterSpacing: -0.4 }}>{item.value}</span>
-                    <span style={{ fontSize: 11, color: isDark ? D.textMuted : '#64748B', fontWeight: 600 }}>{item.label}</span>
+                    <item.icon size={15} color={item.color} strokeWidth={2.2} />
+                    <span style={{ fontSize: 16, fontWeight: 800, color: isDark ? D.textPrimary : '#0F172A', letterSpacing: -0.4 }}>{item.value}</span>
+                    <span style={{ fontSize: 10, color: isDark ? D.textMuted : '#64748B', fontWeight: 600 }}>{item.label}</span>
                   </div>
                 ))}
               </div>
@@ -1060,29 +1192,45 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                   <span style={{ fontSize: 11, color: isDark ? D.textMuted : '#94A3B8' }}>Past 7 Days</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 44 }}>
-                  {[35, 60, 45, 75, 95, 70, 90].map((h, i) => {
-                    const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-                    const isToday = i === 6;
-                    return (
-                      <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                        <div
-                          style={{
-                            width: '100%',
-                            borderRadius: 4,
-                            height: `${Math.round((h / 100) * 36)}px`,
-                            background: isToday ? 'linear-gradient(180deg, #8B5CF6, #7C3AED)' : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124, 58, 237, 0.12)'),
-                            boxShadow: isToday ? '0 2px 8px rgba(124, 58, 237, 0.3)' : 'none',
-                          }}
-                        />
-                        <span style={{ fontSize: 9.5, color: isToday ? '#7C3AED' : (isDark ? D.textMuted : '#94A3B8'), fontWeight: isToday ? 700 : 500 }}>{days[i]}</span>
-                      </div>
-                    );
-                  })}
+                  {(() => {
+                    const maxFreq = Math.max(...stats.frequency7d, 1);
+                    const shortDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+                    const dayLabels: string[] = [];
+                    for (let dIdx = 6; dIdx >= 0; dIdx--) {
+                      const d = new Date();
+                      d.setDate(d.getDate() - dIdx);
+                      dayLabels.push(shortDays[d.getDay()]);
+                    }
+                    return stats.frequency7d.map((count, i) => {
+                      const isToday = i === 6;
+                      const barHeight = Math.max(6, Math.round((count / maxFreq) * 36));
+                      return (
+                        <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                          <div
+                            title={`${count} prompt${count === 1 ? '' : 's'}`}
+                            style={{
+                              width: '100%',
+                              borderRadius: 4,
+                              height: `${barHeight}px`,
+                              background: isToday
+                                ? 'linear-gradient(180deg, #8B5CF6, #7C3AED)'
+                                : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124, 58, 237, 0.12)'),
+                              boxShadow: isToday ? '0 2px 8px rgba(124, 58, 237, 0.3)' : 'none',
+                              transition: 'height 240ms ease',
+                            }}
+                          />
+                          <span style={{ fontSize: 9.5, color: isToday ? '#7C3AED' : (isDark ? D.textMuted : '#94A3B8'), fontWeight: isToday ? 700 : 500 }}>
+                            {dayLabels[i]}
+                          </span>
+                        </div>
+                      );
+                    });
+                  })()}
                 </div>
               </div>
             </div>
 
-            {/* Achievements & Badges */}
+            {/* Achievements & Badges Bento Card */}
             <div
               style={{
                 background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
@@ -1095,62 +1243,220 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                 gap: 16,
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              {/* Header */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
                 <h3 style={{ fontSize: 16, fontWeight: 700, color: isDark ? D.textPrimary : '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Award size={17} color="#F59E0B" />
-                  <span>Unlocked Badges</span>
+                  <Award size={18} color="#F59E0B" />
+                  <span>Achievements & Badges</span>
                 </h3>
-                <span style={{ fontSize: 11, fontWeight: 700, color: isDark ? '#C084FC' : '#7C3AED', background: isDark ? 'rgba(139, 92, 246, 0.18)' : 'rgba(124, 58, 237, 0.08)', padding: '2px 8px', borderRadius: 9999 }}>
-                  4 Badges
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: isDark ? '#C084FC' : '#7C3AED',
+                    background: isDark ? 'rgba(139, 92, 246, 0.18)' : 'rgba(124, 58, 237, 0.08)',
+                    border: `1px solid ${isDark ? 'rgba(139, 92, 246, 0.3)' : 'rgba(124, 58, 237, 0.2)'}`,
+                    padding: '3px 10px',
+                    borderRadius: 9999,
+                  }}
+                >
+                  {stats.unlockedBadgeCount} / {stats.totalBadgeCount} Unlocked
                 </span>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+              {/* Category Filter Tabs */}
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 6,
+                  overflowX: 'auto',
+                  paddingBottom: 4,
+                  scrollbarWidth: 'none',
+                }}
+              >
                 {[
-                  { title: 'Prompt Pioneer', desc: 'Crafted initial prompt', icon: Sparkles, color: '#8B5CF6' },
-                  { title: 'Style Maestro', desc: 'Style profile attached', icon: Sliders, color: '#EC4899' },
-                  { title: 'Optimizer Pro', desc: '90+ Score achieved', icon: Target, color: '#10B981' },
-                  { title: 'Daily Streak', desc: '3+ consecutive days', icon: Flame, color: '#F59E0B' },
-                ].map((b, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      padding: 12,
-                      borderRadius: 14,
-                      border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9'}`,
-                      background: isDark ? 'rgba(14, 13, 20, 0.75)' : '#FAF5FF',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                    }}
-                  >
-                    <div
+                  { id: 'all', label: `All (${stats.totalBadgeCount})` },
+                  { id: 'unlocked', label: `Unlocked (${stats.unlockedBadgeCount})` },
+                  { id: 'Volume & Craft', label: 'Volume' },
+                  { id: 'Raw Prompt Mastery', label: 'Quality' },
+                  { id: 'Consistency & Streak', label: 'Streaks' },
+                  { id: 'Template Mastery', label: 'Templates' },
+                  { id: 'Model Explorer', label: 'Models' },
+                  { id: 'Mode & Versatility', label: 'Modes' },
+                ].map((cat) => {
+                  const isSelected = badgeCategory === cat.id;
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setBadgeCategory(cat.id)}
                       style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: 8,
-                        background: isDark ? 'rgba(255, 255, 255, 0.08)' : '#FFFFFF',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: b.color,
-                        boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-                        flexShrink: 0,
+                        padding: '4px 10px',
+                        borderRadius: 9999,
+                        fontSize: 11,
+                        fontWeight: isSelected ? 700 : 500,
+                        whiteSpace: 'nowrap',
+                        cursor: 'pointer',
+                        border: isSelected
+                          ? '1px solid #7C3AED'
+                          : `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0,0,0,0.08)'}`,
+                        background: isSelected
+                          ? 'linear-gradient(135deg, #7C3AED, #9333EA)'
+                          : (isDark ? 'rgba(255, 255, 255, 0.04)' : '#F8FAFC'),
+                        color: isSelected ? '#FFFFFF' : (isDark ? D.textMuted : '#64748B'),
+                        transition: 'all 160ms ease',
                       }}
                     >
-                      <b.icon size={16} strokeWidth={2.2} />
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontSize: 12.5, fontWeight: 700, color: isDark ? D.textPrimary : '#1E293B' }}>{b.title}</span>
-                      <span style={{ fontSize: 10.5, color: isDark ? D.textMuted : '#64748B' }}>{b.desc}</span>
-                    </div>
-                  </div>
-                ))}
+                      {cat.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Badges Grid (Scrollable) */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+                  gap: 10,
+                  maxHeight: 480,
+                  overflowY: 'auto',
+                  paddingRight: 4,
+                }}
+              >
+                {(() => {
+                  const filtered = (stats.badges || []).filter((b) => {
+                    if (badgeCategory === 'all') return true;
+                    if (badgeCategory === 'unlocked') return b.unlocked;
+                    return b.category === badgeCategory;
+                  });
+
+                  if (filtered.length === 0) {
+                    return (
+                      <div style={{ gridColumn: '1 / -1', padding: '32px 16px', textAlign: 'center', color: isDark ? D.textMuted : '#94A3B8', fontSize: 12 }}>
+                        No badges in this category yet. Keep enhancing prompts to unlock more!
+                      </div>
+                    );
+                  }
+
+                  return filtered.map((b) => {
+                    const tierStyle = getTierStyle(b.tier, isDark);
+                    const IconComp = getBadgeIcon(b.icon);
+
+                    return (
+                      <div
+                        key={b.id}
+                        style={{
+                          padding: '12px 14px',
+                          borderRadius: 16,
+                          border: `1px solid ${b.unlocked ? tierStyle.border : (isDark ? 'rgba(255, 255, 255, 0.06)' : '#E2E8F0')}`,
+                          background: isDark
+                            ? (b.unlocked ? 'rgba(24, 20, 38, 0.75)' : 'rgba(12, 11, 18, 0.45)')
+                            : (b.unlocked ? '#FFFFFF' : '#FAFAFA'),
+                          boxShadow: b.unlocked ? `0 2px 12px ${tierStyle.glow}` : 'none',
+                          opacity: b.unlocked ? 1 : 0.75,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 8,
+                          transition: 'all 200ms ease',
+                        }}
+                      >
+                        {/* Top row: Icon + Tier & Unlock status */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div
+                              style={{
+                                width: 30,
+                                height: 30,
+                                borderRadius: 8,
+                                background: tierStyle.bg,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: b.unlocked ? tierStyle.color : (isDark ? '#64748B' : '#94A3B8'),
+                                border: `1px solid ${tierStyle.border}`,
+                                flexShrink: 0,
+                              }}
+                            >
+                              <IconComp size={15} strokeWidth={2.2} />
+                            </div>
+                            <span
+                              style={{
+                                fontSize: 9,
+                                fontWeight: 800,
+                                padding: '1px 6px',
+                                borderRadius: 4,
+                                background: tierStyle.bg,
+                                color: tierStyle.color,
+                                border: `1px solid ${tierStyle.border}`,
+                                letterSpacing: '0.4px',
+                              }}
+                            >
+                              {tierStyle.label}
+                            </span>
+                          </div>
+
+                          {b.unlocked ? (
+                            <span style={{ fontSize: 9.5, fontWeight: 700, color: '#10B981', display: 'flex', alignItems: 'center', gap: 3 }}>
+                              <Check size={11} strokeWidth={3} />
+                              UNLOCKED
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: 9.5, fontWeight: 600, color: isDark ? '#94A3B8' : '#64748B', display: 'flex', alignItems: 'center', gap: 3 }}>
+                              <Lock size={10} />
+                              LOCKED
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Title & Description */}
+                        <div>
+                          <div style={{ fontSize: 12.5, fontWeight: 700, color: isDark ? D.textPrimary : '#1E293B', marginBottom: 2 }}>
+                            {b.title}
+                          </div>
+                          <div style={{ fontSize: 10.5, color: isDark ? D.textMuted : '#64748B', lineHeight: 1.35 }}>
+                            {b.description}
+                          </div>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div style={{ marginTop: 'auto' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9.5, color: isDark ? D.textMuted : '#94A3B8', fontWeight: 600, marginBottom: 3 }}>
+                            <span>{b.progress}</span>
+                            <span>{Math.round(b.percentage)}%</span>
+                          </div>
+                          <div
+                            style={{
+                              width: '100%',
+                              height: 4,
+                              borderRadius: 9999,
+                              background: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0',
+                              overflow: 'hidden',
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: `${Math.min(100, Math.max(b.unlocked ? 100 : 0, b.percentage))}%`,
+                                height: '100%',
+                                borderRadius: 9999,
+                                background: b.unlocked
+                                  ? 'linear-gradient(90deg, #10B981, #059669)'
+                                  : `linear-gradient(90deg, #7C3AED, ${tierStyle.color})`,
+                                transition: 'width 300ms ease',
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
               </div>
             </div>
           </div>
         </div>
-      )}
+      </div>
+    )}
 
       {/* ═══════════════════════════════════════════════════
          SETTINGS VIEW (macOS & Linear Bento Layout)
