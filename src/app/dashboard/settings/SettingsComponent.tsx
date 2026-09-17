@@ -746,7 +746,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
             style={{
               display: 'grid',
               gridTemplateColumns: isMobile ? '1fr' : isDesktop ? '1.15fr 0.85fr' : '1fr',
-              gap: 24,
+              gap: isMobile ? 16 : 24,
               width: '100%',
             }}
           >
@@ -1137,30 +1137,30 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
           </div>
 
           {/* Right Column: Telemetry & Badges Bento */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 16 : 24 }}>
             {/* KPI Metric Tiles */}
             <div
               style={{
                 background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
-                borderRadius: 24,
+                borderRadius: isMobile ? 18 : 24,
                 border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124, 58, 237, 0.12)'}`,
                 boxShadow: isDark ? '0 4px 20px rgba(0, 0, 0, 0.35)' : '0 4px 20px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02)',
-                padding: '24px 26px',
+                padding: isSmall ? '16px 14px' : isMobile ? '20px 18px' : '24px 26px',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 20,
+                gap: isMobile ? 16 : 20,
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <h3 style={{ fontSize: 16, fontWeight: 700, color: isDark ? D.textPrimary : '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <h3 style={{ fontSize: isSmall ? 15 : 16, fontWeight: 700, color: isDark ? D.textPrimary : '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
                   <Activity size={17} color="#7C3AED" />
                   <span>Performance Telemetry</span>
                 </h3>
                 <span style={{ fontSize: 12, color: isDark ? D.textMuted : '#64748B' }}>Live Metrics</span>
               </div>
 
-              {/* 4 Metric Boxes */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+              {/* 4 Metric Boxes: 2x2 on mobile, 4x1 on desktop */}
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? 10 : 8 }}>
                 {[
                   { label: 'Prompts', value: stats.prompts.toLocaleString(), icon: Zap, color: '#7C3AED' },
                   { label: 'Avg Score', value: stats.avgScore.toString(), icon: Target, color: '#EC4899' },
@@ -1171,9 +1171,9 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                     key={i}
                     style={{
                       background: isDark ? 'rgba(14, 13, 20, 0.75)' : '#F8FAFC',
-                      borderRadius: 14,
+                      borderRadius: isMobile ? 12 : 14,
                       border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.06)' : '#E2E8F0'}`,
-                      padding: '12px 6px',
+                      padding: isMobile ? '12px 10px' : '12px 6px',
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
@@ -1182,7 +1182,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                     }}
                   >
                     <item.icon size={15} color={item.color} strokeWidth={2.2} />
-                    <span style={{ fontSize: 16, fontWeight: 800, color: isDark ? D.textPrimary : '#0F172A', letterSpacing: -0.4 }}>{item.value}</span>
+                    <span style={{ fontSize: isMobile ? 17 : 16, fontWeight: 800, color: isDark ? D.textPrimary : '#0F172A', letterSpacing: -0.4 }}>{item.value}</span>
                     <span style={{ fontSize: 10, color: isDark ? D.textMuted : '#64748B', fontWeight: 600 }}>{item.label}</span>
                   </div>
                 ))}
@@ -1200,9 +1200,9 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                     const shortDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
                     const dayLabels: string[] = [];
                     for (let dIdx = 6; dIdx >= 0; dIdx--) {
-                      const d = new Date();
-                      d.setDate(d.getDate() - dIdx);
-                      dayLabels.push(shortDays[d.getDay()]);
+                       const d = new Date();
+                       d.setDate(d.getDate() - dIdx);
+                       dayLabels.push(shortDays[d.getDay()]);
                     }
                     return stats.frequency7d.map((count, i) => {
                       const isToday = i === 6;
@@ -1233,7 +1233,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
               </div>
             </div>
 
-            {/* LeetCode-Style Badges Showcase Widget (as requested) */}
+            {/* LeetCode-Style Badges Showcase Widget */}
             <div
               id="badges-showcase-card"
               onClick={() => {
@@ -1241,13 +1241,13 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
               }}
               style={{
                 background: isDark ? '#18181B' : '#FFFFFF',
-                borderRadius: 20,
+                borderRadius: isMobile ? 18 : 20,
                 border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0'}`,
                 boxShadow: isDark ? '0 4px 24px rgba(0, 0, 0, 0.35)' : '0 4px 20px rgba(0, 0, 0, 0.04)',
-                padding: '20px 24px',
+                padding: isSmall ? '16px 16px' : isMobile ? '18px 20px' : '20px 24px',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 14,
+                gap: isMobile ? 12 : 14,
                 cursor: 'pointer',
                 transition: 'all 200ms ease',
               }}
@@ -1261,7 +1261,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
               </div>
 
               {/* Large Count Number */}
-              <div style={{ fontSize: 32, fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A', lineHeight: 1 }}>
+              <div style={{ fontSize: isSmall ? 28 : 32, fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A', lineHeight: 1 }}>
                 {stats.unlockedBadgeCount}
               </div>
 
@@ -1271,9 +1271,9 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: 24,
-                  padding: '8px 0 12px',
-                  minHeight: 74,
+                  gap: isSmall ? 16 : isMobile ? 20 : 24,
+                  padding: isMobile ? '6px 0 10px' : '8px 0 12px',
+                  minHeight: isMobile ? 64 : 74,
                 }}
               >
                 {(() => {
@@ -1292,7 +1292,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                   return displayBadges.map((b, idx) => {
                     const isCenter = displayBadges.length === 3 ? idx === 1 : idx === displayBadges.length - 1;
                     const isHovered = hoveredBadgeId === b.id;
-                    const size = isCenter ? 68 : 54;
+                    const size = isCenter ? (isSmall ? 56 : isMobile ? 62 : 68) : (isSmall ? 44 : isMobile ? 48 : 54);
                     const tierStyle = getTierStyle(b.tier, isDark);
 
                     return (
@@ -1324,11 +1324,14 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                               transform: 'translateX(-50%)',
                               background: isDark ? '#2B2B2D' : '#1E293B',
                               color: '#FFFFFF',
-                              fontSize: 13.5,
+                              fontSize: isSmall ? 12 : 13.5,
                               fontWeight: 500,
-                              padding: '6px 14px',
+                              padding: isSmall ? '5px 10px' : '6px 14px',
                               borderRadius: 8,
                               whiteSpace: 'nowrap',
+                              maxWidth: '85vw',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
                               pointerEvents: 'none',
                               boxShadow: '0 6px 20px rgba(0, 0, 0, 0.45)',
                               border: isDark ? '1px solid rgba(255, 255, 255, 0.18)' : '1px solid rgba(0, 0, 0, 0.15)',
@@ -1361,7 +1364,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                 <div style={{ fontSize: 11.5, fontWeight: 600, color: isDark ? '#94A3B8' : '#64748B' }}>
                   Most Recent Badge
                 </div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: isDark ? '#F1F5F9' : '#0F172A', marginTop: 3 }}>
+                <div style={{ fontSize: isSmall ? 14 : 15, fontWeight: 700, color: isDark ? '#F1F5F9' : '#0F172A', marginTop: 3 }}>
                   {(() => {
                     const unlocked = (stats.badges || []).filter((b) => b.unlocked);
                     const displayBadges = unlocked.slice(Math.max(0, unlocked.length - 3));
@@ -1767,27 +1770,27 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
             onClick={(e) => e.stopPropagation()}
             style={{
               background: isDark ? '#18181B' : '#FFFFFF',
-              borderRadius: 24,
+              borderRadius: isMobile ? 20 : 24,
               border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : '#E2E8F0'}`,
               boxShadow: isDark ? '0 25px 60px rgba(0, 0, 0, 0.6)' : '0 25px 60px rgba(0, 0, 0, 0.12)',
               maxWidth: 580,
               width: '100%',
-              maxHeight: '85vh',
+              maxHeight: '88vh',
               display: 'flex',
               flexDirection: 'column',
-              padding: '24px 24px',
-              gap: 16,
+              padding: isSmall ? '16px 14px' : isMobile ? '20px 18px' : '24px 24px',
+              gap: isMobile ? 12 : 16,
               position: 'relative',
             }}
           >
             {/* Modal Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
               <div>
-                <h3 style={{ fontSize: 18, fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Award size={20} color="#F59E0B" />
+                <h3 style={{ fontSize: isSmall ? 16 : 18, fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Award size={isSmall ? 18 : 20} color="#F59E0B" />
                   <span>Your Unlocked Badges</span>
                 </h3>
-                <p style={{ fontSize: 12, color: isDark ? D.textMuted : '#64748B', margin: '4px 0 0' }}>
+                <p style={{ fontSize: isSmall ? 11 : 12, color: isDark ? D.textMuted : '#64748B', margin: '4px 0 0' }}>
                   Click any badge to view why you earned it and your milestone stats.
                 </p>
               </div>
@@ -1830,8 +1833,8 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
-                gap: 12,
+                gridTemplateColumns: isSmall ? 'repeat(auto-fill, minmax(95px, 1fr))' : isMobile ? 'repeat(auto-fill, minmax(110px, 1fr))' : 'repeat(auto-fill, minmax(130px, 1fr))',
+                gap: isSmall ? 8 : 12,
                 overflowY: 'auto',
                 padding: '8px 4px',
               }}
@@ -1855,7 +1858,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                         setSelectedBadge(b);
                       }}
                       style={{
-                        padding: '14px 10px',
+                        padding: isSmall ? '10px 6px' : '14px 10px',
                         borderRadius: 16,
                         border: `1px solid ${tierStyle.border}`,
                         background: isDark ? 'rgba(255, 255, 255, 0.04)' : '#F8FAFC',
@@ -1881,14 +1884,14 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                         src={`/badges/${b.id}.png`}
                         alt={b.title}
                         style={{
-                          width: 52,
-                          height: 52,
+                          width: isSmall ? 44 : 52,
+                          height: isSmall ? 44 : 52,
                           objectFit: 'contain',
                           filter: `drop-shadow(0 3px 8px ${tierStyle.glow})`,
                         }}
                       />
                       <div>
-                        <div style={{ fontSize: 11.5, fontWeight: 700, color: isDark ? D.textPrimary : '#1E293B', lineHeight: 1.2 }}>
+                        <div style={{ fontSize: isSmall ? 10.5 : 11.5, fontWeight: 700, color: isDark ? D.textPrimary : '#1E293B', lineHeight: 1.2 }}>
                           {b.title}
                         </div>
                         <span
@@ -1939,15 +1942,17 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
             onClick={(e) => e.stopPropagation()}
             style={{
               background: isDark ? '#18181B' : '#FFFFFF',
-              borderRadius: 24,
+              borderRadius: isMobile ? 20 : 24,
               border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : '#E2E8F0'}`,
               boxShadow: isDark ? '0 25px 60px rgba(0, 0, 0, 0.6)' : '0 25px 60px rgba(0, 0, 0, 0.12)',
               maxWidth: 440,
               width: '100%',
-              padding: '28px 24px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              padding: isSmall ? '20px 16px' : isMobile ? '24px 20px' : '28px 24px',
               display: 'flex',
               flexDirection: 'column',
-              gap: 20,
+              gap: isMobile ? 16 : 20,
               position: 'relative',
             }}
           >
@@ -1981,7 +1986,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
               <div
                 style={{
                   position: 'relative',
-                  padding: 14,
+                  padding: isSmall ? 10 : 14,
                   borderRadius: 24,
                   background: isDark ? 'rgba(255, 255, 255, 0.03)' : '#F8FAFC',
                 }}
@@ -1990,8 +1995,8 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                   src={`/badges/${selectedBadge.id}.png`}
                   alt={selectedBadge.title}
                   style={{
-                    width: 88,
-                    height: 88,
+                    width: isSmall ? 72 : 88,
+                    height: isSmall ? 72 : 88,
                     objectFit: 'contain',
                     filter: selectedBadge.unlocked
                       ? `drop-shadow(0 6px 18px ${getTierStyle(selectedBadge.tier, isDark).glow})`
@@ -2021,7 +2026,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                   </span>
                 </div>
 
-                <h3 style={{ fontSize: 20, fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A', margin: 0 }}>
+                <h3 style={{ fontSize: isSmall ? 18 : 20, fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A', margin: 0 }}>
                   {selectedBadge.title}
                 </h3>
               </div>

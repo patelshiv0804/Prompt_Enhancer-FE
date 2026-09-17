@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { Flame, Zap } from 'lucide-react';
 import { useTheme, D } from '@/theme/theme';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 interface ActivityHeatmapProps {
   activityCalendar?: Record<string, number>;
@@ -31,6 +32,17 @@ export function ActivityHeatmap({
 }: ActivityHeatmapProps) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+
+  const isMobile = useMediaQuery('(max-width: 640px)');
+  const isSmall = useMediaQuery('(max-width: 420px)');
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to today (right side of the 52-week calendar) on mobile/tablet
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollLeft = scrollContainerRef.current.scrollWidth;
+    }
+  }, []);
 
   const [hoveredCell, setHoveredCell] = useState<{
     cell: DayCell;
@@ -169,21 +181,21 @@ export function ActivityHeatmap({
     <div
       style={{
         background: isDark ? 'rgba(20, 19, 32, 0.88)' : '#FFFFFF',
-        borderRadius: 24,
+        borderRadius: isMobile ? 18 : 24,
         border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124, 58, 237, 0.12)'}`,
         boxShadow: isDark ? '0 4px 24px rgba(0, 0, 0, 0.4)' : '0 4px 20px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02)',
-        padding: '24px 28px',
+        padding: isSmall ? '16px 14px' : isMobile ? '18px 18px' : '24px 28px',
         display: 'flex',
         flexDirection: 'column',
-        gap: 18,
+        gap: isMobile ? 14 : 18,
         width: '100%',
         position: 'relative',
       }}
     >
       {/* Top Header & Streak Telemetry */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14 }}>
+      <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', flexDirection: isMobile ? 'column' : 'row', gap: 12 }}>
         <div>
-          <h3 style={{ fontSize: 17, fontWeight: 800, color: isDark ? D.textPrimary : '#0F172A', margin: 0, letterSpacing: -0.3 }}>
+          <h3 style={{ fontSize: isSmall ? 14.5 : isMobile ? 15.5 : 17, fontWeight: 800, color: isDark ? D.textPrimary : '#0F172A', margin: 0, letterSpacing: -0.3 }}>
             Prompt Enhancement Activity Calendar
           </h3>
         </div>
@@ -197,14 +209,14 @@ export function ActivityHeatmap({
               gap: 6,
               background: isDark ? 'rgba(245, 158, 11, 0.14)' : 'rgba(245, 158, 11, 0.08)',
               border: '1px solid rgba(245, 158, 11, 0.4)',
-              padding: '5px 12px',
+              padding: isSmall ? '4px 10px' : '5px 12px',
               borderRadius: 9999,
-              fontSize: 12,
+              fontSize: isSmall ? 11 : 12,
               fontWeight: 700,
               color: '#F59E0B',
             }}
           >
-            <Flame size={14} color="#F59E0B" />
+            <Flame size={isSmall ? 13 : 14} color="#F59E0B" />
             <span>{currentStreak}d Streak</span>
           </div>
 
@@ -215,24 +227,33 @@ export function ActivityHeatmap({
               gap: 6,
               background: isDark ? 'rgba(168, 85, 247, 0.14)' : 'rgba(168, 85, 247, 0.08)',
               border: '1px solid rgba(168, 85, 247, 0.4)',
-              padding: '5px 12px',
+              padding: isSmall ? '4px 10px' : '5px 12px',
               borderRadius: 9999,
-              fontSize: 12,
+              fontSize: isSmall ? 11 : 12,
               fontWeight: 700,
               color: '#C084FC',
             }}
           >
-            <Zap size={14} color="#C084FC" />
+            <Zap size={isSmall ? 13 : 14} color="#C084FC" />
             <span>Max: {maxStreakCount}d</span>
           </div>
         </div>
       </div>
 
+      {/* On mobile: subtle swipe reminder */}
+      {isMobile && (
+        <div style={{ fontSize: 10.5, color: isDark ? D.textMuted : '#94A3B8', marginTop: -4, display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span>← Swipe horizontally to see 52-week activity history</span>
+        </div>
+      )}
+
       {/* Full-Size Calendar Heatmap Container */}
       <div
+        ref={scrollContainerRef}
         style={{
           width: '100%',
           overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch',
           paddingBottom: 8,
           scrollbarWidth: 'thin',
         }}
@@ -326,20 +347,20 @@ export function ActivityHeatmap({
       <div
         style={{
           display: 'flex',
-          alignItems: 'center',
+          alignItems: isMobile ? 'flex-start' : 'center',
           justifyContent: 'space-between',
-          flexWrap: 'wrap',
+          flexDirection: isMobile ? 'column' : 'row',
           gap: 12,
           paddingTop: 8,
           borderTop: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9'}`,
         }}
       >
-        <span style={{ fontSize: 11.5, color: isDark ? D.textMuted : '#64748B' }}>
+        <span style={{ fontSize: isSmall ? 10.5 : 11.5, color: isDark ? D.textMuted : '#64748B' }}>
           Total <strong style={{ color: isDark ? D.textPrimary : '#1E293B' }}>{totalPrompts}</strong> lifetime prompt enhancements recorded
         </span>
 
         {/* Legend with LeetCode Streak Highlight */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: isDark ? D.textMuted : '#94A3B8' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: isSmall ? 10 : 11, color: isDark ? D.textMuted : '#94A3B8', flexWrap: 'wrap' }}>
           <span>Less</span>
           <div style={{ width: 11, height: 11, borderRadius: 3, background: isDark ? 'rgba(255,255,255,0.045)' : '#E2E8F0' }} />
           <div style={{ width: 11, height: 11, borderRadius: 3, background: '#15803D' }} />
@@ -356,7 +377,7 @@ export function ActivityHeatmap({
             }}
           />
           <span>More</span>
-          <span style={{ marginLeft: 6, fontSize: 11, color: '#D946EF', fontWeight: 700 }}>
+          <span style={{ marginLeft: 6, fontSize: isSmall ? 10 : 11, color: '#D946EF', fontWeight: 700 }}>
             (🟣 Streak Highlight)
           </span>
         </div>
