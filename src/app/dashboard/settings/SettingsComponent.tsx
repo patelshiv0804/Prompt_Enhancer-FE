@@ -1230,6 +1230,111 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
               </div>
             </div>
 
+            {/* LeetCode-Style Badges Showcase Widget (as requested) */}
+            <div
+              id="badges-showcase-card"
+              onClick={() => {
+                setBadgeCategory(prev => prev === 'unlocked' ? 'all' : 'unlocked');
+              }}
+              style={{
+                background: isDark ? '#18181B' : '#FFFFFF',
+                borderRadius: 20,
+                border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0'}`,
+                boxShadow: isDark ? '0 4px 24px rgba(0, 0, 0, 0.35)' : '0 4px 20px rgba(0, 0, 0, 0.04)',
+                padding: '20px 24px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 14,
+                cursor: 'pointer',
+                transition: 'all 200ms ease',
+              }}
+            >
+              {/* Top row: Badges label + right arrow */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 14, fontWeight: 600, color: isDark ? '#94A3B8' : '#64748B' }}>
+                  Badges
+                </span>
+                <ArrowRight size={18} color={isDark ? '#94A3B8' : '#64748B'} />
+              </div>
+
+              {/* Large Count Number */}
+              <div style={{ fontSize: 32, fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A', lineHeight: 1 }}>
+                {stats.unlockedBadgeCount}
+              </div>
+
+              {/* Horizontal Showcase of Badges (Transparent Artworks) */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 24,
+                  padding: '8px 0 12px',
+                }}
+              >
+                {(() => {
+                  const unlocked = (stats.badges || []).filter((b) => b.unlocked);
+                  // If user has unlocked badges, showcase up to 3 of them; otherwise show top starter badges
+                  const displayBadges = unlocked.length >= 3
+                    ? unlocked.slice(0, 3)
+                    : [
+                        ...unlocked,
+                        ...(stats.badges || []).filter((b) => !b.unlocked),
+                      ].slice(0, 3);
+
+                  return displayBadges.map((b, idx) => {
+                    const isCenter = idx === 1;
+                    const size = isCenter ? 68 : 54;
+                    const tierStyle = getTierStyle(b?.tier, isDark);
+
+                    return (
+                      <div
+                        key={b?.id || idx}
+                        title={`${b?.title} (${b?.unlocked ? 'Unlocked' : 'Locked'})`}
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          position: 'relative',
+                          transition: 'transform 200ms ease',
+                        }}
+                      >
+                        <img
+                          src={`/badges/${b?.id}.png`}
+                          alt={b?.title || 'Badge'}
+                          style={{
+                            width: size,
+                            height: size,
+                            objectFit: 'contain',
+                            filter: b?.unlocked
+                              ? `drop-shadow(0 4px 12px ${tierStyle.glow})`
+                              : 'grayscale(100%) opacity(30%)',
+                            transform: isCenter ? 'scale(1.08)' : 'scale(1)',
+                            transition: 'transform 200ms ease, filter 200ms ease',
+                          }}
+                        />
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+
+              {/* Bottom Info: Most Recent Badge */}
+              <div>
+                <div style={{ fontSize: 11.5, fontWeight: 600, color: isDark ? '#94A3B8' : '#64748B' }}>
+                  Most Recent Badge
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: isDark ? '#F1F5F9' : '#0F172A', marginTop: 3 }}>
+                  {(() => {
+                    const unlocked = (stats.badges || []).filter((b) => b.unlocked);
+                    return unlocked.length > 0
+                      ? unlocked[unlocked.length - 1].title
+                      : (stats.badges[0]?.title || 'Prompt Pioneer (Unlock at 10 prompts)');
+                  })()}
+                </div>
+              </div>
+            </div>
+
             {/* Achievements & Badges Bento Card */}
             <div
               style={{
@@ -1361,24 +1466,53 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                           transition: 'all 200ms ease',
                         }}
                       >
-                        {/* Top row: Icon + Tier & Unlock status */}
+                        {/* Top row: Real Artwork Badge Image + Tier & Unlock status */}
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                             <div
                               style={{
-                                width: 30,
-                                height: 30,
-                                borderRadius: 8,
-                                background: tierStyle.bg,
+                                width: 36,
+                                height: 36,
+                                flexShrink: 0,
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                color: b.unlocked ? tierStyle.color : (isDark ? '#64748B' : '#94A3B8'),
-                                border: `1px solid ${tierStyle.border}`,
-                                flexShrink: 0,
+                                position: 'relative',
                               }}
                             >
-                              <IconComp size={15} strokeWidth={2.2} />
+                              <img
+                                src={`/badges/${b.id}.png`}
+                                alt={b.title}
+                                style={{
+                                  width: 36,
+                                  height: 36,
+                                  objectFit: 'contain',
+                                  filter: b.unlocked
+                                    ? `drop-shadow(0 2px 8px ${tierStyle.glow})`
+                                    : 'grayscale(100%) opacity(30%)',
+                                  transition: 'all 200ms ease',
+                                }}
+                                onError={(e) => {
+                                  (e.currentTarget as HTMLElement).style.display = 'none';
+                                  const fallback = (e.currentTarget.nextElementSibling as HTMLElement);
+                                  if (fallback) fallback.style.display = 'flex';
+                                }}
+                              />
+                              <div
+                                style={{
+                                  display: 'none',
+                                  width: 30,
+                                  height: 30,
+                                  borderRadius: 8,
+                                  background: tierStyle.bg,
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  color: b.unlocked ? tierStyle.color : (isDark ? '#64748B' : '#94A3B8'),
+                                  border: `1px solid ${tierStyle.border}`,
+                                }}
+                              >
+                                <IconComp size={15} strokeWidth={2.2} />
+                              </div>
                             </div>
                             <span
                               style={{
