@@ -223,6 +223,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
   const [badgeCategory, setBadgeCategory] = useState<string>('all');
   const [selectedBadge, setSelectedBadge] = useState<BadgeItem | null>(null);
   const [showBadgesModal, setShowBadgesModal] = useState<boolean>(false);
+  const [hoveredBadgeId, setHoveredBadgeId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Preference Settings — the theme control mirrors the global preference
@@ -1290,32 +1291,54 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
 
                   return displayBadges.map((b, idx) => {
                     const isCenter = displayBadges.length === 3 ? idx === 1 : idx === displayBadges.length - 1;
+                    const isHovered = hoveredBadgeId === b.id;
                     const size = isCenter ? 68 : 54;
                     const tierStyle = getTierStyle(b.tier, isDark);
 
                     return (
                       <div
                         key={b.id}
-                        title={`Click to see why you won ${b.title}!`}
                         onClick={(e) => {
                           e.stopPropagation();
                           setSelectedBadge(b);
                         }}
+                        onMouseEnter={() => setHoveredBadgeId(b.id)}
+                        onMouseLeave={() => setHoveredBadgeId(null)}
                         style={{
                           display: 'flex',
                           flexDirection: 'column',
                           alignItems: 'center',
                           position: 'relative',
                           cursor: 'pointer',
-                          transition: 'transform 200ms ease',
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'scale(1.12)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'scale(1)';
+                          transform: isHovered ? 'scale(1.14)' : (isCenter ? 'scale(1.05)' : 'scale(1)'),
+                          transition: 'transform 200ms cubic-bezier(0.16, 1, 0.3, 1)',
                         }}
                       >
+                        {/* Floating Tooltip matching reference screenshot */}
+                        {isHovered && (
+                          <div
+                            style={{
+                              position: 'absolute',
+                              bottom: 'calc(100% + 10px)',
+                              left: '50%',
+                              transform: 'translateX(-50%)',
+                              background: isDark ? '#2B2B2D' : '#1E293B',
+                              color: '#FFFFFF',
+                              fontSize: 13.5,
+                              fontWeight: 500,
+                              padding: '6px 14px',
+                              borderRadius: 8,
+                              whiteSpace: 'nowrap',
+                              pointerEvents: 'none',
+                              boxShadow: '0 6px 20px rgba(0, 0, 0, 0.45)',
+                              border: isDark ? '1px solid rgba(255, 255, 255, 0.18)' : '1px solid rgba(0, 0, 0, 0.15)',
+                              zIndex: 50,
+                            }}
+                          >
+                            {b.title}
+                          </div>
+                        )}
+
                         <img
                           src={`/badges/${b.id}.png`}
                           alt={b.title}
@@ -1341,6 +1364,9 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                 <div style={{ fontSize: 15, fontWeight: 700, color: isDark ? '#F1F5F9' : '#0F172A', marginTop: 3 }}>
                   {(() => {
                     const unlocked = (stats.badges || []).filter((b) => b.unlocked);
+                    const displayBadges = unlocked.slice(Math.max(0, unlocked.length - 3));
+                    const hovered = displayBadges.find(b => b.id === hoveredBadgeId);
+                    if (hovered) return hovered.title;
                     return unlocked.length > 0 ? unlocked[unlocked.length - 1].title : 'None yet';
                   })()}
                 </div>
