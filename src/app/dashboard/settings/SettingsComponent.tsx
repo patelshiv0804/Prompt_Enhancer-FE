@@ -221,6 +221,8 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
     badges: [],
   });
   const [badgeCategory, setBadgeCategory] = useState<string>('all');
+  const [selectedBadge, setSelectedBadge] = useState<BadgeItem | null>(null);
+  const [showBadgesModal, setShowBadgesModal] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Preference Settings — the theme control mirrors the global preference
@@ -1234,7 +1236,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
             <div
               id="badges-showcase-card"
               onClick={() => {
-                setBadgeCategory(prev => prev === 'unlocked' ? 'all' : 'unlocked');
+                setShowBadgesModal(true);
               }}
               style={{
                 background: isDark ? '#18181B' : '#FFFFFF',
@@ -1262,7 +1264,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                 {stats.unlockedBadgeCount}
               </div>
 
-              {/* Horizontal Showcase of Badges (Transparent Artworks) */}
+              {/* Horizontal Showcase of ONLY Achieved Badges */}
               <div
                 style={{
                   display: 'flex',
@@ -1270,47 +1272,59 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                   justifyContent: 'center',
                   gap: 24,
                   padding: '8px 0 12px',
+                  minHeight: 74,
                 }}
               >
                 {(() => {
                   const unlocked = (stats.badges || []).filter((b) => b.unlocked);
-                  // If user has unlocked badges, showcase up to 3 of them; otherwise show top starter badges
-                  const displayBadges = unlocked.length >= 3
-                    ? unlocked.slice(0, 3)
-                    : [
-                        ...unlocked,
-                        ...(stats.badges || []).filter((b) => !b.unlocked),
-                      ].slice(0, 3);
+                  if (unlocked.length === 0) {
+                    return (
+                      <div style={{ fontSize: 12, color: isDark ? D.textMuted : '#94A3B8', textAlign: 'center', padding: '12px 0' }}>
+                        No badges unlocked yet. Start enhancing prompts to earn your first badge!
+                      </div>
+                    );
+                  }
+
+                  // Show up to 3 achieved badges (center one prominent)
+                  const displayBadges = unlocked.slice(Math.max(0, unlocked.length - 3));
 
                   return displayBadges.map((b, idx) => {
-                    const isCenter = idx === 1;
+                    const isCenter = displayBadges.length === 3 ? idx === 1 : idx === displayBadges.length - 1;
                     const size = isCenter ? 68 : 54;
-                    const tierStyle = getTierStyle(b?.tier, isDark);
+                    const tierStyle = getTierStyle(b.tier, isDark);
 
                     return (
                       <div
-                        key={b?.id || idx}
-                        title={`${b?.title} (${b?.unlocked ? 'Unlocked' : 'Locked'})`}
+                        key={b.id}
+                        title={`Click to see why you won ${b.title}!`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedBadge(b);
+                        }}
                         style={{
                           display: 'flex',
                           flexDirection: 'column',
                           alignItems: 'center',
                           position: 'relative',
+                          cursor: 'pointer',
                           transition: 'transform 200ms ease',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'scale(1.12)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'scale(1)';
                         }}
                       >
                         <img
-                          src={`/badges/${b?.id}.png`}
-                          alt={b?.title || 'Badge'}
+                          src={`/badges/${b.id}.png`}
+                          alt={b.title}
                           style={{
                             width: size,
                             height: size,
                             objectFit: 'contain',
-                            filter: b?.unlocked
-                              ? `drop-shadow(0 4px 12px ${tierStyle.glow})`
-                              : 'grayscale(100%) opacity(30%)',
-                            transform: isCenter ? 'scale(1.08)' : 'scale(1)',
-                            transition: 'transform 200ms ease, filter 200ms ease',
+                            filter: `drop-shadow(0 4px 12px ${tierStyle.glow})`,
+                            transition: 'all 200ms ease',
                           }}
                         />
                       </div>
@@ -1327,264 +1341,9 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                 <div style={{ fontSize: 15, fontWeight: 700, color: isDark ? '#F1F5F9' : '#0F172A', marginTop: 3 }}>
                   {(() => {
                     const unlocked = (stats.badges || []).filter((b) => b.unlocked);
-                    return unlocked.length > 0
-                      ? unlocked[unlocked.length - 1].title
-                      : (stats.badges[0]?.title || 'Prompt Pioneer (Unlock at 10 prompts)');
+                    return unlocked.length > 0 ? unlocked[unlocked.length - 1].title : 'None yet';
                   })()}
                 </div>
-              </div>
-            </div>
-
-            {/* Achievements & Badges Bento Card */}
-            <div
-              style={{
-                background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
-                borderRadius: 24,
-                border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124, 58, 237, 0.12)'}`,
-                boxShadow: isDark ? '0 4px 20px rgba(0, 0, 0, 0.35)' : '0 4px 20px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02)',
-                padding: '24px 26px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 16,
-              }}
-            >
-              {/* Header */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-                <h3 style={{ fontSize: 16, fontWeight: 700, color: isDark ? D.textPrimary : '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Award size={18} color="#F59E0B" />
-                  <span>Achievements & Badges</span>
-                </h3>
-                <span
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: isDark ? '#C084FC' : '#7C3AED',
-                    background: isDark ? 'rgba(139, 92, 246, 0.18)' : 'rgba(124, 58, 237, 0.08)',
-                    border: `1px solid ${isDark ? 'rgba(139, 92, 246, 0.3)' : 'rgba(124, 58, 237, 0.2)'}`,
-                    padding: '3px 10px',
-                    borderRadius: 9999,
-                  }}
-                >
-                  {stats.unlockedBadgeCount} / {stats.totalBadgeCount} Unlocked
-                </span>
-              </div>
-
-              {/* Category Filter Tabs */}
-              <div
-                style={{
-                  display: 'flex',
-                  gap: 6,
-                  overflowX: 'auto',
-                  paddingBottom: 4,
-                  scrollbarWidth: 'none',
-                }}
-              >
-                {[
-                  { id: 'all', label: `All (${stats.totalBadgeCount})` },
-                  { id: 'unlocked', label: `Unlocked (${stats.unlockedBadgeCount})` },
-                  { id: 'Volume & Craft', label: 'Volume' },
-                  { id: 'Raw Prompt Mastery', label: 'Quality' },
-                  { id: 'Consistency & Streak', label: 'Streaks' },
-                  { id: 'Template Mastery', label: 'Templates' },
-                  { id: 'Model Explorer', label: 'Models' },
-                  { id: 'Mode & Versatility', label: 'Modes' },
-                ].map((cat) => {
-                  const isSelected = badgeCategory === cat.id;
-                  return (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      onClick={() => setBadgeCategory(cat.id)}
-                      style={{
-                        padding: '4px 10px',
-                        borderRadius: 9999,
-                        fontSize: 11,
-                        fontWeight: isSelected ? 700 : 500,
-                        whiteSpace: 'nowrap',
-                        cursor: 'pointer',
-                        border: isSelected
-                          ? '1px solid #7C3AED'
-                          : `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0,0,0,0.08)'}`,
-                        background: isSelected
-                          ? 'linear-gradient(135deg, #7C3AED, #9333EA)'
-                          : (isDark ? 'rgba(255, 255, 255, 0.04)' : '#F8FAFC'),
-                        color: isSelected ? '#FFFFFF' : (isDark ? D.textMuted : '#64748B'),
-                        transition: 'all 160ms ease',
-                      }}
-                    >
-                      {cat.label}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Badges Grid (Scrollable) */}
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-                  gap: 10,
-                  maxHeight: 480,
-                  overflowY: 'auto',
-                  paddingRight: 4,
-                }}
-              >
-                {(() => {
-                  const filtered = (stats.badges || []).filter((b) => {
-                    if (badgeCategory === 'all') return true;
-                    if (badgeCategory === 'unlocked') return b.unlocked;
-                    return b.category === badgeCategory;
-                  });
-
-                  if (filtered.length === 0) {
-                    return (
-                      <div style={{ gridColumn: '1 / -1', padding: '32px 16px', textAlign: 'center', color: isDark ? D.textMuted : '#94A3B8', fontSize: 12 }}>
-                        No badges in this category yet. Keep enhancing prompts to unlock more!
-                      </div>
-                    );
-                  }
-
-                  return filtered.map((b) => {
-                    const tierStyle = getTierStyle(b.tier, isDark);
-                    const IconComp = getBadgeIcon(b.icon);
-
-                    return (
-                      <div
-                        key={b.id}
-                        style={{
-                          padding: '12px 14px',
-                          borderRadius: 16,
-                          border: `1px solid ${b.unlocked ? tierStyle.border : (isDark ? 'rgba(255, 255, 255, 0.06)' : '#E2E8F0')}`,
-                          background: isDark
-                            ? (b.unlocked ? 'rgba(24, 20, 38, 0.75)' : 'rgba(12, 11, 18, 0.45)')
-                            : (b.unlocked ? '#FFFFFF' : '#FAFAFA'),
-                          boxShadow: b.unlocked ? `0 2px 12px ${tierStyle.glow}` : 'none',
-                          opacity: b.unlocked ? 1 : 0.75,
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: 8,
-                          transition: 'all 200ms ease',
-                        }}
-                      >
-                        {/* Top row: Real Artwork Badge Image + Tier & Unlock status */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <div
-                              style={{
-                                width: 36,
-                                height: 36,
-                                flexShrink: 0,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                position: 'relative',
-                              }}
-                            >
-                              <img
-                                src={`/badges/${b.id}.png`}
-                                alt={b.title}
-                                style={{
-                                  width: 36,
-                                  height: 36,
-                                  objectFit: 'contain',
-                                  filter: b.unlocked
-                                    ? `drop-shadow(0 2px 8px ${tierStyle.glow})`
-                                    : 'grayscale(100%) opacity(30%)',
-                                  transition: 'all 200ms ease',
-                                }}
-                                onError={(e) => {
-                                  (e.currentTarget as HTMLElement).style.display = 'none';
-                                  const fallback = (e.currentTarget.nextElementSibling as HTMLElement);
-                                  if (fallback) fallback.style.display = 'flex';
-                                }}
-                              />
-                              <div
-                                style={{
-                                  display: 'none',
-                                  width: 30,
-                                  height: 30,
-                                  borderRadius: 8,
-                                  background: tierStyle.bg,
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  color: b.unlocked ? tierStyle.color : (isDark ? '#64748B' : '#94A3B8'),
-                                  border: `1px solid ${tierStyle.border}`,
-                                }}
-                              >
-                                <IconComp size={15} strokeWidth={2.2} />
-                              </div>
-                            </div>
-                            <span
-                              style={{
-                                fontSize: 9,
-                                fontWeight: 800,
-                                padding: '1px 6px',
-                                borderRadius: 4,
-                                background: tierStyle.bg,
-                                color: tierStyle.color,
-                                border: `1px solid ${tierStyle.border}`,
-                                letterSpacing: '0.4px',
-                              }}
-                            >
-                              {tierStyle.label}
-                            </span>
-                          </div>
-
-                          {b.unlocked ? (
-                            <span style={{ fontSize: 9.5, fontWeight: 700, color: '#10B981', display: 'flex', alignItems: 'center', gap: 3 }}>
-                              <Check size={11} strokeWidth={3} />
-                              UNLOCKED
-                            </span>
-                          ) : (
-                            <span style={{ fontSize: 9.5, fontWeight: 600, color: isDark ? '#94A3B8' : '#64748B', display: 'flex', alignItems: 'center', gap: 3 }}>
-                              <Lock size={10} />
-                              LOCKED
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Title & Description */}
-                        <div>
-                          <div style={{ fontSize: 12.5, fontWeight: 700, color: isDark ? D.textPrimary : '#1E293B', marginBottom: 2 }}>
-                            {b.title}
-                          </div>
-                          <div style={{ fontSize: 10.5, color: isDark ? D.textMuted : '#64748B', lineHeight: 1.35 }}>
-                            {b.description}
-                          </div>
-                        </div>
-
-                        {/* Progress Bar */}
-                        <div style={{ marginTop: 'auto' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9.5, color: isDark ? D.textMuted : '#94A3B8', fontWeight: 600, marginBottom: 3 }}>
-                            <span>{b.progress}</span>
-                            <span>{Math.round(b.percentage)}%</span>
-                          </div>
-                          <div
-                            style={{
-                              width: '100%',
-                              height: 4,
-                              borderRadius: 9999,
-                              background: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0',
-                              overflow: 'hidden',
-                            }}
-                          >
-                            <div
-                              style={{
-                                width: `${Math.min(100, Math.max(b.unlocked ? 100 : 0, b.percentage))}%`,
-                                height: '100%',
-                                borderRadius: 9999,
-                                background: b.unlocked
-                                  ? 'linear-gradient(90deg, #10B981, #059669)'
-                                  : `linear-gradient(90deg, #7C3AED, ${tierStyle.color})`,
-                                transition: 'width 300ms ease',
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  });
-                })()}
               </div>
             </div>
           </div>
@@ -1956,6 +1715,391 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                 <span>Save Preferences</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── All Earned Badges Showcase Modal ── */}
+      {showBadgesModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setShowBadgesModal(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9998,
+            background: 'rgba(0, 0, 0, 0.72)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: isDark ? '#18181B' : '#FFFFFF',
+              borderRadius: 24,
+              border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : '#E2E8F0'}`,
+              boxShadow: isDark ? '0 25px 60px rgba(0, 0, 0, 0.6)' : '0 25px 60px rgba(0, 0, 0, 0.12)',
+              maxWidth: 580,
+              width: '100%',
+              maxHeight: '85vh',
+              display: 'flex',
+              flexDirection: 'column',
+              padding: '24px 24px',
+              gap: 16,
+              position: 'relative',
+            }}
+          >
+            {/* Modal Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <h3 style={{ fontSize: 18, fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Award size={20} color="#F59E0B" />
+                  <span>Your Unlocked Badges</span>
+                </h3>
+                <p style={{ fontSize: 12, color: isDark ? D.textMuted : '#64748B', margin: '4px 0 0' }}>
+                  Click any badge to view why you earned it and your milestone stats.
+                </p>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: isDark ? '#C084FC' : '#7C3AED',
+                    background: isDark ? 'rgba(139, 92, 246, 0.18)' : 'rgba(124, 58, 237, 0.08)',
+                    border: `1px solid ${isDark ? 'rgba(139, 92, 246, 0.3)' : 'rgba(124, 58, 237, 0.2)'}`,
+                    padding: '3px 10px',
+                    borderRadius: 9999,
+                  }}
+                >
+                  {stats.unlockedBadgeCount} Unlocked
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowBadgesModal(false)}
+                  style={{
+                    background: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: 30,
+                    height: 30,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: isDark ? '#94A3B8' : '#64748B',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+
+            {/* Grid of Unlocked Badges */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
+                gap: 12,
+                overflowY: 'auto',
+                padding: '8px 4px',
+              }}
+            >
+              {(() => {
+                const unlocked = (stats.badges || []).filter((b) => b.unlocked);
+                if (unlocked.length === 0) {
+                  return (
+                    <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px 16px', color: isDark ? D.textMuted : '#94A3B8', fontSize: 13 }}>
+                      You haven't unlocked any badges yet. Continue enhancing prompts and building streaks to earn them!
+                    </div>
+                  );
+                }
+
+                return unlocked.map((b) => {
+                  const tierStyle = getTierStyle(b.tier, isDark);
+                  return (
+                    <div
+                      key={b.id}
+                      onClick={() => {
+                        setSelectedBadge(b);
+                      }}
+                      style={{
+                        padding: '14px 10px',
+                        borderRadius: 16,
+                        border: `1px solid ${tierStyle.border}`,
+                        background: isDark ? 'rgba(255, 255, 255, 0.04)' : '#F8FAFC',
+                        boxShadow: `0 2px 10px ${tierStyle.glow}`,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        textAlign: 'center',
+                        gap: 8,
+                        cursor: 'pointer',
+                        transition: 'all 200ms ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-3px)';
+                        e.currentTarget.style.borderColor = tierStyle.color;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.borderColor = tierStyle.border;
+                      }}
+                    >
+                      <img
+                        src={`/badges/${b.id}.png`}
+                        alt={b.title}
+                        style={{
+                          width: 52,
+                          height: 52,
+                          objectFit: 'contain',
+                          filter: `drop-shadow(0 3px 8px ${tierStyle.glow})`,
+                        }}
+                      />
+                      <div>
+                        <div style={{ fontSize: 11.5, fontWeight: 700, color: isDark ? D.textPrimary : '#1E293B', lineHeight: 1.2 }}>
+                          {b.title}
+                        </div>
+                        <span
+                          style={{
+                            fontSize: 8.5,
+                            fontWeight: 800,
+                            padding: '1px 5px',
+                            borderRadius: 4,
+                            background: tierStyle.bg,
+                            color: tierStyle.color,
+                            border: `1px solid ${tierStyle.border}`,
+                            letterSpacing: '0.4px',
+                            display: 'inline-block',
+                            marginTop: 4,
+                          }}
+                        >
+                          {tierStyle.label}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Badge Detail "Why You Won This" Modal ── */}
+      {selectedBadge && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setSelectedBadge(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            background: 'rgba(0, 0, 0, 0.75)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: isDark ? '#18181B' : '#FFFFFF',
+              borderRadius: 24,
+              border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : '#E2E8F0'}`,
+              boxShadow: isDark ? '0 25px 60px rgba(0, 0, 0, 0.6)' : '0 25px 60px rgba(0, 0, 0, 0.12)',
+              maxWidth: 440,
+              width: '100%',
+              padding: '28px 24px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 20,
+              position: 'relative',
+            }}
+          >
+            {/* Close X */}
+            <button
+              type="button"
+              onClick={() => setSelectedBadge(null)}
+              aria-label="Close"
+              style={{
+                position: 'absolute',
+                top: 18,
+                right: 18,
+                background: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9',
+                border: 'none',
+                borderRadius: '50%',
+                width: 32,
+                height: 32,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: isDark ? '#94A3B8' : '#64748B',
+                cursor: 'pointer',
+                transition: 'all 150ms ease',
+              }}
+            >
+              <X size={16} />
+            </button>
+
+            {/* Badge Artwork Hero */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 12 }}>
+              <div
+                style={{
+                  position: 'relative',
+                  padding: 14,
+                  borderRadius: 24,
+                  background: isDark ? 'rgba(255, 255, 255, 0.03)' : '#F8FAFC',
+                }}
+              >
+                <img
+                  src={`/badges/${selectedBadge.id}.png`}
+                  alt={selectedBadge.title}
+                  style={{
+                    width: 88,
+                    height: 88,
+                    objectFit: 'contain',
+                    filter: selectedBadge.unlocked
+                      ? `drop-shadow(0 6px 18px ${getTierStyle(selectedBadge.tier, isDark).glow})`
+                      : 'grayscale(100%) opacity(40%)',
+                  }}
+                />
+              </div>
+
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 6 }}>
+                  <span
+                    style={{
+                      fontSize: 9.5,
+                      fontWeight: 800,
+                      padding: '2px 8px',
+                      borderRadius: 9999,
+                      background: getTierStyle(selectedBadge.tier, isDark).bg,
+                      color: getTierStyle(selectedBadge.tier, isDark).color,
+                      border: `1px solid ${getTierStyle(selectedBadge.tier, isDark).border}`,
+                      letterSpacing: '0.5px',
+                    }}
+                  >
+                    {getTierStyle(selectedBadge.tier, isDark).label}
+                  </span>
+                  <span style={{ fontSize: 11, color: isDark ? D.textMuted : '#94A3B8', fontWeight: 600 }}>
+                    • {selectedBadge.category}
+                  </span>
+                </div>
+
+                <h3 style={{ fontSize: 20, fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A', margin: 0 }}>
+                  {selectedBadge.title}
+                </h3>
+              </div>
+            </div>
+
+            {/* Why You Won This Info Box */}
+            <div
+              style={{
+                background: isDark ? 'rgba(255, 255, 255, 0.03)' : '#F8FAFC',
+                borderRadius: 16,
+                border: `1px solid ${selectedBadge.unlocked ? (isDark ? 'rgba(16, 185, 129, 0.25)' : 'rgba(16, 185, 129, 0.35)') : (isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0')}`,
+                padding: '16px 18px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 10,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span
+                  style={{
+                    fontSize: 10.5,
+                    fontWeight: 800,
+                    letterSpacing: '0.5px',
+                    color: selectedBadge.unlocked ? '#10B981' : (isDark ? '#F59E0B' : '#D97706'),
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 5,
+                  }}
+                >
+                  <Award size={13} />
+                  {selectedBadge.unlocked ? 'WHY YOU WON THIS BADGE' : 'HOW TO UNLOCK THIS BADGE'}
+                </span>
+                {selectedBadge.unlocked ? (
+                  <span style={{ fontSize: 10, fontWeight: 700, color: '#10B981', display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <Check size={11} strokeWidth={3} />
+                    EARNED
+                  </span>
+                ) : (
+                  <span style={{ fontSize: 10, fontWeight: 600, color: isDark ? '#94A3B8' : '#64748B', display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <Lock size={10} />
+                    IN PROGRESS
+                  </span>
+                )}
+              </div>
+
+              <div style={{ fontSize: 13, fontWeight: 600, color: isDark ? D.textPrimary : '#1E293B', lineHeight: 1.4 }}>
+                {selectedBadge.description}
+              </div>
+
+              {selectedBadge.unlock_criterion && (
+                <div style={{ fontSize: 11, color: isDark ? D.textMuted : '#64748B' }}>
+                  <strong>Milestone:</strong> {selectedBadge.unlock_criterion}
+                </div>
+              )}
+
+              {/* Progress */}
+              <div style={{ marginTop: 4 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 600, color: isDark ? D.textMuted : '#64748B', marginBottom: 4 }}>
+                  <span>Your Progress</span>
+                  <span>{selectedBadge.progress} ({Math.round(selectedBadge.percentage)}%)</span>
+                </div>
+                <div
+                  style={{
+                    width: '100%',
+                    height: 6,
+                    borderRadius: 9999,
+                    background: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: `${Math.min(100, Math.max(selectedBadge.unlocked ? 100 : 0, selectedBadge.percentage))}%`,
+                      height: '100%',
+                      borderRadius: 9999,
+                      background: selectedBadge.unlocked
+                        ? 'linear-gradient(90deg, #10B981, #059669)'
+                        : `linear-gradient(90deg, #7C3AED, ${getTierStyle(selectedBadge.tier, isDark).color})`,
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Done Button */}
+            <button
+              type="button"
+              onClick={() => setSelectedBadge(null)}
+              style={{
+                width: '100%',
+                padding: '11px 0',
+                borderRadius: 14,
+                border: 'none',
+                background: 'linear-gradient(135deg, #7C3AED 0%, #9333EA 100%)',
+                color: '#FFFFFF',
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: 'pointer',
+                boxShadow: '0 2px 10px rgba(124, 58, 237, 0.3)',
+                transition: 'all 160ms ease',
+              }}
+            >
+              Close
+            </button>
           </div>
         </div>
       )}
