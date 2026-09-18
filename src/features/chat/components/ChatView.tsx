@@ -559,7 +559,7 @@ function getLocalToolRecommendations(prompt: string, mode?: string): { matched_t
   return { matched_task: 'General AI Task', match_confidence: 0.75, tools: [{ name: 'ChatGPT', rank: 1 }, { name: 'Claude', rank: 2 }, { name: 'Gemini', rank: 3 }] };
 }
 
-function ChatDetailSkeleton() {
+export function ChatDetailSkeleton() {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   return (

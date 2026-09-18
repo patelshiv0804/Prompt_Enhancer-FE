@@ -8,6 +8,7 @@ import ScoreSection from '@/features/optimizer/components/ScoreSection';
 import { apiClient, streamEnhance, type ReenhanceStreamDone } from '@/utils/apiClient';
 import { useAuth } from '@/context/AuthContext';
 import { getUserMessage } from '@/utils/errorMessages';
+import OptimizerSkeleton from '@/features/optimizer/components/OptimizerSkeleton';
 
 const MODE_MAPPING: Record<string, { role: string; mode: string }> = {
   'General': { role: 'student', mode: 'study' },
@@ -525,7 +526,7 @@ function OptimizerPageContent() {
 
 export default function OptimizerPage() {
   return (
-    <Suspense fallback={<div className="workspace-container" style={{ padding: 48, textAlign: 'center', color: 'var(--color-text-secondary)' }}>Loading Workspace...</div>}>
+    <Suspense fallback={<OptimizerSkeleton />}>
       <OptimizerPageContent />
     </Suspense>
   );

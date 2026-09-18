@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { ChevronDown } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
@@ -15,6 +16,7 @@ interface HeaderProps {
 }
 
 export default function Header({ activeTab = 'Draft', onTabChange }: HeaderProps) {
+  const router = useRouter();
   const {
     styleProfiles,
     activeStyle,
@@ -115,6 +117,11 @@ export default function Header({ activeTab = 'Draft', onTabChange }: HeaderProps
               <button
                 key={tab}
                 onClick={() => onTabChange?.(tab)}
+                onMouseEnter={() => {
+                  try {
+                    router.prefetch(tab === 'Vault' ? '/dashboard/vault' : '/dashboard/optimizer');
+                  } catch {}
+                }}
                 style={{
                   fontSize: 12.5, fontWeight: tab === activeTab ? 600 : 500,
                   color: tab === activeTab ? (isDark ? D.textPrimary : 'var(--color-text-primary)') : (isDark ? D.textMuted : 'var(--color-text-secondary)'),

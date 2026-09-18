@@ -182,6 +182,23 @@ export default function Sidebar() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [toggleSidebar, router]);
 
+  // Pre-warm dashboard routes so clicking any section navigates instantly
+  useEffect(() => {
+    const prewarmRoutes = [
+      '/dashboard/optimizer',
+      '/dashboard/templates',
+      '/dashboard/vault',
+      '/dashboard/style-memory',
+      '/dashboard/settings',
+      '/dashboard/profile',
+    ];
+    prewarmRoutes.forEach(route => {
+      try {
+        router.prefetch(route);
+      } catch {}
+    });
+  }, [router]);
+
   // Click outside to close recent flyout in collapsed mode
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -640,7 +657,12 @@ export default function Sidebar() {
                         key={item.id}
                         id={`nav-collapsed-${item.id}`}
                         onClick={() => navigate(item.id)}
-                        onMouseEnter={(e) => handleMouseEnterIcon(e, item.label, item.shortcut)}
+                        onMouseEnter={(e) => {
+                          handleMouseEnterIcon(e, item.label, item.shortcut);
+                          try {
+                            router.prefetch(`/dashboard/${item.id}`);
+                          } catch {}
+                        }}
                         onMouseLeave={handleMouseLeaveIcon}
                         aria-label={item.label}
                         style={{
@@ -678,7 +700,12 @@ export default function Sidebar() {
                 <button
                   id="nav-collapsed-recent"
                   onClick={() => setShowRecentFlyout(prev => !prev)}
-                  onMouseEnter={(e) => handleMouseEnterIcon(e, 'Recent Chats', 'Click to view')}
+                  onMouseEnter={(e) => {
+                    handleMouseEnterIcon(e, 'Recent Chats', 'Click to view');
+                    try {
+                      router.prefetch('/dashboard/vault');
+                    } catch {}
+                  }}
                   onMouseLeave={handleMouseLeaveIcon}
                   aria-label="Recent Chats"
                   style={{
@@ -768,6 +795,11 @@ export default function Sidebar() {
                             setShowRecentFlyout(false);
                             router.push('/dashboard/vault');
                           }}
+                          onMouseEnter={() => {
+                            try {
+                              router.prefetch('/dashboard/vault');
+                            } catch {}
+                          }}
                           style={{
                             fontSize: 11,
                             fontWeight: 600,
@@ -813,6 +845,11 @@ export default function Sidebar() {
                                 onClick={() => {
                                   setShowRecentFlyout(false);
                                   router.push(`/dashboard/chat/${item.id}`);
+                                }}
+                                onMouseEnter={() => {
+                                  try {
+                                    router.prefetch(`/dashboard/chat/${item.id}`);
+                                  } catch {}
                                 }}
                                 style={{
                                   display: 'flex',
@@ -895,6 +932,11 @@ export default function Sidebar() {
                                 key={item.id}
                                 id={`nav-${item.id}`}
                                 onClick={() => navigate(item.id)}
+                                onMouseEnter={() => {
+                                  try {
+                                    router.prefetch(`/dashboard/${item.id}`);
+                                  } catch {}
+                                }}
                                 style={{
                                   display: 'flex', alignItems: 'center', gap: 9, padding: '7px 8px',
                                   borderRadius: 8, fontSize: 13.5, fontWeight: active ? 600 : 450,
@@ -972,6 +1014,11 @@ export default function Sidebar() {
                   <button
                     id="sidebar-history-view-all"
                     onClick={e => { e.stopPropagation(); router.push('/dashboard/vault'); }}
+                    onMouseEnter={() => {
+                      try {
+                        router.prefetch('/dashboard/vault');
+                      } catch {}
+                    }}
                     style={{
                       fontSize: 10.5, fontWeight: 600, color: isDark ? '#C084FC' : '#6D28D9', background: 'none', border: 'none',
                       cursor: 'pointer', padding: '1px 4px', borderRadius: 4, marginRight: 2,
@@ -1024,6 +1071,11 @@ export default function Sidebar() {
                               tabIndex={0}
                               title={item.prompt}
                               onClick={() => router.push(`/dashboard/chat/${item.id}`)}
+                              onMouseEnter={() => {
+                                try {
+                                  router.prefetch(`/dashboard/chat/${item.id}`);
+                                } catch {}
+                              }}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter' || e.key === ' ') {
                                   e.preventDefault();
@@ -1124,7 +1176,13 @@ export default function Sidebar() {
                 <button
                   id="user-profile-collapsed-btn"
                   onClick={() => router.push('/dashboard/profile')}
-                  onMouseEnter={(e) => handleMouseEnterIcon(e, user?.display_name || user?.email || 'Profile', user?.plan || 'Free')}
+                  onMouseEnter={(e) => {
+                    handleMouseEnterIcon(e, user?.display_name || user?.email || 'Profile', user?.plan || 'Free');
+                    try {
+                      router.prefetch('/dashboard/profile');
+                      router.prefetch('/dashboard/settings');
+                    } catch {}
+                  }}
                   onMouseLeave={handleMouseLeaveIcon}
                   aria-label="Profile"
                   style={{
@@ -1162,6 +1220,12 @@ export default function Sidebar() {
                 <button
                   id="user-profile-btn"
                   onClick={() => router.push('/dashboard/profile')}
+                  onMouseEnter={() => {
+                    try {
+                      router.prefetch('/dashboard/profile');
+                      router.prefetch('/dashboard/settings');
+                    } catch {}
+                  }}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 9, padding: '6px 8px',
                     borderRadius: 8, flex: 1, border: 'none',
