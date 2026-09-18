@@ -40,16 +40,45 @@ const CATEGORY_ACCENTS: Record<string, string> = {
 };
 
 function timeAgo(isoString: string): string {
-  const diff  = Date.now() - new Date(isoString).getTime();
-  const mins  = Math.floor(diff / 60_000);
-  const hours = Math.floor(mins / 60);
-  const days  = Math.floor(hours / 24);
-  if (mins < 1)   return 'just now';
-  if (mins < 60)  return `${mins}m ago`;
-  if (hours < 24) return `${hours} hours ago`;
-  if (days === 1) return 'Yesterday';
-  if (days < 7)   return `${days} days ago`;
-  return new Date(isoString).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  if (!isoString) return '';
+  const date = new Date(isoString);
+  if (isNaN(date.getTime())) return '';
+
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+
+  // Safeguard for future timestamps or within 1 minute
+  if (diffMs < 60_000) return 'just now';
+
+  const mins = Math.floor(diffMs / 60_000);
+  if (mins < 60) return `${mins}m ago`;
+
+  // Start of today in local time (00:00:00.000)
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+
+  // If created today
+  if (date.getTime() >= todayStart) {
+    const hours = Math.floor(mins / 60);
+    return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+  }
+
+  // Start of yesterday in local time
+  const yesterdayStart = todayStart - 86_400_000;
+
+  // If created yesterday
+  if (date.getTime() >= yesterdayStart) {
+    return 'Yesterday';
+  }
+
+  // Calendar days difference
+  const itemMidnight = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  const calendarDays = Math.round((todayStart - itemMidnight) / 86_400_000);
+
+  if (calendarDays < 7) {
+    return `${calendarDays} days ago`;
+  }
+
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function scoreColor(score: number): string {

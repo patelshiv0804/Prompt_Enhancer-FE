@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
   User, Check, Settings, Camera,
@@ -163,8 +163,6 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
   const searchParams = useSearchParams();
   const router = useRouter();
   const queryTab = searchParams?.get('tab') || searchParams?.get('view');
-
-  const isDesktop = useMediaQuery('(min-width: 1081px)');
   const isTablet = useMediaQuery('(max-width: 1080px) and (min-width: 641px)');
   const isMobile = useMediaQuery('(max-width: 640px)');
   const isSmall = useMediaQuery('(max-width: 420px)');
@@ -175,16 +173,20 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
     if (queryTab === 'settings') return 'settings';
     return initialTab;
   });
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const { theme: appTheme, setTheme: setAppTheme, preference: appPreference } = useTheme();
   const isDark = appTheme === 'dark';
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (queryTab === 'profile') setActiveTab('profile');
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    else if (queryTab === 'settings') setActiveTab('settings');
-  }, [queryTab]);
+    if (queryTab === 'profile' && activeTab !== 'profile') {
+      setIsLoading(true);
+      setActiveTab('profile');
+    } else if (queryTab === 'settings' && activeTab !== 'settings') {
+      setIsLoading(true);
+      setActiveTab('settings');
+    }
+  }, [queryTab, activeTab]);
 
   const { user, refreshUserProfile } = useAuth();
   const [displayName, setDisplayName] = useState<string>(() => user?.display_name || '');
@@ -220,11 +222,46 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
     totalBadgeCount: 29,
     badges: [],
   });
+
+  // Dynamic streak calculation from activity calendar ensuring real-time accuracy across client timezones
+  const effectiveDayStreak = useMemo(() => {
+    const cal = stats.activityCalendar || {};
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const getCount = (d: Date) => {
+      const localKey = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      return cal[localKey] || 0;
+    };
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayCount = getCount(today);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayCount = getCount(yesterday);
+
+    let streak = 0;
+    let checkD = new Date(today);
+    if (todayCount === 0 && yesterdayCount > 0) {
+      checkD = yesterday;
+    } else if (todayCount === 0 && yesterdayCount === 0) {
+      return stats.dayStreak > 0 ? stats.dayStreak : 0;
+    }
+
+    while (true) {
+      if (getCount(checkD) > 0) {
+        streak++;
+        checkD.setDate(checkD.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+    return Math.max(streak, stats.dayStreak || 0);
+  }, [stats.activityCalendar, stats.dayStreak]);
+
   const [badgeCategory, setBadgeCategory] = useState<string>('all');
   const [selectedBadge, setSelectedBadge] = useState<BadgeItem | null>(null);
   const [showBadgesModal, setShowBadgesModal] = useState<boolean>(false);
   const [hoveredBadgeId, setHoveredBadgeId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Preference Settings — the theme control mirrors the global preference
   // (light / dark / system) so "System" shows selected and survives reloads.
@@ -276,10 +313,45 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
     }
   }, [toast.visible]);
 
+  const fetchStats = useCallback(async () => {
+    try {
+      const statsData = await apiClient.get('/api/v1/profile/stats');
+      if (statsData) {
+        setStats({
+          prompts: statsData.total_prompts ?? 0,
+          avgScore: typeof statsData.average_score === 'number' ? Math.round(statsData.average_score) : 0,
+          dayStreak: statsData.streak_days ?? 0,
+          longestStreak: statsData.longest_streak ?? statsData.streak_days ?? 0,
+          totalActiveDays: statsData.total_active_days ?? 0,
+          activityCalendar: (typeof statsData.activity_calendar === 'object' && statsData.activity_calendar)
+            ? statsData.activity_calendar
+            : {},
+          userMaxScore: statsData.user_max_score ?? 0,
+          frequency7d: Array.isArray(statsData.frequency_7d) && statsData.frequency_7d.length === 7
+            ? statsData.frequency_7d
+            : [0, 0, 0, 0, 0, 0, 0],
+          unlockedBadgeCount: statsData.unlocked_badge_count ?? 0,
+          totalBadgeCount: statsData.total_badge_count ?? 29,
+          badges: Array.isArray(statsData.badges) ? statsData.badges : [],
+        });
+      }
+    } catch (e) {
+      console.warn('Could not load stats:', e);
+    }
+  }, []);
+
+  const handleTabSwitch = (targetTab: 'profile' | 'settings') => {
+    if (targetTab === activeTab) return;
+    setIsLoading(true);
+    setActiveTab(targetTab);
+    router.push(`/dashboard/${targetTab}`);
+  };
+
   /* ═══════════════════════════════════════════════════
-     Fetch Data on Load
+     Fetch Data on Load & Tab Switch
      ═══════════════════════════════════════════════════ */
   useEffect(() => {
+    let isMounted = true;
     async function loadBackendData() {
       setIsLoading(true);
       try {
@@ -311,30 +383,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
         console.warn('Could not load profile:', e);
       }
 
-      try {
-        const statsData = await apiClient.get('/api/v1/profile/stats');
-        if (statsData) {
-          setStats({
-            prompts: statsData.total_prompts ?? 0,
-            avgScore: typeof statsData.average_score === 'number' ? Math.round(statsData.average_score) : 0,
-            dayStreak: statsData.streak_days ?? 0,
-            longestStreak: statsData.longest_streak ?? statsData.streak_days ?? 0,
-            totalActiveDays: statsData.total_active_days ?? 0,
-            activityCalendar: (typeof statsData.activity_calendar === 'object' && statsData.activity_calendar)
-              ? statsData.activity_calendar
-              : {},
-            userMaxScore: statsData.user_max_score ?? 0,
-            frequency7d: Array.isArray(statsData.frequency_7d) && statsData.frequency_7d.length === 7
-              ? statsData.frequency_7d
-              : [0, 0, 0, 0, 0, 0, 0],
-            unlockedBadgeCount: statsData.unlocked_badge_count ?? 0,
-            totalBadgeCount: statsData.total_badge_count ?? 29,
-            badges: Array.isArray(statsData.badges) ? statsData.badges : [],
-          });
-        }
-      } catch (e) {
-        console.warn('Could not load stats:', e);
-      }
+      await fetchStats();
 
       try {
         const settingsData = await apiClient.get('/api/v1/settings');
@@ -354,7 +403,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
               }
             }
           }
-          
+
           const roleKey = userRole.toLowerCase();
           const validModes = ROLE_MODES[roleKey] || [];
           if (roleKey === 'general' || validModes.length === 0) {
@@ -388,11 +437,17 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
       } catch (e) {
         console.warn('Could not load settings:', e);
       }
-      setIsLoading(false);
+      if (isMounted) {
+        setIsLoading(false);
+      }
     }
 
     loadBackendData();
-  }, []);
+    return () => {
+      isMounted = false;
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
 
   /* ═══════════════════════════════════════════════════
      Handlers & API Mutations
@@ -677,10 +732,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
             }}
           >
             <button
-              onClick={() => {
-                setActiveTab('profile');
-                router.push('/dashboard/profile');
-              }}
+              onClick={() => handleTabSwitch('profile')}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -701,10 +753,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
               <span>Profile</span>
             </button>
             <button
-              onClick={() => {
-                setActiveTab('settings');
-                router.push('/dashboard/settings');
-              }}
+              onClick={() => handleTabSwitch('settings')}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -736,649 +785,982 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
           {/* Full-Width LeetCode Activity & Streak Heatmap (Top Hero Placement) */}
           <ActivityHeatmap
             activityCalendar={stats.activityCalendar}
-            currentStreak={stats.dayStreak}
+            currentStreak={effectiveDayStreak}
             longestStreak={stats.longestStreak}
             totalActiveDays={stats.totalActiveDays}
             totalPrompts={stats.prompts}
           />
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: isMobile ? '1fr' : isDesktop ? '1.15fr 0.85fr' : '1fr',
-              gap: isMobile ? 16 : 24,
-              width: '100%',
-            }}
-          >
-          {/* Left Column: Identity & Plan Bento */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-            {/* Identity Bento Card */}
-            <div
-              style={{
-                background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
-                borderRadius: 24,
-                border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124, 58, 237, 0.12)'}`,
-                boxShadow: isDark ? '0 4px 20px rgba(0, 0, 0, 0.35)' : '0 4px 20px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02)',
-                overflow: 'hidden',
-                position: 'relative',
-              }}
-            >
-              {/* Subtle Ambient Header Canvas */}
+          <div className="bento-profile-grid">
+            {/* Left Column: Identity & Plan Bento */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 24, height: '100%' }}>
+              {/* Identity Bento Card */}
               <div
                 style={{
-                  height: 100,
-                  background: 'linear-gradient(135deg, #1E1035 0%, #2E1254 50%, #4C1D95 100%)',
+                  background: isDark ? 'rgba(18, 16, 28, 0.88)' : '#FFFFFF',
+                  borderRadius: 24,
+                  border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.09)' : 'rgba(124, 58, 237, 0.12)'}`,
+                  boxShadow: isDark
+                    ? 'inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 16px 40px -8px rgba(0, 0, 0, 0.5)'
+                    : '0 8px 30px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02)',
+                  overflow: 'hidden',
+                  position: 'relative',
+                  backdropFilter: 'blur(20px)',
+                }}
+              >
+                {/* Cinematic Ambient Apple-Style Header Canvas */}
+                <div
+                  style={{
+                    height: 120,
+                    background: 'linear-gradient(130deg, #0D071E 0%, #1A0B36 35%, #2B0D59 70%, #3B0F75 100%)',
+                    position: 'relative',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {/* Layered ambient glow orbs */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      width: 220,
+                      height: 220,
+                      borderRadius: '50%',
+                      background: 'radial-gradient(circle, rgba(168, 85, 247, 0.45) 0%, transparent 68%)',
+                      top: -80,
+                      left: '12%',
+                      filter: 'blur(30px)',
+                      pointerEvents: 'none',
+                    }}
+                  />
+                  <div
+                    style={{
+                      position: 'absolute',
+                      width: 200,
+                      height: 200,
+                      borderRadius: '50%',
+                      background: 'radial-gradient(circle, rgba(99, 102, 241, 0.35) 0%, transparent 70%)',
+                      top: -60,
+                      right: '15%',
+                      filter: 'blur(35px)',
+                      pointerEvents: 'none',
+                    }}
+                  />
+                  <div
+                    style={{
+                      position: 'absolute',
+                      width: 140,
+                      height: 140,
+                      borderRadius: '50%',
+                      background: 'radial-gradient(circle, rgba(236, 72, 153, 0.25) 0%, transparent 70%)',
+                      bottom: -40,
+                      right: '40%',
+                      filter: 'blur(25px)',
+                      pointerEvents: 'none',
+                    }}
+                  />
+
+                  {/* Frosted Glass Tier Chip */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 14,
+                      right: 16,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '5px 13px',
+                      borderRadius: 9999,
+                      background: 'rgba(255, 255, 255, 0.12)',
+                      backdropFilter: 'blur(16px)',
+                      border: '1px solid rgba(255, 255, 255, 0.22)',
+                      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: '50%',
+                        background: '#34D399',
+                        boxShadow: '0 0 8px #34D399',
+                        display: 'inline-block',
+                      }}
+                    />
+                    <span
+                      style={{
+                        color: '#FFFFFF',
+                        fontSize: 10.5,
+                        fontWeight: 750,
+                        letterSpacing: '0.8px',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      {plan} Tier
+                    </span>
+                  </div>
+                </div>
+
+                {/* Avatar + Info Block */}
+                <div style={{ padding: isMobile ? '0 18px 22px' : '0 28px 26px', position: 'relative' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: -42, marginBottom: 16 }}>
+                    {/* Glowing Ring Avatar */}
+                    <div style={{ position: 'relative' }}>
+                      <div
+                        style={{
+                          padding: 3,
+                          borderRadius: '50%',
+                          background: 'linear-gradient(135deg, #8B5CF6 0%, #6366F1 50%, #EC4899 100%)',
+                          boxShadow: '0 8px 24px -2px rgba(124, 58, 237, 0.45)',
+                          display: 'inline-block',
+                        }}
+                      >
+                        <div
+                          onClick={() => setShowAvatarPicker(!showAvatarPicker)}
+                          style={{
+                            width: 78,
+                            height: 78,
+                            borderRadius: '50%',
+                            border: `3px solid ${isDark ? '#110F1C' : '#FFFFFF'}`,
+                            overflow: 'hidden',
+                            cursor: 'pointer',
+                            position: 'relative',
+                            background: isDark ? '#141320' : '#FFFFFF',
+                          }}
+                          title="Click to customize avatar"
+                        >
+                          {avatarUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            renderPresetAvatar(avatarPreset, 78, 32)
+                          )}
+
+                          {/* Camera Hover Overlay */}
+                          <div
+                            style={{
+                              position: 'absolute',
+                              inset: 0,
+                              background: 'rgba(0,0,0,0.4)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              opacity: 0,
+                              transition: 'opacity 180ms ease',
+                              color: '#FFFFFF',
+                            }}
+                            className="hover:opacity-100"
+                          >
+                            <Camera size={18} />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Micro Camera Edit Button */}
+                      <button
+                        onClick={() => setShowAvatarPicker(!showAvatarPicker)}
+                        style={{
+                          position: 'absolute',
+                          bottom: 2,
+                          right: -2,
+                          width: 28,
+                          height: 28,
+                          borderRadius: '50%',
+                          background: 'linear-gradient(135deg, #7C3AED, #6D28D9)',
+                          border: `2.5px solid ${isDark ? '#110F1C' : '#FFFFFF'}`,
+                          color: '#FFFFFF',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          boxShadow: '0 3px 10px rgba(124, 58, 237, 0.5)',
+                          transition: 'transform 160ms ease',
+                        }}
+                        className="hover:scale-110 active:scale-95"
+                      >
+                        <Camera size={13} strokeWidth={2.4} />
+                      </button>
+                      <input ref={avatarInputRef} type="file" accept="image/*" onChange={handleDirectAvatarUpload} style={{ display: 'none' }} />
+                    </div>
+
+                    {/* Quick Profile Stat Pills (Apple ID Style) */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', paddingBottom: 2 }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          padding: '5px 12px',
+                          borderRadius: 10,
+                          background: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
+                          border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'}`,
+                        }}
+                      >
+                        <Zap size={13} color="#A78BFA" strokeWidth={2.4} />
+                        <span style={{ fontSize: 12, fontWeight: 700, color: isDark ? '#F1F5F9' : '#0F172A' }}>{stats.prompts}</span>
+                        <span style={{ fontSize: 11, color: isDark ? D.textMuted : '#64748B' }}>prompts</span>
+                      </div>
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          padding: '5px 12px',
+                          borderRadius: 10,
+                          background: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
+                          border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'}`,
+                        }}
+                      >
+                        <Flame size={13} color="#F59E0B" strokeWidth={2.4} />
+                        <span style={{ fontSize: 12, fontWeight: 700, color: isDark ? '#F1F5F9' : '#0F172A' }}>{effectiveDayStreak}d</span>
+                        <span style={{ fontSize: 11, color: isDark ? D.textMuted : '#64748B' }}>streak</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Avatar Picker Tray */}
+                  {showAvatarPicker && (
+                    <div
+                      style={{
+                        marginBottom: 18,
+                        padding: 14,
+                        borderRadius: 16,
+                        background: isDark ? 'rgba(12, 10, 20, 0.95)' : '#F8FAFC',
+                        border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : '#E2E8F0'}`,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 10,
+                        boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: isDark ? D.textPrimary : '#1E293B' }}>Choose Avatar Preset</span>
+                        <button onClick={() => setShowAvatarPicker(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: isDark ? D.textMuted : '#64748B' }}>
+                          <X size={14} />
+                        </button>
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                        <button
+                          onClick={() => avatarInputRef.current?.click()}
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: 8,
+                            fontSize: 12,
+                            fontWeight: 600,
+                            background: '#7C3AED',
+                            color: '#FFFFFF',
+                            border: 'none',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 6,
+                          }}
+                        >
+                          <Camera size={13} /> Upload Image
+                        </button>
+                        {presetAvatarGradients.map((_: string, i: number) => {
+                          const presetIdx = i + 1;
+                          const isCurrent = avatarPreset === presetIdx && !avatarUrl;
+                          return (
+                            <button
+                              key={presetIdx}
+                              onClick={() => handleSelectPresetAvatar(presetIdx)}
+                              style={{
+                                background: 'none',
+                                border: isCurrent ? '2px solid #7C3AED' : '2px solid transparent',
+                                padding: 2,
+                                borderRadius: '50%',
+                                cursor: 'pointer',
+                                transform: isCurrent ? 'scale(1.1)' : 'none',
+                                transition: 'all 160ms ease',
+                              }}
+                            >
+                              {renderPresetAvatar(presetIdx, 32, 14)}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Name & Title */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {isEditingName ? (
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          handleSaveDisplayName();
+                        }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 8, maxWidth: 360 }}
+                      >
+                        <input
+                          type="text"
+                          value={editingNameValue}
+                          onChange={(e) => setEditingNameValue(e.target.value)}
+                          autoFocus
+                          style={{
+                            padding: '6px 12px',
+                            fontSize: 16,
+                            fontWeight: 700,
+                            borderRadius: 8,
+                            border: '1.5px solid #7C3AED',
+                            outline: 'none',
+                            flex: 1,
+                            background: isDark ? 'rgba(14, 13, 20, 0.9)' : '#FFFFFF',
+                            color: isDark ? D.textPrimary : '#0F172A',
+                          }}
+                        />
+                        <button
+                          type="submit"
+                          style={{
+                            background: '#7C3AED',
+                            color: '#FFF',
+                            border: 'none',
+                            borderRadius: 8,
+                            padding: '8px 12px',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <Check size={14} strokeWidth={2.5} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsEditingName(false)}
+                          style={{
+                            background: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9',
+                            color: isDark ? D.textSecondary : '#64748B',
+                            border: 'none',
+                            borderRadius: 8,
+                            padding: '8px 12px',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <X size={14} />
+                        </button>
+                      </form>
+                    ) : (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                        <h2 style={{ fontSize: 22, fontWeight: 800, color: isDark ? D.textPrimary : '#0F172A', margin: 0, letterSpacing: -0.5 }}>
+                          {displayName || 'User'}
+                        </h2>
+                        <button
+                          onClick={() => {
+                            setEditingNameValue(displayName);
+                            setIsEditingName(true);
+                          }}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            background: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9',
+                            border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.09)' : '#E2E8F0'}`,
+                            borderRadius: 8,
+                            padding: '3px 8px',
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color: isDark ? D.textSecondary : '#64748B',
+                            cursor: 'pointer',
+                            transition: 'all 160ms ease',
+                          }}
+                          className="hover:!border-[#7C3AED] hover:!text-[#7C3AED]"
+                          title="Edit display name"
+                        >
+                          <Pencil size={11} strokeWidth={2.2} />
+                          <span>Edit</span>
+                        </button>
+                        <span
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 750,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.8px',
+                            background: isDark ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.22), rgba(99, 102, 241, 0.16))' : 'rgba(124, 58, 237, 0.08)',
+                            border: `1px solid ${isDark ? 'rgba(168, 85, 247, 0.35)' : 'rgba(124, 58, 237, 0.2)'}`,
+                            color: isDark ? '#C084FC' : '#7C3AED',
+                            padding: '3px 10px',
+                            borderRadius: 8,
+                          }}
+                        >
+                          {userRole}
+                        </span>
+                      </div>
+                    )}
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginTop: 2 }}>
+                      <span style={{ fontSize: 13, color: isDark ? D.textSecondary : '#64748B' }}>{email}</span>
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          fontSize: 11,
+                          fontWeight: 700,
+                          color: '#10B981',
+                          background: 'rgba(16, 185, 129, 0.10)',
+                          border: '1px solid rgba(16, 185, 129, 0.25)',
+                          padding: '2px 8px',
+                          borderRadius: 9999,
+                        }}
+                      >
+                        <ShieldCheck size={12} strokeWidth={2.5} /> Verified
+                      </span>
+                      {createdAt && (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: isDark ? D.textMuted : '#94A3B8' }}>
+                          <Calendar size={12} strokeWidth={2} /> Member since {createdAt}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Executive Subscription & Capability Spotlight Bento */}
+              <div
+                style={{
+                  background: 'linear-gradient(135deg, #0A0818 0%, #120926 40%, #1C0F38 100%)',
+                  borderRadius: 24,
+                  border: '1px solid rgba(168, 85, 247, 0.25)',
+                  padding: isMobile ? '22px 18px' : '26px 28px',
+                  color: '#FFFFFF',
+                  boxShadow: isDark
+                    ? 'inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 16px 40px -8px rgba(0, 0, 0, 0.5)'
+                    : '0 8px 30px rgba(0, 0, 0, 0.06)',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  minHeight: isMobile ? 'auto' : 350,
+                }}
+              >
+                {/* Subtle ambient light gradient */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: -60,
+                    right: -40,
+                    width: 200,
+                    height: 200,
+                    borderRadius: '50%',
+                    background: 'radial-gradient(circle, rgba(139, 92, 246, 0.22) 0%, transparent 70%)',
+                    pointerEvents: 'none',
+                  }}
+                />
+
+                {/* Header: Icon + Title + Active Status Pill */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18, position: 'relative' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 12,
+                        background: 'linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 4px 14px rgba(124, 58, 237, 0.4)',
+                      }}
+                    >
+                      <Crown size={20} color="#FFFFFF" strokeWidth={2.4} />
+                    </div>
+                    <div>
+                      <span
+                        style={{
+                          fontSize: 10.5,
+                          fontWeight: 750,
+                          textTransform: 'uppercase',
+                          letterSpacing: '1px',
+                          color: '#C4B5FD',
+                          display: 'block',
+                          marginBottom: 3,
+                        }}
+                      >
+                        Active Subscription
+                      </span>
+                      <h3 style={{ fontSize: 20, fontWeight: 800, color: '#FFFFFF', margin: 0, letterSpacing: -0.4 }}>
+                        {plan === 'Free' ? 'AURE Starter Free' : `${plan} Professional`}
+                      </h3>
+                    </div>
+                  </div>
+
+                  <span
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '5px 12px',
+                      borderRadius: 9999,
+                      background: 'rgba(16, 185, 129, 0.14)',
+                      border: '1px solid rgba(16, 185, 129, 0.35)',
+                      fontSize: 11,
+                      fontWeight: 750,
+                      color: '#34D399',
+                    }}
+                  >
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#34D399', boxShadow: '0 0 8px #34D399' }} />
+                    Active
+                  </span>
+                </div>
+
+                {/* Quota Progress Bar */}
+                <div style={{ marginBottom: 20, position: 'relative' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'rgba(255,255,255,0.75)', marginBottom: 8 }}>
+                    <span style={{ fontWeight: 600 }}>Daily Prompt Enhancements</span>
+                    <span style={{ fontWeight: 750, color: '#FFFFFF' }}>{stats.prompts} / Unlimited</span>
+                  </div>
+                  <div style={{ width: '100%', height: 7, borderRadius: 9999, background: 'rgba(255,255,255,0.10)', overflow: 'hidden' }}>
+                    <div
+                      style={{
+                        width: `${Math.min(100, Math.max(16, stats.prompts * 4))}%`,
+                        height: '100%',
+                        background: 'linear-gradient(90deg, #8B5CF6 0%, #D946EF 50%, #38BDF8 100%)',
+                        borderRadius: 9999,
+                        boxShadow: '0 0 14px rgba(168, 85, 247, 0.65)',
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Tier Capabilities (Apple Bento Chips) */}
+                <div className="bento-subscription-chips" style={{ marginBottom: 18 }}>
+                  {[
+                    { label: 'Real-time Token Streaming', icon: Zap, color: '#A78BFA' },
+                    { label: '12+ Persona Architectures', icon: Cpu, color: '#38BDF8' },
+                    { label: 'Full Style Memory Injection', icon: Brain, color: '#F472B6' },
+                    { label: 'Side-by-Side Diff Engine', icon: Layers, color: '#34D399' },
+                  ].map((cap, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 10,
+                        padding: '10px 12px',
+                        borderRadius: 12,
+                        background: 'rgba(255, 255, 255, 0.04)',
+                        border: '1px solid rgba(255, 255, 255, 0.07)',
+                        transition: 'all 160ms ease',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                        <div
+                          style={{
+                            width: 26,
+                            height: 26,
+                            borderRadius: 7,
+                            background: 'rgba(255, 255, 255, 0.06)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <cap.icon size={14} color={cap.color} strokeWidth={2.4} />
+                        </div>
+                        <span style={{ fontSize: 12.5, fontWeight: 600, color: '#F1F5F9' }}>{cap.label}</span>
+                      </div>
+                      <CheckCircle2 size={15} color="#34D399" strokeWidth={2.5} />
+                    </div>
+                  ))}
+                </div>
+
+                {/* Bottom Action Strip */}
+                <div
+                  style={{
+                    borderTop: '1px solid rgba(255, 255, 255, 0.09)',
+                    paddingTop: 16,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: 12,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'rgba(255, 255, 255, 0.65)' }}>
+                    <ShieldCheck size={15} color="#38BDF8" strokeWidth={2.4} />
+                    <span>Neural prompt clusters operational</span>
+                  </div>
+
+                  <button
+                    onClick={() => handleTabSwitch('settings')}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '7px 15px',
+                      borderRadius: 10,
+                      background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.28), rgba(99, 102, 241, 0.28))',
+                      border: '1px solid rgba(168, 85, 247, 0.45)',
+                      color: '#EDE9FE',
+                      fontSize: 12,
+                      fontWeight: 750,
+                      cursor: 'pointer',
+                      transition: 'all 160ms ease',
+                    }}
+                    className="hover:scale-105 active:scale-95"
+                  >
+                    <Crown size={13} color="#FBBF24" />
+                    <span>Upgrade Plan</span>
+                    <ArrowRight size={13} />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Telemetry & Badges Bento */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 16 : 24, height: '100%' }}>
+              {/* KPI Metric Tiles */}
+              <div
+                style={{
+                  background: isDark ? 'rgba(18, 16, 28, 0.88)' : '#FFFFFF',
+                  borderRadius: 24,
+                  border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.09)' : 'rgba(124, 58, 237, 0.12)'}`,
+                  boxShadow: isDark
+                    ? 'inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 16px 40px -8px rgba(0, 0, 0, 0.5)'
+                    : '0 8px 30px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02)',
+                  padding: isSmall ? '16px 14px' : isMobile ? '20px 18px' : '24px 26px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: isMobile ? 16 : 20,
+                  backdropFilter: 'blur(20px)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <h3 style={{ fontSize: isSmall ? 15 : 16, fontWeight: 750, color: isDark ? D.textPrimary : '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Activity size={17} color="#7C3AED" />
+                    <span>Performance Telemetry</span>
+                  </h3>
+                  <span style={{ fontSize: 12, color: isDark ? D.textMuted : '#64748B', fontWeight: 600 }}>Live Metrics</span>
+                </div>
+
+                {/* 4 Metric Boxes: 2x2 on mobile, 4x1 on desktop */}
+                <div className="bento-telemetry-grid">
+                  {[
+                    { label: 'Prompts', value: stats.prompts.toLocaleString(), icon: Zap, color: '#7C3AED' },
+                    { label: 'Avg Score', value: stats.avgScore.toString(), icon: Target, color: '#EC4899' },
+                    { label: 'Day Streak', value: `${effectiveDayStreak}d`, icon: Flame, color: '#F59E0B' },
+                    { label: 'Raw Best', value: `${Math.round(stats.userMaxScore)}`, icon: Award, color: '#10B981' },
+                  ].map((item, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        background: isDark ? 'rgba(255, 255, 255, 0.03)' : '#F8FAFC',
+                        borderRadius: isMobile ? 12 : 14,
+                        border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.06)' : '#E2E8F0'}`,
+                        padding: isMobile ? '12px 10px' : '12px 6px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: 4,
+                        textAlign: 'center',
+                        transition: 'transform 160ms ease, border-color 160ms ease',
+                      }}
+                      className="hover:scale-[1.03]"
+                    >
+                      <item.icon size={15} color={item.color} strokeWidth={2.4} />
+                      <span style={{ fontSize: isMobile ? 17 : 16, fontWeight: 800, color: isDark ? D.textPrimary : '#0F172A', letterSpacing: -0.4 }}>{item.value}</span>
+                      <span style={{ fontSize: 10, color: isDark ? D.textMuted : '#64748B', fontWeight: 600 }}>{item.label}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Weekly Activity Sparkline */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: isDark ? D.textPrimary : '#334155' }}>Enhancement Frequency</span>
+                    <span style={{ fontSize: 11, color: isDark ? D.textMuted : '#94A3B8' }}>Past 7 Days</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 44 }}>
+                    {(() => {
+                      const maxFreq = Math.max(...stats.frequency7d, 1);
+                      const shortDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+                      const dayLabels: string[] = [];
+                      for (let dIdx = 6; dIdx >= 0; dIdx--) {
+                        const d = new Date();
+                        d.setDate(d.getDate() - dIdx);
+                        dayLabels.push(shortDays[d.getDay()]);
+                      }
+                      return stats.frequency7d.map((count, i) => {
+                        const isToday = i === 6;
+                        const barHeight = Math.max(6, Math.round((count / maxFreq) * 36));
+                        return (
+                          <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                            <div
+                              title={`${count} prompt${count === 1 ? '' : 's'}`}
+                              style={{
+                                width: '100%',
+                                borderRadius: 4,
+                                height: `${barHeight}px`,
+                                background: isToday
+                                  ? 'linear-gradient(180deg, #8B5CF6, #7C3AED)'
+                                  : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124, 58, 237, 0.12)'),
+                                boxShadow: isToday ? '0 2px 8px rgba(124, 58, 237, 0.35)' : 'none',
+                                transition: 'height 240ms ease',
+                              }}
+                            />
+                            <span style={{ fontSize: 9.5, color: isToday ? '#7C3AED' : (isDark ? D.textMuted : '#94A3B8'), fontWeight: isToday ? 700 : 500 }}>
+                              {dayLabels[i]}
+                            </span>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                </div>
+              </div>
+
+              {/* LeetCode-Style Badges Showcase Widget */}
+              <div
+                id="badges-showcase-card"
+                onClick={() => {
+                  setShowBadgesModal(true);
+                }}
+                style={{
+                  background: isDark ? 'rgba(18, 16, 28, 0.88)' : '#FFFFFF',
+                  borderRadius: 24,
+                  border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.09)' : 'rgba(124, 58, 237, 0.12)'}`,
+                  boxShadow: isDark
+                    ? 'inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 16px 40px -8px rgba(0, 0, 0, 0.5)'
+                    : '0 8px 30px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02)',
+                  padding: isMobile ? '22px 18px' : '26px 28px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  flex: 1,
+                  minHeight: isMobile ? 'auto' : 350,
+                  cursor: 'pointer',
+                  transition: 'all 200ms ease',
+                  backdropFilter: 'blur(20px)',
                   position: 'relative',
                   overflow: 'hidden',
                 }}
               >
+                {/* Subtle ambient light gradient */}
                 <div
                   style={{
                     position: 'absolute',
-                    inset: 0,
-                    backgroundImage: 'radial-gradient(circle at 20% 30%, rgba(168, 85, 247, 0.3) 0%, transparent 60%)',
+                    top: -50,
+                    right: -40,
+                    width: 180,
+                    height: 180,
+                    borderRadius: '50%',
+                    background: 'radial-gradient(circle, rgba(245, 158, 11, 0.15) 0%, transparent 70%)',
+                    pointerEvents: 'none',
                   }}
                 />
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: 14,
-                    right: 16,
-                    padding: '4px 12px',
-                    borderRadius: 9999,
-                    background: 'rgba(255, 255, 255, 0.15)',
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(255, 255, 255, 0.25)',
-                    color: '#FFFFFF',
-                    fontSize: 11,
-                    fontWeight: 700,
-                    letterSpacing: '0.6px',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  {plan} Tier
-                </div>
-              </div>
 
-              {/* Avatar + Info Block */}
-              <div style={{ padding: '0 28px 26px', position: 'relative' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: -40, marginBottom: 14 }}>
-                  {/* Glowing Avatar */}
-                  <div style={{ position: 'relative' }}>
-                    <div
-                      onClick={() => setShowAvatarPicker(!showAvatarPicker)}
-                      style={{
-                        width: 80,
-                        height: 80,
-                        borderRadius: '50%',
-                        border: `4px solid ${isDark ? '#141320' : '#FFFFFF'}`,
-                        boxShadow: '0 4px 16px rgba(109, 40, 217, 0.22)',
-                        overflow: 'hidden',
-                        cursor: 'pointer',
-                        position: 'relative',
-                        background: isDark ? '#141320' : '#FFFFFF',
-                      }}
-                      title="Click to customize avatar"
-                    >
-                      {avatarUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      ) : (
-                        renderPresetAvatar(avatarPreset, 80, 32)
-                      )}
-
-                      {/* Camera Hover Overlay */}
+                {/* Top Section: Header + Large Count */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, position: 'relative' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <div
                         style={{
-                          position: 'absolute',
-                          inset: 0,
-                          background: 'rgba(0,0,0,0.35)',
+                          width: 36,
+                          height: 36,
+                          borderRadius: 10,
+                          background: 'linear-gradient(135deg, #F59E0B 0%, #EA580C 100%)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          opacity: 0,
-                          transition: 'opacity 180ms ease',
-                          color: '#FFFFFF',
+                          boxShadow: '0 4px 12px rgba(245, 158, 11, 0.35)',
                         }}
-                        className="hover:opacity-100"
                       >
-                        <Camera size={18} />
+                        <Award size={18} color="#FFFFFF" strokeWidth={2.4} />
+                      </div>
+                      <div>
+                        <span
+                          style={{
+                            fontSize: 10.5,
+                            fontWeight: 750,
+                            textTransform: 'uppercase',
+                            letterSpacing: '1px',
+                            color: '#FCD34D',
+                            display: 'block',
+                            marginBottom: 2,
+                          }}
+                        >
+                          Mastery & Honors
+                        </span>
+                        <span style={{ fontSize: 16, fontWeight: 800, color: isDark ? D.textPrimary : '#0F172A', letterSpacing: -0.3 }}>
+                          Badges
+                        </span>
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => setShowAvatarPicker(!showAvatarPicker)}
+                    <div
                       style={{
-                        position: 'absolute',
-                        bottom: 0,
-                        right: -2,
-                        width: 26,
-                        height: 26,
-                        borderRadius: '50%',
-                        background: '#7C3AED',
-                        border: `2px solid ${isDark ? '#141320' : '#FFFFFF'}`,
-                        color: '#FFFFFF',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        boxShadow: '0 2px 6px rgba(124, 58, 237, 0.4)',
-                      }}
-                    >
-                      <Camera size={12} strokeWidth={2.5} />
-                    </button>
-                    <input ref={avatarInputRef} type="file" accept="image/*" onChange={handleDirectAvatarUpload} style={{ display: 'none' }} />
-                  </div>
-                </div>
-
-                {/* Avatar Picker Tray */}
-                {showAvatarPicker && (
-                  <div
-                    style={{
-                      marginBottom: 16,
-                      padding: 14,
-                      borderRadius: 16,
-                      background: isDark ? 'rgba(14, 13, 20, 0.95)' : '#F8FAFC',
-                      border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.10)' : '#E2E8F0'}`,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 10,
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: isDark ? D.textPrimary : '#1E293B' }}>Choose Avatar Preset</span>
-                      <button onClick={() => setShowAvatarPicker(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: isDark ? D.textMuted : '#64748B' }}>
-                        <X size={14} />
-                      </button>
-                    </div>
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                      <button
-                        onClick={() => avatarInputRef.current?.click()}
-                        style={{
-                          padding: '6px 12px',
-                          borderRadius: 8,
-                          fontSize: 12,
-                          fontWeight: 600,
-                          background: '#7C3AED',
-                          color: '#FFFFFF',
-                          border: 'none',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 6,
-                        }}
-                      >
-                        <Camera size={13} /> Upload Image
-                      </button>
-                      {presetAvatarGradients.map((_: string, i: number) => {
-                        const presetIdx = i + 1;
-                        const isCurrent = avatarPreset === presetIdx && !avatarUrl;
-                        return (
-                          <button
-                            key={presetIdx}
-                            onClick={() => handleSelectPresetAvatar(presetIdx)}
-                            style={{
-                              background: 'none',
-                              border: isCurrent ? '2px solid #7C3AED' : '2px solid transparent',
-                              padding: 2,
-                              borderRadius: '50%',
-                              cursor: 'pointer',
-                              transform: isCurrent ? 'scale(1.1)' : 'none',
-                              transition: 'all 160ms ease',
-                            }}
-                          >
-                            {renderPresetAvatar(presetIdx, 32, 14)}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Name & Title */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {isEditingName ? (
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        handleSaveDisplayName();
-                      }}
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, maxWidth: 360 }}
-                    >
-                      <input
-                        type="text"
-                        value={editingNameValue}
-                        onChange={(e) => setEditingNameValue(e.target.value)}
-                        autoFocus
-                        style={{
-                          padding: '6px 12px',
-                          fontSize: 16,
-                          fontWeight: 700,
-                          borderRadius: 8,
-                          border: '1.5px solid #7C3AED',
-                          outline: 'none',
-                          flex: 1,
-                          background: isDark ? 'rgba(14, 13, 20, 0.9)' : '#FFFFFF',
-                          color: isDark ? D.textPrimary : '#0F172A',
-                        }}
-                      />
-                      <button
-                        type="submit"
-                        style={{
-                          background: '#7C3AED',
-                          color: '#FFF',
-                          border: 'none',
-                          borderRadius: 8,
-                          padding: '8px 12px',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        <Check size={14} strokeWidth={2.5} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setIsEditingName(false)}
-                        style={{
-                          background: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9',
-                          color: isDark ? D.textSecondary : '#64748B',
-                          border: 'none',
-                          borderRadius: 8,
-                          padding: '8px 12px',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        <X size={14} />
-                      </button>
-                    </form>
-                  ) : (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                      <h2 style={{ fontSize: 20, fontWeight: 800, color: isDark ? D.textPrimary : '#0F172A', margin: 0, letterSpacing: -0.4 }}>
-                        {displayName || 'User'}
-                      </h2>
-                      <button
-                        onClick={() => {
-                          setEditingNameValue(displayName);
-                          setIsEditingName(true);
-                        }}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          color: isDark ? D.textMuted : '#94A3B8',
-                          padding: 2,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                        }}
-                        className="hover:!text-[#7C3AED]"
-                        title="Edit name"
-                      >
-                        <Pencil size={14} />
-                      </button>
-                      <span
-                        style={{
-                          fontSize: 11,
-                          fontWeight: 700,
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.6px',
-                          background: isDark ? 'rgba(139, 92, 246, 0.18)' : 'rgba(124, 58, 237, 0.08)',
-                          color: isDark ? '#C084FC' : '#7C3AED',
-                          padding: '2px 8px',
-                          borderRadius: 6,
-                        }}
-                      >
-                        {userRole}
-                      </span>
-                    </div>
-                  )}
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: 13, color: isDark ? D.textSecondary : '#64748B' }}>{email}</span>
-                    <span
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 3,
-                        fontSize: 11,
-                        fontWeight: 600,
-                        color: '#10B981',
-                        background: 'rgba(16, 185, 129, 0.08)',
-                        padding: '1.5px 7px',
+                        gap: 6,
+                        padding: '5px 12px',
                         borderRadius: 9999,
+                        background: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
+                        border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)'}`,
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: isDark ? '#C084FC' : '#7C3AED',
                       }}
                     >
-                      <Check size={10} strokeWidth={3} /> Verified
+                      <span>View All</span>
+                      <ArrowRight size={13} />
+                    </div>
+                  </div>
+
+                  {/* Large Count Number & Status */}
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                    <span style={{ fontSize: isSmall ? 28 : 32, fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A', lineHeight: 1 }}>
+                      {stats.unlockedBadgeCount}
                     </span>
-                    {createdAt && <span style={{ fontSize: 12, color: isDark ? D.textMuted : '#94A3B8' }}>• Member since {createdAt}</span>}
+                    <span style={{ fontSize: 12, color: isDark ? D.textMuted : '#64748B', fontWeight: 600 }}>
+                      unlocked of {(stats.badges || []).length || 11} honors
+                    </span>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Subscription & Capability Spotlight */}
-            <div
-              style={{
-                background: 'linear-gradient(135deg, #09090D 0%, #150D2A 50%, #200E3E 100%)',
-                borderRadius: 24,
-                border: '1px solid rgba(139, 92, 246, 0.22)',
-                padding: isMobile ? '22px 18px' : '28px 30px',
-                color: '#FFFFFF',
-                boxShadow: isDark ? '0 4px 24px rgba(0, 0, 0, 0.4)' : '0 4px 20px rgba(0, 0, 0, 0.06)',
-                position: 'relative',
-                overflow: 'hidden',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-                <div>
-                  <span
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      textTransform: 'uppercase',
-                      letterSpacing: '1px',
-                      color: '#C4B5FD',
-                      display: 'block',
-                      marginBottom: 4,
-                    }}
-                  >
-                    Active Plan
-                  </span>
-                  <h3 style={{ fontSize: 20, fontWeight: 800, color: '#FFFFFF', margin: 0 }}>
-                    {plan === 'Free' ? 'AURE Starter Free' : `${plan} Professional`}
-                  </h3>
-                </div>
-                <span
+                {/* Horizontal Showcase of ONLY Achieved Badges */}
+                <div
                   style={{
-                    padding: '4px 12px',
-                    borderRadius: 9999,
-                    background: 'rgba(124, 58, 237, 0.35)',
-                    border: '1px solid rgba(167, 139, 250, 0.4)',
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: '#EDE9FE',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: isSmall ? 16 : isMobile ? 20 : 26,
+                    padding: '20px 0',
+                    flex: 1,
                   }}
                 >
-                  Active
-                </span>
-              </div>
-
-              {/* Quota Progress */}
-              <div style={{ marginBottom: 20 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'rgba(255,255,255,0.7)', marginBottom: 6 }}>
-                  <span>Daily Prompt Enhancements</span>
-                  <span>{stats.prompts} / Unlimited</span>
-                </div>
-                <div style={{ width: '100%', height: 6, borderRadius: 9999, background: 'rgba(255,255,255,0.12)', overflow: 'hidden' }}>
-                  <div
-                    style={{
-                      width: `${Math.min(100, Math.max(15, stats.prompts * 4))}%`,
-                      height: '100%',
-                      background: 'linear-gradient(90deg, #8B5CF6 0%, #EC4899 100%)',
-                      borderRadius: 9999,
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Tier Capabilities */}
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10 }}>
-                {[
-                  'Real-time Token Streaming',
-                  '12+ Persona Architectures',
-                  'Full Style Memory Injection',
-                  'Side-by-Side Diff Engine',
-                ].map((cap, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12.5, color: '#E2E8F0' }}>
-                    <CheckCircle size={14} color="#A78BFA" />
-                    <span>{cap}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column: Telemetry & Badges Bento */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 16 : 24 }}>
-            {/* KPI Metric Tiles */}
-            <div
-              style={{
-                background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
-                borderRadius: isMobile ? 18 : 24,
-                border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124, 58, 237, 0.12)'}`,
-                boxShadow: isDark ? '0 4px 20px rgba(0, 0, 0, 0.35)' : '0 4px 20px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02)',
-                padding: isSmall ? '16px 14px' : isMobile ? '20px 18px' : '24px 26px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: isMobile ? 16 : 20,
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <h3 style={{ fontSize: isSmall ? 15 : 16, fontWeight: 700, color: isDark ? D.textPrimary : '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Activity size={17} color="#7C3AED" />
-                  <span>Performance Telemetry</span>
-                </h3>
-                <span style={{ fontSize: 12, color: isDark ? D.textMuted : '#64748B' }}>Live Metrics</span>
-              </div>
-
-              {/* 4 Metric Boxes: 2x2 on mobile, 4x1 on desktop */}
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? 10 : 8 }}>
-                {[
-                  { label: 'Prompts', value: stats.prompts.toLocaleString(), icon: Zap, color: '#7C3AED' },
-                  { label: 'Avg Score', value: stats.avgScore.toString(), icon: Target, color: '#EC4899' },
-                  { label: 'Day Streak', value: `${stats.dayStreak}d`, icon: Flame, color: '#F59E0B' },
-                  { label: 'Raw Best', value: `${Math.round(stats.userMaxScore)}`, icon: Award, color: '#10B981' },
-                ].map((item, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      background: isDark ? 'rgba(14, 13, 20, 0.75)' : '#F8FAFC',
-                      borderRadius: isMobile ? 12 : 14,
-                      border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.06)' : '#E2E8F0'}`,
-                      padding: isMobile ? '12px 10px' : '12px 6px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: 4,
-                      textAlign: 'center',
-                    }}
-                  >
-                    <item.icon size={15} color={item.color} strokeWidth={2.2} />
-                    <span style={{ fontSize: isMobile ? 17 : 16, fontWeight: 800, color: isDark ? D.textPrimary : '#0F172A', letterSpacing: -0.4 }}>{item.value}</span>
-                    <span style={{ fontSize: 10, color: isDark ? D.textMuted : '#64748B', fontWeight: 600 }}>{item.label}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Weekly Activity Sparkline */}
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: isDark ? D.textPrimary : '#334155' }}>Enhancement Frequency</span>
-                  <span style={{ fontSize: 11, color: isDark ? D.textMuted : '#94A3B8' }}>Past 7 Days</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 44 }}>
                   {(() => {
-                    const maxFreq = Math.max(...stats.frequency7d, 1);
-                    const shortDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-                    const dayLabels: string[] = [];
-                    for (let dIdx = 6; dIdx >= 0; dIdx--) {
-                       const d = new Date();
-                       d.setDate(d.getDate() - dIdx);
-                       dayLabels.push(shortDays[d.getDay()]);
-                    }
-                    return stats.frequency7d.map((count, i) => {
-                      const isToday = i === 6;
-                      const barHeight = Math.max(6, Math.round((count / maxFreq) * 36));
+                    const unlocked = (stats.badges || []).filter((b) => b.unlocked);
+                    if (unlocked.length === 0) {
                       return (
-                        <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                          <div
-                            title={`${count} prompt${count === 1 ? '' : 's'}`}
+                        <div style={{ fontSize: 12, color: isDark ? D.textMuted : '#94A3B8', textAlign: 'center', padding: '12px 0' }}>
+                          No badges unlocked yet. Start enhancing prompts to earn your first badge!
+                        </div>
+                      );
+                    }
+
+                    // Show up to 3 achieved badges (center one prominent)
+                    const displayBadges = unlocked.slice(Math.max(0, unlocked.length - 3));
+
+                    return displayBadges.map((b, idx) => {
+                      const isCenter = displayBadges.length === 3 ? idx === 1 : idx === displayBadges.length - 1;
+                      const isHovered = hoveredBadgeId === b.id;
+                      const size = isCenter ? (isSmall ? 60 : isMobile ? 66 : 72) : (isSmall ? 46 : isMobile ? 50 : 56);
+                      const tierStyle = getTierStyle(b.tier, isDark);
+
+                      return (
+                        <div
+                          key={b.id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedBadge(b);
+                          }}
+                          onMouseEnter={() => setHoveredBadgeId(b.id)}
+                          onMouseLeave={() => setHoveredBadgeId(null)}
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            position: 'relative',
+                            cursor: 'pointer',
+                            transform: isHovered ? 'scale(1.14)' : (isCenter ? 'scale(1.05)' : 'scale(1)'),
+                            transition: 'transform 200ms cubic-bezier(0.16, 1, 0.3, 1)',
+                          }}
+                        >
+                          {/* Floating Tooltip matching reference screenshot */}
+                          {isHovered && (
+                            <div
+                              style={{
+                                position: 'absolute',
+                                bottom: 'calc(100% + 10px)',
+                                left: '50%',
+                                transform: 'translateX(-50%)',
+                                background: isDark ? '#2B2B2D' : '#1E293B',
+                                color: '#FFFFFF',
+                                fontSize: isSmall ? 12 : 13.5,
+                                fontWeight: 500,
+                                padding: isSmall ? '5px 10px' : '6px 14px',
+                                borderRadius: 8,
+                                whiteSpace: 'nowrap',
+                                maxWidth: '85vw',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                pointerEvents: 'none',
+                                boxShadow: '0 6px 20px rgba(0, 0, 0, 0.45)',
+                                border: isDark ? '1px solid rgba(255, 255, 255, 0.18)' : '1px solid rgba(0, 0, 0, 0.15)',
+                                zIndex: 50,
+                              }}
+                            >
+                              {b.title}
+                            </div>
+                          )}
+
+                          <img
+                            src={`/badges/${b.id}.png`}
+                            alt={b.title}
                             style={{
-                              width: '100%',
-                              borderRadius: 4,
-                              height: `${barHeight}px`,
-                              background: isToday
-                                ? 'linear-gradient(180deg, #8B5CF6, #7C3AED)'
-                                : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124, 58, 237, 0.12)'),
-                              boxShadow: isToday ? '0 2px 8px rgba(124, 58, 237, 0.3)' : 'none',
-                              transition: 'height 240ms ease',
+                              width: size,
+                              height: size,
+                              objectFit: 'contain',
+                              filter: `drop-shadow(0 6px 16px ${tierStyle.glow})`,
+                              transition: 'all 200ms ease',
                             }}
                           />
-                          <span style={{ fontSize: 9.5, color: isToday ? '#7C3AED' : (isDark ? D.textMuted : '#94A3B8'), fontWeight: isToday ? 700 : 500 }}>
-                            {dayLabels[i]}
-                          </span>
                         </div>
                       );
                     });
                   })()}
                 </div>
-              </div>
-            </div>
 
-            {/* LeetCode-Style Badges Showcase Widget */}
-            <div
-              id="badges-showcase-card"
-              onClick={() => {
-                setShowBadgesModal(true);
-              }}
-              style={{
-                background: isDark ? '#18181B' : '#FFFFFF',
-                borderRadius: isMobile ? 18 : 20,
-                border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0'}`,
-                boxShadow: isDark ? '0 4px 24px rgba(0, 0, 0, 0.35)' : '0 4px 20px rgba(0, 0, 0, 0.04)',
-                padding: isSmall ? '16px 16px' : isMobile ? '18px 20px' : '20px 24px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: isMobile ? 12 : 14,
-                cursor: 'pointer',
-                transition: 'all 200ms ease',
-              }}
-            >
-              {/* Top row: Badges label + right arrow */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 14, fontWeight: 600, color: isDark ? '#94A3B8' : '#64748B' }}>
-                  Badges
-                </span>
-                <ArrowRight size={18} color={isDark ? '#94A3B8' : '#64748B'} />
-              </div>
+                {/* Bottom Info: Most Recent Badge */}
+                <div
+                  style={{
+                    borderTop: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.09)' : 'rgba(0, 0, 0, 0.08)'}`,
+                    paddingTop: 16,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: 10,
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: 10.5, fontWeight: 750, textTransform: 'uppercase', letterSpacing: '0.8px', color: isDark ? '#94A3B8' : '#64748B' }}>
+                      Most Recent Badge
+                    </div>
+                    <div style={{ fontSize: isSmall ? 13.5 : 14.5, fontWeight: 750, color: isDark ? '#F1F5F9' : '#0F172A', marginTop: 2 }}>
+                      {(() => {
+                        const unlocked = (stats.badges || []).filter((b) => b.unlocked);
+                        const displayBadges = unlocked.slice(Math.max(0, unlocked.length - 3));
+                        const hovered = displayBadges.find(b => b.id === hoveredBadgeId);
+                        if (hovered) return hovered.title;
+                        return unlocked.length > 0 ? unlocked[unlocked.length - 1].title : 'None yet';
+                      })()}
+                    </div>
+                  </div>
 
-              {/* Large Count Number */}
-              <div style={{ fontSize: isSmall ? 28 : 32, fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A', lineHeight: 1 }}>
-                {stats.unlockedBadgeCount}
-              </div>
-
-              {/* Horizontal Showcase of ONLY Achieved Badges */}
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: isSmall ? 16 : isMobile ? 20 : 24,
-                  padding: isMobile ? '6px 0 10px' : '8px 0 12px',
-                  minHeight: isMobile ? 64 : 74,
-                }}
-              >
-                {(() => {
-                  const unlocked = (stats.badges || []).filter((b) => b.unlocked);
-                  if (unlocked.length === 0) {
-                    return (
-                      <div style={{ fontSize: 12, color: isDark ? D.textMuted : '#94A3B8', textAlign: 'center', padding: '12px 0' }}>
-                        No badges unlocked yet. Start enhancing prompts to earn your first badge!
-                      </div>
-                    );
-                  }
-
-                  // Show up to 3 achieved badges (center one prominent)
-                  const displayBadges = unlocked.slice(Math.max(0, unlocked.length - 3));
-
-                  return displayBadges.map((b, idx) => {
-                    const isCenter = displayBadges.length === 3 ? idx === 1 : idx === displayBadges.length - 1;
-                    const isHovered = hoveredBadgeId === b.id;
-                    const size = isCenter ? (isSmall ? 56 : isMobile ? 62 : 68) : (isSmall ? 44 : isMobile ? 48 : 54);
-                    const tierStyle = getTierStyle(b.tier, isDark);
-
-                    return (
-                      <div
-                        key={b.id}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedBadge(b);
-                        }}
-                        onMouseEnter={() => setHoveredBadgeId(b.id)}
-                        onMouseLeave={() => setHoveredBadgeId(null)}
-                        style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          position: 'relative',
-                          cursor: 'pointer',
-                          transform: isHovered ? 'scale(1.14)' : (isCenter ? 'scale(1.05)' : 'scale(1)'),
-                          transition: 'transform 200ms cubic-bezier(0.16, 1, 0.3, 1)',
-                        }}
-                      >
-                        {/* Floating Tooltip matching reference screenshot */}
-                        {isHovered && (
-                          <div
-                            style={{
-                              position: 'absolute',
-                              bottom: 'calc(100% + 10px)',
-                              left: '50%',
-                              transform: 'translateX(-50%)',
-                              background: isDark ? '#2B2B2D' : '#1E293B',
-                              color: '#FFFFFF',
-                              fontSize: isSmall ? 12 : 13.5,
-                              fontWeight: 500,
-                              padding: isSmall ? '5px 10px' : '6px 14px',
-                              borderRadius: 8,
-                              whiteSpace: 'nowrap',
-                              maxWidth: '85vw',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              pointerEvents: 'none',
-                              boxShadow: '0 6px 20px rgba(0, 0, 0, 0.45)',
-                              border: isDark ? '1px solid rgba(255, 255, 255, 0.18)' : '1px solid rgba(0, 0, 0, 0.15)',
-                              zIndex: 50,
-                            }}
-                          >
-                            {b.title}
-                          </div>
-                        )}
-
-                        <img
-                          src={`/badges/${b.id}.png`}
-                          alt={b.title}
-                          style={{
-                            width: size,
-                            height: size,
-                            objectFit: 'contain',
-                            filter: `drop-shadow(0 4px 12px ${tierStyle.glow})`,
-                            transition: 'all 200ms ease',
-                          }}
-                        />
-                      </div>
-                    );
-                  });
-                })()}
-              </div>
-
-              {/* Bottom Info: Most Recent Badge */}
-              <div>
-                <div style={{ fontSize: 11.5, fontWeight: 600, color: isDark ? '#94A3B8' : '#64748B' }}>
-                  Most Recent Badge
-                </div>
-                <div style={{ fontSize: isSmall ? 14 : 15, fontWeight: 700, color: isDark ? '#F1F5F9' : '#0F172A', marginTop: 3 }}>
-                  {(() => {
-                    const unlocked = (stats.badges || []).filter((b) => b.unlocked);
-                    const displayBadges = unlocked.slice(Math.max(0, unlocked.length - 3));
-                    const hovered = displayBadges.find(b => b.id === hoveredBadgeId);
-                    if (hovered) return hovered.title;
-                    return unlocked.length > 0 ? unlocked[unlocked.length - 1].title : 'None yet';
-                  })()}
+                  <div
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      fontSize: 11.5,
+                      fontWeight: 700,
+                      color: '#F59E0B',
+                      background: 'rgba(245, 158, 11, 0.12)',
+                      border: '1px solid rgba(245, 158, 11, 0.28)',
+                      padding: '4px 10px',
+                      borderRadius: 8,
+                    }}
+                  >
+                    <Medal size={13} strokeWidth={2.4} />
+                    <span>Achieved</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    )}
+      )}
 
       {/* ═══════════════════════════════════════════════════
          SETTINGS VIEW (macOS & Linear Bento Layout)
@@ -1405,7 +1787,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                 <p style={{ fontSize: 13, color: isDark ? D.textSecondary : '#64748B', margin: 0 }}>Select your preferred workspace theme color palette.</p>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(3, 160px)', gap: 12 }}>
+              <div className="bento-appearance-grid">
                 {[
                   { id: 'light', label: 'Light', icon: Sun, bg: '#F8FAFC', border: '#E2E8F0' },
                   { id: 'dark', label: 'Dark', icon: Moon, bg: '#0F172A', border: '#334155' },
@@ -1477,13 +1859,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                 </span>
               </div>
 
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : isDesktop ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)',
-                  gap: 10,
-                }}
-              >
+              <div className="bento-roles-grid">
                 {ROLES.map((role) => {
                   const isSelected = userRole.toLowerCase() === role.id.toLowerCase();
                   const RoleIcon = role.icon;
@@ -1844,7 +2220,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                 if (unlocked.length === 0) {
                   return (
                     <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px 16px', color: isDark ? D.textMuted : '#94A3B8', fontSize: 13 }}>
-                      You haven't unlocked any badges yet. Continue enhancing prompts and building streaks to earn them!
+                      You haven&apos;t unlocked any badges yet. Continue enhancing prompts and building streaks to earn them!
                     </div>
                   );
                 }

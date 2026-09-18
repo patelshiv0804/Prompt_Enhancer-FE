@@ -1,34 +1,54 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useSyncExternalStore, useCallback } from 'react';
 
 /**
- * SSR-safe media-query hook.
- *
- * Initializes to `false` (desktop-first) so the first client render matches the
- * server render — this avoids hydration mismatches. The real match is resolved
- * in an effect after mount, then kept in sync via a change listener.
- *
- * The app is styled with inline styles, which CSS `@media` rules cannot override
- * (inline wins specificity), so responsive layout decisions are driven from JS
- * with this hook.
+ * Helper to determine an intelligent fallback during SSR.
+ * Desktop-first min-width queries (e.g. min-width: 1081px) default to true
+ * so the initial server markup aligns with desktop views.
  */
-export function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(false);
+function getDefaultServerFallback(query: string, serverFallback?: boolean): boolean {
+  if (typeof serverFallback === 'boolean') return serverFallback;
+  if (query.includes('min-width') && !query.includes('max-width')) {
+    return true;
+  }
+  return false;
+}
 
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.matchMedia) return;
+/**
+ * SSR-safe and hydration-safe media-query hook using React's useSyncExternalStore.
+ *
+ * On the client, this reads window.matchMedia synchronously during the very first
+ * render, eliminating any initial layout flash or skeleton morphing between breakpoints.
+ */
+export function useMediaQuery(query: string, serverFallback?: boolean): boolean {
+  const fallback = getDefaultServerFallback(query, serverFallback);
 
-    const mql = window.matchMedia(query);
-    const onChange = () => setMatches(mql.matches);
+  const subscribe = useCallback(
+    (callback: () => void) => {
+      if (typeof window === 'undefined' || !window.matchMedia) {
+        return () => {};
+      }
+      const mql = window.matchMedia(query);
+      mql.addEventListener('change', callback);
+      return () => {
+        mql.removeEventListener('change', callback);
+      };
+    },
+    [query]
+  );
 
-    // Sync immediately in case the viewport already matches on mount.
-    onChange();
-    mql.addEventListener('change', onChange);
-    return () => mql.removeEventListener('change', onChange);
-  }, [query]);
+  const getSnapshot = () => {
+    if (typeof window === 'undefined' || !window.matchMedia) {
+      return fallback;
+    }
+    return window.matchMedia(query).matches;
+  };
 
-  return matches;
+  const getServerSnapshot = () => fallback;
+
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 
 export default useMediaQuery;
+

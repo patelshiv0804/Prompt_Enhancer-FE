@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo, useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Flame, Zap } from 'lucide-react';
 import { useTheme, D } from '@/theme/theme';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
@@ -23,6 +24,20 @@ interface DayCell {
   isFuture: boolean;
 }
 
+// Helper to reliably format local YYYY-MM-DD regardless of client timezone
+const toLocalDateKey = (d: Date): string => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
+// Check activity count matching local key
+const getActivityCount = (d: Date, calendar: Record<string, number>): number => {
+  const localKey = toLocalDateKey(d);
+  return calendar[localKey] || 0;
+};
+
 export function ActivityHeatmap({
   activityCalendar = {},
   currentStreak = 0,
@@ -33,7 +48,7 @@ export function ActivityHeatmap({
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
-  const isMobile = useMediaQuery('(max-width: 640px)');
+  const isMobile = useMediaQuery('(max-width: 768px)');
   const isSmall = useMediaQuery('(max-width: 420px)');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -56,10 +71,41 @@ export function ActivityHeatmap({
     return Object.values(activityCalendar).filter((c) => c > 0).length;
   }, [totalActiveDays, activityCalendar]);
 
+  // Dynamically compute streak from calendar activity to ensure real-time accuracy
+  const effectiveStreak = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const todayCount = getActivityCount(today, activityCalendar);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayCount = getActivityCount(yesterday, activityCalendar);
+
+    let activeStreak = 0;
+    let checkD = new Date(today);
+    if (todayCount === 0 && yesterdayCount > 0) {
+      checkD = yesterday;
+    } else if (todayCount === 0 && yesterdayCount === 0) {
+      return currentStreak > 0 ? currentStreak : 0;
+    }
+
+    while (true) {
+      const count = getActivityCount(checkD, activityCalendar);
+      if (count > 0) {
+        activeStreak++;
+        checkD.setDate(checkD.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+
+    return Math.max(activeStreak, currentStreak);
+  }, [activityCalendar, currentStreak]);
+
   const maxStreakCount = useMemo(() => {
-    if (longestStreak > 0) return longestStreak;
-    return currentStreak > 0 ? currentStreak : 0;
-  }, [longestStreak, currentStreak]);
+    const maxVal = Math.max(longestStreak, effectiveStreak);
+    return maxVal > 0 ? maxVal : 0;
+  }, [longestStreak, effectiveStreak]);
 
   // Compute 52 weeks (364 days, full year like LeetCode and GitHub)
   const { weeks, monthLabels } = useMemo(() => {
@@ -68,17 +114,16 @@ export function ActivityHeatmap({
 
     // Current streak set of dates
     const streakDates = new Set<string>();
-    if (currentStreak > 0) {
-      const todayKey = today.toISOString().split('T')[0];
-      const hasToday = Boolean(activityCalendar[todayKey] && activityCalendar[todayKey] > 0);
+    if (effectiveStreak > 0) {
+      const todayCount = getActivityCount(today, activityCalendar);
       const startD = new Date(today);
-      if (!hasToday) {
+      if (todayCount === 0) {
         startD.setDate(startD.getDate() - 1);
       }
-      for (let i = 0; i < currentStreak; i++) {
+      for (let i = 0; i < effectiveStreak; i++) {
         const d = new Date(startD);
         d.setDate(d.getDate() - i);
-        streakDates.add(d.toISOString().split('T')[0]);
+        streakDates.add(toLocalDateKey(d));
       }
     }
 
@@ -96,15 +141,15 @@ export function ActivityHeatmap({
     let lastLabeledCol = -10;
     let lastMonthIdx = -1;
 
-    let cursor = new Date(startDate);
+    const cursor = new Date(startDate);
 
     for (let w = 0; w < WEEKS_COUNT; w++) {
       const weekDays: DayCell[] = [];
       for (let d = 0; d < 7; d++) {
-        const dateStr = cursor.toISOString().split('T')[0];
+        const dateStr = toLocalDateKey(cursor);
         const isFuture = cursor > today;
         const isTodayDate = cursor.getTime() === today.getTime();
-        const count = isFuture ? 0 : (activityCalendar[dateStr] || 0);
+        const count = isFuture ? 0 : getActivityCount(cursor, activityCalendar);
         const isStreakDay = streakDates.has(dateStr);
 
         const currentMonth = cursor.getMonth();
@@ -141,7 +186,7 @@ export function ActivityHeatmap({
     }
 
     return { weeks: calculatedWeeks, monthLabels: months };
-  }, [activityCalendar, currentStreak]);
+  }, [activityCalendar, effectiveStreak]);
 
   // Color determination for each cell matching LeetCode screenshot
   const getCellBackground = (cell: DayCell) => {
@@ -180,16 +225,19 @@ export function ActivityHeatmap({
   return (
     <div
       style={{
-        background: isDark ? 'rgba(20, 19, 32, 0.88)' : '#FFFFFF',
-        borderRadius: isMobile ? 18 : 24,
-        border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124, 58, 237, 0.12)'}`,
-        boxShadow: isDark ? '0 4px 24px rgba(0, 0, 0, 0.4)' : '0 4px 20px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02)',
+        background: isDark ? 'rgba(18, 16, 28, 0.88)' : '#FFFFFF',
+        borderRadius: 24,
+        border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.09)' : 'rgba(124, 58, 237, 0.12)'}`,
+        boxShadow: isDark
+          ? 'inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 16px 40px -8px rgba(0, 0, 0, 0.5)'
+          : '0 8px 30px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02)',
         padding: isSmall ? '16px 14px' : isMobile ? '18px 18px' : '24px 28px',
         display: 'flex',
         flexDirection: 'column',
         gap: isMobile ? 14 : 18,
         width: '100%',
         position: 'relative',
+        backdropFilter: 'blur(20px)',
       }}
     >
       {/* Top Header & Streak Telemetry */}
@@ -217,7 +265,7 @@ export function ActivityHeatmap({
             }}
           >
             <Flame size={isSmall ? 13 : 14} color="#F59E0B" />
-            <span>{currentStreak}d Streak</span>
+            <span>{effectiveStreak}d Streak</span>
           </div>
 
           <div
@@ -356,7 +404,7 @@ export function ActivityHeatmap({
         }}
       >
         <span style={{ fontSize: isSmall ? 10.5 : 11.5, color: isDark ? D.textMuted : '#64748B' }}>
-          Total <strong style={{ color: isDark ? D.textPrimary : '#1E293B' }}>{totalPrompts}</strong> lifetime prompt enhancements recorded
+          Total <strong style={{ color: isDark ? D.textPrimary : '#1E293B' }}>{totalPrompts}</strong> lifetime prompt enhancements recorded • <strong style={{ color: isDark ? D.textPrimary : '#1E293B' }}>{activeDaysCount}</strong> active days
         </span>
 
         {/* Legend with LeetCode Streak Highlight */}
@@ -383,43 +431,59 @@ export function ActivityHeatmap({
         </div>
       </div>
 
-      {/* Floating Hover Tooltip */}
-      {hoveredCell && !hoveredCell.cell.isFuture && (
-        <div
-          style={{
-            position: 'fixed',
-            left: hoveredCell.x,
-            top: hoveredCell.y - 12,
-            transform: 'translate(-50%, -100%)',
-            pointerEvents: 'none',
-            background: isDark ? 'rgba(15, 14, 22, 0.97)' : '#0F172A',
-            border: `1px solid ${hoveredCell.cell.isStreak ? '#D946EF' : (isDark ? 'rgba(255, 255, 255, 0.18)' : '#334155')}`,
-            boxShadow: '0 4px 24px rgba(0, 0, 0, 0.5)',
-            color: '#FFFFFF',
-            padding: '7px 12px',
-            borderRadius: 8,
-            fontSize: 11.5,
-            zIndex: 9999,
-            whiteSpace: 'nowrap',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 2,
-            textAlign: 'center',
-          }}
-        >
-          <div style={{ fontWeight: 700 }}>
-            {hoveredCell.cell.count === 0
-              ? 'No enhancements'
-              : `${hoveredCell.cell.count} prompt enhancement${hoveredCell.cell.count === 1 ? '' : 's'}`}
-          </div>
-          <div style={{ fontSize: 10, color: '#94A3B8' }}>{hoveredCell.cell.displayDate}</div>
-          {hoveredCell.cell.isStreak && (
-            <div style={{ fontSize: 10, color: '#D946EF', fontWeight: 700 }}>
-              🔥 Active Consecutive Streak Day
+      {/* Floating Hover Tooltip rendered to document.body so it is never trapped by backdropFilter/transform */}
+      {hoveredCell && !hoveredCell.cell.isFuture && typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            style={{
+              position: 'fixed',
+              left: hoveredCell.x,
+              top: hoveredCell.y - 10,
+              transform: 'translate(-50%, -100%)',
+              pointerEvents: 'none',
+              background: isDark ? 'rgba(15, 14, 22, 0.97)' : '#0F172A',
+              border: `1px solid ${hoveredCell.cell.isStreak && hoveredCell.cell.count > 0 ? '#D946EF' : (isDark ? 'rgba(255, 255, 255, 0.18)' : '#334155')}`,
+              boxShadow: '0 8px 30px rgba(0, 0, 0, 0.55)',
+              color: '#FFFFFF',
+              padding: '7px 12px',
+              borderRadius: 8,
+              fontSize: 11.5,
+              zIndex: 999999,
+              whiteSpace: 'nowrap',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2,
+              textAlign: 'center',
+            }}
+          >
+            <div style={{ fontWeight: 700 }}>
+              {hoveredCell.cell.count === 0
+                ? 'No enhancements'
+                : `${hoveredCell.cell.count} prompt enhancement${hoveredCell.cell.count === 1 ? '' : 's'}`}
             </div>
-          )}
-        </div>
-      )}
+            <div style={{ fontSize: 10, color: '#94A3B8' }}>{hoveredCell.cell.displayDate}</div>
+            {hoveredCell.cell.isStreak && hoveredCell.cell.count > 0 && (
+              <div style={{ fontSize: 10, color: '#D946EF', fontWeight: 700 }}>
+                🔥 Active Consecutive Streak Day
+              </div>
+            )}
+            {/* Tooltip arrow notch */}
+            <div
+              style={{
+                position: 'absolute',
+                bottom: -4,
+                left: '50%',
+                transform: 'translateX(-50%) rotate(45deg)',
+                width: 8,
+                height: 8,
+                background: isDark ? 'rgba(15, 14, 22, 0.97)' : '#0F172A',
+                borderRight: `1px solid ${hoveredCell.cell.isStreak && hoveredCell.cell.count > 0 ? '#D946EF' : (isDark ? 'rgba(255, 255, 255, 0.18)' : '#334155')}`,
+                borderBottom: `1px solid ${hoveredCell.cell.isStreak && hoveredCell.cell.count > 0 ? '#D946EF' : (isDark ? 'rgba(255, 255, 255, 0.18)' : '#334155')}`,
+              }}
+            />
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

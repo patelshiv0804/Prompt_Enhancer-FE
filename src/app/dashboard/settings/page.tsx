@@ -1,8 +1,13 @@
 'use client';
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import { SettingsComponent } from './SettingsComponent';
+import SettingsSkeleton from './SettingsSkeleton';
 
 export default function SettingsPage() {
-  return <SettingsComponent initialTab="settings" />;
+  return (
+    <Suspense fallback={<SettingsSkeleton activeTab="settings" />}>
+      <SettingsComponent initialTab="settings" />
+    </Suspense>
+  );
 }
