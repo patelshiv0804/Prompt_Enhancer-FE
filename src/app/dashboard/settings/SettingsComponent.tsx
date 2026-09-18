@@ -808,57 +808,17 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                   backdropFilter: 'blur(20px)',
                 }}
               >
-                {/* Cinematic Ambient Apple-Style Header Canvas */}
+                {/* Clean Header Canvas */}
                 <div
                   style={{
                     height: 120,
-                    background: 'linear-gradient(130deg, #0D071E 0%, #1A0B36 35%, #2B0D59 70%, #3B0F75 100%)',
+                    background: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.02)',
+                    borderBottom: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)'}`,
                     position: 'relative',
                     overflow: 'hidden',
                   }}
                 >
-                  {/* Layered ambient glow orbs */}
-                  <div
-                    style={{
-                      position: 'absolute',
-                      width: 220,
-                      height: 220,
-                      borderRadius: '50%',
-                      background: 'radial-gradient(circle, rgba(168, 85, 247, 0.45) 0%, transparent 68%)',
-                      top: -80,
-                      left: '12%',
-                      filter: 'blur(30px)',
-                      pointerEvents: 'none',
-                    }}
-                  />
-                  <div
-                    style={{
-                      position: 'absolute',
-                      width: 200,
-                      height: 200,
-                      borderRadius: '50%',
-                      background: 'radial-gradient(circle, rgba(99, 102, 241, 0.35) 0%, transparent 70%)',
-                      top: -60,
-                      right: '15%',
-                      filter: 'blur(35px)',
-                      pointerEvents: 'none',
-                    }}
-                  />
-                  <div
-                    style={{
-                      position: 'absolute',
-                      width: 140,
-                      height: 140,
-                      borderRadius: '50%',
-                      background: 'radial-gradient(circle, rgba(236, 72, 153, 0.25) 0%, transparent 70%)',
-                      bottom: -40,
-                      right: '40%',
-                      filter: 'blur(25px)',
-                      pointerEvents: 'none',
-                    }}
-                  />
-
-                  {/* Frosted Glass Tier Chip */}
+                  {/* Tier Chip */}
                   <div
                     style={{
                       position: 'absolute',
@@ -869,9 +829,9 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                       gap: 6,
                       padding: '5px 13px',
                       borderRadius: 9999,
-                      background: 'rgba(255, 255, 255, 0.12)',
+                      background: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)',
                       backdropFilter: 'blur(16px)',
-                      border: '1px solid rgba(255, 255, 255, 0.22)',
+                      border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)'}`,
                       boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
                     }}
                   >
@@ -887,7 +847,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                     />
                     <span
                       style={{
-                        color: '#FFFFFF',
+                        color: isDark ? '#FFFFFF' : '#0F172A',
                         fontSize: 10.5,
                         fontWeight: 750,
                         letterSpacing: '0.8px',
@@ -1215,14 +1175,14 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
               {/* Executive Subscription & Capability Spotlight Bento */}
               <div
                 style={{
-                  background: 'linear-gradient(135deg, #0A0818 0%, #120926 40%, #1C0F38 100%)',
+                  background: isDark ? 'rgba(18, 16, 28, 0.88)' : '#FFFFFF',
                   borderRadius: 24,
-                  border: '1px solid rgba(168, 85, 247, 0.25)',
+                  border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.09)' : 'rgba(124, 58, 237, 0.12)'}`,
                   padding: isMobile ? '22px 18px' : '26px 28px',
-                  color: '#FFFFFF',
+                  color: isDark ? '#FFFFFF' : '#0F172A',
                   boxShadow: isDark
                     ? 'inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 16px 40px -8px rgba(0, 0, 0, 0.5)'
-                    : '0 8px 30px rgba(0, 0, 0, 0.06)',
+                    : '0 8px 30px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02)',
                   position: 'relative',
                   overflow: 'hidden',
                   flex: 1,
@@ -1230,22 +1190,9 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                   flexDirection: 'column',
                   justifyContent: 'space-between',
                   minHeight: isMobile ? 'auto' : 350,
+                  backdropFilter: 'blur(20px)',
                 }}
               >
-                {/* Subtle ambient light gradient */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: -60,
-                    right: -40,
-                    width: 200,
-                    height: 200,
-                    borderRadius: '50%',
-                    background: 'radial-gradient(circle, rgba(139, 92, 246, 0.22) 0%, transparent 70%)',
-                    pointerEvents: 'none',
-                  }}
-                />
-
                 {/* Header: Icon + Title + Active Status Pill */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18, position: 'relative' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -1254,11 +1201,11 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                         width: 40,
                         height: 40,
                         borderRadius: 12,
-                        background: 'linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%)',
+                        background: '#7C3AED',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        boxShadow: '0 4px 14px rgba(124, 58, 237, 0.4)',
+                        boxShadow: '0 4px 14px rgba(124, 58, 237, 0.3)',
                       }}
                     >
                       <Crown size={20} color="#FFFFFF" strokeWidth={2.4} />
@@ -1270,14 +1217,14 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                           fontWeight: 750,
                           textTransform: 'uppercase',
                           letterSpacing: '1px',
-                          color: '#C4B5FD',
+                          color: isDark ? '#C4B5FD' : '#7C3AED',
                           display: 'block',
                           marginBottom: 3,
                         }}
                       >
                         Active Subscription
                       </span>
-                      <h3 style={{ fontSize: 20, fontWeight: 800, color: '#FFFFFF', margin: 0, letterSpacing: -0.4 }}>
+                      <h3 style={{ fontSize: 20, fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A', margin: 0, letterSpacing: -0.4 }}>
                         {plan === 'Free' ? 'AURE Starter Free' : `${plan} Professional`}
                       </h3>
                     </div>
@@ -1304,18 +1251,18 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
 
                 {/* Quota Progress Bar */}
                 <div style={{ marginBottom: 20, position: 'relative' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'rgba(255,255,255,0.75)', marginBottom: 8 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: isDark ? 'rgba(255,255,255,0.75)' : '#64748B', marginBottom: 8 }}>
                     <span style={{ fontWeight: 600 }}>Daily Prompt Enhancements</span>
-                    <span style={{ fontWeight: 750, color: '#FFFFFF' }}>{stats.prompts} / Unlimited</span>
+                    <span style={{ fontWeight: 750, color: isDark ? '#FFFFFF' : '#0F172A' }}>{stats.prompts} / Unlimited</span>
                   </div>
-                  <div style={{ width: '100%', height: 7, borderRadius: 9999, background: 'rgba(255,255,255,0.10)', overflow: 'hidden' }}>
+                  <div style={{ width: '100%', height: 7, borderRadius: 9999, background: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.06)', overflow: 'hidden' }}>
                     <div
                       style={{
                         width: `${Math.min(100, Math.max(16, stats.prompts * 4))}%`,
                         height: '100%',
-                        background: 'linear-gradient(90deg, #8B5CF6 0%, #D946EF 50%, #38BDF8 100%)',
+                        background: '#7C3AED',
                         borderRadius: 9999,
-                        boxShadow: '0 0 14px rgba(168, 85, 247, 0.65)',
+                        boxShadow: '0 0 10px rgba(124, 58, 237, 0.4)',
                       }}
                     />
                   </div>
@@ -1338,8 +1285,8 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                         gap: 10,
                         padding: '10px 12px',
                         borderRadius: 12,
-                        background: 'rgba(255, 255, 255, 0.04)',
-                        border: '1px solid rgba(255, 255, 255, 0.07)',
+                        background: isDark ? 'rgba(255, 255, 255, 0.04)' : '#F8FAFC',
+                        border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.07)' : '#E2E8F0'}`,
                         transition: 'all 160ms ease',
                       }}
                     >
@@ -1349,7 +1296,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                             width: 26,
                             height: 26,
                             borderRadius: 7,
-                            background: 'rgba(255, 255, 255, 0.06)',
+                            background: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -1357,7 +1304,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                         >
                           <cap.icon size={14} color={cap.color} strokeWidth={2.4} />
                         </div>
-                        <span style={{ fontSize: 12.5, fontWeight: 600, color: '#F1F5F9' }}>{cap.label}</span>
+                        <span style={{ fontSize: 12.5, fontWeight: 600, color: isDark ? '#F1F5F9' : '#0F172A' }}>{cap.label}</span>
                       </div>
                       <CheckCircle2 size={15} color="#34D399" strokeWidth={2.5} />
                     </div>
@@ -1367,7 +1314,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                 {/* Bottom Action Strip */}
                 <div
                   style={{
-                    borderTop: '1px solid rgba(255, 255, 255, 0.09)',
+                    borderTop: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.09)' : '#E2E8F0'}`,
                     paddingTop: 16,
                     display: 'flex',
                     alignItems: 'center',
@@ -1376,7 +1323,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                     gap: 12,
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'rgba(255, 255, 255, 0.65)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: isDark ? 'rgba(255, 255, 255, 0.65)' : '#64748B' }}>
                     <ShieldCheck size={15} color="#38BDF8" strokeWidth={2.4} />
                     <span>Neural prompt clusters operational</span>
                   </div>
@@ -1389,9 +1336,9 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                       gap: 6,
                       padding: '7px 15px',
                       borderRadius: 10,
-                      background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.28), rgba(99, 102, 241, 0.28))',
-                      border: '1px solid rgba(168, 85, 247, 0.45)',
-                      color: '#EDE9FE',
+                      background: isDark ? 'rgba(124, 58, 237, 0.22)' : 'rgba(124, 58, 237, 0.08)',
+                      border: '1px solid rgba(124, 58, 237, 0.35)',
+                      color: isDark ? '#EDE9FE' : '#7C3AED',
                       fontSize: 12,
                       fontWeight: 750,
                       cursor: 'pointer',
@@ -1535,20 +1482,6 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
                   overflow: 'hidden',
                 }}
               >
-                {/* Subtle ambient light gradient */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: -50,
-                    right: -40,
-                    width: 180,
-                    height: 180,
-                    borderRadius: '50%',
-                    background: 'radial-gradient(circle, rgba(245, 158, 11, 0.15) 0%, transparent 70%)',
-                    pointerEvents: 'none',
-                  }}
-                />
-
                 {/* Top Section: Header + Large Count */}
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, position: 'relative' }}>

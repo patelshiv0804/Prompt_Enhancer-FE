@@ -176,11 +176,12 @@ export default function SettingsSkeleton({ activeTab = 'settings' }: SettingsSke
                   backdropFilter: 'blur(20px)',
                 }}
               >
-                {/* 120px Ambient Header Canvas Skeleton */}
+                {/* 120px Header Canvas Skeleton */}
                 <div
                   style={{
                     height: 120,
-                    background: isDark ? 'linear-gradient(130deg, #0D071E 0%, #1A0B36 50%, #2B0D59 100%)' : '#EDE9FE',
+                    background: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.02)',
+                    borderBottom: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)'}`,
                     position: 'relative',
                   }}
                 >
@@ -252,9 +253,9 @@ export default function SettingsSkeleton({ activeTab = 'settings' }: SettingsSke
               {/* Executive Subscription Card Skeleton */}
               <div
                 style={{
-                  background: 'linear-gradient(135deg, #0A0818 0%, #120926 40%, #1C0F38 100%)',
+                  background: isDark ? 'rgba(18, 16, 28, 0.88)' : '#FFFFFF',
                   borderRadius: 24,
-                  border: '1px solid rgba(168, 85, 247, 0.25)',
+                  border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.09)' : 'rgba(124, 58, 237, 0.12)'}`,
                   padding: isMobile ? '22px 18px' : '26px 28px',
                   display: 'flex',
                   flexDirection: 'column',
@@ -264,6 +265,7 @@ export default function SettingsSkeleton({ activeTab = 'settings' }: SettingsSke
                   boxShadow: isDark
                     ? 'inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 16px 40px -8px rgba(0, 0, 0, 0.5)'
                     : '0 8px 30px rgba(0, 0, 0, 0.06)',
+                  backdropFilter: 'blur(20px)',
                 }}
               >
                 {/* Header Skeleton */}

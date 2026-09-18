@@ -20,10 +20,10 @@ export default function OptimizerSkeleton() {
 
   const cardStyle: React.CSSProperties = {
     flex: stackCards ? 'none' : 1,
-    padding: isMobile ? '20px 16px' : 36,
-    borderRadius: isMobile ? 22 : 28,
-    height: stackCards ? 'auto' : 780,
-    maxHeight: stackCards ? 'none' : 780,
+    padding: isMobile ? '18px 16px' : '26px 30px',
+    borderRadius: isMobile ? 20 : 24,
+    height: stackCards ? 'auto' : 640,
+    maxHeight: stackCards ? 'none' : 640,
     minHeight: stackCards ? (isMobile ? 540 : 460) : undefined,
     background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
     border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.09)' : 'rgba(124,58,237,0.10)'}`,
@@ -34,7 +34,81 @@ export default function OptimizerSkeleton() {
     flexDirection: 'column',
   };
 
-  const rolePillWidths = [78, 86, 92, 98, 102, 88, 114, 120, 68];
+  const dropdownPillWidths = [135, 115];
+
+  if (!hasPromptId) {
+    return (
+      <div
+        id="optimizer-page-skeleton"
+        className="workspace-container workspace-container--hero"
+        style={{
+          width: '100%',
+          flex: isMobile ? 'none' : 1,
+          minHeight: isMobile ? 'auto' : 0,
+          height: isMobile ? 'auto' : '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'relative',
+          padding: isMobile ? '12px 10px 16px' : '8px 16px 24px',
+          paddingBottom: isMobile ? '12px' : '13vh',
+        }}
+      >
+        {/* Title skeleton */}
+        <div
+          className="skeleton"
+          style={{
+            width: isMobile ? 180 : 260,
+            height: isMobile ? 28 : 38,
+            borderRadius: 12,
+            marginBottom: isMobile ? 24 : 32,
+          }}
+        />
+
+        {/* Capsule Skeleton */}
+        <div
+          style={{
+            width: '100%',
+            maxWidth: 780,
+            borderRadius: 28,
+            background: isDark ? 'rgba(28, 26, 42, 0.85)' : '#FFFFFF',
+            border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.10)' : 'rgba(124, 58, 237, 0.16)'}`,
+            boxShadow: isDark
+              ? '0 16px 48px -12px rgba(0, 0, 0, 0.65), 0 0 24px rgba(124, 58, 237, 0.10)'
+              : '0 12px 36px -8px rgba(124, 58, 237, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04)',
+            padding: isMobile ? '14px 16px 12px' : '18px 22px 14px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 16,
+          }}
+        >
+          {/* Input lines */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div className="skeleton" style={{ width: '55%', height: 15, borderRadius: 6 }} />
+            <div className="skeleton" style={{ width: '35%', height: 15, borderRadius: 6 }} />
+          </div>
+
+          {/* Bottom toolbar */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap', paddingTop: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div className="skeleton" style={{ width: 32, height: 32, borderRadius: '50%' }} />
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              {dropdownPillWidths.map((w, idx) => (
+                <div key={idx} className="skeleton" style={{ width: w, height: 34, borderRadius: 9999 }} />
+              ))}
+              <div style={{ width: 1, height: 20, background: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)', margin: '0 2px' }} />
+              <div className="skeleton" style={{ width: 35, height: 35, borderRadius: 11 }} />
+              <div className="skeleton" style={{ width: 37, height: 35, borderRadius: 11 }} />
+              <div className="skeleton" style={{ width: 32, height: 32, borderRadius: '50%' }} />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -58,14 +132,14 @@ export default function OptimizerSkeleton() {
         {/* ── Left Card: Your Prompt ── */}
         <div style={cardStyle}>
           {/* Header */}
-          <div style={{ marginBottom: isMobile ? 16 : 24 }}>
+          <div style={{ marginBottom: isMobile ? 12 : 16 }}>
             <div
               className="skeleton"
-              style={{ width: 84, height: 12, borderRadius: 4, marginBottom: isMobile ? 6 : 8 }}
+              style={{ width: 84, height: 11, borderRadius: 4, marginBottom: 6 }}
             />
             <div
               className="skeleton"
-              style={{ width: isMobile ? 140 : 180, height: isMobile ? 20 : 24, borderRadius: 6 }}
+              style={{ width: isMobile ? 140 : 170, height: isMobile ? 18 : 22, borderRadius: 6 }}
             />
           </div>
 
@@ -74,98 +148,74 @@ export default function OptimizerSkeleton() {
             style={{
               flex: 1,
               border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.10)'}`,
-              borderRadius: isMobile ? 16 : 18,
+              borderRadius: isMobile ? 14 : 16,
               background: isDark ? 'rgba(14, 13, 20, 0.65)' : '#FDFCFF',
-              padding: isMobile ? '16px 14px' : 24,
+              padding: isMobile ? '14px 14px' : '18px 20px',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
-              minHeight: isMobile ? 260 : 200,
+              minHeight: isMobile ? 200 : 170,
               boxShadow: isDark
                 ? 'inset 0 1px 3px rgba(0,0,0,0.3)'
                 : 'inset 0 1px 3px rgba(109,40,217,0.03)',
             }}
           >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <div className="skeleton" style={{ width: '48%', height: 14, borderRadius: 4 }} />
-              <div className="skeleton" style={{ width: '32%', height: 14, borderRadius: 4 }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+              <div className="skeleton" style={{ width: '48%', height: 13, borderRadius: 4 }} />
+              <div className="skeleton" style={{ width: '32%', height: 13, borderRadius: 4 }} />
             </div>
 
             <div
               style={{
                 display: 'flex',
                 justifyContent: 'flex-end',
-                marginTop: isMobile ? 10 : 16,
+                marginTop: isMobile ? 8 : 12,
               }}
             >
-              <div className="skeleton" style={{ width: 140, height: 12, borderRadius: 4 }} />
+              <div className="skeleton" style={{ width: 130, height: 11, borderRadius: 4 }} />
             </div>
           </div>
 
           {/* Controls Section */}
           <div
             style={{
-              marginTop: isMobile ? 18 : 32,
+              marginTop: isMobile ? 12 : 16,
               display: 'flex',
               flexDirection: 'column',
-              gap: isMobile ? 14 : 16,
+              gap: 12,
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div className="skeleton" style={{ width: 42, height: 11, borderRadius: 4 }} />
-              {isMobile && (
-                <div className="skeleton" style={{ width: 50, height: 10, borderRadius: 4 }} />
-              )}
-            </div>
-
-            {/* Role Pills */}
+            {/* Selectors Bar */}
             <div
               style={{
                 display: 'flex',
-                flexWrap: isMobile ? 'nowrap' : 'wrap',
-                gap: isMobile ? 8 : 10,
-                overflowX: isMobile ? 'hidden' : 'visible',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 8,
               }}
             >
-              {rolePillWidths.map((w, idx) => (
-                <div
-                  key={idx}
-                  className="skeleton"
-                  style={{
-                    width: w,
-                    height: isMobile ? 32 : 36,
-                    borderRadius: 9999,
-                    flexShrink: isMobile ? 0 : undefined,
-                  }}
-                />
-              ))}
-            </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                {dropdownPillWidths.map((w, idx) => (
+                  <div
+                    key={idx}
+                    className="skeleton"
+                    style={{
+                      width: w,
+                      height: 34,
+                      borderRadius: 9999,
+                    }}
+                  />
+                ))}
+              </div>
 
-            {/* Action Buttons */}
-            <div
-              style={{
-                display: isMobile ? 'grid' : 'flex',
-                gridTemplateColumns: isMobile ? '1fr 1fr' : undefined,
-                gap: isMobile ? 10 : 8,
-                marginTop: isMobile ? 14 : 16,
-              }}
-            >
-              <div
-                className="skeleton"
-                style={{
-                  width: isMobile ? '100%' : 124,
-                  height: isMobile ? 42 : 40,
-                  borderRadius: 12,
-                }}
-              />
-              <div
-                className="skeleton"
-                style={{
-                  width: isMobile ? '100%' : 124,
-                  height: isMobile ? 42 : 40,
-                  borderRadius: 12,
-                }}
-              />
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                <div style={{ width: 1, height: 20, background: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)', margin: '0 2px' }} />
+                <div className="skeleton" style={{ width: 35, height: 35, borderRadius: 11 }} />
+                <div className="skeleton" style={{ width: 37, height: 35, borderRadius: 11 }} />
+                <div className="skeleton" style={{ width: 32, height: 32, borderRadius: '50%' }} />
+              </div>
             </div>
           </div>
         </div>
@@ -179,8 +229,8 @@ export default function OptimizerSkeleton() {
               width: stackCards ? '100%' : undefined,
               flex: stackCards ? 'none' : 0.818,
               paddingLeft: stackCards ? 0 : 24,
-              height: stackCards ? (isMobile ? 520 : 600) : 780,
-              maxHeight: stackCards ? (isMobile ? 520 : 600) : 780,
+              height: stackCards ? (isMobile ? 520 : 600) : 640,
+              maxHeight: stackCards ? (isMobile ? 520 : 600) : 640,
             }}
           >
             <div
@@ -189,8 +239,8 @@ export default function OptimizerSkeleton() {
                 width: '100%',
                 flex: 'none',
                 height: stackCards ? (isMobile ? 520 : 600) : '100%',
-                maxHeight: stackCards ? (isMobile ? 520 : 600) : 780,
-                padding: isMobile ? '20px 14px' : '36px 36px',
+                maxHeight: stackCards ? (isMobile ? 520 : 600) : 640,
+                padding: isMobile ? '18px 16px' : '26px 30px',
                 overflow: 'hidden',
               }}
             >

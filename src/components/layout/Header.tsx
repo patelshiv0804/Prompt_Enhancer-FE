@@ -89,10 +89,10 @@ export default function Header({ activeTab = 'Draft', onTabChange }: HeaderProps
   return (
     <header style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: isPhone ? '14px 16px 10px' : (isMobile ? '18px 24px 14px' : '28px 36px 20px'),
-      marginBottom: isPhone ? 18 : (isMobile ? 22 : 12),
+      padding: isPhone ? '12px 16px 8px' : (isMobile ? '16px 20px 10px' : '18px 36px 10px'),
+      marginBottom: isPhone ? 12 : (isMobile ? 14 : 8),
       gap: isPhone ? 6 : 12, flexWrap: 'nowrap', flexShrink: 0,
-      maxWidth: 1100, margin: isPhone ? '0 auto 18px' : (isMobile ? '0 auto 22px' : '0 auto 12px'), width: '100%',
+      maxWidth: 1100, margin: isPhone ? '0 auto 12px' : (isMobile ? '0 auto 14px' : '0 auto 8px'), width: '100%',
     }}>
       {/* Left: Title + Tabs */}
       <div style={{ display: 'flex', alignItems: 'center', gap: isPhone ? 8 : 14, paddingLeft: isMobile ? 40 : 0, minWidth: 0, flexShrink: 0 }}>

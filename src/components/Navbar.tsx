@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 import { LogOut, Menu, X, ArrowRight } from "lucide-react";
 import Link from "next/link";
@@ -110,6 +111,7 @@ export default function Navbar() {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const isClickScrolling = useRef(false);
   const clickScrollTimer = useRef<NodeJS.Timeout | null>(null);
   const { isAuthenticated, loading, logout } = useAuth();
@@ -125,6 +127,7 @@ export default function Navbar() {
   const highlightId = hoveredId ?? activeId;
 
   useEffect(() => {
+    setMounted(true);
     if (typeof window !== "undefined" && window.location.hash) {
       const hashId = window.location.hash.replace("#", "");
       if (navLinks.some((n) => n.id === hashId)) {
@@ -229,7 +232,7 @@ export default function Navbar() {
         <>
           <button
             type="button"
-            onClick={logout}
+            onClick={() => setShowLogoutConfirm(true)}
             className="inline-flex items-center gap-2 text-sm font-medium transition-colors duration-200"
             style={{ color: mutedText }}
           >
@@ -282,7 +285,7 @@ export default function Navbar() {
             style={{ color: isDark ? D.textSecondary : "#374151" }}
             onClick={() => {
               setMobileOpen(false);
-              logout();
+              setShowLogoutConfirm(true);
             }}
           >
             Log out
@@ -495,6 +498,127 @@ export default function Navbar() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Two-step logout confirmation dialog */}
+      {showLogoutConfirm && mounted && createPortal(
+        <div
+          role="presentation"
+          onClick={() => setShowLogoutConfirm(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.65)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999,
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="navbar-logout-dialog-title"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: isDark ? '#141320' : '#FFFFFF',
+              borderRadius: 16,
+              padding: '24px 28px',
+              maxWidth: 340,
+              width: '90%',
+              border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(124,58,237,0.15)'}`,
+              boxShadow: isDark ? '0 20px 50px rgba(0, 0, 0, 0.6)' : '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+              textAlign: 'center',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 16,
+            }}
+          >
+            <div
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: '50%',
+                background: 'rgba(239, 68, 68, 0.12)',
+                color: '#EF4444',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto',
+                border: '1px solid rgba(239, 68, 68, 0.25)',
+              }}
+            >
+              <LogOut size={18} strokeWidth={2} />
+            </div>
+            <div>
+              <h3
+                id="navbar-logout-dialog-title"
+                style={{
+                  fontSize: 16,
+                  fontWeight: 700,
+                  color: isDark ? D.textPrimary : '#1E293B',
+                  margin: '0 0 6px',
+                }}
+              >
+                Confirm Logout
+              </h3>
+              <p
+                style={{
+                  fontSize: 13,
+                  color: isDark ? D.textSecondary : '#64748B',
+                  margin: 0,
+                  lineHeight: 1.5,
+                }}
+              >
+                Are you sure you want to log out of your account?
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+              <button
+                type="button"
+                onClick={() => setShowLogoutConfirm(false)}
+                style={{
+                  flex: 1,
+                  padding: '10px 0',
+                  borderRadius: 10,
+                  border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : '#E2E8F0'}`,
+                  background: isDark ? 'rgba(255,255,255,0.06)' : '#FFFFFF',
+                  color: isDark ? D.textPrimary : '#64748B',
+                  fontWeight: 600,
+                  fontSize: 13,
+                  cursor: 'pointer',
+                  transition: 'all 160ms ease',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowLogoutConfirm(false);
+                  logout();
+                }}
+                style={{
+                  flex: 1,
+                  padding: '10px 0',
+                  borderRadius: 10,
+                  border: 'none',
+                  background: 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)',
+                  color: '#FFFFFF',
+                  fontWeight: 600,
+                  fontSize: 13,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(124,58,237,0.25)',
+                }}
+              >
+                Log Out
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </motion.nav>
   );
 }
+

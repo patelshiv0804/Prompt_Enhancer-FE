@@ -458,8 +458,32 @@ export default function OptimizerView() {
     }
   };
 
+  const handleReset = () => {
+    setIsAnalyzing(false);
+    setIsAnalyzed(false);
+    setIsOptimizing(false);
+    setIsOptimized(false);
+    setAnalysisResult(null);
+    setOptimizationResult(null);
+    setOriginalPromptText('');
+    setLoadedPromptId(null);
+    setVersionsList([]);
+    setActiveVersionNumber(null);
+    setTemplateDismissed(true);
+    setError(null);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('prompt_id');
+      url.searchParams.delete('template');
+      url.searchParams.delete('template_id');
+      window.history.pushState({}, '', url.pathname);
+    }
+  };
+
+  const isHeroState = !(isAnalyzed || isOptimized || isOptimizing);
+
   return (
-    <div className="workspace-container">
+    <div className={`workspace-container${isHeroState ? ' workspace-container--hero' : ''}`}>
       {error && (
         <div style={{
           padding: '12px 20px',
@@ -485,6 +509,7 @@ export default function OptimizerView() {
         onAnalyze={handleAnalyze}
         onOptimize={handleOptimize}
         onReenhance={loadedPromptId ? handleReenhance : undefined}
+        onReset={handleReset}
         analysisResult={analysisResult}
         optimizationResult={optimizationResult}
         streamingText={streamingText}
