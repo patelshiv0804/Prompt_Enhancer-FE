@@ -318,7 +318,7 @@ export function SettingsComponent({ initialTab = 'settings' }: SettingsPageProps
       const statsData = await apiClient.get('/api/v1/profile/stats');
       if (statsData) {
         setStats({
-          prompts: statsData.total_prompts ?? 0,
+          prompts: statsData.lifetime_prompts ?? statsData.total_prompts ?? 0,
           avgScore: typeof statsData.average_score === 'number' ? Math.round(statsData.average_score) : 0,
           dayStreak: statsData.streak_days ?? 0,
           longestStreak: statsData.longest_streak ?? statsData.streak_days ?? 0,
