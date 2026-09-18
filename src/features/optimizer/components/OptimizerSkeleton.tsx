@@ -1,114 +1,294 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useIsDark } from '@/theme/theme';
 
 export default function OptimizerSkeleton() {
   const isMobile = useMediaQuery('(max-width: 768px)');
-  const isTablet = useMediaQuery('(max-width: 1024px)');
-  const pagePadX = isMobile ? 16 : isTablet ? 32 : 48;
+  const stackCards = useMediaQuery('(max-width: 1024px)');
+  const isDark = useIsDark();
+
+  const [hasPromptId, setHasPromptId] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      setHasPromptId(Boolean(params.get('prompt_id')));
+    }
+  }, []);
+
+  const cardStyle: React.CSSProperties = {
+    flex: stackCards ? 'none' : 1,
+    padding: isMobile ? '20px 16px' : 36,
+    borderRadius: isMobile ? 22 : 28,
+    height: stackCards ? 'auto' : 780,
+    maxHeight: stackCards ? 'none' : 780,
+    minHeight: stackCards ? (isMobile ? 540 : 460) : undefined,
+    background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
+    border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.09)' : 'rgba(124,58,237,0.10)'}`,
+    boxShadow: isDark
+      ? '0 4px 28px rgba(0,0,0,0.5), 0 0 20px rgba(139,92,246,0.04)'
+      : '0 4px 24px rgba(109,40,217,0.07), 0 1px 4px rgba(0,0,0,0.04)',
+    display: 'flex',
+    flexDirection: 'column',
+  };
+
+  const rolePillWidths = [78, 86, 92, 98, 102, 88, 114, 120, 68];
 
   return (
     <div
       id="optimizer-page-skeleton"
+      className="workspace-container"
       style={{
-        maxWidth: 1100,
-        margin: '0 auto',
-        paddingLeft: pagePadX,
-        paddingRight: pagePadX,
-        paddingTop: 8,
         width: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 20,
         paddingBottom: 64,
       }}
     >
-      {/* Top Controls Row */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div className="skeleton" style={{ width: 110, height: 32, borderRadius: 9999 }} />
-          <div className="skeleton" style={{ width: 130, height: 32, borderRadius: 9999 }} />
-        </div>
-        <div className="skeleton" style={{ width: 90, height: 32, borderRadius: 10 }} />
-      </div>
-
-      {/* Main Prompt Input Box Skeleton */}
+      {/* ── Main Comparison Row ── */}
       <div
         style={{
-          borderRadius: 20,
-          padding: isMobile ? 16 : 22,
-          border: '1px solid rgba(124, 58, 237, 0.12)',
-          background: 'rgba(255, 255, 255, 0.02)',
           display: 'flex',
-          flexDirection: 'column',
-          gap: 16,
-          minHeight: 180,
+          flexDirection: stackCards ? 'column' : 'row',
+          gap: stackCards ? 20 : 0,
+          width: '100%',
+          marginBottom: 32,
         }}
       >
-        <div className="skeleton" style={{ width: '40%', height: 16, borderRadius: 4 }} />
-        <div className="skeleton" style={{ width: '85%', height: 14, borderRadius: 4 }} />
-        <div className="skeleton" style={{ width: '65%', height: 14, borderRadius: 4 }} />
-
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto', paddingTop: 12 }}>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <div className="skeleton" style={{ width: 32, height: 32, borderRadius: 8 }} />
-            <div className="skeleton" style={{ width: 32, height: 32, borderRadius: 8 }} />
+        {/* ── Left Card: Your Prompt ── */}
+        <div style={cardStyle}>
+          {/* Header */}
+          <div style={{ marginBottom: isMobile ? 16 : 24 }}>
+            <div
+              className="skeleton"
+              style={{ width: 84, height: 12, borderRadius: 4, marginBottom: isMobile ? 6 : 8 }}
+            />
+            <div
+              className="skeleton"
+              style={{ width: isMobile ? 140 : 180, height: isMobile ? 20 : 24, borderRadius: 6 }}
+            />
           </div>
-          <div className="skeleton" style={{ width: 120, height: 38, borderRadius: 12 }} />
+
+          {/* Textarea Box Skeleton */}
+          <div
+            style={{
+              flex: 1,
+              border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.10)'}`,
+              borderRadius: isMobile ? 16 : 18,
+              background: isDark ? 'rgba(14, 13, 20, 0.65)' : '#FDFCFF',
+              padding: isMobile ? '16px 14px' : 24,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              minHeight: isMobile ? 260 : 200,
+              boxShadow: isDark
+                ? 'inset 0 1px 3px rgba(0,0,0,0.3)'
+                : 'inset 0 1px 3px rgba(109,40,217,0.03)',
+            }}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div className="skeleton" style={{ width: '48%', height: 14, borderRadius: 4 }} />
+              <div className="skeleton" style={{ width: '32%', height: 14, borderRadius: 4 }} />
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                marginTop: isMobile ? 10 : 16,
+              }}
+            >
+              <div className="skeleton" style={{ width: 140, height: 12, borderRadius: 4 }} />
+            </div>
+          </div>
+
+          {/* Controls Section */}
+          <div
+            style={{
+              marginTop: isMobile ? 18 : 32,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: isMobile ? 14 : 16,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div className="skeleton" style={{ width: 42, height: 11, borderRadius: 4 }} />
+              {isMobile && (
+                <div className="skeleton" style={{ width: 50, height: 10, borderRadius: 4 }} />
+              )}
+            </div>
+
+            {/* Role Pills */}
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: isMobile ? 'nowrap' : 'wrap',
+                gap: isMobile ? 8 : 10,
+                overflowX: isMobile ? 'hidden' : 'visible',
+              }}
+            >
+              {rolePillWidths.map((w, idx) => (
+                <div
+                  key={idx}
+                  className="skeleton"
+                  style={{
+                    width: w,
+                    height: isMobile ? 32 : 36,
+                    borderRadius: 9999,
+                    flexShrink: isMobile ? 0 : undefined,
+                  }}
+                />
+              ))}
+            </div>
+
+            {/* Action Buttons */}
+            <div
+              style={{
+                display: isMobile ? 'grid' : 'flex',
+                gridTemplateColumns: isMobile ? '1fr 1fr' : undefined,
+                gap: isMobile ? 10 : 8,
+                marginTop: isMobile ? 14 : 16,
+              }}
+            >
+              <div
+                className="skeleton"
+                style={{
+                  width: isMobile ? '100%' : 124,
+                  height: isMobile ? 42 : 40,
+                  borderRadius: 12,
+                }}
+              />
+              <div
+                className="skeleton"
+                style={{
+                  width: isMobile ? '100%' : 124,
+                  height: isMobile ? 42 : 40,
+                  borderRadius: 12,
+                }}
+              />
+            </div>
+          </div>
         </div>
+
+        {/* ── Right Card: Enhanced Prompt (Shown when prompt_id is present) ── */}
+        {hasPromptId && (
+          <div
+            style={{
+              overflow: 'hidden',
+              display: 'flex',
+              width: stackCards ? '100%' : undefined,
+              flex: stackCards ? 'none' : 0.818,
+              paddingLeft: stackCards ? 0 : 24,
+              height: stackCards ? (isMobile ? 520 : 600) : 780,
+              maxHeight: stackCards ? (isMobile ? 520 : 600) : 780,
+            }}
+          >
+            <div
+              style={{
+                ...cardStyle,
+                width: '100%',
+                flex: 'none',
+                height: stackCards ? (isMobile ? 520 : 600) : '100%',
+                maxHeight: stackCards ? (isMobile ? 520 : 600) : 780,
+                padding: isMobile ? '20px 14px' : '36px 36px',
+                overflow: 'hidden',
+              }}
+            >
+              {/* Header */}
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: 12,
+                  marginBottom: isMobile ? 16 : 24,
+                  height: 36,
+                }}
+              >
+                <div className="skeleton" style={{ width: 130, height: 14, borderRadius: 4 }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div className="skeleton" style={{ width: 68, height: 26, borderRadius: 9999 }} />
+                  <div className="skeleton" style={{ width: 56, height: 32, borderRadius: 9999 }} />
+                  <div className="skeleton" style={{ width: 32, height: 32, borderRadius: 8 }} />
+                </div>
+              </div>
+
+              {/* Enhanced Prompt Body */}
+              <div
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 12,
+                  padding: '8px 0',
+                }}
+              >
+                <div className="skeleton" style={{ width: '45%', height: 18, borderRadius: 4, marginBottom: 8 }} />
+                <div className="skeleton" style={{ width: '92%', height: 14, borderRadius: 4 }} />
+                <div className="skeleton" style={{ width: '98%', height: 14, borderRadius: 4 }} />
+                <div className="skeleton" style={{ width: '85%', height: 14, borderRadius: 4 }} />
+                <div className="skeleton" style={{ width: '90%', height: 14, borderRadius: 4 }} />
+                <div className="skeleton" style={{ width: '38%', height: 16, borderRadius: 4, margin: '14px 0 4px' }} />
+                <div className="skeleton" style={{ width: '94%', height: 14, borderRadius: 4 }} />
+                <div className="skeleton" style={{ width: '88%', height: 14, borderRadius: 4 }} />
+                <div className="skeleton" style={{ width: '70%', height: 14, borderRadius: 4 }} />
+              </div>
+
+              {/* Bottom Actions */}
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  paddingTop: 16,
+                  borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(124,58,237,0.06)'}`,
+                  marginTop: 'auto',
+                }}
+              >
+                <div className="skeleton" style={{ width: 130, height: 38, borderRadius: 10 }} />
+                <div className="skeleton" style={{ width: 88, height: 38, borderRadius: 10 }} />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Side-by-Side Comparison Area Skeleton */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-          gap: 16,
-        }}
-      >
+      {/* ── Score Section Skeleton (Shown when prompt_id is present) ── */}
+      {hasPromptId && (
         <div
           style={{
-            borderRadius: 18,
-            padding: 20,
-            border: '1px solid rgba(124, 58, 237, 0.10)',
+            borderRadius: isMobile ? 22 : 28,
+            padding: isMobile ? '20px 16px' : 36,
+            background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
+            border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.09)' : 'rgba(124,58,237,0.10)'}`,
+            boxShadow: isDark
+              ? '0 4px 28px rgba(0,0,0,0.5), 0 0 20px rgba(139,92,246,0.04)'
+              : '0 4px 24px rgba(109,40,217,0.07), 0 1px 4px rgba(0,0,0,0.04)',
             display: 'flex',
             flexDirection: 'column',
-            gap: 12,
-            minHeight: 220,
+            gap: 24,
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div className="skeleton" style={{ width: 120, height: 16, borderRadius: 4 }} />
-            <div className="skeleton" style={{ width: 50, height: 20, borderRadius: 9999 }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+            <div className="skeleton" style={{ width: 90, height: 90, borderRadius: '50%', flexShrink: 0 }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
+              <div className="skeleton" style={{ width: '40%', height: 20, borderRadius: 6 }} />
+              <div className="skeleton" style={{ width: '70%', height: 14, borderRadius: 4 }} />
+            </div>
           </div>
-          <div className="skeleton" style={{ width: '90%', height: 14, borderRadius: 4 }} />
-          <div className="skeleton" style={{ width: '95%', height: 14, borderRadius: 4 }} />
-          <div className="skeleton" style={{ width: '80%', height: 14, borderRadius: 4 }} />
-          <div className="skeleton" style={{ width: '60%', height: 14, borderRadius: 4 }} />
-        </div>
-
-        <div
-          style={{
-            borderRadius: 18,
-            padding: 20,
-            border: '1px solid rgba(124, 58, 237, 0.10)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 12,
-            minHeight: 220,
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div className="skeleton" style={{ width: 140, height: 16, borderRadius: 4 }} />
-            <div className="skeleton" style={{ width: 60, height: 20, borderRadius: 9999 }} />
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+              gap: 12,
+            }}
+          >
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="skeleton" style={{ height: 72, borderRadius: 14 }} />
+            ))}
           </div>
-          <div className="skeleton" style={{ width: '95%', height: 14, borderRadius: 4 }} />
-          <div className="skeleton" style={{ width: '90%', height: 14, borderRadius: 4 }} />
-          <div className="skeleton" style={{ width: '85%', height: 14, borderRadius: 4 }} />
-          <div className="skeleton" style={{ width: '70%', height: 14, borderRadius: 4 }} />
         </div>
-      </div>
+      )}
     </div>
   );
 }
