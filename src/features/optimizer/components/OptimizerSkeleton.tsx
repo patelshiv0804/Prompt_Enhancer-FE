@@ -6,7 +6,9 @@ import { useIsDark } from '@/theme/theme';
 
 export default function OptimizerSkeleton() {
   const isMobile = useMediaQuery('(max-width: 768px)');
+  const isSmallPhone = useMediaQuery('(max-width: 480px)');
   const stackCards = useMediaQuery('(max-width: 1024px)');
+  const isLandscape = useMediaQuery('(max-height: 540px) and (orientation: landscape)');
   const isDark = useIsDark();
 
   const [hasPromptId, setHasPromptId] = useState(false);
@@ -43,26 +45,31 @@ export default function OptimizerSkeleton() {
         className="workspace-container workspace-container--hero"
         style={{
           width: '100%',
-          flex: isMobile ? 'none' : 1,
-          minHeight: isMobile ? 'auto' : 0,
-          height: isMobile ? 'auto' : '100%',
+          flex: 1,
+          minHeight: '100%',
+          height: '100%',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
           position: 'relative',
-          padding: isMobile ? '12px 10px 16px' : '8px 16px 24px',
-          paddingBottom: isMobile ? '12px' : '13vh',
+          padding: isLandscape
+            ? '10px 12px'
+            : isSmallPhone
+            ? '16px 10px'
+            : isMobile
+            ? '20px 14px'
+            : '24px 24px',
         }}
       >
         {/* Title skeleton */}
         <div
           className="skeleton"
           style={{
-            width: isMobile ? 180 : 260,
-            height: isMobile ? 28 : 38,
+            width: isLandscape ? 200 : isMobile ? 180 : 260,
+            height: isLandscape ? 24 : isMobile ? 28 : 38,
             borderRadius: 12,
-            marginBottom: isMobile ? 24 : 32,
+            marginBottom: isLandscape ? 12 : isMobile ? 24 : 32,
           }}
         />
 

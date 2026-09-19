@@ -499,6 +499,7 @@ html.dark .dashboard-root {
   padding-top: 0;
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
 
 @media (min-width: 769px) and (min-height: 620px) {
@@ -519,7 +520,8 @@ html.dark .dashboard-root {
 
 .workspace-container--hero {
   flex: 1;
-  min-height: 0;
+  min-height: 100%;
+  height: 100%;
   padding-top: 0;
   padding-bottom: 0;
   display: flex;
@@ -774,7 +776,21 @@ html.dark .dashboard-root .skeleton {
     padding-bottom: 80px;
   }
   .workspace-container--hero {
-    padding-bottom: 24px;
+    padding-bottom: 0;
+    height: 100%;
+    flex: 1;
+  }
+}
+
+@media (max-width: 480px) {
+  .workspace-container {
+    padding: 0 12px;
+    padding-bottom: 72px;
+  }
+  .workspace-container--hero {
+    padding-bottom: 0;
+    height: 100%;
+    flex: 1;
   }
 }
 
@@ -1129,5 +1145,15 @@ html.theme-transitioning .dashboard-root *:not(canvas):not(svg):not(svg *) {
 @media (max-width: 640px) {
   .bento-subscription-chips {
     grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Rotating Border Glow Line Animation ── */
+@keyframes spinBeam {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
   }
 }

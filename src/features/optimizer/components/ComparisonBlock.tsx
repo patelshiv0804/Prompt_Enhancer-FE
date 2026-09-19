@@ -10,7 +10,7 @@ import {
   Smartphone, Server, Database, ShieldCheck, Globe, Cpu, Terminal,
   Lightbulb, DollarSign, Scale, ShoppingCart, Users, Mail, Radio,
   Activity, PieChart, TrendingUp, BookOpen, Building2, Layout, LayoutTemplate, Award, Zap, GitBranch, ChevronDown, ChevronRight, ArrowLeft, Feather, X, Lock, Check,
-  Plus, Mic, RotateCcw,
+  Plus, RotateCcw,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import FormattedPromptViewer from './FormattedPromptViewer';
@@ -340,25 +340,25 @@ export default function ComparisonBlock({
 
   const stackCards = useMediaQuery('(max-width: 1024px)');
   const isMobile = useMediaQuery('(max-width: 768px)');
-  // Below ~560px a single row of 4 depth pills no longer fits, so the segmented
-  // control becomes a tidy 2×2 grid instead of wrapping one pill onto its own line.
-  const narrowControls = useMediaQuery('(max-width: 560px)');
+  const isNarrow = useMediaQuery('(max-width: 640px)');
+  const isSmallPhone = useMediaQuery('(max-width: 480px)');
+  const isLandscape = useMediaQuery('(max-height: 540px) and (orientation: landscape)');
 
   // The two comparison cards are locked to 780px tall side-by-side on desktop.
   // When they stack (≤1024px) they must go fluid-height; on phones (≤768px)
   // they also shrink their padding/radius. Spread over `cardStyle` per use-site.
   const responsiveCard: React.CSSProperties = {
     flex: stackCards ? 'none' : 1,
-    padding: isMobile ? '18px 16px' : '26px 30px',
-    borderRadius: isMobile ? 20 : 24,
+    padding: isSmallPhone ? '14px 12px' : isMobile ? '18px 16px' : '26px 30px',
+    borderRadius: isSmallPhone ? 16 : isMobile ? 20 : 24,
     height: stackCards ? 'auto' : 640,
     maxHeight: stackCards ? 'none' : 640,
-    minHeight: stackCards ? (isMobile ? 500 : 440) : undefined,
+    minHeight: stackCards ? (isMobile ? 380 : 440) : undefined,
     background: isDark ? 'rgba(20, 19, 32, 0.85)' : '#FFFFFF',
-    border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.09)' : 'rgba(124,58,237,0.10)'}`,
+    border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.09)' : '#E2E8F0'}`,
     boxShadow: isDark
       ? '0 4px 28px rgba(0,0,0,0.5), 0 0 20px rgba(139,92,246,0.04)'
-      : '0 4px 24px rgba(109,40,217,0.07), 0 1px 4px rgba(0,0,0,0.04)',
+      : 'none',
   };
 
   // ── 1. Plus Button ──
@@ -376,6 +376,7 @@ export default function ComparisonBlock({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          position: 'relative',
           background: openPlusMenu
             ? (isDark ? 'rgba(124, 58, 237, 0.25)' : 'rgba(124, 58, 237, 0.15)')
             : (isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)'),
@@ -387,21 +388,36 @@ export default function ComparisonBlock({
         className="hover:scale-105 hover:!border-[rgba(168,85,247,0.5)]"
       >
         <Plus size={16} />
+        {enhancementLevel !== 'auto' && (
+          <span
+            style={{
+              position: 'absolute',
+              top: 2,
+              right: 2,
+              width: 6,
+              height: 6,
+              borderRadius: '50%',
+              background: '#C084FC',
+              boxShadow: '0 0 6px #A855F7',
+            }}
+          />
+        )}
       </button>
 
       <AnimatePresence>
         {openPlusMenu && (
           <motion.div
-            initial={{ opacity: 0, y: 6, scale: 0.98 }}
+            initial={{ opacity: 0, y: -6, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 6, scale: 0.98 }}
+            exit={{ opacity: 0, y: -6, scale: 0.98 }}
             transition={{ duration: 0.15 }}
             style={{
               position: 'absolute',
-              top: 'calc(100% + 8px)',
+              bottom: 'calc(100% + 8px)',
               left: 0,
               zIndex: 90,
-              minWidth: 220,
+              minWidth: 235,
+              transformOrigin: 'bottom left',
               borderRadius: 14,
               padding: 6,
               background: isDark ? '#181628' : '#FFFFFF',
@@ -467,6 +483,52 @@ export default function ComparisonBlock({
                 <span>Clear Input</span>
               </button>
             )}
+
+            {/* Enhancement Depth Selector inside the + menu (All Devices) */}
+            <div style={{ height: 1, background: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.07)', margin: '5px 0' }} />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '3px 8px 3px' }}>
+              <span style={{ fontSize: 9.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: isDark ? 'rgba(255,255,255,0.4)' : '#64748B' }}>
+                Enhancement Depth
+              </span>
+              <span style={{ fontSize: 9.5, fontWeight: 600, color: isDark ? '#C084FC' : '#7C3AED' }}>
+                {DEPTH_OPTIONS.find(d => d.id === enhancementLevel)?.label}
+              </span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 4, padding: '2px 2px 3px' }}>
+              {DEPTH_OPTIONS.map(opt => {
+                const isSelected = enhancementLevel === opt.id;
+                const Icon = opt.icon;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    title={`${opt.label}: ${opt.desc}`}
+                    onClick={() => {
+                      setEnhancementLevel(opt.id);
+                      setOpenPlusMenu(false);
+                    }}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 3,
+                      padding: '6px 2px',
+                      borderRadius: 7,
+                      border: `1px solid ${isSelected ? (isDark ? 'rgba(168, 85, 247, 0.55)' : 'rgba(124, 58, 237, 0.45)') : 'transparent'}`,
+                      background: isSelected ? (isDark ? 'rgba(124, 58, 237, 0.22)' : 'rgba(124, 58, 237, 0.10)') : 'transparent',
+                      color: isSelected ? (isDark ? '#FFFFFF' : '#6D28D9') : (isDark ? 'rgba(255, 255, 255, 0.7)' : '#475569'),
+                      cursor: 'pointer',
+                      transition: 'all 120ms ease',
+                    }}
+                    className={!isSelected ? (isDark ? 'hover:bg-[rgba(255,255,255,0.06)]' : 'hover:bg-[rgba(124,58,237,0.05)]') : ''}
+                  >
+                    <Icon size={13} style={{ color: isSelected ? (isDark ? '#C084FC' : '#7C3AED') : (isDark ? 'rgba(255,255,255,0.5)' : '#64748B') }} />
+                    <span style={{ fontSize: 9.5, fontWeight: isSelected ? 600 : 500 }}>{opt.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -503,13 +565,15 @@ export default function ComparisonBlock({
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: 7,
-            padding: isMobile ? '6px 12px' : '7px 14px',
+            gap: isNarrow ? 5 : 7,
+            padding: isNarrow ? '5px 10px' : isMobile ? '6px 12px' : '7px 14px',
             borderRadius: 9999,
-            fontSize: 12.5,
+            fontSize: isSmallPhone ? 11.5 : 12.5,
             fontWeight: 550,
             cursor: isRoleModeDisabled ? 'not-allowed' : 'pointer',
             opacity: isTemplateActive ? 0.5 : 1,
+            minWidth: 0,
+            maxWidth: isNarrow ? 185 : (isMobile ? 200 : undefined),
             background: openDropdown === 'role'
               ? (isDark ? 'rgba(124, 58, 237, 0.22)' : 'rgba(124, 58, 237, 0.12)')
               : (isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)'),
@@ -524,24 +588,33 @@ export default function ComparisonBlock({
           }}
           className="hover:border-[rgba(168,85,247,0.4)] active:scale-[0.98]"
         >
-          <ActiveRoleIcon size={14} style={{ color: isDark ? '#C084FC' : '#7C3AED' }} />
-          <span style={{ color: isDark ? 'rgba(255,255,255,0.45)' : '#64748B', fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Role</span>
-          <span style={{ fontWeight: 600 }}>
+          <ActiveRoleIcon size={14} style={{ color: isDark ? '#C084FC' : '#7C3AED', flexShrink: 0 }} />
+          {!isSmallPhone && (
+            <span style={{ color: isDark ? 'rgba(255,255,255,0.45)' : '#64748B', fontWeight: 600, fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.04em', flexShrink: 0 }}>Role</span>
+          )}
+          <span style={{
+            fontWeight: 600,
+            maxWidth: isNarrow ? 125 : (isMobile ? 140 : 180),
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}>
             {activeRoleObj.label}{activeMode ? ` · ${activeMode}` : ''}
           </span>
-          <ChevronDown size={13} style={{ transform: openDropdown === 'role' ? 'rotate(180deg)' : 'none', transition: 'transform 200ms ease', opacity: 0.65 }} />
+          <ChevronDown size={13} style={{ transform: openDropdown === 'role' ? 'rotate(180deg)' : 'none', transition: 'transform 200ms ease', opacity: 0.65, flexShrink: 0 }} />
         </button>
 
         <AnimatePresence>
           {openDropdown === 'role' && (
             <motion.div
-              initial={{ opacity: 0, y: 6, scale: 0.98 }}
+              initial={{ opacity: 0, y: -6, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 6, scale: 0.98 }}
+              exit={{ opacity: 0, y: -6, scale: 0.98 }}
               transition={{ duration: 0.16 }}
               style={{
                 position: 'absolute',
-                top: 'calc(100% + 8px)',
+                bottom: 'calc(100% + 8px)',
+                right: 'auto',
                 left: 0,
                 zIndex: 90,
                 borderRadius: 16,
@@ -555,7 +628,8 @@ export default function ComparisonBlock({
                 display: 'flex',
                 flexDirection: 'column',
                 overflow: 'hidden',
-                maxWidth: '92vw',
+                maxWidth: 'calc(100vw - 28px)',
+                transformOrigin: 'bottom left',
               }}
             >
               {/* Scoped Scrollbar Style - Sleek 4px, no arrows, transparent track */}
@@ -757,105 +831,176 @@ export default function ComparisonBlock({
                     })
                   )}
                 </div>
-              ) : isMobile && mobileModeView ? (
+              ) : isMobile ? (
                 /* Mobile Drilldown View when a role is clicked on small screens */
-                <div style={{ width: 245, display: 'flex', flexDirection: 'column' }}>
-                  <button
-                    type="button"
-                    onClick={() => setMobileModeView(false)}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 5, padding: '6px 8px',
-                      borderRadius: 7, border: 'none', background: 'transparent',
-                      color: isDark ? '#C084FC' : '#7C3AED', fontSize: 11.5, fontWeight: 600,
-                      cursor: 'pointer', textAlign: 'left', marginBottom: 2,
-                    }}
-                  >
-                    <ArrowLeft size={12} />
-                    <span>Back to Personas</span>
-                  </button>
-                  <div style={{ fontSize: 9.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: isDark ? 'rgba(255,255,255,0.4)' : '#64748B', padding: '3px 8px 5px' }}>
-                    Modes &middot; {currentHoveredRole.label}
+                mobileModeView ? (
+                  <div style={{ width: isSmallPhone ? 230 : 255, display: 'flex', flexDirection: 'column' }}>
+                    <button
+                      type="button"
+                      onClick={() => setMobileModeView(false)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 5, padding: '6px 8px',
+                        borderRadius: 7, border: 'none', background: 'transparent',
+                        color: isDark ? '#C084FC' : '#7C3AED', fontSize: 11.5, fontWeight: 600,
+                        cursor: 'pointer', textAlign: 'left', marginBottom: 2,
+                      }}
+                    >
+                      <ArrowLeft size={12} />
+                      <span>Back to Personas</span>
+                    </button>
+                    <div style={{ fontSize: 9.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: isDark ? 'rgba(255,255,255,0.4)' : '#64748B', padding: '3px 8px 5px' }}>
+                      Modes &middot; {currentHoveredRole.label}
+                    </div>
+                    <div
+                      className="custom-dropdown-scroll"
+                      style={{
+                        maxHeight: 195,
+                        overflowY: 'auto',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 1.5,
+                        paddingRight: 4,
+                        scrollbarWidth: 'thin',
+                        scrollbarColor: isDark ? 'rgba(168, 85, 247, 0.45) transparent' : 'rgba(124, 58, 237, 0.35) transparent',
+                      }}
+                    >
+                      {/* All Modes / Auto selection for mobile drilldown */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveRole(currentHoveredRole.id);
+                          setActiveMode('');
+                          setOpenDropdown(null);
+                          setMobileModeView(false);
+                        }}
+                        style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          width: '100%', padding: '5.5px 8px', borderRadius: 7, border: 'none',
+                          background: (activeRole === currentHoveredRole.id && !activeMode)
+                            ? (isDark ? 'rgba(124, 58, 237, 0.22)' : 'rgba(124, 58, 237, 0.10)')
+                            : 'transparent',
+                          color: (activeRole === currentHoveredRole.id && !activeMode)
+                            ? (isDark ? '#FFFFFF' : '#6D28D9')
+                            : (isDark ? 'rgba(255, 255, 255, 0.78)' : '#334155'),
+                          fontSize: 12, fontWeight: (activeRole === currentHoveredRole.id && !activeMode) ? 600 : 500,
+                          cursor: 'pointer', textAlign: 'left',
+                          marginBottom: 2,
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <Sparkles size={12.5} style={{ color: (activeRole === currentHoveredRole.id && !activeMode) ? (isDark ? '#C084FC' : '#7C3AED') : (isDark ? 'rgba(255,255,255,0.45)' : '#64748B') }} />
+                          <span>All Modes (Auto)</span>
+                        </div>
+                        {activeRole === currentHoveredRole.id && !activeMode && (
+                          <Check size={13} style={{ color: isDark ? '#C084FC' : '#7C3AED' }} />
+                        )}
+                      </button>
+                      {hoveredModes.map(m => {
+                        const ModeIcon = getModeIcon(m);
+                        const isSelected = activeRole === currentHoveredRole.id && activeMode === m;
+                        return (
+                          <button
+                            key={m}
+                            type="button"
+                            onClick={() => {
+                              setActiveRole(currentHoveredRole.id);
+                              setActiveMode(m);
+                              setOpenDropdown(null);
+                              setMobileModeView(false);
+                            }}
+                            style={{
+                              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                              width: '100%', padding: '5.5px 8px', borderRadius: 7, border: 'none',
+                              background: isSelected
+                                ? (isDark ? 'rgba(124, 58, 237, 0.22)' : 'rgba(124, 58, 237, 0.10)')
+                                : 'transparent',
+                              color: isSelected
+                                ? (isDark ? '#FFFFFF' : '#6D28D9')
+                                : (isDark ? 'rgba(255, 255, 255, 0.78)' : '#334155'),
+                              fontSize: 12, fontWeight: isSelected ? 600 : 500,
+                              cursor: 'pointer', textAlign: 'left',
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <ModeIcon size={12.5} style={{ color: isSelected ? (isDark ? '#C084FC' : '#7C3AED') : (isDark ? 'rgba(255,255,255,0.45)' : '#64748B') }} />
+                              <span>{m}</span>
+                            </div>
+                            {isSelected && <Check size={13} style={{ color: isDark ? '#C084FC' : '#7C3AED' }} />}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
+                ) : (
+                  /* Mobile Single-Column Persona List */
                   <div
                     className="custom-dropdown-scroll"
                     style={{
+                      width: isSmallPhone ? 230 : 255,
                       maxHeight: 195,
                       overflowY: 'auto',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 1.5,
                       paddingRight: 4,
                       scrollbarWidth: 'thin',
                       scrollbarColor: isDark ? 'rgba(168, 85, 247, 0.45) transparent' : 'rgba(124, 58, 237, 0.35) transparent',
                     }}
                   >
-                    {/* All Modes / Auto selection for mobile drilldown */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveRole(currentHoveredRole.id);
-                        setActiveMode('');
-                        setOpenDropdown(null);
-                        setMobileModeView(false);
-                      }}
-                      style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        width: '100%', padding: '5.5px 8px', borderRadius: 7, border: 'none',
-                        background: (activeRole === currentHoveredRole.id && !activeMode)
-                          ? (isDark ? 'rgba(124, 58, 237, 0.22)' : 'rgba(124, 58, 237, 0.10)')
-                          : 'transparent',
-                        color: (activeRole === currentHoveredRole.id && !activeMode)
-                          ? (isDark ? '#FFFFFF' : '#6D28D9')
-                          : (isDark ? 'rgba(255, 255, 255, 0.78)' : '#334155'),
-                        fontSize: 12, fontWeight: (activeRole === currentHoveredRole.id && !activeMode) ? 600 : 500,
-                        cursor: 'pointer', textAlign: 'left',
-                        marginBottom: 2,
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <Sparkles size={12.5} style={{ color: (activeRole === currentHoveredRole.id && !activeMode) ? (isDark ? '#C084FC' : '#7C3AED') : (isDark ? 'rgba(255,255,255,0.45)' : '#64748B') }} />
-                        <span>All Modes (Auto)</span>
-                      </div>
-                      {activeRole === currentHoveredRole.id && !activeMode && (
-                        <Check size={13} style={{ color: isDark ? '#C084FC' : '#7C3AED' }} />
-                      )}
-                    </button>
-                    {hoveredModes.map(m => {
-                      const ModeIcon = getModeIcon(m);
-                      const isSelected = activeRole === currentHoveredRole.id && activeMode === m;
+                    <div style={{ fontSize: 9.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: isDark ? 'rgba(255,255,255,0.4)' : '#64748B', padding: '4px 8px 3px' }}>
+                      Select Persona
+                    </div>
+                    {ROLES.map(role => {
+                      const Icon = role.icon;
+                      const isCurrentActive = activeRole === role.id;
+                      const hasSubModes = (ROLE_MODES[role.id]?.length || 0) > 0;
+
                       return (
                         <button
-                          key={m}
+                          key={role.id}
                           type="button"
                           onClick={() => {
-                            setActiveRole(currentHoveredRole.id);
-                            setActiveMode(m);
+                            setHoveredRoleId(role.id);
+                            if (hasSubModes) {
+                              setMobileModeView(true);
+                              return;
+                            }
+                            setActiveRole(role.id);
+                            setActiveMode('');
                             setOpenDropdown(null);
-                            setMobileModeView(false);
                           }}
                           style={{
-                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                            width: '100%', padding: '5.5px 8px', borderRadius: 7, border: 'none',
-                            background: isSelected
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            width: '100%',
+                            padding: '6px 8px',
+                            borderRadius: 7,
+                            border: 'none',
+                            background: isCurrentActive
                               ? (isDark ? 'rgba(124, 58, 237, 0.22)' : 'rgba(124, 58, 237, 0.10)')
                               : 'transparent',
-                            color: isSelected
+                            color: isCurrentActive
                               ? (isDark ? '#FFFFFF' : '#6D28D9')
-                              : (isDark ? 'rgba(255, 255, 255, 0.78)' : '#334155'),
-                            fontSize: 12, fontWeight: isSelected ? 600 : 500,
-                            cursor: 'pointer', textAlign: 'left',
+                              : (isDark ? 'rgba(255, 255, 255, 0.82)' : '#334155'),
+                            fontSize: 12,
+                            fontWeight: isCurrentActive ? 600 : 500,
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 120ms ease',
                           }}
                         >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <ModeIcon size={12.5} style={{ color: isSelected ? (isDark ? '#C084FC' : '#7C3AED') : (isDark ? 'rgba(255,255,255,0.45)' : '#64748B') }} />
-                            <span>{m}</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                            <Icon size={13.5} style={{ color: isCurrentActive ? (isDark ? '#C084FC' : '#7C3AED') : (isDark ? 'rgba(255,255,255,0.5)' : '#64748B') }} />
+                            <span>{role.label}</span>
                           </div>
-                          {isSelected && <Check size={13} style={{ color: isDark ? '#C084FC' : '#7C3AED' }} />}
+                          {isCurrentActive ? (
+                            <Check size={12.5} style={{ color: isDark ? '#C084FC' : '#7C3AED' }} />
+                          ) : hasSubModes ? (
+                            <ChevronRight size={12} style={{ color: isDark ? 'rgba(255,255,255,0.3)' : '#94A3B8' }} />
+                          ) : null}
                         </button>
                       );
                     })}
                   </div>
-                </div>
+                )
               ) : (
                 /* Desktop / Standard Side-by-Side View */
                 <div style={{ display: 'flex' }}>
@@ -1085,134 +1230,8 @@ export default function ComparisonBlock({
     );
   };
 
-  // ── 3. Depth Dropdown ──
-  const renderDepthPill = () => (
-    <div style={{ position: 'relative' }}>
-      <button
-        type="button"
-        id="depth-dropdown-btn"
-        disabled={isOptimizing || isAnalyzing}
-        onClick={() => {
-          if (isOptimizing || isAnalyzing) return;
-          setOpenDropdown(prev => prev === 'depth' ? null : 'depth');
-        }}
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 7,
-          padding: isMobile ? '6px 12px' : '7px 14px',
-          borderRadius: 9999,
-          fontSize: 12.5,
-          fontWeight: 550,
-          cursor: (isOptimizing || isAnalyzing) ? 'not-allowed' : 'pointer',
-          background: openDropdown === 'depth'
-            ? (isDark ? 'rgba(124, 58, 237, 0.22)' : 'rgba(124, 58, 237, 0.12)')
-            : (isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)'),
-          border: `1px solid ${openDropdown === 'depth'
-            ? (isDark ? 'rgba(168, 85, 247, 0.55)' : 'rgba(124, 58, 237, 0.45)')
-            : (isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.09)')}`,
-          color: isDark ? '#FFFFFF' : '#1E293B',
-          boxShadow: openDropdown === 'depth'
-            ? (isDark ? '0 0 14px rgba(124, 58, 237, 0.3)' : '0 2px 8px rgba(124, 58, 237, 0.15)')
-            : 'none',
-          transition: 'all 180ms ease',
-        }}
-        className="hover:border-[rgba(168,85,247,0.4)] active:scale-[0.98]"
-      >
-        {(() => {
-          const opt = DEPTH_OPTIONS.find(d => d.id === enhancementLevel) || DEPTH_OPTIONS[0];
-          const Icon = opt.icon;
-          return (
-            <>
-              <Icon size={14} style={{ color: isDark ? '#C084FC' : '#7C3AED' }} />
-              <span style={{ color: isDark ? 'rgba(255,255,255,0.45)' : '#64748B', fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Depth</span>
-              <span style={{ fontWeight: 600 }}>{opt.label}</span>
-              <ChevronDown size={13} style={{ transform: openDropdown === 'depth' ? 'rotate(180deg)' : 'none', transition: 'transform 200ms ease', opacity: 0.65 }} />
-            </>
-          );
-        })()}
-      </button>
-
-      <AnimatePresence>
-        {openDropdown === 'depth' && (
-          <motion.div
-            initial={{ opacity: 0, y: 6, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 6, scale: 0.98 }}
-            transition={{ duration: 0.16 }}
-            className="custom-dropdown-scroll"
-            style={{
-              position: 'absolute',
-              top: 'calc(100% + 8px)',
-              left: 0,
-              zIndex: 90,
-              minWidth: 240,
-              maxHeight: 195,
-              overflowY: 'auto',
-              scrollbarWidth: 'thin',
-              scrollbarColor: isDark ? 'rgba(168, 85, 247, 0.45) transparent' : 'rgba(124, 58, 237, 0.35) transparent',
-              borderRadius: 13,
-              padding: 5,
-              background: isDark ? '#181628' : '#FFFFFF',
-              border: `1px solid ${isDark ? 'rgba(168, 85, 247, 0.28)' : 'rgba(124, 58, 237, 0.2)'}`,
-              boxShadow: isDark
-                ? '0 16px 40px rgba(0,0,0,0.7), 0 0 20px rgba(124,58,237,0.14)'
-                : '0 12px 32px rgba(124,58,237,0.16), 0 1px 4px rgba(0,0,0,0.06)',
-              backdropFilter: 'blur(20px)',
-            }}
-          >
-            <div style={{ fontSize: 9.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: isDark ? 'rgba(255,255,255,0.4)' : '#64748B', padding: '4px 8px 3px' }}>
-              Select Enhancement Depth
-            </div>
-            {DEPTH_OPTIONS.map(opt => {
-              const Icon = opt.icon;
-              const isSelected = enhancementLevel === opt.id;
-              return (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => {
-                    setEnhancementLevel(opt.id);
-                    setOpenDropdown(null);
-                  }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    justifyContent: 'space-between',
-                    width: '100%',
-                    padding: '6px 8px',
-                    borderRadius: 7,
-                    border: 'none',
-                    background: isSelected
-                      ? (isDark ? 'rgba(124, 58, 237, 0.22)' : 'rgba(124, 58, 237, 0.10)')
-                      : 'transparent',
-                    color: isSelected
-                      ? (isDark ? '#FFFFFF' : '#6D28D9')
-                      : (isDark ? 'rgba(255, 255, 255, 0.78)' : '#334155'),
-                    fontSize: 12,
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    transition: 'all 120ms ease',
-                    gap: 6,
-                  }}
-                  className={!isSelected ? (isDark ? 'hover:bg-[rgba(255,255,255,0.06)]' : 'hover:bg-[rgba(124,58,237,0.05)]') : ''}
-                >
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 7, flex: 1 }}>
-                    <Icon size={13} style={{ color: isSelected ? (isDark ? '#C084FC' : '#7C3AED') : (isDark ? 'rgba(255,255,255,0.5)' : '#64748B'), marginTop: 1.5, flexShrink: 0 }} />
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontWeight: isSelected ? 600 : 500 }}>{opt.label}</span>
-                      <span style={{ fontSize: 10.5, color: isDark ? 'rgba(255,255,255,0.45)' : '#64748B', lineHeight: 1.25 }}>{opt.desc}</span>
-                    </div>
-                  </div>
-                  {isSelected && <Check size={13} style={{ color: isDark ? '#C084FC' : '#7C3AED', flexShrink: 0, marginTop: 1.5 }} />}
-                </button>
-              );
-            })}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
+  // ── 3. Depth Dropdown (Integrated into + menu for all screen sizes) ──
+  const renderDepthPill = () => null;
 
   // ── 4. Action Buttons (Icon-only with hover purpose tooltip) ──
   const renderActionButtons = () => (
@@ -1380,26 +1399,6 @@ export default function ComparisonBlock({
           )}
         </AnimatePresence>
       </div>
-
-      {/* Mic Icon */}
-      <div
-        id="capsule-mic-btn"
-        title="Voice input"
-        style={{
-          width: 32,
-          height: 32,
-          borderRadius: '50%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: isDark ? 'rgba(255, 255, 255, 0.45)' : '#94A3B8',
-          cursor: 'pointer',
-          transition: 'all 160ms ease',
-        }}
-        className="hover:!text-[var(--color-primary)] hover:scale-105"
-      >
-        <Mic size={15} />
-      </div>
     </div>
   );
 
@@ -1409,21 +1408,26 @@ export default function ComparisonBlock({
       <div
         style={{
           width: '100%',
-          flex: isMobile ? 'none' : 1,
-          minHeight: isMobile ? 'auto' : 0,
-          height: isMobile ? 'auto' : '100%',
+          flex: 1,
+          minHeight: '100%',
+          height: '100%',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
           position: 'relative',
-          padding: isMobile ? '12px 10px 16px' : '8px 16px 24px',
-          paddingBottom: isMobile ? '12px' : '13vh',
+          padding: isLandscape
+            ? '10px 12px'
+            : isSmallPhone
+            ? '16px 10px'
+            : isMobile
+            ? '20px 14px'
+            : '24px 24px',
           boxSizing: 'border-box',
           overflow: 'visible',
           background: isDark
-            ? 'radial-gradient(ellipse 70% 55% at 50% 42%, rgba(124, 58, 237, 0.16) 0%, rgba(99, 102, 241, 0.05) 45%, transparent 75%)'
-            : 'radial-gradient(ellipse 70% 55% at 50% 42%, rgba(124, 58, 237, 0.08) 0%, rgba(99, 102, 241, 0.03) 45%, transparent 75%)',
+            ? 'radial-gradient(ellipse 70% 55% at 50% 50%, rgba(124, 58, 237, 0.16) 0%, rgba(99, 102, 241, 0.05) 45%, transparent 75%)'
+            : 'none',
         }}
       >
         {/* Top-Right New/Clear icon if text is entered */}
@@ -1460,12 +1464,12 @@ export default function ComparisonBlock({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
           style={{
-            fontSize: isMobile ? 24 : 34,
+            fontSize: isLandscape ? 22 : isSmallPhone ? 22 : isMobile ? 26 : 34,
             fontWeight: 500,
             letterSpacing: '-0.025em',
             color: isDark ? '#F1F5F9' : '#1E293B',
             textAlign: 'center',
-            marginBottom: isMobile ? 14 : 20,
+            marginBottom: isLandscape ? 10 : isSmallPhone ? 14 : isMobile ? 18 : 22,
             lineHeight: 1.2,
           }}
         >
@@ -1480,27 +1484,89 @@ export default function ComparisonBlock({
           transition={{ duration: 0.35, ease: 'easeOut' }}
           style={{
             width: '100%',
-            maxWidth: 780,
+            maxWidth: 860,
             borderRadius: 28,
             background: isDark ? 'rgba(24, 22, 38, 0.88)' : '#FFFFFF',
             backdropFilter: 'blur(24px)',
             WebkitBackdropFilter: 'blur(24px)',
-            border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.10)' : 'rgba(124, 58, 237, 0.16)'}`,
+            border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.10)' : '#E2E8F0'}`,
             boxShadow: isDark
               ? '0 16px 48px -12px rgba(0, 0, 0, 0.65), 0 0 24px rgba(124, 58, 237, 0.10)'
-              : '0 12px 36px -8px rgba(124, 58, 237, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04)',
-            padding: isMobile ? '12px 14px 10px' : '16px 20px 14px',
+              : 'none',
+            padding: isSmallPhone ? '12px 14px 10px' : isMobile ? '12px 16px 12px' : '14px 18px 14px',
             display: 'flex',
             flexDirection: 'column',
-            gap: 12,
+            gap: templateName ? 8 : 10,
             position: 'relative',
             transition: 'border-color 200ms ease, box-shadow 200ms ease',
           }}
-          className="focus-within:!border-[rgba(168,85,247,0.55)] focus-within:!shadow-[0_20px_56px_-10px_rgba(0,0,0,0.75),0_0_30px_rgba(124,58,237,0.22)]"
+          className={
+            isDark
+              ? 'focus-within:!border-[rgba(168,85,247,0.55)] focus-within:!shadow-[0_20px_56px_-10px_rgba(0,0,0,0.75),0_0_30px_rgba(124,58,237,0.22)]'
+              : 'focus-within:!border-[#A855F7] focus-within:!shadow-none'
+          }
         >
+          {/* ── Rotating Border Glow Line (Circular Orbital Beam) ── */}
+          <div
+            className="pointer-events-none absolute -inset-[1.5px] rounded-[29.5px] overflow-hidden"
+            style={{
+              padding: 1.5,
+              WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+              WebkitMaskComposite: 'xor',
+              maskComposite: 'exclude',
+              zIndex: 2,
+            }}
+            aria-hidden="true"
+          >
+            <div
+              style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                width: 2200,
+                height: 2200,
+                transform: 'translate(-50%, -50%)',
+                animation: 'spinBeam 6s linear infinite',
+                background: isDark
+                  ? 'conic-gradient(from 0deg, transparent 0deg, transparent 260deg, rgba(168,85,247,0.3) 295deg, #C084FC 330deg, #EC4899 350deg, #8B5CF6 360deg)'
+                  : 'conic-gradient(from 0deg, transparent 0deg, transparent 260deg, rgba(168,85,247,0.35) 295deg, #7C3AED 330deg, #EC4899 350deg, #9333EA 360deg)',
+              }}
+            />
+          </div>
+
+          {/* ── Soft Beam Glow Accent (Travels with the beam head) ── */}
+          <div
+            className="pointer-events-none absolute -inset-[1px] rounded-[29px] overflow-hidden"
+            style={{
+              filter: isDark ? 'blur(6px)' : 'blur(4px)',
+              opacity: isDark ? 0.7 : 0.45,
+              padding: 2,
+              WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+              WebkitMaskComposite: 'xor',
+              maskComposite: 'exclude',
+              zIndex: 1,
+            }}
+            aria-hidden="true"
+          >
+            <div
+              style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                width: 2200,
+                height: 2200,
+                transform: 'translate(-50%, -50%)',
+                animation: 'spinBeam 6s linear infinite',
+                background: isDark
+                  ? 'conic-gradient(from 0deg, transparent 0deg, transparent 270deg, rgba(168,85,247,0.5) 320deg, #C084FC 345deg, #8B5CF6 360deg)'
+                  : 'conic-gradient(from 0deg, transparent 0deg, transparent 270deg, rgba(168,85,247,0.4) 320deg, #7C3AED 345deg, #9333EA 360deg)',
+              }}
+            />
+          </div>
+
           {/* Applied-template chip (if any) */}
           {templateName && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 8px', borderRadius: 10, background: isDark ? 'rgba(124,58,237,0.15)' : 'rgba(124,58,237,0.08)', border: `1px solid ${isDark ? 'rgba(168,85,247,0.3)' : 'rgba(124,58,237,0.2)'}`, alignSelf: 'flex-start' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 8px', borderRadius: 10, background: isDark ? 'rgba(124,58,237,0.15)' : 'rgba(124,58,237,0.08)', border: `1px solid ${isDark ? 'rgba(168,85,247,0.3)' : 'rgba(124,58,237,0.2)'}`, alignSelf: 'flex-start', marginBottom: 2 }}>
               <LayoutTemplate size={13} style={{ color: '#A855F7' }} />
               <span style={{ fontSize: 11, fontWeight: 600, color: isDark ? '#E2E8F0' : '#1E293B' }}>{templateName}</span>
               {onClearTemplate && (
@@ -1511,54 +1577,62 @@ export default function ComparisonBlock({
             </div>
           )}
 
-          {/* Textarea */}
-          <textarea
-            value={originalText}
-            onChange={e => setOriginalText(e.target.value)}
-            onKeyDown={e => {
-              if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-                e.preventDefault();
-                if (originalText.trim() && !isOptimizing && !isAnalyzing && originalText.length <= 12000) {
-                  onOptimize(originalText, activeRole, activeMode, enhancementLevel);
+          {/* Prompt Bar: Unified 2-Row Layout across Mobile, Tablet, and Desktop */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%' }}>
+            {/* Row 1: Textarea with full width and comfortable multi-line typing */}
+            <textarea
+              value={originalText}
+              onChange={e => setOriginalText(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && !e.shiftKey && !isMobile) {
+                  e.preventDefault();
+                  if (originalText.trim() && !isOptimizing && !isAnalyzing && originalText.length <= 12000) {
+                    onOptimize(originalText, activeRole, activeMode, enhancementLevel);
+                  }
+                } else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                  e.preventDefault();
+                  if (originalText.trim() && !isOptimizing && !isAnalyzing && originalText.length <= 12000) {
+                    onOptimize(originalText, activeRole, activeMode, enhancementLevel);
+                  }
                 }
-              }
-            }}
-            disabled={isOptimizing || isAnalyzing}
-            placeholder="Paste or write below..."
-            rows={originalText.split('\n').length > 1 ? Math.min(originalText.split('\n').length + 1, 7) : 2}
-            style={{
-              width: '100%',
-              fontSize: 15,
-              lineHeight: 1.6,
-              color: isDark ? '#F8FAFC' : '#0F172A',
-              background: 'transparent',
-              border: 'none',
-              resize: 'none',
-              outline: 'none',
-              letterSpacing: '0.01em',
-              minHeight: 48,
-              maxHeight: 220,
-              cursor: (isOptimizing || isAnalyzing) ? 'not-allowed' : 'text',
-            }}
-          />
+              }}
+              disabled={isOptimizing || isAnalyzing}
+              placeholder="Paste or write below..."
+              rows={originalText.split('\n').length > 1 ? Math.min(originalText.split('\n').length, 8) : (isMobile ? 2 : 3)}
+              style={{
+                width: '100%',
+                fontSize: isMobile ? 14.5 : 15,
+                lineHeight: 1.55,
+                color: isDark ? '#F8FAFC' : '#0F172A',
+                background: 'transparent',
+                border: 'none',
+                resize: 'none',
+                outline: 'none',
+                letterSpacing: '0.01em',
+                minHeight: isMobile ? 46 : 56,
+                maxHeight: 220,
+                padding: '2px 4px',
+                cursor: (isOptimizing || isAnalyzing) ? 'not-allowed' : 'text',
+              }}
+            />
 
-          {/* Controls Bar inside the Capsule */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap', paddingTop: 4 }}>
-            {/* Left: Plus Button & Word Count */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              {renderPlusButton()}
-              {originalText && (
-                <span style={{ fontSize: 11, color: originalText.length > 12000 ? '#EF4444' : (isDark ? 'rgba(255,255,255,0.45)' : '#64748B'), fontWeight: 500 }}>
-                  {originalText.split(' ').filter(Boolean).length} words &middot; {originalText.length.toLocaleString()} chars
-                </span>
-              )}
-            </div>
+            {/* Row 2: Clean Toolbar with all controls on ONE line */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, width: '100%', minWidth: 0 }}>
+              {/* Left: Plus button, Role pill */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0, flex: 1 }}>
+                {renderPlusButton()}
+                {renderRolePill()}
+              </div>
 
-            {/* Right: Selectors & Actions */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              {renderRolePill()}
-              {renderDepthPill()}
-              {renderActionButtons()}
+              {/* Right: Word count + Action buttons */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0 }}>
+                {originalText && (
+                  <span style={{ fontSize: 11, color: originalText.length > 12000 ? '#EF4444' : (isDark ? 'rgba(255,255,255,0.45)' : '#64748B'), fontWeight: 500, whiteSpace: 'nowrap' }}>
+                    {originalText.split(' ').filter(Boolean).length}w
+                  </span>
+                )}
+                {renderActionButtons()}
+              </div>
             </div>
           </div>
         </motion.div>
@@ -1582,7 +1656,55 @@ export default function ComparisonBlock({
         transition={{ type: 'spring', bounce: 0, duration: 0.6 }}
       >
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: isMobile ? 12 : 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* Left: Title */}
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: isDark ? 'rgba(255,255,255,0.48)' : '#64748B', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: isMobile ? 2 : 4 }}>
+              Your Prompt
+            </div>
+            <h2 style={{ fontSize: isMobile ? 16 : 18, fontWeight: 700, color: isDark ? D.textPrimary : 'var(--color-text-primary)', margin: 0, letterSpacing: -0.3 }}>
+              Paste or write below
+            </h2>
+          </div>
+
+          {/* Right: Template chip + New Prompt button */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            {/* Applied-template chip */}
+            {templateName && (
+              <div
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '7px 8px', maxWidth: 220, borderRadius: 14,
+                  background: isDark
+                    ? 'linear-gradient(160deg, rgba(139,92,246,0.20) 0%, rgba(168,85,247,0.10) 100%)'
+                    : 'linear-gradient(160deg, rgba(167,139,250,0.20) 0%, rgba(196,181,253,0.10) 100%)',
+                  border: `1px solid ${isDark ? 'rgba(167,139,250,0.35)' : 'rgba(124,58,237,0.28)'}`,
+                  boxShadow: isDark
+                    ? 'inset 0 1px 0 rgba(255,255,255,0.1), 0 3px 12px rgba(0,0,0,0.4)'
+                    : 'inset 0 1px 0 rgba(255,255,255,0.6), 0 3px 12px rgba(124,58,237,0.12)',
+                  flexShrink: 0,
+                }}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 30, height: 30, borderRadius: 9, background: 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)', color: '#fff', flexShrink: 0, boxShadow: '0 2px 8px rgba(124,58,237,0.35)' }}>
+                  <LayoutTemplate size={15} strokeWidth={2.2} />
+                </span>
+                <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: 'var(--color-primary)', lineHeight: 1 }}>Template in use</span>
+                  <span style={{ fontSize: 12.5, fontWeight: 700, color: isDark ? D.textPrimary : 'var(--color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.25 }} title={templateName}>{templateName}</span>
+                </div>
+                {onClearTemplate && (
+                  <button
+                    onClick={onClearTemplate}
+                    aria-label="Stop using template"
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, borderRadius: 7, border: 'none', background: 'transparent', color: isDark ? D.textMuted : 'var(--color-text-secondary)', cursor: 'pointer', flexShrink: 0, transition: 'all 180ms ease' }}
+                    className="hover:!bg-[rgba(124,58,237,0.14)] hover:!text-[var(--color-primary)]"
+                  >
+                    <X size={13} strokeWidth={2.4} />
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* New Prompt button — always on the right */}
             {onReset && (
               <button
                 type="button"
@@ -1601,6 +1723,7 @@ export default function ComparisonBlock({
                   border: `1px solid ${isDark ? 'rgba(168, 85, 247, 0.25)' : 'rgba(124, 58, 237, 0.18)'}`,
                   cursor: 'pointer',
                   transition: 'all 160ms ease',
+                  flexShrink: 0,
                 }}
                 className="hover:scale-105 active:scale-95"
               >
@@ -1608,128 +1731,108 @@ export default function ComparisonBlock({
                 New Prompt
               </button>
             )}
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: isDark ? 'rgba(255,255,255,0.48)' : '#64748B', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: isMobile ? 2 : 4 }}>
-                Your Prompt
-              </div>
-              <h2 style={{ fontSize: isMobile ? 16 : 18, fontWeight: 700, color: isDark ? D.textPrimary : 'var(--color-text-primary)', margin: 0, letterSpacing: -0.3 }}>
-                Paste or write below
-              </h2>
-            </div>
           </div>
-
-          {/* Applied-template chip */}
-          {templateName && (
-            <div
-              style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                padding: '7px 8px', maxWidth: 240, borderRadius: 14,
-                background: isDark
-                  ? 'linear-gradient(160deg, rgba(139,92,246,0.20) 0%, rgba(168,85,247,0.10) 100%)'
-                  : 'linear-gradient(160deg, rgba(167,139,250,0.20) 0%, rgba(196,181,253,0.10) 100%)',
-                border: `1px solid ${isDark ? 'rgba(167,139,250,0.35)' : 'rgba(124,58,237,0.28)'}`,
-                boxShadow: isDark
-                  ? 'inset 0 1px 0 rgba(255,255,255,0.1), 0 3px 12px rgba(0,0,0,0.4)'
-                  : 'inset 0 1px 0 rgba(255,255,255,0.6), 0 3px 12px rgba(124,58,237,0.12)',
-                flexShrink: 0,
-              }}
-            >
-              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 30, height: 30, borderRadius: 9, background: 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)', color: '#fff', flexShrink: 0, boxShadow: '0 2px 8px rgba(124,58,237,0.35)' }}>
-                <LayoutTemplate size={15} strokeWidth={2.2} />
-              </span>
-              <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: 'var(--color-primary)', lineHeight: 1 }}>Template in use</span>
-                <span style={{ fontSize: 12.5, fontWeight: 700, color: isDark ? D.textPrimary : 'var(--color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.25 }} title={templateName}>{templateName}</span>
-              </div>
-              {onClearTemplate && (
-                <button
-                  onClick={onClearTemplate}
-                  aria-label="Stop using template"
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, borderRadius: 7, border: 'none', background: 'transparent', color: isDark ? D.textMuted : 'var(--color-text-secondary)', cursor: 'pointer', flexShrink: 0, transition: 'all 180ms ease' }}
-                  className="hover:!bg-[rgba(124,58,237,0.14)] hover:!text-[var(--color-primary)]"
-                >
-                  <X size={13} strokeWidth={2.4} />
-                </button>
-              )}
-            </div>
-          )}
         </div>
 
-        {/* Textarea */}
+        {/* Textarea & Integrated Toolbar */}
         <div
+          ref={controlsRef}
           style={{
             flex: 1,
             border: originalText.length > 12000
               ? '1px solid #EF4444'
-              : `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.10)'}`,
+              : `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(124,58,237,0.12)'}`,
             borderRadius: isMobile ? 14 : 16,
             background: originalText.length > 12000
               ? (isDark ? 'rgba(239, 68, 68, 0.15)' : '#FFF5F5')
               : (isDark ? 'rgba(14, 13, 20, 0.65)' : '#FDFCFF'),
-            padding: isMobile ? '14px 14px' : '18px 20px',
+            padding: isMobile ? '14px 14px 12px' : '18px 20px 14px',
             display: 'flex',
             flexDirection: 'column',
-            minHeight: isMobile ? 200 : 170,
-            boxShadow: originalText.length > 12000 ? '0 0 0 3px rgba(239,68,68,0.12)' : (isDark ? 'inset 0 1px 3px rgba(0,0,0,0.3)' : 'inset 0 1px 3px rgba(109,40,217,0.03)'),
-            transition: 'all 300ms ease-in-out',
+            justifyContent: 'space-between',
+            minHeight: isMobile ? 220 : 200,
+            boxShadow: originalText.length > 12000
+              ? '0 0 0 3px rgba(239,68,68,0.12)'
+              : (isDark ? 'inset 0 1px 3px rgba(0,0,0,0.3)' : 'inset 0 1px 3px rgba(109,40,217,0.03)'),
+            transition: 'all 250ms ease',
             opacity: (isOptimizing || isAnalyzing) ? 0.7 : 1,
-          }}
-        >
-          <textarea
-            value={originalText}
-            onChange={e => setOriginalText(e.target.value)}
-            disabled={isOptimizing || isAnalyzing}
-            placeholder="Paste or write below..."
-            style={{
-              width: '100%', flex: 1, fontSize: 14, lineHeight: 1.6, color: isDark ? D.textPrimary : 'var(--color-text-primary)',
-              background: 'transparent', border: 'none', resize: 'none', outline: 'none', letterSpacing: '0.01em',
-              cursor: (isOptimizing || isAnalyzing) ? 'not-allowed' : 'text',
-            }}
-          />
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {renderPlusButton()}
-              {originalText.length > 12000 && (
-                <span style={{ fontSize: 11, fontWeight: 600, color: '#DC2626', display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <AlertTriangle size={13} /> Limit reached (12k max)
-                </span>
-              )}
-            </div>
-            <span style={{ fontSize: 11, fontWeight: originalText.length > 12000 ? 700 : 400, color: originalText.length > 12000 ? '#DC2626' : (isDark ? 'rgba(255,255,255,0.4)' : 'var(--color-text-secondary)') }}>
-              {originalText.split(' ').filter(Boolean).length} words &middot; {originalText.length.toLocaleString()} / 12,000 chars
-            </span>
-          </div>
-        </div>
-
-        {/* Controls */}
-        <div
-          ref={controlsRef}
-          style={{
-            marginTop: isMobile ? 12 : 16,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 12,
-            opacity: (isOptimizing || isAnalyzing) ? 0.6 : 1,
-            pointerEvents: (isOptimizing || isAnalyzing) ? 'none' : 'auto',
-            transition: 'opacity 200ms ease',
             position: 'relative',
           }}
         >
-          {/* Selectors Bar */}
+          {/* Textarea */}
+          <textarea
+            value={originalText}
+            onChange={e => setOriginalText(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                if (originalText.trim() && !isOptimizing && !isAnalyzing && originalText.length <= 12000) {
+                  onOptimize(originalText, activeRole, activeMode, enhancementLevel);
+                }
+              }
+            }}
+            disabled={isOptimizing || isAnalyzing}
+            placeholder="Paste or write below..."
+            style={{
+              width: '100%',
+              flex: 1,
+              minHeight: 100,
+              fontSize: 14,
+              lineHeight: 1.6,
+              color: isDark ? D.textPrimary : 'var(--color-text-primary)',
+              background: 'transparent',
+              border: 'none',
+              resize: 'none',
+              outline: 'none',
+              letterSpacing: '0.01em',
+              cursor: (isOptimizing || isAnalyzing) ? 'not-allowed' : 'text',
+              padding: 0,
+            }}
+          />
+
+          {/* Unified Bottom Toolbar */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              flexWrap: 'wrap',
               gap: 8,
+              marginTop: 12,
+              paddingTop: 10,
+              borderTop: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)'}`,
+              flexWrap: 'wrap',
+              opacity: (isOptimizing || isAnalyzing) ? 0.6 : 1,
+              pointerEvents: (isOptimizing || isAnalyzing) ? 'none' : 'auto',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            {/* Left: Plus Button & Role Pill */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flexWrap: 'wrap' }}>
+              {renderPlusButton()}
               {renderRolePill()}
-              {renderDepthPill()}
             </div>
-            {renderActionButtons()}
+
+            {/* Right: Char/Word Count & Action Buttons */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+              {originalText.length > 12000 ? (
+                <span style={{ fontSize: 11, fontWeight: 600, color: '#DC2626', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <AlertTriangle size={13} /> Limit reached (12k max)
+                </span>
+              ) : (
+                <span
+                  style={{
+                    fontSize: 11,
+                    color: isDark ? 'rgba(255,255,255,0.45)' : '#64748B',
+                    fontWeight: 500,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {isSmallPhone
+                    ? `${originalText.split(' ').filter(Boolean).length}w`
+                    : `${originalText.split(' ').filter(Boolean).length} words · ${originalText.length.toLocaleString()} / 12,000 chars`}
+                </span>
+              )}
+              {renderActionButtons()}
+            </div>
           </div>
         </div>
       </motion.div>
@@ -1749,8 +1852,8 @@ export default function ComparisonBlock({
               display: 'flex',
               width: stackCards ? '100%' : undefined,
               flex: stackCards ? 'none' : undefined,
-              height: stackCards ? (isMobile ? 520 : 600) : 640,
-              maxHeight: stackCards ? (isMobile ? 520 : 600) : 640,
+              height: stackCards ? 'auto' : 640,
+              maxHeight: stackCards ? 'none' : 640,
             }}
           >
             {/* Score panel */}
@@ -1760,8 +1863,9 @@ export default function ComparisonBlock({
                 ...responsiveCard,
                 width: '100%',
                 flex: 'none',
-                height: stackCards ? (isMobile ? 520 : 600) : '100%',
-                maxHeight: stackCards ? (isMobile ? 520 : 600) : 640,
+                height: stackCards ? 'auto' : '100%',
+                maxHeight: stackCards ? 'none' : 640,
+                minHeight: stackCards ? (isMobile ? 380 : 440) : undefined,
                 overflowY: 'auto',
                 scrollbarWidth: 'thin',
                 scrollbarColor: isDark ? 'rgba(139,92,246,0.25) transparent' : 'rgba(124,58,237,0.2) transparent',
@@ -1801,20 +1905,21 @@ export default function ComparisonBlock({
                 ...responsiveCard,
                 width: '100%',
                 flex: 'none',
-                height: stackCards ? (isMobile ? 520 : 600) : '100%',
-                maxHeight: stackCards ? (isMobile ? 520 : 600) : 640,
-                padding: isMobile ? '18px 16px' : '26px 8px 26px 30px',
+                height: stackCards ? 'auto' : '100%',
+                maxHeight: stackCards ? 'none' : 640,
+                minHeight: stackCards ? (isMobile ? 380 : 440) : undefined,
+                padding: isSmallPhone ? '14px 12px' : isMobile ? '18px 16px' : '26px 8px 26px 30px',
                 overflow: 'hidden',
                 display: 'flex',
                 flexDirection: 'column',
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: isMobile ? 12 : 16, height: 34, paddingRight: isMobile ? 0 : 28 }}>
-                  <h2 style={{ fontSize: 11.5, fontWeight: 600, color: isDark ? D.textMuted : 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', opacity: isOptimizing ? 0.6 : 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginBottom: isMobile ? 12 : 16, minHeight: 34, height: 'auto', flexWrap: 'wrap', paddingRight: isMobile ? 0 : 28 }}>
+                  <h2 style={{ fontSize: 11.5, fontWeight: 600, color: isDark ? D.textMuted : 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', opacity: isOptimizing ? 0.6 : 1, margin: 0 }}>
                     Optimized Prompt
                   </h2>
 
                   {(isOptimized || isOptimizing) && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, opacity: isOptimizing ? 0.6 : 1, pointerEvents: isOptimizing ? 'none' : 'auto', flexShrink: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, opacity: isOptimizing ? 0.6 : 1, pointerEvents: isOptimizing ? 'none' : 'auto', flexShrink: 0, flexWrap: 'wrap' }}>
                       {/* Detected enhancement level badge */}
                       {isOptimized && optimizationResult?.detected_level && (
                         <div
@@ -1870,13 +1975,14 @@ export default function ComparisonBlock({
                           <AnimatePresence>
                             {isVersionMenuOpen && (
                               <motion.div
-                                initial={{ opacity: 0, y: -5, scale: 0.97 }}
+                                initial={{ opacity: 0, y: 5, scale: 0.97 }}
                                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                                exit={{ opacity: 0, y: -5, scale: 0.97 }}
+                                exit={{ opacity: 0, y: 5, scale: 0.97 }}
                                 transition={{ duration: 0.16 }}
                                 role="menu"
                                 style={{
-                                  position: 'absolute', top: 'calc(100% + 8px)', right: 0, minWidth: '100%',
+                                  position: 'absolute', bottom: 'calc(100% + 8px)', right: 0, minWidth: '100%',
+                                  transformOrigin: 'bottom right',
                                   padding: 5, borderRadius: 14, zIndex: 20, overflow: 'hidden',
                                   background: isDark ? 'rgba(20, 19, 32, 0.96)' : 'linear-gradient(160deg, #FFFFFF 0%, #F8F5FF 100%)',
                                   border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(124,58,237,0.18)'}`,

@@ -55,6 +55,7 @@ export default function ScoreSection({
   const isDark = useIsDark();
   const [ready, setReady] = useState(false);
   const isMobile = useMediaQuery('(max-width: 768px)');
+  const isSmallPhone = useMediaQuery('(max-width: 480px)');
 
   useEffect(() => {
     if (isAnalyzed || isOptimized) {
@@ -169,8 +170,8 @@ export default function ScoreSection({
               </div>
             </div>
 
-            {/* Right: 3×2 Dimension Cards with Image 1 Loading Bar */}
-            <div style={{ flex: 1, display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: 16, alignContent: 'start', minWidth: isMobile ? 0 : 280 }}>
+            {/* Right: Dimension Cards */}
+            <div style={{ flex: 1, display: 'grid', gridTemplateColumns: isSmallPhone ? '1fr' : isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: isSmallPhone ? 10 : 16, alignContent: 'start', minWidth: isMobile ? 0 : 280 }}>
               {evaluatingDimensions.map((d) => (
                 <div
                   key={d.label}
@@ -420,7 +421,7 @@ export default function ScoreSection({
                 </div>
               )}
 
-              <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ width: '100%', maxWidth: isMobile ? 240 : '100%', display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
                   <span style={{ color: isDark ? D.textSecondary : 'var(--color-text-secondary)' }}>Before</span>
                   <span style={{ fontWeight: 600, color: isDark ? D.textSecondary : 'var(--color-text-secondary)' }}>{origScore}</span>
@@ -433,7 +434,7 @@ export default function ScoreSection({
             </div>
 
             {/* Right: Dimensions grid */}
-            <div style={{ flex: 1, display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: 16, alignContent: 'start', minWidth: isMobile ? 0 : 280 }}>
+            <div style={{ flex: 1, display: 'grid', gridTemplateColumns: isSmallPhone ? '1fr' : isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: isSmallPhone ? 10 : 16, alignContent: 'start', minWidth: isMobile ? 0 : 280 }}>
               {dimensions.map(dim => {
                 const Icon = dim.icon;
                 const displayed = dim.scoreAfter;
