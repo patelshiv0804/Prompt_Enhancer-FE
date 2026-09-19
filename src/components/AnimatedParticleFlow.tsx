@@ -214,24 +214,36 @@ function AnimatedParticleFlowInner() {
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
-  // Intersection Observer to monitor viewport visibility
+  // Monitor visibility: pause when deeply off-screen or tab is hidden
   useEffect(() => {
     if (!mounted) return;
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        setIsVisible(false);
+      } else {
+        setIsVisible(true);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         setIsVisible(entry.isIntersecting);
       },
-      { rootMargin: "300px 0px" }
+      { rootMargin: "800px 0px" } // Generous margin so it never cuts out prematurely
     );
+
     const container = containerRef.current;
     if (container) {
       observer.observe(container);
     }
+
     return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       if (container) {
         observer.unobserve(container);
       }
@@ -269,10 +281,12 @@ function AnimatedParticleFlowInner() {
 
     const resize = () => {
       const rect = canvas.parentElement?.getBoundingClientRect();
-      if (!rect) return;
       const dpr = window.devicePixelRatio || 1;
-      const w = rect.width;
-      const h = rect.height;
+      const rawW = rect?.width ?? 0;
+      const rawH = rect?.height ?? 0;
+      // Guaranteed safe fallback to FLOW_WIDTH/FLOW_HEIGHT if dimensions are zero on initial mount
+      const w = rawW > 50 ? rawW : FLOW_WIDTH;
+      const h = rawH > 50 ? rawH : FLOW_HEIGHT;
       canvas.width = w * dpr;
       canvas.height = h * dpr;
       canvas.style.width = `${w}px`;
@@ -282,6 +296,16 @@ function AnimatedParticleFlowInner() {
 
     resize();
     window.addEventListener("resize", resize);
+
+    const ro = typeof ResizeObserver !== "undefined"
+      ? new ResizeObserver(() => {
+          resize();
+        })
+      : null;
+
+    if (ro && canvas.parentElement) {
+      ro.observe(canvas.parentElement);
+    }
 
     const tick = (timestamp: number) => {
       if (!active) return;
@@ -298,10 +322,10 @@ function AnimatedParticleFlowInner() {
         time += deltaSec;
 
         const dpr = window.devicePixelRatio || 1;
-        const w = canvas.width / dpr;
-        const h = canvas.height / dpr;
-        const scaleX = w / FLOW_WIDTH;
-        const scaleY = h / FLOW_HEIGHT;
+        const w = (canvas.width / dpr) || FLOW_WIDTH;
+        const h = (canvas.height / dpr) || FLOW_HEIGHT;
+        const scaleX = Math.max(w / FLOW_WIDTH, 0.1);
+        const scaleY = Math.max(h / FLOW_HEIGHT, 0.1);
 
         ctx.clearRect(0, 0, w, h);
         ctx.save();
@@ -400,6 +424,7 @@ function AnimatedParticleFlowInner() {
       active = false;
       cancelAnimationFrame(animFrameIdRef.current);
       window.removeEventListener("resize", resize);
+      if (ro) ro.disconnect();
     };
   }, [isVisible, particles]);
 
@@ -410,16 +435,15 @@ function AnimatedParticleFlowInner() {
   return (
     <div
       ref={containerRef}
-      className="pointer-events-none absolute inset-0 z-0"
+      className="pointer-events-none absolute inset-0 z-0 w-full h-full"
       style={{
         willChange: "transform",
         transform: "translateZ(0)",
-        contain: "layout style paint",
       }}
     >
       <canvas
         ref={canvasRef}
-        className="h-full w-full"
+        className="h-full w-full block"
       />
     </div>
   );

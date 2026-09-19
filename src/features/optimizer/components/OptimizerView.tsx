@@ -273,7 +273,8 @@ export default function OptimizerView() {
     setError(null);
 
     const selectedRole = activeRole.toLowerCase();
-    const selectedMode = activeMode && activeMode.trim() ? activeMode : selectedRole;
+    const isGeneralMode = selectedRole === 'general' || selectedRole === 'auto';
+    const hasMode = Boolean(activeMode && activeMode.trim());
     const applyStyle = activeStyle.id !== null;
     // Send enhancement_level only when the user explicitly forced a level.
     // Omitting it (or sending undefined) tells the backend to auto-detect.
@@ -283,13 +284,16 @@ export default function OptimizerView() {
     // When the user selects "General" (or "auto"), omit role+mode entirely.
     // This lets the backend AMPE path freely classify the domain instead of
     // being forced into the Universal General Template.
-    // Specific role+mode selections (student+study, developer+backend, etc.)
-    // still send role+mode and go through the existing template path unchanged.
-    const isGeneralMode = selectedRole === 'general' || selectedRole === 'auto';
-
+    // When a role is selected without a mode, send only the role so the backend
+    // searches across all available templates of that role.
     const payload = {
       prompt: promptText,
-      ...(isGeneralMode ? {} : { role: selectedRole, mode: selectedMode }),
+      ...(isGeneralMode
+        ? {}
+        : {
+            role: selectedRole,
+            ...(activeMode && activeMode.trim() ? { mode: activeMode.trim() } : {}),
+          }),
       apply_style: applyStyle,
       style_profile_id: activeStyle.id || undefined,
       ...(activeTarget && activeTarget !== 'None' ? { target_model: activeTarget } : {}),

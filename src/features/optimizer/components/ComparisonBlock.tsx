@@ -308,8 +308,9 @@ export default function ComparisonBlock({
   useEffect(() => {
     if (activeRole && activeRole !== 'general') {
       const modes = ROLE_MODES[activeRole] || [];
-      if (modes.length > 0 && !modes.includes(activeMode)) {
-        setActiveMode(modes[0]);
+      // If the current mode doesn't belong to the new role, clear it (stay role-only)
+      if (activeMode && !modes.includes(activeMode)) {
+        setActiveMode('');
       }
     } else {
       setActiveMode('');
@@ -734,7 +735,7 @@ export default function ComparisonBlock({
                               </>
                             ) : (
                               <span style={{ fontSize: 10, fontStyle: 'italic', color: isDark ? 'rgba(255,255,255,0.45)' : '#64748B' }}>
-                                (Default)
+                                (All Modes)
                               </span>
                             )}
                           </div>
@@ -788,6 +789,37 @@ export default function ComparisonBlock({
                       scrollbarColor: isDark ? 'rgba(168, 85, 247, 0.45) transparent' : 'rgba(124, 58, 237, 0.35) transparent',
                     }}
                   >
+                    {/* All Modes / Auto selection for mobile drilldown */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveRole(currentHoveredRole.id);
+                        setActiveMode('');
+                        setOpenDropdown(null);
+                        setMobileModeView(false);
+                      }}
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        width: '100%', padding: '5.5px 8px', borderRadius: 7, border: 'none',
+                        background: (activeRole === currentHoveredRole.id && !activeMode)
+                          ? (isDark ? 'rgba(124, 58, 237, 0.22)' : 'rgba(124, 58, 237, 0.10)')
+                          : 'transparent',
+                        color: (activeRole === currentHoveredRole.id && !activeMode)
+                          ? (isDark ? '#FFFFFF' : '#6D28D9')
+                          : (isDark ? 'rgba(255, 255, 255, 0.78)' : '#334155'),
+                        fontSize: 12, fontWeight: (activeRole === currentHoveredRole.id && !activeMode) ? 600 : 500,
+                        cursor: 'pointer', textAlign: 'left',
+                        marginBottom: 2,
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <Sparkles size={12.5} style={{ color: (activeRole === currentHoveredRole.id && !activeMode) ? (isDark ? '#C084FC' : '#7C3AED') : (isDark ? 'rgba(255,255,255,0.45)' : '#64748B') }} />
+                        <span>All Modes (Auto)</span>
+                      </div>
+                      {activeRole === currentHoveredRole.id && !activeMode && (
+                        <Check size={13} style={{ color: isDark ? '#C084FC' : '#7C3AED' }} />
+                      )}
+                    </button>
                     {hoveredModes.map(m => {
                       const ModeIcon = getModeIcon(m);
                       const isSelected = activeRole === currentHoveredRole.id && activeMode === m;
@@ -859,16 +891,10 @@ export default function ComparisonBlock({
                               setMobileModeView(true);
                               return;
                             }
-                            if (!hasSubModes) {
-                              setActiveRole(role.id);
-                              setActiveMode('');
-                              setOpenDropdown(null);
-                            } else {
-                              setActiveRole(role.id);
-                              if (activeRole !== role.id) {
-                                setActiveMode('');
-                              }
-                            }
+                            // Clicking persona directly selects role without mode
+                            setActiveRole(role.id);
+                            setActiveMode('');
+                            setOpenDropdown(null);
                           }}
                           style={{
                             display: 'flex',
@@ -938,18 +964,57 @@ export default function ComparisonBlock({
                       }}
                     >
                       {roleHasModes ? (
-                        hoveredModes.map(m => {
-                          const ModeIcon = getModeIcon(m);
-                          const isSelected = activeRole === currentHoveredRole.id && activeMode === m;
-                          return (
-                            <button
-                              key={m}
-                              type="button"
-                              onClick={() => {
-                                setActiveRole(currentHoveredRole.id);
-                                setActiveMode(m);
-                                setOpenDropdown(null);
-                              }}
+                        <>
+                          {/* All Modes / Auto selection button */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveRole(currentHoveredRole.id);
+                              setActiveMode('');
+                              setOpenDropdown(null);
+                            }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              width: '100%',
+                              padding: '5px 7px',
+                              borderRadius: 7,
+                              border: 'none',
+                              background: activeRole === currentHoveredRole.id && !activeMode
+                                ? (isDark ? 'rgba(124, 58, 237, 0.22)' : 'rgba(124, 58, 237, 0.10)')
+                                : 'transparent',
+                              color: activeRole === currentHoveredRole.id && !activeMode
+                                ? (isDark ? '#FFFFFF' : '#6D28D9')
+                                : (isDark ? 'rgba(255, 255, 255, 0.78)' : '#334155'),
+                              fontSize: 11.5,
+                              fontWeight: activeRole === currentHoveredRole.id && !activeMode ? 600 : 500,
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                              marginBottom: 2,
+                            }}
+                            className={!(activeRole === currentHoveredRole.id && !activeMode) ? (isDark ? 'hover:bg-[rgba(255,255,255,0.06)]' : 'hover:bg-[rgba(124,58,237,0.05)]') : ''}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <Sparkles size={12.5} style={{ color: (activeRole === currentHoveredRole.id && !activeMode) ? (isDark ? '#C084FC' : '#7C3AED') : (isDark ? 'rgba(255,255,255,0.45)' : '#64748B') }} />
+                              <span>All Modes (Auto)</span>
+                            </div>
+                            {activeRole === currentHoveredRole.id && !activeMode && (
+                              <Check size={12} style={{ color: isDark ? '#C084FC' : '#7C3AED' }} />
+                            )}
+                          </button>
+                          {hoveredModes.map(m => {
+                            const ModeIcon = getModeIcon(m);
+                            const isSelected = activeRole === currentHoveredRole.id && activeMode === m;
+                            return (
+                              <button
+                                key={m}
+                                type="button"
+                                onClick={() => {
+                                  setActiveRole(currentHoveredRole.id);
+                                  setActiveMode(m);
+                                  setOpenDropdown(null);
+                                }}
                                 style={{
                                   display: 'flex',
                                   alignItems: 'center',
@@ -979,7 +1044,8 @@ export default function ComparisonBlock({
                                 {isSelected && <Check size={12} style={{ color: isDark ? '#C084FC' : '#7C3AED' }} />}
                               </button>
                             );
-                          })
+                          })}
+                        </>
                       ) : (
                         <div style={{ padding: '8px 6px', fontSize: 11.5, color: isDark ? 'rgba(255,255,255,0.6)' : '#64748B', lineHeight: 1.4 }}>
                           <p style={{ margin: '0 0 8px' }}>
@@ -1207,15 +1273,14 @@ export default function ComparisonBlock({
         <AnimatePresence>
           {hoveredAction === 'analyze' && (
             <motion.div
-              initial={{ opacity: 0, y: 4, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 4, scale: 0.95 }}
+              initial={{ opacity: 0, y: 4, scale: 0.95, x: '-50%' }}
+              animate={{ opacity: 1, y: 0, scale: 1, x: '-50%' }}
+              exit={{ opacity: 0, y: 4, scale: 0.95, x: '-50%' }}
               transition={{ duration: 0.12 }}
               style={{
                 position: 'absolute',
                 bottom: 'calc(100% + 8px)',
                 left: '50%',
-                transform: 'translateX(-50%)',
                 pointerEvents: 'none',
                 zIndex: 100,
                 background: isDark ? '#1C1A2E' : '#FFFFFF',
@@ -1284,14 +1349,14 @@ export default function ComparisonBlock({
         <AnimatePresence>
           {hoveredAction === 'enhance' && (
             <motion.div
-              initial={{ opacity: 0, y: 4, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 4, scale: 0.95 }}
+              initial={{ opacity: 0, y: 4, scale: 0.95, x: '-50%' }}
+              animate={{ opacity: 1, y: 0, scale: 1, x: '-50%' }}
+              exit={{ opacity: 0, y: 4, scale: 0.95, x: '-50%' }}
               transition={{ duration: 0.12 }}
               style={{
                 position: 'absolute',
                 bottom: 'calc(100% + 8px)',
-                right: 0,
+                left: '50%',
                 pointerEvents: 'none',
                 zIndex: 100,
                 background: isDark ? '#1C1A2E' : '#FFFFFF',

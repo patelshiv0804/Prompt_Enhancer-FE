@@ -358,7 +358,7 @@ export default function FAQSection() {
 
           <div className="relative z-10 shrink-0">
             <Link
-              href="/auth"
+              href="/dashboard"
               className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-white px-6 py-3 sm:px-7 sm:py-3.5 text-sm font-semibold text-gray-900 shadow-[0_4px_24px_rgba(255,255,255,0.18)] transition-all hover:bg-gray-50 hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
             >
               Get started for free

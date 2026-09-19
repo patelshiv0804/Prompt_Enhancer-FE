@@ -42,26 +42,7 @@ export default function TransformationEngine({
   isEnhancing,
 }: TransformationEngineProps) {
   const sectionRef = useRef<HTMLDivElement>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
   const isDark = useIsDark();
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsLoaded(true);
-        }
-      },
-      { rootMargin: "400px 0px" } // trigger load well before it scrolls into view
-    );
-    const section = sectionRef.current;
-    if (section) {
-      observer.observe(section);
-    }
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
 
   return (
     <section
@@ -179,9 +160,9 @@ export default function TransformationEngine({
             className="te-flow relative"
             style={{ width: FLOW_WIDTH, height: FLOW_HEIGHT }}
           >
-            {/* Particle flow (SVG overlay — covers full container on desktop). */}
-            <div className="te-particles">
-              {isLoaded && <AnimatedParticleFlow />}
+            {/* Particle flow (canvas overlay — covers full container on desktop). */}
+            <div className="te-particles absolute inset-0 pointer-events-none z-0">
+              <AnimatedParticleFlow />
             </div>
 
             {/* Top: Raw Prompt Card — centered horizontally at top */}

@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { ArrowRight, Play } from "lucide-react";
+import Link from "next/link";
 import TrustLogos from "./TrustLogos";
 import PromptIQUniverse from "./PromptIQUniverse";
 import { useIsDark, D } from "@/theme/theme";
@@ -72,8 +73,8 @@ export default function Hero() {
           className="flex w-full max-w-[360px] flex-col items-center gap-3 px-6 pointer-events-auto sm:w-auto sm:max-w-none sm:flex-row sm:flex-wrap sm:justify-center sm:gap-4 sm:px-0"
           style={{ marginTop: 34 }}
         >
-          <a
-            href="#get-started"
+          <Link
+            href="/dashboard"
             id="hero-cta-primary"
             className="group w-full sm:w-auto"
             style={{
@@ -88,7 +89,7 @@ export default function Hero() {
           >
             Enhance your prompt
             <ArrowRight size={16} />
-          </a>
+          </Link>
           <a
             href="#how-it-works"
             id="hero-cta-secondary"

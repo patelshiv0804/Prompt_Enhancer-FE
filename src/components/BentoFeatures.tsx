@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 import { D, useIsDark } from "@/theme/theme";
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -2397,19 +2398,25 @@ export default function BentoFeatures() {
                   background: "radial-gradient(circle, rgba(139,92,246,0.18) 0%, transparent 70%)",
                   borderRadius: 999, filter: "blur(8px)", pointerEvents: "none",
                 }} />
-                <motion.a href="#get-started"
+                <motion.div
                   whileHover={{ scale: 1.025 }} whileTap={{ scale: 0.975 }}
-                  style={{
-                    position: "relative", display: "inline-flex", alignItems: "center", gap: 10,
-                    background: P.ink, color: isDark ? D.ctaText : "#fff", borderRadius: 999, padding: "15px 30px",
-                    fontSize: 15, fontWeight: 640, textDecoration: "none",
-                    boxShadow: isDark ? D.ctaShadow : "0 4px 20px rgba(13,13,26,0.18)", letterSpacing: "-0.01em", whiteSpace: "nowrap",
-                  }}>
-                  Enhance your first prompt
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M5 12h14M12 5l7 7-7 7" />
-                  </svg>
-                </motion.a>
+                  style={{ display: "inline-block" }}
+                >
+                  <Link
+                    href="/dashboard"
+                    style={{
+                      position: "relative", display: "inline-flex", alignItems: "center", gap: 10,
+                      background: P.ink, color: isDark ? D.ctaText : "#fff", borderRadius: 999, padding: "15px 30px",
+                      fontSize: 15, fontWeight: 640, textDecoration: "none",
+                      boxShadow: isDark ? D.ctaShadow : "0 4px 20px rgba(13,13,26,0.18)", letterSpacing: "-0.01em", whiteSpace: "nowrap",
+                    }}
+                  >
+                    Enhance your first prompt
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                  </Link>
+                </motion.div>
               </div>
             </div>
           </motion.div>
